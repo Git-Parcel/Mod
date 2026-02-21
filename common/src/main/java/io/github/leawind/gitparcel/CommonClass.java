@@ -8,10 +8,6 @@ import io.github.leawind.gitparcel.server.commands.ParcelDebugCommand;
 public class CommonClass {
 
   public static void init() {
-    Constants.LOG.info(
-        "Environment: {}",
-        Services.PLATFORM.isDevelopmentEnvironment() ? "development" : "production");
-
     GameEvents.REGISTER_COMMANDS =
         (event) -> {
           ParcelCommand.register(event.dispatcher(), event.context());
