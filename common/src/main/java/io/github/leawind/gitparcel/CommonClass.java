@@ -1,8 +1,9 @@
 package io.github.leawind.gitparcel;
 
+import io.github.leawind.gitparcel.api.GameEvents;
 import io.github.leawind.gitparcel.platform.Services;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.item.Items;
+import io.github.leawind.gitparcel.server.commands.ParcelCommand;
+import io.github.leawind.gitparcel.server.commands.ParcelDebugCommand;
 
 public class CommonClass {
 
@@ -10,5 +11,14 @@ public class CommonClass {
     Constants.LOG.info(
         "Environment: {}",
         Services.PLATFORM.isDevelopmentEnvironment() ? "development" : "production");
+
+    GameEvents.REGISTER_COMMANDS =
+        (event) -> {
+          ParcelCommand.register(event.dispatcher(), event.context());
+
+          if (Services.PLATFORM.isDevelopmentEnvironment()) {
+            ParcelDebugCommand.register(event.dispatcher(), event.context());
+          }
+        };
   }
 }
