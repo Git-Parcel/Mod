@@ -27,7 +27,9 @@ public class MixinCommands {
       method = "<init>")
   private void fabric_addCommands(
       Commands.CommandSelection selection, CommandBuildContext context, CallbackInfo ci) {
-    GameEvents.REGISTER_COMMANDS.accept(
-        new GameEvents.RegiterCommands(dispatcher, selection, context));
+    if (GameEvents.REGISTER_COMMANDS != null) {
+      GameEvents.REGISTER_COMMANDS.accept(
+          new GameEvents.RegiterCommands(dispatcher, selection, context));
+    }
   }
 }
