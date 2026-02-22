@@ -6,6 +6,7 @@ import io.github.leawind.gitparcel.platform.Services;
 import io.github.leawind.gitparcel.server.commands.ParcelCommand;
 import io.github.leawind.gitparcel.server.commands.ParcelDebugCommand;
 import io.github.leawind.gitparcel.server.commands.arguments.FilePathArgument;
+import io.github.leawind.gitparcel.server.commands.arguments.ParcelFormatArgument;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -20,6 +21,12 @@ public final class GameEvents {
         "gitparcel:file_path",
         FilePathArgument.class,
         SingletonArgumentInfo.contextFree(FilePathArgument::filePath));
+
+    InvokeArgumentTypeInfos.register(
+        registry,
+        "gitparcel:parcel_format",
+        ParcelFormatArgument.class,
+        SingletonArgumentInfo.contextFree(ParcelFormatArgument::parcelFormat));
   }
 
   public static void registerCommands(

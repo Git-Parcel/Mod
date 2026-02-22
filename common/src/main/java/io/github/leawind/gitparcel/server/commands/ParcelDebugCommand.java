@@ -1,11 +1,12 @@
 package io.github.leawind.gitparcel.server.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import io.github.leawind.gitparcel.Constants;
 import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.parcel.ParcelFormats;
 import io.github.leawind.gitparcel.server.commands.arguments.FilePathArgument;
+import io.github.leawind.gitparcel.server.commands.arguments.ParcelFormatArgument;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -34,7 +35,23 @@ public class ParcelDebugCommand {
                                                 BoundingBox.fromCorners(
                                                     BlockPosArgument.getLoadedBlockPos(ctx, "from"),
                                                     BlockPosArgument.getLoadedBlockPos(ctx, "to")),
-                                                FilePathArgument.getPath(ctx, "path"))))));
+                                                FilePathArgument.getPath(ctx, "path"),
+                                                ParcelFormats.MVP_V0))
+                                    .then(
+                                        Commands.argument(
+                                                "format", ParcelFormatArgument.parcelFormat())
+                                            .executes(
+                                                ctx ->
+                                                    saveParcel(
+                                                        ctx.getSource(),
+                                                        BoundingBox.fromCorners(
+                                                            BlockPosArgument.getLoadedBlockPos(
+                                                                ctx, "from"),
+                                                            BlockPosArgument.getLoadedBlockPos(
+                                                                ctx, "to")),
+                                                        FilePathArgument.getPath(ctx, "path"),
+                                                        ParcelFormatArgument.getParcelFormat(
+                                                            ctx, "format")))))));
     final var commandLoad =
         Commands.literal("load")
             .then(
@@ -56,14 +73,16 @@ public class ParcelDebugCommand {
     dispatcher.register(command);
   }
 
-  public static int saveParcel(CommandSourceStack source, BoundingBox bounds, Path path) {
+  public static int saveParcel(
+      CommandSourceStack source, BoundingBox bounds, Path path, ParcelFormat format) {
     try {
       var parcel = new Parcel(source.getLevel(), bounds);
-      ParcelFormat.Registry.COMPRESSED_NBT_V0.save(parcel, path);
-      Constants.LOG.info("Saving parcel {} to {}", bounds, path);
+      format.save(parcel, path);
+      Constants.LOG.info("Saving parcel {} to {} with format {}", bounds, path, format.id);
       return 0;
     } catch (Exception e) {
-      Constants.LOG.error("Error while saving parcel {} to {}", bounds, path, e);
+      Constants.LOG.error(
+          "Error while saving parcel {} to {} with format {}", bounds, path, format.id, e);
       return 1;
     }
   }
