@@ -1,7 +1,7 @@
 package io.github.leawind.gitparcel.mixin;
 
 import com.mojang.brigadier.CommandDispatcher;
-import io.github.leawind.gitparcel.api.GameEvents;
+import io.github.leawind.gitparcel.GameEvents;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -27,9 +27,6 @@ public class MixinCommands {
       method = "<init>")
   private void fabric_addCommands(
       Commands.CommandSelection selection, CommandBuildContext context, CallbackInfo ci) {
-    if (GameEvents.REGISTER_COMMANDS != null) {
-      GameEvents.REGISTER_COMMANDS.accept(
-          new GameEvents.RegiterCommands(dispatcher, selection, context));
-    }
+    GameEvents.registerCommands(dispatcher, selection, context);
   }
 }
