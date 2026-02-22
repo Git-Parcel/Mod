@@ -8,6 +8,7 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 
 import java.nio.file.InvalidPathException;
@@ -25,8 +26,10 @@ public class FilePathArgument implements ArgumentType<Path> {
           "temp",
           "\"including space\"",
           "'quoted'");
-  public static final SimpleCommandExceptionType ERROR_INVALID =
-      new SimpleCommandExceptionType(Component.translatable("argument.filepath.invalid"));
+  public static final SimpleCommandExceptionType ERROR_INVALID_PATH =
+      new SimpleCommandExceptionType(Component.translatable("argument.filepath.invalid_path"));
+  public static final SimpleCommandExceptionType ERROR_INVALID_CHAR =
+      new SimpleCommandExceptionType(Component.translatable("argument.filepath.invalid_char"));
 
   public static FilePathArgument filePath() {
     return new FilePathArgument();
@@ -39,16 +42,79 @@ public class FilePathArgument implements ArgumentType<Path> {
   @Override
   public Path parse(StringReader reader) throws CommandSyntaxException {
     try {
-      return Path.of(reader.readString());
+      // exclude special chars
+      var str = reader.readString();
+      if (str.matches(".*[:*?\"<>|\n].*")) {
+        throw ERROR_INVALID_CHAR.createWithContext(reader);
+      }
+      return Path.of(str);
     } catch (InvalidPathException e) {
-      throw ERROR_INVALID.createWithContext(reader);
+      throw ERROR_INVALID_PATH.createWithContext(reader);
     }
   }
 
   @Override
   public <S> CompletableFuture<Suggestions> listSuggestions(
       final CommandContext<S> context, final SuggestionsBuilder builder) {
-    // TODO
+    if (context.getSource() instanceof SharedSuggestionProvider) {
+      try {
+        do {
+          String remaining = builder.getRemaining();
+
+          final Path cwd = Path.of(".");
+          char quote = remaining.isEmpty() ? '!' : remaining.charAt(0);
+          if (quote == '"' || quote == '\'') {
+            if (remaining.charAt(remaining.length() - 1) == quote
+                && remaining.length() > 1
+                && remaining.charAt(remaining.length() - 2) != '\\') {
+              break;
+            }
+
+            String unquoted = remaining.substring(1);
+
+            var path = Path.of(unquoted);
+            boolean endsWithSeperator = remaining.endsWith("/") || remaining.endsWith("\\");
+
+            if (endsWithSeperator) {
+              var entries = path.toFile().list();
+              if (entries == null) {
+                break;
+              }
+              var suggestions = Arrays.stream(entries).map(entry -> remaining + entry);
+              return SharedSuggestionProvider.suggest(suggestions, builder);
+            } else {
+              var parent = path.getParent();
+
+              if (parent == null && !path.isAbsolute()) {
+                parent = cwd;
+              }
+              if (parent != null) {
+                var half = path.getFileName().toString();
+                var beforeHalf = remaining.substring(0, remaining.length() - half.length());
+
+                var entries = parent.toFile().list();
+                if (entries != null) {
+                  var suggestions =
+                      Arrays.stream(entries)
+                          .filter(entry -> entry.startsWith(half))
+                          .map(entry -> beforeHalf + entry);
+                  return SharedSuggestionProvider.suggest(suggestions, builder);
+                }
+              }
+            }
+
+          } else {
+            var entries = cwd.toFile().list();
+            if (entries != null) {
+              var suggestions = Arrays.stream(entries).filter(entry -> entry.startsWith(remaining));
+              return SharedSuggestionProvider.suggest(suggestions, builder);
+            }
+          }
+
+        } while (false);
+      } catch (InvalidPathException | UnsupportedOperationException | SecurityException ignored) {
+      }
+    }
     return Suggestions.empty();
   }
 
