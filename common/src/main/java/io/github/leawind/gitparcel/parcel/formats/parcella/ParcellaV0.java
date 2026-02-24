@@ -40,6 +40,7 @@ public class ParcellaV0 implements ParcelFormat {
    * coordinates to 1D indices and decoding them back. The Z-Order curve preserves spatial locality
    * by interleaving the bits of coordinate values.
    */
+  @SuppressWarnings("unused")
   public static class ZOrder3D {
 
     /**
@@ -176,7 +177,6 @@ public class ParcellaV0 implements ParcelFormat {
      * @throws IllegalArgumentException if the coordinate cannot be transformed to a valid positive
      *     coordinate
      */
-    @SuppressWarnings("unused")
     public static long coordToIndexSigned2(Vector3i coord) {
       for (int k = 0; k < 8; k++) {
         Vector3i sign = SIGN_OFFSET[k][0];
