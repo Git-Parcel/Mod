@@ -14,6 +14,9 @@ neoForge {
 		minecraftVersion = parchment_minecraft
 		mappingsVersion = parchment_version
 	}
+	
+	// So we can access vanilla classes in test
+	addModdingDependenciesTo(sourceSets.test)
 }
 
 dependencies {
@@ -21,6 +24,14 @@ dependencies {
 	// fabric and neoforge both bundle mixinextras, so it is safe to use it in common
 	compileOnly group: 'io.github.llamalad7', name: 'mixinextras-common', version: '0.3.5'
 	annotationProcessor group: 'io.github.llamalad7', name: 'mixinextras-common', version: '0.3.5'
+	
+	// Unit testing
+	testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+	useJUnitPlatform()
 }
 
 configurations {
