@@ -1,0 +1,90 @@
+package io.github.leawind.gitparcel.parcel;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import org.jspecify.annotations.Nullable;
+
+public class ParcelFormatManager {
+  private final Map<String, Map<Integer, ParcelFormat>> savers = new HashMap<>();
+  private final Map<String, Map<Integer, ParcelFormat>> loaders = new HashMap<>();
+  private ParcelFormat.@Nullable Save defaultSaver;
+  private ParcelFormat.@Nullable Load defaultLoader;
+
+  public ParcelFormatManager register(ParcelFormat format) {
+    if (format instanceof ParcelFormat.Save saver) {
+      savers.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), saver);
+    } else if (format instanceof ParcelFormat.Load loader) {
+      loaders.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), loader);
+    }
+    return this;
+  }
+
+  public ParcelFormatManager registerDefault(ParcelFormat format) {
+    if (format instanceof ParcelFormat.Save saver) {
+      defaultSaver = saver;
+    } else if (format instanceof ParcelFormat.Load loader) {
+      defaultLoader = loader;
+    }
+    return register(format);
+  }
+
+  public ParcelFormat.@Nullable Save defaultSaver() {
+    return defaultSaver;
+  }
+
+  public ParcelFormat.@Nullable Load defaultLoader() {
+    return defaultLoader;
+  }
+
+  /**
+   * Get the latest version of saver for the given format id.
+   *
+   * @param id The format id.
+   * @return null if no saver is found
+   */
+  public ParcelFormat.@Nullable Save saver(String id) {
+    return (ParcelFormat.Save) latest(savers, id);
+  }
+
+  public ParcelFormat.@Nullable Save saver(String id, int version) {
+    return (ParcelFormat.Save) savers.getOrDefault(id, Map.of()).get(version);
+  }
+
+  /**
+   * Get the latest version of loader for the given format id.
+   *
+   * @param id The format id.
+   * @return null if no loader is found
+   */
+  public ParcelFormat.@Nullable Load loader(String id) {
+    return (ParcelFormat.Load) latest(loaders, id);
+  }
+
+  public ParcelFormat.@Nullable Load loader(String id, int version) {
+    return (ParcelFormat.Load) loaders.getOrDefault(id, Map.of()).get(version);
+  }
+
+  public Set<String> saverNames() {
+    return savers.keySet();
+  }
+
+  public Set<String> loaderNames() {
+    return loaders.keySet();
+  }
+
+  private static @Nullable ParcelFormat latest(
+      Map<String, Map<Integer, ParcelFormat>> formats, String id) {
+    var versions = formats.get(id);
+    if (versions == null) {
+      return null;
+    }
+    var sorted =
+        versions //
+            .values()
+            .stream()
+            .sorted((a, b) -> b.version() - a.version())
+            .toList();
+    return sorted.getFirst();
+  }
+}

@@ -24,9 +24,15 @@ public final class GameEvents {
 
     InvokeArgumentTypeInfos.register(
         registry,
-        "gitparcel:parcel_format",
-        ParcelFormatArgument.class,
-        SingletonArgumentInfo.contextFree(ParcelFormatArgument::parcelFormat));
+        "gitparcel:parcel_format_saver",
+        ParcelFormatArgument.Saver.class,
+        SingletonArgumentInfo.contextFree(ParcelFormatArgument::saver));
+
+    InvokeArgumentTypeInfos.register(
+        registry,
+        "gitparcel:parcel_format_loader",
+        ParcelFormatArgument.Loader.class,
+        SingletonArgumentInfo.contextFree(ParcelFormatArgument::loader));
   }
 
   public static void registerCommands(

@@ -2,7 +2,6 @@ package io.github.leawind.gitparcel.platform;
 
 import io.github.leawind.gitparcel.Constants;
 import io.github.leawind.gitparcel.platform.services.IPlatformHelper;
-
 import java.util.ServiceLoader;
 
 public class Services {

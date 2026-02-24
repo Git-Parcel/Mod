@@ -1,13 +1,14 @@
 package io.github.leawind.gitparcel.parcel;
 
+import io.github.leawind.gitparcel.Constants;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public final class Parcel {
   private final ServerLevel level;
@@ -42,6 +43,11 @@ public final class Parcel {
     return new BlockPos(bounds.maxX(), bounds.maxY(), bounds.maxZ());
   }
 
+  /**
+   * Metadata for parcels.
+   *
+   * @see <a href="https://git-parcel.github.io/schemas/ParcelMeta.json">Parcel Metadata Schema</a>
+   */
   public static final class Metadata {
     public String format;
     public int dataVersion;
@@ -64,5 +70,16 @@ public final class Parcel {
     }
 
     public record ModDependency(String id, String min, String max) {}
+
+    public static void save(Parcel.Metadata metadata, Path dir) {
+      // TODO
+      Constants.LOG.warn("Saving metadata of metadata {} to {}", metadata, dir);
+    }
+
+    public static Metadata load(Path dir) {
+      Constants.LOG.warn("Loading metadata from {}", dir);
+      // TODO
+      return null;
+    }
   }
 }

@@ -2,19 +2,16 @@ package io.github.leawind.gitparcel.server.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
 import io.github.leawind.gitparcel.Constants;
-import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
-import io.github.leawind.gitparcel.parcel.ParcelFormats;
 import io.github.leawind.gitparcel.server.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.server.commands.arguments.ParcelFormatArgument;
+import java.nio.file.Path;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.levelgen.structure.BoundingBox;
-
-import java.nio.file.Path;
+import net.minecraft.core.Vec3i;
 
 public class ParcelDebugCommand {
 
@@ -32,25 +29,22 @@ public class ParcelDebugCommand {
                                         ctx ->
                                             saveParcel(
                                                 ctx.getSource(),
-                                                BoundingBox.fromCorners(
-                                                    BlockPosArgument.getLoadedBlockPos(ctx, "from"),
-                                                    BlockPosArgument.getLoadedBlockPos(ctx, "to")),
+                                                BlockPosArgument.getLoadedBlockPos(ctx, "from"),
+                                                BlockPosArgument.getLoadedBlockPos(ctx, "to"),
                                                 FilePathArgument.getPath(ctx, "path"),
-                                                ParcelFormats.MVP_V0))
+                                                Constants.PARCEL_FORMATS.defaultSaver()))
                                     .then(
-                                        Commands.argument(
-                                                "format", ParcelFormatArgument.parcelFormat())
+                                        Commands.argument("format", ParcelFormatArgument.saver())
                                             .executes(
                                                 ctx ->
                                                     saveParcel(
                                                         ctx.getSource(),
-                                                        BoundingBox.fromCorners(
-                                                            BlockPosArgument.getLoadedBlockPos(
-                                                                ctx, "from"),
-                                                            BlockPosArgument.getLoadedBlockPos(
-                                                                ctx, "to")),
+                                                        BlockPosArgument.getLoadedBlockPos(
+                                                            ctx, "from"),
+                                                        BlockPosArgument.getLoadedBlockPos(
+                                                            ctx, "to"),
                                                         FilePathArgument.getPath(ctx, "path"),
-                                                        ParcelFormatArgument.getParcelFormat(
+                                                        ParcelFormatArgument.getSaver(
                                                             ctx, "format")))))));
     final var commandLoad =
         Commands.literal("load")
@@ -74,15 +68,15 @@ public class ParcelDebugCommand {
   }
 
   public static int saveParcel(
-      CommandSourceStack source, BoundingBox bounds, Path path, ParcelFormat format) {
+      CommandSourceStack source, BlockPos from, Vec3i to, Path path, ParcelFormat.Save format) {
     try {
-      var parcel = new Parcel(source.getLevel(), bounds);
-      format.save(parcel, path);
-      Constants.LOG.info("Saving parcel {} to {} with format {}", bounds, path, format.id);
+      // TODO
+      format.save(source.getLevel(), from, to, path, true, true);
+      Constants.LOG.info(
+          "Saving parcel [{}, {}] with format {} to {}", from, to, format.id(), path);
       return 0;
     } catch (Exception e) {
-      Constants.LOG.error(
-          "Error while saving parcel {} to {} with format {}", bounds, path, format.id, e);
+      Constants.LOG.error("Error while saving parcel", e);
       return 1;
     }
   }
