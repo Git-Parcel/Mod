@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -73,7 +74,8 @@ public class MvpV0 implements ParcelFormat {
       try (BufferedWriter writer = Files.newBufferedWriter(paletteFile, StandardCharsets.UTF_8)) {
         for (int i = 0; i < paletteList.size(); i++) {
           BlockState blockState = paletteList.get(i);
-          String blockStateString = blockState.toString();
+          String blockStateString =
+              BuiltInRegistries.BLOCK.wrapAsHolder(blockState.getBlock()).getRegisteredName();
           writer.write(Integer.toHexString(i) + "=" + blockStateString);
           writer.newLine();
         }
