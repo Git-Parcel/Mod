@@ -156,12 +156,7 @@ public class ParcellaV0 implements ParcelFormat {
 
     @Override
     public void save(
-        Level level,
-        BlockPos from,
-        Vec3i size,
-        Path dir,
-        boolean includeBlock,
-        boolean includeEntity)
+        Level level, BlockPos from, Vec3i size, Path dir, boolean saveBlocks, boolean saveEntities)
         throws IOException {
       try (ProblemReporter.ScopedCollector problemReporter =
           new ProblemReporter.ScopedCollector(LOGGER)) {
@@ -170,11 +165,11 @@ public class ParcellaV0 implements ParcelFormat {
         Path formatOptionsFile = dir.resolve("format-options.json");
         Options options = Options.tryLoadOrDefault(formatOptionsFile);
 
-        if (includeBlock) {
+        if (saveBlocks) {
           saveBlocks(level, from, size, dir, options);
         }
 
-        if (includeEntity) {
+        if (saveEntities) {
           saveEntities(problemReporter, level, from, size, dir, options);
         }
       }
