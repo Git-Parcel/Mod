@@ -1,14 +1,51 @@
 package io.github.leawind.gitparcel.parcel.formats.parcella;
 
+import com.google.gson.Gson;
+import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.DoubleTag;
+import net.minecraft.nbt.IntTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtIo;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.decoration.painting.Painting;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3i;
+import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
 
 public class ParcellaV0 implements ParcelFormat {
+  private static final Gson GSON = new Gson();
+  private static final Logger LOGGER = LogUtils.getLogger();
+
+  private static final String OPTIONS_SCHEMA =
+      "https://git-parcel.github.io/schemas/ParcellaFormatOptions.json";
 
   @Override
   public String id() {
@@ -20,7 +57,108 @@ public class ParcellaV0 implements ParcelFormat {
     return 0;
   }
 
+  public static class BlockPalette {
+    public final Map<Data, Integer> map = new HashMap<>();
+    public final List<Data> list = new ArrayList<>();
+    public final Set<Integer> blockEntities = new HashSet<>();
+
+    private int nextPaletteId = 0;
+
+    public final Path palettePath;
+    public final Path nbtDir;
+
+    public BlockPalette(Path palettePath, Path nbtDir) {
+      this.palettePath = palettePath;
+      this.nbtDir = nbtDir;
+    }
+
+    public int collect(Level level, BlockPos pos) {
+      BlockState blockState = level.getBlockState(pos);
+      BlockEntity blockEntity = level.getBlockEntity(pos);
+      CompoundTag tag = null;
+      if (blockEntity != null) {
+        tag = blockEntity.saveWithFullMetadata(level.registryAccess());
+      }
+      return collect(blockState, tag);
+    }
+
+    public int collect(BlockState blockState, @Nullable CompoundTag nbt) {
+      return collect(new Data(blockState, nbt));
+    }
+
+    public int collect(Data data) {
+      if (!map.containsKey(data)) {
+        map.put(data, nextPaletteId);
+        list.add(data);
+        if (data.nbt != null) {
+          blockEntities.add(nextPaletteId);
+        }
+        nextPaletteId++;
+        return nextPaletteId - 1;
+      }
+      return map.get(data);
+    }
+
+    public void clear() {
+      map.clear();
+      list.clear();
+      nextPaletteId = 0;
+    }
+
+    public void tryLoad() {
+      // TODO try load block palette
+    }
+
+    public void save(boolean useSnbt) throws IOException {
+      Files.createDirectories(nbtDir);
+      try (BufferedWriter writer = Files.newBufferedWriter(palettePath, StandardCharsets.UTF_8)) {
+        for (int i = 0; i < list.size(); i++) {
+          Data data = list.get(i);
+          String blockStateString =
+              BuiltInRegistries.BLOCK.wrapAsHolder(data.blockState.getBlock()).getRegisteredName();
+          writer.write(Integer.toHexString(i) + "=" + blockStateString);
+          writer.newLine();
+        }
+      }
+      // Save NBTs
+      for (int id : blockEntities) {
+        Data data = list.get(id);
+        if (data.nbt != null) {
+          if (useSnbt) {
+            // TODO format
+            Files.writeString(nbtDir.resolve(id + ".snbt"), data.nbt.toString());
+          } else {
+            NbtIo.write(data.nbt, nbtDir.resolve(id + ".nbt"));
+          }
+          // TODO remove redundant NBT files
+        }
+      }
+    }
+
+    public record Data(BlockState blockState, @Nullable CompoundTag nbt) {}
+  }
+
   public static final class Save extends ParcellaV0 implements ParcelFormat.Save {
+    public static class Options {
+      public boolean enableSnbtForBlockEntities = true;
+      public boolean enableMicroparcel = false;
+      public boolean enableSnbtForEntities = true;
+      public Vec3i subparcelOffset = Vec3i.ZERO;
+
+      public static @Nullable Options tryLoad(Path path) {
+        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+          return GSON.fromJson(reader, Options.class);
+        } catch (IOException e) {
+          return null;
+        }
+      }
+
+      public static Options tryLoadOrDefault(Path path) {
+        Options options = Options.tryLoad(path);
+        return options != null ? options : new Options();
+      }
+    }
+
     @Override
     public void save(
         ServerLevel level,
@@ -30,8 +168,264 @@ public class ParcellaV0 implements ParcelFormat {
         boolean includeBlock,
         boolean includeEntity)
         throws IOException {
-      // NOW
-      throw new RuntimeException("Not implemented");
+      try (ProblemReporter.ScopedCollector problemReporter =
+          new ProblemReporter.ScopedCollector(LOGGER)) {
+        Files.createDirectories(dir);
+
+        Path formatOptionsFile = dir.resolve("format-options.json");
+        Options options = Options.tryLoadOrDefault(formatOptionsFile);
+
+        if (includeBlock) {
+          saveBlocks(level, from, size, dir, options);
+        }
+
+        if (includeEntity) {
+          saveEntities(problemReporter, level, from, size, dir, options);
+        }
+      }
+    }
+
+    private void saveBlocks(ServerLevel level, BlockPos from, Vec3i size, Path dir, Options options)
+        throws IOException {
+
+      Path blocksDir = dir.resolve("blocks");
+
+      Files.createDirectories(blocksDir);
+
+      Path nbtDir = blocksDir.resolve("nbt");
+      BlockPalette palette = new BlockPalette(blocksDir.resolve("palette.txt"), nbtDir);
+      palette.tryLoad();
+
+      // Process sub-parcels with Z-Order encoding
+      Path subParcelsDir = blocksDir.resolve("subparcels");
+      Files.createDirectories(subParcelsDir);
+
+      BlockPos gridOrigin = from.offset(options.subparcelOffset);
+      Iterable<BoundingBox> subparcels = subdivideParcel(from, size, gridOrigin);
+
+      for (var subparcel : subparcels) {
+        long index =
+            ZOrder3D.coordToIndexSigned(
+                (subparcel.minX() - gridOrigin.getX()) / 16,
+                (subparcel.minY() - gridOrigin.getY()) / 16,
+                (subparcel.minZ() - gridOrigin.getZ()) / 16);
+        Path subParcelFile = indexToPath(subParcelsDir, index);
+        Files.createDirectories(subParcelFile.getParent());
+
+        // Write sub-parcel data
+        try (BufferedWriter writer =
+            Files.newBufferedWriter(subParcelFile, StandardCharsets.UTF_8)) {
+
+          BlockPos subparcelFrom =
+              new BlockPos(subparcel.minX(), subparcel.minY(), subparcel.minZ());
+          BlockPos subparcelTo = new BlockPos(subparcel.maxX(), subparcel.maxY(), subparcel.maxZ());
+          writeSubparcel(
+              writer, level, subparcelFrom, subparcelTo, palette, options.enableMicroparcel);
+        }
+      }
+
+      palette.save(options.enableSnbtForBlockEntities);
+    }
+
+    private void writeSubparcel(
+        BufferedWriter writer,
+        ServerLevel level,
+        BlockPos from,
+        BlockPos to,
+        BlockPalette palette,
+        boolean enableMicroparcel)
+        throws IOException {
+      if (!enableMicroparcel) {
+        for (int x = from.getX(); x < to.getX(); x++) {
+          for (int y = from.getY(); y < to.getY(); y++) {
+            for (int z = from.getZ(); z < to.getZ(); z++) {
+              int id = palette.collect(level, new BlockPos(x, y, z));
+              writer.write(Integer.toHexString(id));
+              writer.newLine();
+            }
+          }
+        }
+      } else {
+        // TODO microparcel
+        LOGGER.warn("Microparcel is not implemented yet");
+      }
+    }
+
+    private void saveEntities(
+        ProblemReporter problemReporter,
+        ServerLevel level,
+        BlockPos from,
+        Vec3i size,
+        Path dir,
+        Options options)
+        throws IOException {
+
+      // TODO remove redundant entities
+
+      Path entitiesDir = dir.resolve("entities");
+      Files.createDirectories(entitiesDir);
+
+      AABB area =
+          new AABB(
+              from.getX(),
+              from.getY(),
+              from.getZ(),
+              from.getX() + size.getX(),
+              from.getY() + size.getY(),
+              from.getZ() + size.getZ());
+      List<Entity> entities =
+          level.getEntities((Entity) null, area, entity -> !(entity instanceof Player));
+
+      int entityId = 0;
+      for (Entity entity : entities) {
+        CompoundTag tag = getEntityNbt(problemReporter, from, entity);
+        if (options.enableSnbtForEntities) {
+          Files.writeString(entitiesDir.resolve(entityId + ".snbt"), tag.toString());
+        } else {
+          NbtIo.write(tag, entitiesDir.resolve(entityId + ".nbt"));
+        }
+
+        entityId++;
+      }
+    }
+
+    /**
+     * Get the NBT tag of an entity, with position relative to the parcel origin.
+     *
+     * @param problemReporter Problem reporter, refer to {@link StructureTemplate#fillFromWorld }
+     * @param from Start position of the parcel, used to calculate relative position
+     * @param entity Entity to save
+     * @return NBT tag of the entity
+     */
+    private CompoundTag getEntityNbt(
+        ProblemReporter problemReporter, BlockPos from, Entity entity) {
+      CompoundTag tag = new CompoundTag();
+      Vec3 pos =
+          new Vec3(
+              entity.getX() - (double) from.getX(),
+              entity.getY() - (double) from.getY(),
+              entity.getZ() - (double) from.getZ());
+
+      BlockPos blockPos;
+      if (entity instanceof Painting painting) {
+        blockPos = painting.getPos().subtract(from);
+      } else {
+        blockPos = BlockPos.containing(pos);
+      }
+
+      TagValueOutput output =
+          TagValueOutput.createWithContext(problemReporter, entity.registryAccess());
+      entity.save(output);
+
+      {
+        ListTag list = new ListTag();
+        list.add(DoubleTag.valueOf(pos.x));
+        list.add(DoubleTag.valueOf(pos.y));
+        list.add(DoubleTag.valueOf(pos.z));
+        tag.put("pos", list);
+      }
+      {
+        ListTag list = new ListTag();
+        list.add(IntTag.valueOf(blockPos.getX()));
+        list.add(IntTag.valueOf(blockPos.getY()));
+        list.add(IntTag.valueOf(blockPos.getZ()));
+        tag.put("blockPos", list);
+      }
+      {
+        tag.put("nbt", output.buildResult().copy());
+      }
+      return tag;
+    }
+
+    /**
+     * @param from Start position of the parcel
+     * @param size Size of the parcel
+     * @param gridOrigin Absolute position of origin point
+     * @return Bounding boxes of subparcels, use absolute coordinates
+     */
+    public static Iterable<BoundingBox> subdivideParcel(
+        BlockPos from, Vec3i size, Vec3i gridOrigin) {
+      List<BoundingBox> subparcels = new ArrayList<>(1);
+
+      BlockPos to = from.offset(size);
+      List<Integer> xDivisions = subdivideParcel1D(from.getX(), size.getX(), gridOrigin.getX());
+      List<Integer> yDivisions = subdivideParcel1D(from.getY(), size.getY(), gridOrigin.getY());
+      List<Integer> zDivisions = subdivideParcel1D(from.getZ(), size.getZ(), gridOrigin.getZ());
+
+      for (int i = 0; i < xDivisions.size() - 1; i++) {
+        int minX = Math.max(xDivisions.get(i), from.getX());
+        int maxX = Math.min(xDivisions.get(i + 1), to.getX());
+        if (minX >= maxX) continue;
+
+        for (int j = 0; j < yDivisions.size() - 1; j++) {
+          int minY = Math.max(yDivisions.get(j), from.getY());
+          int maxY = Math.min(yDivisions.get(j + 1), to.getY());
+          if (minY >= maxY) continue;
+
+          for (int k = 0; k < zDivisions.size() - 1; k++) {
+            int minZ = Math.max(zDivisions.get(k), from.getZ());
+            int maxZ = Math.min(zDivisions.get(k + 1), to.getZ());
+            if (minZ >= maxZ) continue;
+
+            subparcels.add(new BoundingBox(minX, minY, minZ, maxX - 1, maxY - 1, maxZ - 1));
+          }
+        }
+      }
+
+      return subparcels;
+    }
+
+    /**
+     * @param size Must be positive
+     * @return Divisions of the parcel, including start and end positions. Use absolute coordinates
+     */
+    static List<Integer> subdivideParcel1D(int from, int size, int gridAxis) {
+      List<Integer> divisions = new ArrayList<>();
+
+      int current = from;
+      divisions.add(current);
+      current = ceilToGrid16(gridAxis, current);
+
+      int endExclusive = from + size;
+      while (current < endExclusive) {
+        divisions.add(current);
+        current += 16;
+      }
+
+      divisions.add(endExclusive);
+
+      return divisions;
+    }
+
+    static int floorToGrid16(int grid, int value) {
+      return value - Math.floorMod(value - grid, 16);
+    }
+
+    static int ceilToGrid16(int grid, int value) {
+      return floorToGrid16(grid, value) + 16;
+    }
+
+    static Path indexToPath(Path dir, long index) {
+      if (index == 0) {
+        return dir.resolve("00.txt");
+      }
+
+      Path result = dir;
+      long value = index;
+
+      List<String> parts = new ArrayList<>();
+      while (value != 0) {
+        int b = (int) (value & 0xFF);
+        parts.add(String.format("%02X", b));
+        value >>>= 8;
+      }
+
+      int last = parts.size() - 1;
+      for (int i = 0; i < last; i++) {
+        result = result.resolve(parts.get(i));
+      }
+
+      return result.resolve(parts.get(last) + ".txt");
     }
   }
 

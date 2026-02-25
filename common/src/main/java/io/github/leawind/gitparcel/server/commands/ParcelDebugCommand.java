@@ -70,7 +70,6 @@ public class ParcelDebugCommand {
   public static int saveParcel(
       CommandSourceStack source, BlockPos from, Vec3i to, Path path, ParcelFormat.Save format) {
     try {
-      // TODO
       format.save(source.getLevel(), from, to, path, true, true);
       Constants.LOG.info(
           "Saving parcel [{}, {}] with format {} to {}", from, to, format.id(), path);
@@ -82,7 +81,6 @@ public class ParcelDebugCommand {
   }
 
   public static int loadParcel(CommandSourceStack source, BlockPos origin, Path path) {
-    // TODO
     Constants.LOG.info("Loading parcel {} from {}", origin, path);
     return 0;
   }
