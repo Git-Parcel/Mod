@@ -31,3 +31,7 @@ runs
 # AI tools
 .trae/
 .lingma/
+
+# logs
+**/logs/*.log
+**/logs/*.log.gz
