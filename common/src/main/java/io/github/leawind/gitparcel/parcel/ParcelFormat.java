@@ -8,13 +8,6 @@ import net.minecraft.world.level.Level;
 
 /** A format for saving or loading parcels. */
 public interface ParcelFormat {
-  default boolean isSaver() {
-    throw new UnsupportedOperationException("Method not implemented");
-  }
-
-  default boolean isLoader() {
-    throw new UnsupportedOperationException("Method not implemented");
-  }
 
   /** Unique id of the format. */
   String id();
@@ -23,15 +16,6 @@ public interface ParcelFormat {
   int version();
 
   interface Save extends ParcelFormat {
-    @Override
-    default boolean isSaver() {
-      return true;
-    }
-
-    @Override
-    default boolean isLoader() {
-      return false;
-    }
 
     /**
      * Save parcel content to directory
@@ -54,15 +38,6 @@ public interface ParcelFormat {
   }
 
   interface Load extends ParcelFormat {
-    @Override
-    default boolean isSaver() {
-      return false;
-    }
-
-    @Override
-    default boolean isLoader() {
-      return true;
-    }
 
     /**
      * Load parcel content from directory
