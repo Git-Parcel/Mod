@@ -1,5 +1,8 @@
 package io.github.leawind.gitparcel.parcel.formats.parcella;
 
+import java.util.HashMap;
+import java.util.Map;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import org.joml.Vector3i;
 
@@ -80,13 +83,20 @@ public class ZOrder3D {
    * @return the corresponding 3D coordinate as a Vector3i that may contain negative values
    */
   public static Vector3i indexToCoordSigned(long index) {
+    if (index < CACHE_SIZE) {
+      return INDEX_TO_COORD_CACHE[(int) index];
+    }
+    return indexToCoordSignedImpl(index);
+  }
+
+  /** Internal implementation of indexToCoordSigned without caching. */
+  private static Vector3i indexToCoordSignedImpl(long index) {
     long j = index / 8;
     Vector3i coord = indexToCoord(j);
     int k = (int) (index % 8);
     var x = SIGN_OFFSET[k];
     Vector3i sign = x[0];
     Vector3i offset = x[1];
-
     return coord.mul(sign).add(offset);
   }
 
@@ -122,6 +132,15 @@ public class ZOrder3D {
    * @return the corresponding 1D Z-Order index with sign information encoded
    */
   public static long coordToIndexSigned(int x, int y, int z) {
+    var cached = COORD_TO_INDEX_CACHE.get(hash(x, y, z));
+    if (cached != null) {
+      return cached;
+    }
+    return coordToIndexSignedImpl(x, y, z);
+  }
+
+  /** Internal implementation of coordToIndexSigned without caching. */
+  private static long coordToIndexSignedImpl(int x, int y, int z) {
     int cx = (x >= 0) ? x : (-x - 1);
     int cy = (y >= 0) ? y : (-y - 1);
     int cz = (z >= 0) ? z : (-z - 1);
@@ -191,4 +210,31 @@ public class ZOrder3D {
         new Vector3i[] {new Vector3i(-1, -1, 1), new Vector3i(-1, -1, 0)},
         new Vector3i[] {new Vector3i(-1, -1, -1), new Vector3i(-1, -1, -1)},
       };
+
+  private static long hash(int x, int y, int z) {
+    final long PACKED_X_MASK = (1L << BlockPos.PACKED_HORIZONTAL_LENGTH) - 1L;
+    final long PACKED_Y_MASK = (1L << BlockPos.PACKED_Y_LENGTH) - 1L;
+    final long PACKED_Z_MASK = (1L << BlockPos.PACKED_HORIZONTAL_LENGTH) - 1L;
+    final int Z_OFFSET = BlockPos.PACKED_Y_LENGTH;
+    final int X_OFFSET = BlockPos.PACKED_Y_LENGTH + BlockPos.PACKED_HORIZONTAL_LENGTH;
+
+    return ((long) x & PACKED_X_MASK) << X_OFFSET
+        | ((long) y & PACKED_Y_MASK)
+        | ((long) z & PACKED_Z_MASK) << Z_OFFSET;
+  }
+
+  private static final int CACHE_SIZE = 512;
+  private static final Map<Long, Long> COORD_TO_INDEX_CACHE;
+  private static final Vector3i[] INDEX_TO_COORD_CACHE;
+
+  static {
+    COORD_TO_INDEX_CACHE = new HashMap<>(CACHE_SIZE);
+    INDEX_TO_COORD_CACHE = new Vector3i[CACHE_SIZE];
+    for (int i = 0; i < CACHE_SIZE; i++) {
+      var coord = indexToCoordSignedImpl(i);
+      INDEX_TO_COORD_CACHE[i] = coord;
+      BlockPos.ZERO.asLong();
+      COORD_TO_INDEX_CACHE.put(hash(coord.x, coord.y, coord.z), (long) i);
+    }
+  }
 }
