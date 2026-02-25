@@ -5,7 +5,7 @@ import io.github.leawind.gitparcel.parcel.formats.parcella.ParcellaV0;
 import io.github.leawind.gitparcel.parcel.formats.structuretemplate.StructureTemplateV0;
 import org.junit.jupiter.api.Test;
 
-public class TestParcelFormatManager {
+public class ParcelFormatManagerTest {
   @Test
   void test() {
     var mgr = new ParcelFormatManager();

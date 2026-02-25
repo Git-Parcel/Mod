@@ -5,7 +5,7 @@ import java.util.Set;
 import org.joml.Vector3i;
 import org.junit.jupiter.api.Test;
 
-class TestZOrder3D {
+class ZOrder3DTest {
 
   /**
    * Tests the reversibility of unsigned coordinate-index conversion. Ensures that converting an

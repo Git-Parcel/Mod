@@ -11,9 +11,9 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import org.junit.jupiter.api.Test;
 
-public class TestParcellaV0 {
+public class ParcellaV0Test {
 
-  static class TestSave {
+  static class SaveTest {
     /**
      * @param total Total bounding box, including corners
      * @param subs Bounding boxes of each subparcel, including their corners
