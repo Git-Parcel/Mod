@@ -16,7 +16,7 @@
     "environment": "*",
     "entrypoints": {
         "main": [
-            "io.github.leawind.gitparcel.GitParcel"
+            "io.github.leawind.gitparcel.GitParcelModEntry"
         ]
     },
     "mixins": [

@@ -5,7 +5,7 @@ import io.github.leawind.gitparcel.parcel.formats.parcella.ParcellaV0;
 import io.github.leawind.gitparcel.parcel.formats.structuretemplate.StructureTemplateV0;
 import io.github.leawind.gitparcel.platform.Services;
 
-public class CommonClass {
+public class GitParcelMod {
 
   public static void init() {
     Constants.PARCEL_FORMATS

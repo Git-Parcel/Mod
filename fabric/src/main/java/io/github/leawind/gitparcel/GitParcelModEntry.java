@@ -2,10 +2,10 @@ package io.github.leawind.gitparcel;
 
 import net.fabricmc.api.ModInitializer;
 
-public class GitParcel implements ModInitializer {
+public class GitParcelModEntry implements ModInitializer {
 
   @Override
   public void onInitialize() {
-    CommonClass.init();
+    GitParcelMod.init();
   }
 }
