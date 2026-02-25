@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
 
@@ -46,7 +47,7 @@ public interface ParcelFormat {
      * @param loadBlocks Whether to load blocks
      * @param loadEntities Whether to load entities
      */
-    void load(Level level, BlockPos pos, Path dir, boolean loadBlocks, boolean loadEntities)
+    void load(ServerLevel level, BlockPos pos, Path dir, boolean loadBlocks, boolean loadEntities)
         throws IOException;
   }
 }
