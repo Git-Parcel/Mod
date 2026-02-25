@@ -1,7 +1,6 @@
 package io.github.leawind.gitparcel.parcel.formats.parcella;
 
 import com.google.gson.Gson;
-import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -37,11 +36,9 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3i;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
 
 public class ParcellaV0 implements ParcelFormat {
   private static final Gson GSON = new Gson();
-  private static final Logger LOGGER = LogUtils.getLogger();
 
   private static final String OPTIONS_SCHEMA =
       "https://git-parcel.github.io/schemas/ParcellaFormatOptions.json";

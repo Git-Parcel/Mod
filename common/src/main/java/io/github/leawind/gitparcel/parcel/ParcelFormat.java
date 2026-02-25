@@ -1,13 +1,16 @@
 package io.github.leawind.gitparcel.parcel;
 
+import com.mojang.logging.LogUtils;
 import java.io.IOException;
 import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.Level;
+import org.slf4j.Logger;
 
 /** A format for saving or loading parcels. */
 public interface ParcelFormat {
+  Logger LOGGER = LogUtils.getLogger();
 
   /** Unique id of the format. */
   String id();
