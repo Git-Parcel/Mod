@@ -54,11 +54,7 @@ public class ZOrder3D {
           "Coordinates must be non-negative for standard Z-order encoding.");
     }
 
-    x = part1By2(x);
-    y = part1By2(y);
-    z = part1By2(z);
-
-    return x | (y << 1) | (z << 2);
+    return part1By2(x) | (part1By2(y) << 1) | (part1By2(z) << 2);
   }
 
   /**
@@ -69,10 +65,10 @@ public class ZOrder3D {
    * @return the corresponding 3D coordinate as a Vector3i
    */
   public static Vector3i indexToCoord(long index) {
-    int x = (int) compact1By2(index);
-    int y = (int) compact1By2(index >> 1);
-    int z = (int) compact1By2(index >> 2);
-    return new Vector3i(x, y, z);
+    return new Vector3i(
+        (int) compact1By2(index), // >> 0
+        (int) compact1By2(index >> 1),
+        (int) compact1By2(index >> 2));
   }
 
   /**
@@ -91,13 +87,8 @@ public class ZOrder3D {
 
   /** Internal implementation of indexToCoordSigned without caching. */
   private static Vector3i indexToCoordSignedImpl(long index) {
-    long j = index / 8;
-    Vector3i coord = indexToCoord(j);
-    int k = (int) (index % 8);
-    var x = SIGN_OFFSET[k];
-    Vector3i sign = x[0];
-    Vector3i offset = x[1];
-    return coord.mul(sign).add(offset);
+    var x = SIGN_OFFSET[(int) (index % 8)];
+    return indexToCoord(index / 8).mul(x[0]).add(x[1]);
   }
 
   /**
@@ -151,32 +142,6 @@ public class ZOrder3D {
     if (z < 0) k |= 0b001;
 
     return (coordToIndex(cx, cy, cz) << 3) | k;
-  }
-
-  /**
-   * Alternative implementation for converting 3D coordinates to a signed 1D Z-Order index. This
-   * method accepts coordinates that may be negative by using a sign/magnitude representation. This
-   * is an alternative algorithm that searches through octants to find the correct transformation.
-   *
-   * @param coord the 3D coordinate to encode (may contain negative values)
-   * @return the corresponding 1D Z-Order index with sign information encoded
-   * @throws IllegalArgumentException if the coordinate cannot be transformed to a valid positive
-   *     coordinate
-   */
-  public static long coordToIndexSigned2(Vector3i coord) {
-    for (int k = 0; k < 8; k++) {
-      Vector3i sign = SIGN_OFFSET[k][0];
-      Vector3i offset = SIGN_OFFSET[k][1];
-
-      Vector3i base = new Vector3i(coord).sub(offset).mul(sign);
-
-      if (base.x >= 0 && base.y >= 0 && base.z >= 0) {
-        long j = coordToIndex(base);
-        return j * 8 + k;
-      }
-    }
-
-    throw new IllegalArgumentException("Invalid coordinate for signed Z-order encoding.");
   }
 
   private static long part1By2(long i) {
