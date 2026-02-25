@@ -39,9 +39,6 @@ import org.jspecify.annotations.Nullable;
 public class ParcellaV0 implements ParcelFormat {
   private static final Gson GSON = new Gson();
 
-  private static final String OPTIONS_SCHEMA =
-      "https://git-parcel.github.io/schemas/ParcellaFormatOptions.json";
-
   @Override
   public String id() {
     return "parcella";
@@ -135,6 +132,9 @@ public class ParcellaV0 implements ParcelFormat {
 
   public static final class Save extends ParcellaV0 implements ParcelFormat.Save {
     public static class Options {
+      private static final String SCHEMA_URL =
+          "https://git-parcel.github.io/schemas/ParcellaFormatOptions.json";
+
       public boolean enableSnbtForBlockEntities = true;
       public boolean enableMicroparcel = false;
       public boolean enableSnbtForEntities = true;
