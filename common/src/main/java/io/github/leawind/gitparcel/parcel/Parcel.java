@@ -7,19 +7,19 @@ import java.util.List;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
 public final class Parcel {
-  private final ServerLevel level;
+  private final Level level;
   private BoundingBox bounds;
 
-  public Parcel(ServerLevel level, BoundingBox bounds) {
+  public Parcel(Level level, BoundingBox bounds) {
     this.level = level;
     this.bounds = bounds;
   }
 
-  public ServerLevel getLevel() {
+  public Level getLevel() {
     return level;
   }
 

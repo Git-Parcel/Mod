@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 
 /** A format for saving or loading parcels. */
 public interface ParcelFormat {
@@ -44,7 +44,7 @@ public interface ParcelFormat {
      * @param includeEntity Whether to include entities in the parcel
      */
     void save(
-        ServerLevel level,
+        Level level,
         BlockPos from,
         Vec3i size,
         Path dir,
@@ -72,7 +72,7 @@ public interface ParcelFormat {
      * @param dir Path to parcel directory, must exist
      * @param options Loading options
      */
-    void load(ServerLevel level, BlockPos pos, Path dir, Options options) throws IOException;
+    void load(Level level, BlockPos pos, Path dir, Options options) throws IOException;
 
     /**
      * Options for loading parcels.

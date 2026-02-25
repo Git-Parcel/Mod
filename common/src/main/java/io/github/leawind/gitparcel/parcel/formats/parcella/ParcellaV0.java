@@ -23,7 +23,6 @@ import net.minecraft.nbt.DoubleTag;
 import net.minecraft.nbt.IntTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.painting.Painting;
@@ -161,7 +160,7 @@ public class ParcellaV0 implements ParcelFormat {
 
     @Override
     public void save(
-        ServerLevel level,
+        Level level,
         BlockPos from,
         Vec3i size,
         Path dir,
@@ -185,7 +184,7 @@ public class ParcellaV0 implements ParcelFormat {
       }
     }
 
-    private void saveBlocks(ServerLevel level, BlockPos from, Vec3i size, Path dir, Options options)
+    private void saveBlocks(Level level, BlockPos from, Vec3i size, Path dir, Options options)
         throws IOException {
 
       Path blocksDir = dir.resolve("blocks");
@@ -229,7 +228,7 @@ public class ParcellaV0 implements ParcelFormat {
 
     private void writeSubparcel(
         BufferedWriter writer,
-        ServerLevel level,
+        Level level,
         BlockPos from,
         BlockPos to,
         BlockPalette palette,
@@ -253,7 +252,7 @@ public class ParcellaV0 implements ParcelFormat {
 
     private void saveEntities(
         ProblemReporter problemReporter,
-        ServerLevel level,
+        Level level,
         BlockPos from,
         Vec3i size,
         Path dir,

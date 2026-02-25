@@ -10,7 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
 public class StructureTemplateV0 implements ParcelFormat {
@@ -27,7 +27,7 @@ public class StructureTemplateV0 implements ParcelFormat {
   public static final class Save extends StructureTemplateV0 implements ParcelFormat.Save {
     @Override
     public void save(
-        ServerLevel level,
+        Level level,
         BlockPos from,
         Vec3i size,
         Path dir,
