@@ -43,17 +43,10 @@ public interface ParcelFormat {
      * @param level Level
      * @param pos Position in level
      * @param dir Path to parcel directory, must exist
-     * @param options Loading options
+     * @param loadBlocks Whether to load blocks
+     * @param loadEntities Whether to load entities
      */
-    void load(Level level, BlockPos pos, Path dir, Options options) throws IOException;
-
-    /**
-     * Options for loading parcels.
-     *
-     * @param includeBlock Whether to load blocks
-     * @param includeEntity Whether to load entities
-     * @param clearEntities If load entities, whether to clear entities in the parcel before loading
-     */
-    record Options(boolean includeBlock, boolean includeEntity, boolean clearEntities) {}
+    void load(Level level, BlockPos pos, Path dir, boolean loadBlocks, boolean loadEntities)
+        throws IOException;
   }
 }
