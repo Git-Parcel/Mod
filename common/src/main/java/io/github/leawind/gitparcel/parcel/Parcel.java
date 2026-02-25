@@ -1,47 +1,15 @@
 package io.github.leawind.gitparcel.parcel;
 
-import io.github.leawind.gitparcel.Constants;
-import java.nio.file.Path;
-import java.util.ArrayList;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.SharedConstants;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import org.jspecify.annotations.Nullable;
 
 public final class Parcel {
-  private final Level level;
-  private BoundingBox bounds;
-
-  public Parcel(Level level, BoundingBox bounds) {
-    this.level = level;
-    this.bounds = bounds;
-  }
-
-  public Level getLevel() {
-    return level;
-  }
-
-  public BoundingBox getBounds() {
-    return bounds;
-  }
-
-  void setBounds(BoundingBox bounds) {
-    this.bounds = bounds;
-  }
-
-  public Vec3i getSize() {
-    return new Vec3i(bounds.getXSpan(), bounds.getYSpan(), bounds.getZSpan());
-  }
-
-  public BlockPos getFromCorner() {
-    return new BlockPos(bounds.minX(), bounds.minY(), bounds.minZ());
-  }
-
-  public BlockPos getToCorner() {
-    return new BlockPos(bounds.maxX(), bounds.maxY(), bounds.maxZ());
-  }
 
   /**
    * Metadata for parcels.
@@ -49,36 +17,86 @@ public final class Parcel {
    * @see <a href="https://git-parcel.github.io/schemas/ParcelMeta.json">Parcel Metadata Schema</a>
    */
   public static final class Metadata {
-    public String format;
+    public static final String FILE_NAME = "parcel.json";
+    public static final String SCHEMA_URL = "https://git-parcel.github.io/schemas/ParcelMeta.json";
+
+    public record ModDependency(@Nullable String min, @Nullable String max) {}
+
+    public ParcelFormat format;
     public int dataVersion;
     public Vec3i size;
-    public String name;
-    public String author;
-    public String description = "";
-    public List<String> tags = new ArrayList<>();
-    public List<ModDependency> mods = new ArrayList<>();
-    public boolean includeBlock = true;
-    public boolean includeEntity = true;
 
-    public Metadata(String format, int dataVersion, Vec3i size, String name, String author) {
+    public @Nullable String name = null;
+    public @Nullable String description = null;
+    public @Nullable List<String> tags = null;
+    public @Nullable Map<String, ModDependency> mods = null;
+    public @Nullable Boolean includeEntity = null;
+
+    /** Extra fields. */
+    public JsonObject extra = new JsonObject();
+
+    private Metadata(ParcelFormat format, int dataVersion, Vec3i size) {
       this.format = format;
       this.dataVersion = dataVersion;
       this.size = size;
-      this.name = name;
-      this.author = author;
-      SharedConstants.getCurrentVersion().dataVersion();
+      extra.addProperty("$schema", SCHEMA_URL);
     }
 
-    public record ModDependency(String id, String min, String max) {}
+    public JsonElement toJson() {
+      JsonObject json = new JsonObject();
+      {
+        JsonObject formatJson = new JsonObject();
+        formatJson.addProperty("id", format.id());
+        formatJson.addProperty("version", format.version());
+        json.add("format", formatJson);
+      }
+      json.addProperty("dataVersion", dataVersion);
+      {
+        JsonArray sizeJson = new JsonArray();
+        sizeJson.add(size.getX());
+        sizeJson.add(size.getY());
+        sizeJson.add(size.getZ());
+        json.add("size", sizeJson);
+      }
+      if (name != null) {
+        json.addProperty("name", name);
+      }
+      if (description != null) {
+        json.addProperty("description", description);
+      }
+      if (tags != null) {
+        JsonArray tagsJson = new JsonArray();
+        tags.forEach(tagsJson::add);
+        json.add("tags", tagsJson);
+      }
+      if (mods != null) {
+        JsonObject modsJson = new JsonObject();
+        for (var entry : mods.entrySet()) {
+          var dep = entry.getValue();
+          JsonObject modJson = new JsonObject();
+          modJson.addProperty("min", dep.min());
+          modJson.addProperty("max", dep.max());
+          modsJson.add(entry.getKey(), modJson);
+        }
+        json.add("mods", modsJson);
+      }
+      json.addProperty("includeEntity", includeEntity);
 
-    public static void save(Parcel.Metadata metadata, Path dir) {
-      // TODO
-      Constants.LOG.warn("Saving metadata of metadata {} to {}", metadata, dir);
+      // extra fields
+      for (var entry : extra.entrySet()) {
+        json.add(entry.getKey(), entry.getValue());
+      }
+
+      return json;
     }
 
-    public static Metadata load(Path dir) {
-      Constants.LOG.warn("Loading metadata from {}", dir);
-      // TODO
+    public static Metadata create(ParcelFormat format, Vec3i size) {
+      return new Metadata(
+          format, SharedConstants.getCurrentVersion().dataVersion().version(), size);
+    }
+
+    public static Metadata fromJson(JsonObject json) {
+      //TODO
       return null;
     }
   }
