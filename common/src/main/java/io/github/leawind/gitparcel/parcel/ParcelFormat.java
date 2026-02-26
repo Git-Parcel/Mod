@@ -27,7 +27,7 @@ public interface ParcelFormat {
      * @param level Level
      * @param from Position in level
      * @param size Size of the parcel, must be positive
-     * @param dir Path to an existing directory
+     * @param dir Path to parcel data directory
      * @param saveEntities Whether to save entities in the parcel
      */
     void save(Level level, BlockPos from, Vec3i size, Path dir, boolean saveEntities)
@@ -41,7 +41,7 @@ public interface ParcelFormat {
      *
      * @param level Level
      * @param pos Position in level
-     * @param dir Path to parcel directory, must exist
+     * @param dir Path to parcel data directory
      * @param loadBlocks Whether to load blocks
      * @param loadEntities Whether to load entities
      */

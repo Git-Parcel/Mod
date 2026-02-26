@@ -76,20 +76,28 @@ public class ParcelDebugCommand {
   }
 
   public static int save(
-      CommandSourceStack source, BlockPos from, Vec3i to, Path path, ParcelFormat.Save format) {
+      CommandSourceStack source,
+      BlockPos from,
+      Vec3i to,
+      Path parcelDir,
+      ParcelFormat.Save format) {
     try {
       var box = BoundingBox.fromCorners(from, to);
       from = new BlockPos(box.minX(), box.minY(), box.minZ());
       var size = new Vec3i(box.getXSpan(), box.getYSpan(), box.getZSpan());
 
       LOGGER.info(
-          "Saving parcel (pos={}, size={}) with format {} to {}", from, size, format.id(), path);
+          "Saving parcel (pos={}, size={}) with format {} to {}",
+          from,
+          size,
+          format.id(),
+          parcelDir);
 
       var meta = ParcelMeta.create(format.id(), format.version(), size);
       meta.description = "This parcel is for debug purpose only.";
-      meta.saveToParcelDir(path);
-      format.save(source.getLevel(), from, size, path, true);
+      meta.saveToParcelDir(parcelDir);
 
+      Parcel.save(source.getLevel(), from, meta, parcelDir, true);
       return 0;
     } catch (Exception e) {
       LOGGER.error("Error while saving parcel", e);
