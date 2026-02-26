@@ -31,7 +31,7 @@ public final class Parcel {
    *
    * @see <a href="https://git-parcel.github.io/schemas/ParcelMeta.json">Parcel Metadata Schema</a>
    */
-  public static final class Metadata {
+  public static final class ParcelMeta {
     public record ModDependency(@Nullable String min, @Nullable String max) {
       public static final ModDependency ANY = new ModDependency(null, null);
     }
@@ -50,8 +50,8 @@ public final class Parcel {
     public static final String FILE_NAME = "parcel.json";
     public static final String SCHEMA_URL = "https://git-parcel.github.io/schemas/ParcelMeta.json";
 
-    public static Metadata create(String formatId, int formatVersion, Vec3i size) {
-      return new Metadata(
+    public static ParcelMeta create(String formatId, int formatVersion, Vec3i size) {
+      return new ParcelMeta(
           formatId,
           formatVersion,
           SharedConstants.getCurrentVersion().dataVersion().version(),
@@ -73,7 +73,7 @@ public final class Parcel {
     /** Extra fields. */
     public JsonObject extra = new JsonObject();
 
-    private Metadata(String formatId, int formatVersion, int dataVersion, Vec3i size) {
+    private ParcelMeta(String formatId, int formatVersion, int dataVersion, Vec3i size) {
       this.formatId = formatId;
       this.formatVersion = formatVersion;
       this.dataVersion = dataVersion;
@@ -129,9 +129,9 @@ public final class Parcel {
       return json;
     }
 
-    public static Metadata fromJson(JsonObject json) throws JsonAccessException {
+    public static ParcelMeta fromJson(JsonObject json) throws JsonAccessException {
       var ja = new JsonObjectAccessor(json);
-      Metadata metadata;
+      ParcelMeta meta;
 
       {
         String formatId;
@@ -154,16 +154,16 @@ public final class Parcel {
           int sizeZ = sizeJson.get(2).getAsInt();
           size = new Vec3i(sizeX, sizeY, sizeZ);
         }
-        metadata = new Metadata(formatId, formatVersion, dataVersion, size);
+        meta = new ParcelMeta(formatId, formatVersion, dataVersion, size);
       }
 
       {
-        metadata.name = ja.optionalString("name");
+        meta.name = ja.optionalString("name");
         json.remove("name");
       }
 
       {
-        metadata.description = ja.optionalString("description");
+        meta.description = ja.optionalString("description");
         json.remove("description");
       }
       if (json.has("tags")) {
@@ -172,13 +172,13 @@ public final class Parcel {
         for (JsonElement tagElement : tagsJson) {
           tags.add(tagElement.getAsString());
         }
-        metadata.tags = tags;
+        meta.tags = tags;
         json.remove("tags");
       }
 
       if (json.has("mods")) {
         var modsJson = ja.requireJsonObject("mods");
-        metadata.mods = new HashMap<>();
+        meta.mods = new HashMap<>();
 
         for (var entry : modsJson.entrySet()) {
           // "*" | {min?, max?}
@@ -186,7 +186,7 @@ public final class Parcel {
           if (depJson.isJsonObject()) {
             var modJson = depJson.getAsJsonObject();
             var modJa = new JsonObjectAccessor(modJson);
-            metadata.mods.put(
+            meta.mods.put(
                 entry.getKey(),
                 new ModDependency(
                     modJa.optionalString("min"), //
@@ -196,18 +196,18 @@ public final class Parcel {
             if (!s.equals("*")) {
               throw new JsonAccessException.IncorrectType("\"*\"", "\"" + s + "\"");
             }
-            metadata.mods.put(entry.getKey(), ModDependency.ANY);
+            meta.mods.put(entry.getKey(), ModDependency.ANY);
           }
         }
         json.remove("mods");
       }
 
       {
-        metadata.includeEntity = ja.optionalBool("includeEntity");
+        meta.includeEntity = ja.optionalBool("includeEntity");
         json.remove("includeEntity");
       }
-      metadata.extra = json;
-      return metadata;
+      meta.extra = json;
+      return meta;
     }
   }
 }
