@@ -1,10 +1,14 @@
 package io.github.leawind.gitparcel.parcel;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.github.leawind.gitparcel.utils.json.JsonAccessException;
 import io.github.leawind.gitparcel.utils.json.JsonObjectAccessor;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,17 +28,17 @@ public final class ParcelMeta {
   }
 
   /** Exceptions thrown when parsing or validating parcel metadata. */
-  public static class ParcelMetadataException extends Parcel.ParcelException {
-    public ParcelMetadataException(String message) {
+  public static class InvalidParcelMetaException extends Parcel.ParcelException.InvalidParcel {
+    public InvalidParcelMetaException(String message) {
       super(message);
     }
 
-    public ParcelMetadataException(String message, Throwable cause) {
+    public InvalidParcelMetaException(String message, Throwable cause) {
       super(message, cause);
     }
   }
 
-  public static final String FILE_NAME = "parcel.json";
+  private static final Gson GSON = new Gson();
   public static final String SCHEMA_URL = "https://git-parcel.github.io/schemas/ParcelMeta.json";
 
   public static ParcelMeta create(String formatId, int formatVersion, Vec3i size) {
@@ -63,6 +67,20 @@ public final class ParcelMeta {
     this.dataVersion = dataVersion;
     this.size = size;
     extra.addProperty("$schema", SCHEMA_URL);
+  }
+
+  /**
+   * @param path File path to the parcel metadata file
+   * @return The parsed {@link ParcelMeta} object
+   * @throws IOException If an I/O error occurs while reading the file
+   */
+  public static ParcelMeta load(Path path) throws IOException, InvalidParcelMetaException {
+    var json = GSON.fromJson(Files.readString(path), JsonObject.class);
+    try {
+      return fromJson(json);
+    } catch (JsonAccessException e) {
+      throw new InvalidParcelMetaException("Invalid parcel metadata at " + path, e);
+    }
   }
 
   public JsonElement toJson() {

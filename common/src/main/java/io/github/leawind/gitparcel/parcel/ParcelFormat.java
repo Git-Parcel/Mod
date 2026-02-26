@@ -48,6 +48,6 @@ public interface ParcelFormat {
      * @param loadEntities Whether to load entities
      */
     void load(ServerLevel level, BlockPos pos, Path dir, boolean loadBlocks, boolean loadEntities)
-        throws IOException;
+        throws IOException, Parcel.ParcelException;
   }
 }
