@@ -104,10 +104,10 @@ public final class ParcelMeta {
    */
   public void save(Path filePath) throws IOException {
     Files.createDirectories(filePath.getParent());
-    Files.writeString(filePath, GSON.toJson(toJson()));
+    Files.writeString(filePath, GSON.toJson(toJsonObject()));
   }
 
-  public JsonElement toJson() {
+  public JsonObject toJsonObject() {
     JsonObject json = new JsonObject();
     {
       JsonObject formatJson = new JsonObject();
@@ -163,13 +163,13 @@ public final class ParcelMeta {
   public static ParcelMeta load(Path path) throws IOException, InvalidParcelMetaException {
     var json = GSON.fromJson(Files.readString(path), JsonObject.class);
     try {
-      return fromJson(json);
+      return fromJsonObject(json);
     } catch (JsonAccessException e) {
       throw new InvalidParcelMetaException("Invalid parcel metadata at " + path, e);
     }
   }
 
-  public static ParcelMeta fromJson(JsonObject json) throws JsonAccessException {
+  public static ParcelMeta fromJsonObject(JsonObject json) throws JsonAccessException {
     var ja = new JsonObjectAccessor(json);
     ParcelMeta meta;
 

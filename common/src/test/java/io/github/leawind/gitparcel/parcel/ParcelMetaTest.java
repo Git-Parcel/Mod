@@ -15,32 +15,32 @@ import org.junit.jupiter.api.Test;
 
 class ParcelMetaTest {
   @Test
-  void testFromJson_MissingRequiredFields() {
+  void testFromJsonObject_MissingRequiredFields() {
     JsonObject json = new JsonObject();
 
     // Missing format
-    assertThrows(JsonAccessException.MissingProperty.class, () -> ParcelMeta.fromJson(json));
+    assertThrows(JsonAccessException.MissingProperty.class, () -> ParcelMeta.fromJsonObject(json));
 
     // Add format but missing id
     JsonObject formatJson = new JsonObject();
     formatJson.addProperty("version", 1);
     json.add("format", formatJson);
 
-    assertThrows(JsonAccessException.MissingProperty.class, () -> ParcelMeta.fromJson(json));
+    assertThrows(JsonAccessException.MissingProperty.class, () -> ParcelMeta.fromJsonObject(json));
 
     // Add id but missing dataVersion
     formatJson.addProperty("id", "test");
 
-    assertThrows(JsonAccessException.MissingProperty.class, () -> ParcelMeta.fromJson(json));
+    assertThrows(JsonAccessException.MissingProperty.class, () -> ParcelMeta.fromJsonObject(json));
 
     // Add dataVersion but missing size
     json.addProperty("dataVersion", 1);
 
-    assertThrows(JsonAccessException.MissingProperty.class, () -> ParcelMeta.fromJson(json));
+    assertThrows(JsonAccessException.MissingProperty.class, () -> ParcelMeta.fromJsonObject(json));
   }
 
   @Test
-  void testToJsonAndFromJson() throws JsonAccessException {
+  void testToJsonAndFromJsonObject() throws JsonAccessException {
     String jsonStr =
 """
 {
@@ -71,7 +71,7 @@ class ParcelMetaTest {
     JsonObject json = new Gson().fromJson(jsonStr, JsonObject.class);
 
     // Test deserialization
-    ParcelMeta meta = ParcelMeta.fromJson(json);
+    ParcelMeta meta = ParcelMeta.fromJsonObject(json);
 
     assertEquals("parcel", meta.formatId);
     assertEquals(1, meta.formatVersion);
@@ -102,7 +102,7 @@ class ParcelMetaTest {
         "This schema allows custom fields like this", customFields.get("Wow").getAsString());
 
     // Test serialization
-    JsonObject serialized = (JsonObject) meta.toJson();
+    JsonObject serialized = meta.toJsonObject();
     assertNotNull(serialized);
     assertFalse(serialized.has("$schema"));
     assertTrue(serialized.has("format"));
@@ -117,7 +117,7 @@ class ParcelMetaTest {
   }
 
   @Test
-  void testToJsonAndFromJson_Minimal() throws JsonAccessException {
+  void testToJsonAndFromJson_Object_Minimal() throws JsonAccessException {
     // Create a minimal JSON object manually
     JsonObject json = new JsonObject();
 
@@ -136,7 +136,7 @@ class ParcelMetaTest {
     json.add("size", sizeJson);
 
     // Test deserialization
-    ParcelMeta meta = ParcelMeta.fromJson(json);
+    ParcelMeta meta = ParcelMeta.fromJsonObject(json);
 
     assertEquals("test-format", meta.formatId);
     assertEquals(1, meta.formatVersion);
@@ -149,7 +149,7 @@ class ParcelMetaTest {
     assertNull(meta.includeEntity);
 
     // Test serialization
-    JsonObject serialized = (JsonObject) meta.toJson();
+    JsonObject serialized = meta.toJsonObject();
     assertNotNull(serialized);
     assertNotNull(serialized.get("format"));
     assertNotNull(serialized.get("dataVersion"));
