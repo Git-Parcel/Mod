@@ -23,6 +23,8 @@ import org.jspecify.annotations.Nullable;
  * @see <a href="https://git-parcel.github.io/schemas/ParcelMeta.json">Parcel Metadata Schema</a>
  */
 public final class ParcelMeta {
+  public static final String FILE_NAME = "parcel.json";
+
   public record ModDependency(@Nullable String min, @Nullable String max) {
     public static final ModDependency ANY = new ModDependency(null, null);
   }
@@ -56,10 +58,15 @@ public final class ParcelMeta {
   public @Nullable List<String> tags = null;
   public @Nullable Map<String, ModDependency> mods = null;
 
+  /** Default is {@code true}. */
   public @Nullable Boolean includeEntity = null;
 
   /** Extra fields. */
   public JsonObject extra = new JsonObject();
+
+  public boolean includeEntity() {
+    return includeEntity == null || includeEntity;
+  }
 
   private ParcelMeta(String formatId, int formatVersion, int dataVersion, Vec3i size) {
     this.formatId = formatId;
@@ -70,17 +77,34 @@ public final class ParcelMeta {
   }
 
   /**
-   * @param path File path to the parcel metadata file
-   * @return The parsed {@link ParcelMeta} object
-   * @throws IOException If an I/O error occurs while reading the file
+   * Save the metadata to the given directory.
+   *
+   * <ul>
+   *   <li>Overwrite the file if it already exists.
+   *   <li>Create the parent directories if they do not exist.
+   * </ul>
+   *
+   * @param dirPath The parcel directory to save the metadata file to
+   * @throws IOException If an I/O error occurs while writing the file
    */
-  public static ParcelMeta load(Path path) throws IOException, InvalidParcelMetaException {
-    var json = GSON.fromJson(Files.readString(path), JsonObject.class);
-    try {
-      return fromJson(json);
-    } catch (JsonAccessException e) {
-      throw new InvalidParcelMetaException("Invalid parcel metadata at " + path, e);
-    }
+  public void saveToParcelDir(Path dirPath) throws IOException {
+    save(dirPath.resolve(FILE_NAME));
+  }
+
+  /**
+   * Save the metadata to the given file path.
+   *
+   * <ul>
+   *   <li>Overwrite the file if it already exists.
+   *   <li>Create the parent directories if they do not exist.
+   * </ul>
+   *
+   * @param filePath Path to the metadata file
+   * @throws IOException If an I/O error occurs while writing the file
+   */
+  public void save(Path filePath) throws IOException {
+    Files.createDirectories(filePath.getParent());
+    Files.writeString(filePath, GSON.toJson(toJson()));
   }
 
   public JsonElement toJson() {
@@ -129,6 +153,20 @@ public final class ParcelMeta {
     }
 
     return json;
+  }
+
+  /**
+   * @param path File path to the parcel metadata file
+   * @return The parsed {@link ParcelMeta} object
+   * @throws IOException If an I/O error occurs while reading the file
+   */
+  public static ParcelMeta load(Path path) throws IOException, InvalidParcelMetaException {
+    var json = GSON.fromJson(Files.readString(path), JsonObject.class);
+    try {
+      return fromJson(json);
+    } catch (JsonAccessException e) {
+      throw new InvalidParcelMetaException("Invalid parcel metadata at " + path, e);
+    }
   }
 
   public static ParcelMeta fromJson(JsonObject json) throws JsonAccessException {

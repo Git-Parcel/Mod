@@ -7,6 +7,7 @@ import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.Constants;
 import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.server.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.server.commands.arguments.ParcelFormatArgument;
 import java.io.IOException;
@@ -17,6 +18,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import org.slf4j.Logger;
 
 public class ParcelDebugCommand {
@@ -76,13 +78,18 @@ public class ParcelDebugCommand {
   public static int save(
       CommandSourceStack source, BlockPos from, Vec3i to, Path path, ParcelFormat.Save format) {
     try {
-      LOGGER.info("Saving parcel [{}, {}] with format {} to {}", from, to, format.id(), path);
-      var size =
-          new Vec3i(
-              to.getX() - from.getX() + 1,
-              to.getY() - from.getY() + 1,
-              to.getZ() - from.getZ() + 1);
+      var box = BoundingBox.fromCorners(from, to);
+      from = new BlockPos(box.minX(), box.minY(), box.minZ());
+      var size = new Vec3i(box.getXSpan(), box.getYSpan(), box.getZSpan());
+
+      LOGGER.info(
+          "Saving parcel (pos={}, size={}) with format {} to {}", from, size, format.id(), path);
+
+      var meta = ParcelMeta.create(format.id(), format.version(), size);
+      meta.description = "This parcel is for debug purpose only.";
+      meta.saveToParcelDir(path);
       format.save(source.getLevel(), from, size, path, true, true);
+
       return 0;
     } catch (Exception e) {
       LOGGER.error("Error while saving parcel", e);

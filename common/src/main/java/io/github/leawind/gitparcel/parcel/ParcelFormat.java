@@ -26,7 +26,7 @@ public interface ParcelFormat {
      *
      * @param level Level
      * @param from Position in level
-     * @param size Size of the parcel
+     * @param size Size of the parcel, must be positive
      * @param dir Path to an existing directory
      * @param saveBlocks Whether to save blocks in the parcel
      * @param saveEntities Whether to save entities in the parcel
