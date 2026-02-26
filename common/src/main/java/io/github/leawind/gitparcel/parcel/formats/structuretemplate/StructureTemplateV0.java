@@ -20,6 +20,8 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 
 /** Note: The loader of this format always load blocks regardless of the value of `loadBlocks` */
 public abstract class StructureTemplateV0 implements ParcelFormat {
+  public static final String NBT_FILE_NAME = "structure.nbt";
+
   @Override
   public String id() {
     return "structure_template";
@@ -40,7 +42,7 @@ public abstract class StructureTemplateV0 implements ParcelFormat {
       template.fillFromWorld(level, from, size, true, ImmutableList.of());
       CompoundTag tag = template.save(new CompoundTag());
 
-      Path structureFile = dir.resolve("structure.nbt");
+      Path structureFile = dir.resolve(NBT_FILE_NAME);
       try (OutputStream outputStream = Files.newOutputStream(structureFile)) {
         NbtIo.writeCompressed(tag, outputStream);
       }
@@ -56,7 +58,7 @@ public abstract class StructureTemplateV0 implements ParcelFormat {
     public void load(
         ServerLevel level, BlockPos pos, Path dir, boolean loadBlocks, boolean loadEntities)
         throws IOException, ParcelException {
-      Path structureFile = dir.resolve("structure.nbt");
+      Path structureFile = dir.resolve(NBT_FILE_NAME);
       CompoundTag tag = NbtIo.readCompressed(structureFile, NbtAccounter.uncompressedQuota());
       StructureTemplate template = level.getServer().getStructureManager().readStructure(tag);
       StructurePlaceSettings settings = new StructurePlaceSettings();
