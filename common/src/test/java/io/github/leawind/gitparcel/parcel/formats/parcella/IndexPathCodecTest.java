@@ -22,11 +22,9 @@ public class IndexPathCodecTest {
   }
 
   @Test
-  void testIndexToPath2() {
-    var cwd = Path.of(".");
+  void testIndexToPath() {
     BiConsumer<Long, String> test =
-        (index, path) ->
-            assertEquals(IndexPathCodec.indexToPath(cwd, index, ".dat"), cwd.resolve(path));
+        (index, path) -> assertEquals(IndexPathCodec.indexToPath(index, ".dat"), Path.of(path));
 
     test.accept(0x1234L, "34/12.dat");
 

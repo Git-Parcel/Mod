@@ -110,12 +110,14 @@ public abstract class ParcellaV0 implements ParcelFormat {
         Vec3i coord = subparcel.getCoord(anchorPos);
         long index = ZOrder3D.coordToIndexSigned(coord);
 
-        Path subParcelFile = IndexPathCodec.indexToPath(subParcelsDir, index, ".txt");
-        Files.createDirectories(subParcelFile.getParent());
+        Path subparcelRelativePath = IndexPathCodec.indexToPath(index, ".txt");
+        Path subparcelFile = subParcelsDir.resolve(subparcelRelativePath);
+
+        Files.createDirectories(subparcelFile.getParent());
 
         // Write sub-parcel data
         try (BufferedWriter writer =
-            Files.newBufferedWriter(subParcelFile, StandardCharsets.UTF_8)) {
+            Files.newBufferedWriter(subparcelFile, StandardCharsets.UTF_8)) {
           BlockPos subparcelFrom =
               new BlockPos(subparcel.originX, subparcel.originY, subparcel.originZ);
           BlockPos subparcelTo =

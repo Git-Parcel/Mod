@@ -24,20 +24,6 @@ import java.util.List;
 public final class IndexPathCodec {
 
   /**
-   * Encodes the given {@code index} into a hierarchical path relative to the specified {@code root}
-   * directory and appends the provided {@code suffix} to the resulting path string.
-   *
-   * @param root the root directory to resolve the generated path against
-   * @param index the numeric index to encode (treated as an unsigned value)
-   * @param suffix the suffix to append to the final path (e.g. a file extension)
-   * @return a resolved {@link Path} under {@code root} representing the encoded index
-   * @throws IndexOutOfBoundsException if the index is negative
-   */
-  static Path indexToPath(Path root, long index, String suffix) throws IndexOutOfBoundsException {
-    return root.resolve(indexToPath(index, suffix));
-  }
-
-  /**
    * Encodes the given {@code index} into a hierarchical {@link Path}, appending the provided {@code
    * suffix} to the final segment.
    *
