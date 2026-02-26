@@ -108,11 +108,9 @@ public abstract class ParcellaV0 implements ParcelFormat {
       Iterable<Subparcel> subparcels = Subparcel.subdivideParcel(parcel, anchorPos);
 
       for (var subparcel : subparcels) {
-        long index =
-            ZOrder3D.coordToIndexSigned(
-                (subparcel.originX - anchorPos.getX()) / 16,
-                (subparcel.originY - anchorPos.getY()) / 16,
-                (subparcel.originZ - anchorPos.getZ()) / 16);
+        Vec3i coord = subparcel.getCoord(anchorPos);
+        long index = ZOrder3D.coordToIndexSigned(coord);
+
         Path subParcelFile = indexToPath(subParcelsDir, index);
         Files.createDirectories(subParcelFile.getParent());
 

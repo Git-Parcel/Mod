@@ -52,6 +52,12 @@ public class SubparcelTest {
   }
 
   @Test
+  void testGetCoord() {
+    assertEquals(Vec3i.ZERO, new Subparcel(3, 4, 5, 3, 4, 5).getCoord(Vec3i.ZERO));
+    assertEquals(new Vec3i(-1, -1, -1), new Subparcel(-3, -4, -5, 3, 4, 5).getCoord(Vec3i.ZERO));
+  }
+
+  @Test
   void testSubdivideSubparcel() {
     {
       Parcel parcel = new Parcel(0, 0, 0, 16, 16, 16);

@@ -12,9 +12,25 @@ public final class Subparcel extends Parcel {
     super(originX, originY, originZ, sizeX, sizeY, sizeZ);
   }
 
+  /**
+   * @see #getCoord(int, int, int)
+   */
+  public Vec3i getCoord(Vec3i anchorPos) {
+    return getCoord(anchorPos.getX(), anchorPos.getY(), anchorPos.getZ());
+  }
+
+  /**
+   * Get the coordinate of this subparcel based on the anchor position.
+   *
+   * @param anchorX Absolute X coordinate of the anchor position
+   * @param anchorY Absolute Y coordinate of the anchor position
+   * @param anchorZ Absolute Z coordinate of the anchor position
+   */
   public Vec3i getCoord(int anchorX, int anchorY, int anchorZ) {
-    // TODO test
-    return new Vec3i((originX - anchorX) / 16, (originY - anchorY) / 16, (originZ - anchorZ) / 16);
+    return new Vec3i(
+        Math.floorDiv(originX - anchorX, 16),
+        Math.floorDiv(originY - anchorY, 16),
+        Math.floorDiv(originZ - anchorZ, 16));
   }
 
   /**
