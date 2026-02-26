@@ -1,6 +1,7 @@
 package io.github.leawind.gitparcel.parcel;
 
 import com.mojang.logging.LogUtils;
+import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import java.io.IOException;
 import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
@@ -46,6 +47,6 @@ public interface ParcelFormat {
      * @param loadEntities Whether to load entities
      */
     void load(ServerLevel level, BlockPos pos, Path dir, boolean loadBlocks, boolean loadEntities)
-        throws IOException, Parcel.ParcelException;
+        throws IOException, ParcelException;
   }
 }

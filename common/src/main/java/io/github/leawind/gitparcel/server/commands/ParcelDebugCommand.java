@@ -8,6 +8,7 @@ import io.github.leawind.gitparcel.Constants;
 import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.parcel.ParcelMeta;
+import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.server.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.server.commands.arguments.ParcelFormatArgument;
 import java.io.IOException;
@@ -118,7 +119,7 @@ public class ParcelDebugCommand {
       // TODO load entities
       Parcel.load(source.getLevel(), pos, path, true, false);
       return 0;
-    } catch (IOException | Parcel.ParcelException e) {
+    } catch (IOException | ParcelException e) {
       LOGGER.error("Error while loading parcel", e);
       return 1;
     }

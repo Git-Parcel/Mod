@@ -1,8 +1,8 @@
 package io.github.leawind.gitparcel.parcel.formats.structuretemplate;
 
 import com.google.common.collect.ImmutableList;
-import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -55,7 +55,7 @@ public abstract class StructureTemplateV0 implements ParcelFormat {
     @Override
     public void load(
         ServerLevel level, BlockPos pos, Path dir, boolean loadBlocks, boolean loadEntities)
-        throws IOException, Parcel.ParcelException {
+        throws IOException, ParcelException {
       Path structureFile = dir.resolve("structure.nbt");
       CompoundTag tag = NbtIo.readCompressed(structureFile, NbtAccounter.uncompressedQuota());
       StructureTemplate template = level.getServer().getStructureManager().readStructure(tag);

@@ -5,6 +5,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.github.leawind.gitparcel.Constants;
+import io.github.leawind.gitparcel.parcel.exceptions.InvalidParcelMetaException;
 import io.github.leawind.gitparcel.utils.json.JsonAccessException;
 import io.github.leawind.gitparcel.utils.json.JsonObjectAccessor;
 import java.io.IOException;
@@ -28,17 +29,6 @@ public final class ParcelMeta {
 
   public record ModDependency(@Nullable String min, @Nullable String max) {
     public static final ModDependency ANY = new ModDependency(null, null);
-  }
-
-  /** Exceptions thrown when parsing or validating parcel metadata. */
-  public static class InvalidParcelMetaException extends Parcel.ParcelException.InvalidParcel {
-    public InvalidParcelMetaException(String message) {
-      super(message);
-    }
-
-    public InvalidParcelMetaException(String message, Throwable cause) {
-      super(message, cause);
-    }
   }
 
   private static final Gson GSON = new Gson();
