@@ -50,4 +50,9 @@ public class DirPathArgument extends FilePathArgument {
     }
     return path;
   }
+
+  @Override
+  public Collection<String> getExamples() {
+    return EXAMPLES;
+  }
 }
