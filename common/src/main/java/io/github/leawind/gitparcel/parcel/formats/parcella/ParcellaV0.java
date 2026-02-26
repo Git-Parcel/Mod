@@ -39,9 +39,6 @@ import org.jspecify.annotations.Nullable;
 public abstract class ParcellaV0 implements ParcelFormat {
   private static final Gson GSON = new Gson();
 
-  private static final String OPTIONS_SCHEMA =
-      "https://git-parcel.github.io/schemas/ParcellaFormatOptions.json";
-
   @Override
   public String id() {
     return "parcella";
