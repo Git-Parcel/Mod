@@ -5,7 +5,6 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.Constants;
-import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
@@ -98,7 +97,7 @@ public class ParcelDebugCommand {
       meta.description = "This parcel is for debug purpose only.";
       meta.saveToParcelDir(parcelDir);
 
-      Parcel.save(source.getLevel(), from, meta, parcelDir, true);
+      ParcelFormat.save(source.getLevel(), from, meta, parcelDir, true);
       return 0;
     } catch (Exception e) {
       LOGGER.error("Error while saving parcel", e);
@@ -117,7 +116,7 @@ public class ParcelDebugCommand {
     try {
       LOGGER.info("Loading parcel at {} from {}", pos, path);
       // TODO load entities
-      Parcel.load(source.getLevel(), pos, path, true, false);
+      ParcelFormat.load(source.getLevel(), pos, path, true, false);
       return 0;
     } catch (IOException | ParcelException e) {
       LOGGER.error("Error while loading parcel", e);
