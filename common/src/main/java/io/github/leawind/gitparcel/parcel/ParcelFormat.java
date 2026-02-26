@@ -48,8 +48,8 @@ public interface ParcelFormat {
       throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
     }
 
-    if (!meta.size.equals(parcel.size)) {
-      meta.size = parcel.size;
+    if (!meta.size.equals(parcel.getSize())) {
+      meta.size = parcel.getSize();
       meta.save(metaFile);
     }
     format.save(level, parcel, getDataDir(parcelDir), meta.includeEntity() && saveEntity);
@@ -70,7 +70,7 @@ public interface ParcelFormat {
    */
   static void save(Level level, Parcel parcel, ParcelMeta meta, Path parcelDir, boolean saveEntity)
       throws IOException, ParcelException {
-    meta.size = parcel.size;
+    meta.size = parcel.getSize();
     meta.save(getMetaFile(parcelDir));
 
     var format = meta.getFormatSaver();

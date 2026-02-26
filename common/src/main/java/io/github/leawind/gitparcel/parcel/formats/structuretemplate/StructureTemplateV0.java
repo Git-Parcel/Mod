@@ -9,7 +9,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
@@ -40,7 +39,7 @@ public abstract class StructureTemplateV0 implements ParcelFormat {
       Files.createDirectories(dataDir);
 
       StructureTemplate template = new StructureTemplate();
-      template.fillFromWorld(level, parcel.origin, parcel.size, true, ImmutableList.of());
+      template.fillFromWorld(level, parcel.getOrigin(), parcel.getSize(), true, ImmutableList.of());
       CompoundTag tag = template.save(new CompoundTag());
 
       Path structureFile = dataDir.resolve(NBT_FILE_NAME);

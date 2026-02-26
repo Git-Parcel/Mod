@@ -48,10 +48,10 @@ public abstract class MvpV0 implements ParcelFormat {
       int nextPaletteId = 0;
 
       // First pass: collect all unique block states and build palette
-      for (int x = 0; x < parcel.size.getX(); x++) {
-        for (int y = 0; y < parcel.size.getY(); y++) {
-          for (int z = 0; z < parcel.size.getZ(); z++) {
-            BlockPos pos = parcel.origin.offset(x, y, z);
+      for (int x = 0; x < parcel.sizeX; x++) {
+        for (int y = 0; y < parcel.sizeY; y++) {
+          for (int z = 0; z < parcel.sizeZ; z++) {
+            BlockPos pos = parcel.getOrigin().offset(x, y, z);
             BlockState blockState = level.getBlockState(pos);
 
             if (!palette.containsKey(blockState)) {
@@ -79,9 +79,9 @@ public abstract class MvpV0 implements ParcelFormat {
       int subSize = 16; // Maximum size for sub-parcels
 
       // Calculate total number of sub-parcels in each dimension
-      int subParcelCountX = (parcel.size.getX() + subSize - 1) / subSize;
-      int subParcelCountY = (parcel.size.getY() + subSize - 1) / subSize;
-      int subParcelCountZ = (parcel.size.getZ() + subSize - 1) / subSize;
+      int subParcelCountX = (parcel.sizeX + subSize - 1) / subSize;
+      int subParcelCountY = (parcel.sizeY + subSize - 1) / subSize;
+      int subParcelCountZ = (parcel.sizeZ + subSize - 1) / subSize;
       int totalSubParcels = subParcelCountX * subParcelCountY * subParcelCountZ;
 
       // Calculate the number of digits needed for indexing
@@ -100,9 +100,9 @@ public abstract class MvpV0 implements ParcelFormat {
             int startX = sx * subSize;
             int startY = sy * subSize;
             int startZ = sz * subSize;
-            int endX = Math.min(startX + subSize, parcel.size.getX());
-            int endY = Math.min(startY + subSize, parcel.size.getY());
-            int endZ = Math.min(startZ + subSize, parcel.size.getZ());
+            int endX = Math.min(startX + subSize, parcel.sizeX);
+            int endY = Math.min(startY + subSize, parcel.sizeY);
+            int endZ = Math.min(startZ + subSize, parcel.sizeZ);
 
             // Calculate one-dimensional index
             int currentIndex = sx * subParcelCountY * subParcelCountZ + sy * subParcelCountZ + sz;
@@ -129,7 +129,7 @@ public abstract class MvpV0 implements ParcelFormat {
               for (int x = startX; x < endX; x++) {
                 for (int y = startY; y < endY; y++) {
                   for (int z = startZ; z < endZ; z++) {
-                    BlockPos pos = parcel.origin.offset(x, y, z);
+                    BlockPos pos = parcel.getOrigin().offset(x, y, z);
                     BlockState blockState = level.getBlockState(pos);
                     int paletteId = palette.get(blockState);
                     writer.write(Integer.toHexString(paletteId));
@@ -144,10 +144,10 @@ public abstract class MvpV0 implements ParcelFormat {
 
       Files.createDirectories(nbtDir);
       // Handle block entities - save them as individual SNBT files in nbt directory
-      for (int x = 0; x < parcel.size.getX(); x++) {
-        for (int y = 0; y < parcel.size.getY(); y++) {
-          for (int z = 0; z < parcel.size.getZ(); z++) {
-            BlockPos pos = parcel.origin.offset(x, y, z);
+      for (int x = 0; x < parcel.sizeX; x++) {
+        for (int y = 0; y < parcel.sizeY; y++) {
+          for (int z = 0; z < parcel.sizeZ; z++) {
+            BlockPos pos = parcel.getOrigin().offset(x, y, z);
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity != null) {
               // Find the corresponding block state to get its palette ID

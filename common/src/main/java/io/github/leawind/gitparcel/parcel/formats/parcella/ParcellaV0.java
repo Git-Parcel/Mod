@@ -23,7 +23,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.painting.Painting;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.Vec3;
@@ -105,25 +104,28 @@ public abstract class ParcellaV0 implements ParcelFormat {
       Path subParcelsDir = blocksDir.resolve(SUB_PARCELS_DIR_NAME);
       Files.createDirectories(subParcelsDir);
 
-      BlockPos anchorPos = parcel.origin.offset(options.anchorOffset);
-      Iterable<BoundingBox> subparcels = subdivideParcel(parcel.origin, parcel.size, anchorPos);
+      BlockPos anchorPos = parcel.getOrigin().offset(options.anchorOffset);
+      Iterable<Subparcel> subparcels = Subparcel.subdivideParcel(parcel, anchorPos);
 
       for (var subparcel : subparcels) {
         long index =
             ZOrder3D.coordToIndexSigned(
-                (subparcel.minX() - anchorPos.getX()) / 16,
-                (subparcel.minY() - anchorPos.getY()) / 16,
-                (subparcel.minZ() - anchorPos.getZ()) / 16);
+                (subparcel.originX - anchorPos.getX()) / 16,
+                (subparcel.originY - anchorPos.getY()) / 16,
+                (subparcel.originZ - anchorPos.getZ()) / 16);
         Path subParcelFile = indexToPath(subParcelsDir, index);
         Files.createDirectories(subParcelFile.getParent());
 
         // Write sub-parcel data
         try (BufferedWriter writer =
             Files.newBufferedWriter(subParcelFile, StandardCharsets.UTF_8)) {
-
           BlockPos subparcelFrom =
-              new BlockPos(subparcel.minX(), subparcel.minY(), subparcel.minZ());
-          BlockPos subparcelTo = new BlockPos(subparcel.maxX(), subparcel.maxY(), subparcel.maxZ());
+              new BlockPos(subparcel.originX, subparcel.originY, subparcel.originZ);
+          BlockPos subparcelTo =
+              new BlockPos(
+                  subparcel.originX + subparcel.sizeX,
+                  subparcel.originY + subparcel.sizeY,
+                  subparcel.originZ + subparcel.sizeZ);
           writeSubparcel(
               writer, level, subparcelFrom, subparcelTo, palette, options.enableMicroparcel);
         }
@@ -170,7 +172,7 @@ public abstract class ParcellaV0 implements ParcelFormat {
 
       int entityId = 0;
       for (Entity entity : entities) {
-        CompoundTag tag = getEntityNbt(problemReporter, parcel.origin, entity);
+        CompoundTag tag = getEntityNbt(problemReporter, parcel.getOrigin(), entity);
         if (options.enableSnbtForEntities) {
           Files.writeString(entitiesDir.resolve(entityId + ".snbt"), tag.toString());
         } else {
@@ -227,77 +229,6 @@ public abstract class ParcellaV0 implements ParcelFormat {
         tag.put("nbt", output.buildResult().copy());
       }
       return tag;
-    }
-
-    /**
-     * @param parcelOrigin Start position of the parcel
-     * @param parcelSize Size of the parcel
-     * @param anchorPos Absolute position of origin point
-     * @return Bounding boxes of subparcels, use absolute coordinates
-     */
-    public static Iterable<BoundingBox> subdivideParcel(
-        BlockPos parcelOrigin, Vec3i parcelSize, Vec3i anchorPos) {
-      List<BoundingBox> subparcels = new ArrayList<>(1);
-
-      BlockPos to = parcelOrigin.offset(parcelSize);
-      List<Integer> xDivisions =
-          subdivideParcel1D(parcelOrigin.getX(), parcelSize.getX(), anchorPos.getX());
-      List<Integer> yDivisions =
-          subdivideParcel1D(parcelOrigin.getY(), parcelSize.getY(), anchorPos.getY());
-      List<Integer> zDivisions =
-          subdivideParcel1D(parcelOrigin.getZ(), parcelSize.getZ(), anchorPos.getZ());
-
-      for (int i = 0; i < xDivisions.size() - 1; i++) {
-        int minX = Math.max(xDivisions.get(i), parcelOrigin.getX());
-        int maxX = Math.min(xDivisions.get(i + 1), to.getX());
-        if (minX >= maxX) continue;
-
-        for (int j = 0; j < yDivisions.size() - 1; j++) {
-          int minY = Math.max(yDivisions.get(j), parcelOrigin.getY());
-          int maxY = Math.min(yDivisions.get(j + 1), to.getY());
-          if (minY >= maxY) continue;
-
-          for (int k = 0; k < zDivisions.size() - 1; k++) {
-            int minZ = Math.max(zDivisions.get(k), parcelOrigin.getZ());
-            int maxZ = Math.min(zDivisions.get(k + 1), to.getZ());
-            if (minZ >= maxZ) continue;
-
-            subparcels.add(new BoundingBox(minX, minY, minZ, maxX - 1, maxY - 1, maxZ - 1));
-          }
-        }
-      }
-
-      return subparcels;
-    }
-
-    /**
-     * @param size Must be positive
-     * @return Divisions of the parcel, including start and end positions. Use absolute coordinates
-     */
-    static List<Integer> subdivideParcel1D(int origin, int size, int anchorPos) {
-      List<Integer> divisions = new ArrayList<>();
-
-      int current = origin;
-      divisions.add(current);
-      current = ceilToGrid16(anchorPos, current);
-
-      int endExclusive = origin + size;
-      while (current < endExclusive) {
-        divisions.add(current);
-        current += 16;
-      }
-
-      divisions.add(endExclusive);
-
-      return divisions;
-    }
-
-    static int floorToGrid16(int grid, int value) {
-      return value - Math.floorMod(value - grid, 16);
-    }
-
-    static int ceilToGrid16(int grid, int value) {
-      return floorToGrid16(grid, value) + 16;
     }
 
     static Path indexToPath(Path root, long index) {
