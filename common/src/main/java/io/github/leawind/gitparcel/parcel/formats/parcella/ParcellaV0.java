@@ -39,6 +39,12 @@ import org.jspecify.annotations.Nullable;
 public abstract class ParcellaV0 implements ParcelFormat {
   private static final Gson GSON = new Gson();
 
+  public static final String BLOCKS_DIR_NAME = "blocks";
+  public static final String ENTITIES_DIR_NAME = "entities";
+  public static final String NBT_DIR_NAME = "nbt";
+  public static final String PALETTE_FILE_NAME = "palette.txt";
+  public static final String SUB_PARCELS_DIR_NAME = "subparcels";
+
   @Override
   public String id() {
     return "parcella";
@@ -175,16 +181,16 @@ public abstract class ParcellaV0 implements ParcelFormat {
     private void saveBlocks(Level level, BlockPos from, Vec3i size, Path dir, Options options)
         throws IOException {
 
-      Path blocksDir = dir.resolve("blocks");
+      Path blocksDir = dir.resolve(BLOCKS_DIR_NAME);
 
       Files.createDirectories(blocksDir);
 
-      Path nbtDir = blocksDir.resolve("nbt");
-      BlockPalette palette = new BlockPalette(blocksDir.resolve("palette.txt"), nbtDir);
+      Path nbtDir = blocksDir.resolve(NBT_DIR_NAME);
+      BlockPalette palette = new BlockPalette(blocksDir.resolve(PALETTE_FILE_NAME), nbtDir);
       palette.tryLoad();
 
       // Process sub-parcels with Z-Order encoding
-      Path subParcelsDir = blocksDir.resolve("subparcels");
+      Path subParcelsDir = blocksDir.resolve(SUB_PARCELS_DIR_NAME);
       Files.createDirectories(subParcelsDir);
 
       BlockPos gridOrigin = from.offset(options.subparcelOffset);
@@ -249,7 +255,7 @@ public abstract class ParcellaV0 implements ParcelFormat {
 
       // TODO remove redundant entities
 
-      Path entitiesDir = dir.resolve("entities");
+      Path entitiesDir = dir.resolve(ENTITIES_DIR_NAME);
       Files.createDirectories(entitiesDir);
 
       AABB area =
