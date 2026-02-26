@@ -6,23 +6,84 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Utility class for encoding a numeric index into a hierarchical {@link Path}.
+ *
+ * <p>The index is decomposed into unsigned bytes (least significant byte first), each represented
+ * as a two-character uppercase hexadecimal string. Each byte becomes one path segment. This
+ * produces a directory structure that distributes entries across multiple levels to avoid large
+ * flat directories.
+ *
+ * <p>For example, an index value is split into {@code index & 0xFF} chunks, and each chunk is
+ * converted to a hexadecimal string such as {@code "0A"} or {@code "FF"}.
+ *
+ * <p>Small index values are served from an internal cache to reduce allocation overhead.
+ *
+ * <p>This class is not intended to be instantiated.
+ */
 public final class IndexPathCodec {
-  static Path indexToPath(Path root, long index, String suffix) {
+
+  /**
+   * Encodes the given {@code index} into a hierarchical path relative to the specified {@code root}
+   * directory and appends the provided {@code suffix} to the resulting path string.
+   *
+   * @param root the root directory to resolve the generated path against
+   * @param index the numeric index to encode (treated as an unsigned value)
+   * @param suffix the suffix to append to the final path (e.g. a file extension)
+   * @return a resolved {@link Path} under {@code root} representing the encoded index
+   * @throws IndexOutOfBoundsException if the index is negative
+   */
+  static Path indexToPath(Path root, long index, String suffix) throws IndexOutOfBoundsException {
     return root.resolve(indexToPath(index, suffix));
   }
 
-  static Path indexToPath(long index, String suffix) {
+  /**
+   * Encodes the given {@code index} into a hierarchical {@link Path}, appending the provided {@code
+   * suffix} to the final segment.
+   *
+   * <p>The index is split into unsigned bytes (least significant first), each rendered as a
+   * two-digit uppercase hexadecimal string and joined using the platform-specific file separator.
+   *
+   * @param index the numeric index to encode
+   * @param suffix the suffix to append to the final path (e.g. a file extension)
+   * @return a {@link Path} representing the encoded index
+   * @throws IndexOutOfBoundsException if the index is negative
+   */
+  static Path indexToPath(long index, String suffix) throws IndexOutOfBoundsException {
     var parts = indexToPathParts(index);
     return Path.of(String.join(File.separator, parts) + suffix);
   }
 
-  static List<String> indexToPathParts(long index) {
+  /**
+   * Returns the hexadecimal path segments corresponding to the given {@code index}.
+   *
+   * <p>If the index is smaller than the internal cache size, a cached representation is returned.
+   * Otherwise, the value is computed on demand.
+   *
+   * @param index the numeric index to encode
+   * @return an ordered list of hexadecimal path segments (least significant byte first)
+   * @throws IndexOutOfBoundsException if the index is negative
+   */
+  static List<String> indexToPathParts(long index) throws IndexOutOfBoundsException {
     if (index < CACHE_SIZE) {
       return Arrays.asList(CACHE[(int) index]);
     }
     return indexToPathPartsImpl(index);
   }
 
+  /**
+   * Computes the hexadecimal path segments for the given {@code index} without using the cache.
+   *
+   * <p>Behavior is undefined if the index is negative.
+   *
+   * <p>The index is decomposed into unsigned bytes (least significant first). Each byte is
+   * converted to a two-digit uppercase hexadecimal string.
+   *
+   * <p>A zero index produces a single segment {@code "00"}.
+   *
+   * @param index the numeric index to encode. Must be non-negative.
+   * @return a list of hexadecimal path segments (least significant byte first)
+   */
   static List<String> indexToPathPartsImpl(long index) {
     if (index == 0) {
       return List.of("00");
@@ -36,10 +97,20 @@ public final class IndexPathCodec {
     return parts;
   }
 
+  /**
+   * Converts the given byte value (0–255) into a two-digit uppercase hexadecimal string.
+   *
+   * @param value an integer in the range {@code 0x00} to {@code 0xFF}
+   * @return the two-character uppercase hexadecimal representation
+   */
   static String toHex(int value) {
     return HEX_DIGITS[value];
   }
 
+  /**
+   * Lookup table mapping byte values {@code 0x00}–{@code 0xFF} to their two-digit uppercase
+   * hexadecimal string representations.
+   */
   static final String[] HEX_DIGITS = new String[0x100];
 
   static {
@@ -49,6 +120,8 @@ public final class IndexPathCodec {
   }
 
   private static final int CACHE_SIZE = 512;
+
+  /** Cache of precomputed hexadecimal path segments for indices. */
   private static final String[][] CACHE = new String[CACHE_SIZE][];
 
   static {
