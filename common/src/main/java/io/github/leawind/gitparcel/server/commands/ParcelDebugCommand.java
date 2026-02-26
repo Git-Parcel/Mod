@@ -77,7 +77,12 @@ public class ParcelDebugCommand {
       CommandSourceStack source, BlockPos from, Vec3i to, Path path, ParcelFormat.Save format) {
     try {
       LOGGER.info("Saving parcel [{}, {}] with format {} to {}", from, to, format.id(), path);
-      format.save(source.getLevel(), from, to, path, true, true);
+      var size =
+          new Vec3i(
+              to.getX() - from.getX() + 1,
+              to.getY() - from.getY() + 1,
+              to.getZ() - from.getZ() + 1);
+      format.save(source.getLevel(), from, size, path, true, true);
       return 0;
     } catch (Exception e) {
       LOGGER.error("Error while saving parcel", e);
