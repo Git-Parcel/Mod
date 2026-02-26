@@ -13,10 +13,10 @@ public class ParcelFormatManagerTest {
         .register(new StructureTemplateV0.Save())
         .register(new MvpV0.Save());
 
-    assert mgr.defaultSaver() == mgr.saver("parcella");
+    assert mgr.defaultSaver() == mgr.getSaver("parcella");
 
-    assert mgr.saver("parcella") != null;
-    assert mgr.saver("mvp") != null;
-    assert mgr.saver("structure_template") != null;
+    assert mgr.getSaver("parcella") != null;
+    assert mgr.getSaver("mvp") != null;
+    assert mgr.getSaver("structure_template") != null;
   }
 }

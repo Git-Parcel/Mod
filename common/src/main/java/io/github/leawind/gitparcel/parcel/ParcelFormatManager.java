@@ -43,11 +43,11 @@ public class ParcelFormatManager {
    * @param id The format id.
    * @return null if no saver is found
    */
-  public ParcelFormat.@Nullable Save saver(String id) {
+  public ParcelFormat.@Nullable Save getSaver(String id) {
     return (ParcelFormat.Save) latest(savers, id);
   }
 
-  public ParcelFormat.@Nullable Save saver(String id, int version) {
+  public ParcelFormat.@Nullable Save getSaver(String id, int version) {
     return (ParcelFormat.Save) savers.getOrDefault(id, Map.of()).get(version);
   }
 
@@ -57,19 +57,19 @@ public class ParcelFormatManager {
    * @param id The format id.
    * @return null if no loader is found
    */
-  public ParcelFormat.@Nullable Load loader(String id) {
+  public ParcelFormat.@Nullable Load getLoader(String id) {
     return (ParcelFormat.Load) latest(loaders, id);
   }
 
-  public ParcelFormat.@Nullable Load loader(String id, int version) {
+  public ParcelFormat.@Nullable Load getLoader(String id, int version) {
     return (ParcelFormat.Load) loaders.getOrDefault(id, Map.of()).get(version);
   }
 
-  public Set<String> saverNames() {
+  public Set<String> getSaverNames() {
     return savers.keySet();
   }
 
-  public Set<String> loaderNames() {
+  public Set<String> getLoaderNames() {
     return loaders.keySet();
   }
 

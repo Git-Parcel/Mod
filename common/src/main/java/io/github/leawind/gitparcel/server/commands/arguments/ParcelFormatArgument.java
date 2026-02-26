@@ -43,7 +43,7 @@ public final class ParcelFormatArgument {
 
     @Override
     public ParcelFormat.Save parse(StringReader reader) throws CommandSyntaxException {
-      var format = Constants.PARCEL_FORMATS.saver(reader.readString());
+      var format = Constants.PARCEL_FORMATS.getSaver(reader.readString());
       if (format == null) {
         throw ERROR_INVALID.createWithContext(reader);
       }
@@ -54,7 +54,7 @@ public final class ParcelFormatArgument {
     public <S> CompletableFuture<Suggestions> listSuggestions(
         final CommandContext<S> context, final SuggestionsBuilder builder) {
       return context.getSource() instanceof SharedSuggestionProvider
-          ? SharedSuggestionProvider.suggest(Constants.PARCEL_FORMATS.saverNames(), builder)
+          ? SharedSuggestionProvider.suggest(Constants.PARCEL_FORMATS.getSaverNames(), builder)
           : Suggestions.empty();
     }
 
@@ -68,7 +68,7 @@ public final class ParcelFormatArgument {
 
     @Override
     public ParcelFormat.Load parse(StringReader reader) throws CommandSyntaxException {
-      var format = Constants.PARCEL_FORMATS.loader(reader.readString());
+      var format = Constants.PARCEL_FORMATS.getLoader(reader.readString());
       if (format == null) {
         throw ERROR_INVALID.createWithContext(reader);
       }
@@ -79,7 +79,7 @@ public final class ParcelFormatArgument {
     public <S> CompletableFuture<Suggestions> listSuggestions(
         final CommandContext<S> context, final SuggestionsBuilder builder) {
       return context.getSource() instanceof SharedSuggestionProvider
-          ? SharedSuggestionProvider.suggest(Constants.PARCEL_FORMATS.loaderNames(), builder)
+          ? SharedSuggestionProvider.suggest(Constants.PARCEL_FORMATS.getLoaderNames(), builder)
           : Suggestions.empty();
     }
 

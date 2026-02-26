@@ -29,7 +29,7 @@ public final class Parcel {
       throws IOException, ParcelException {
     var metaFile = dir.resolve(PARCEL_META_FILE_NAME);
     var meta = ParcelMeta.load(metaFile);
-    var format = Constants.PARCEL_FORMATS.saver(meta.formatId, meta.formatVersion);
+    var format = Constants.PARCEL_FORMATS.getSaver(meta.formatId, meta.formatVersion);
     if (format == null) {
       throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
     }
@@ -55,7 +55,7 @@ public final class Parcel {
       ServerLevel level, BlockPos pos, Path dir, boolean loadBlocks, boolean loadEntities)
       throws IOException, ParcelException {
     var meta = ParcelMeta.load(dir.resolve(PARCEL_META_FILE_NAME));
-    var loader = Constants.PARCEL_FORMATS.loader(meta.formatId, meta.formatVersion);
+    var loader = Constants.PARCEL_FORMATS.getLoader(meta.formatId, meta.formatVersion);
     if (loader == null) {
       throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
     }
