@@ -26,8 +26,8 @@ public final class Parcel {
    * <p>It loads metadata file {@value #META_FILE_NAME} first and try to save as the same format
    *
    * @param level The level where the parcel is in
-   * @param pos The position to save the parcel at
-   * @param size The size of the parcel
+   * @param parcelOrigin Position of parcel origin in level
+   * @param parcelSize Size of the parcel, must be positive
    * @param parcelDir The parcel directory, which contains the {@value #META_FILE_NAME} file and
    *     {@value #DATA_DIR_NAME} directory
    * @param saveEntity Whether to save the entities in the parcel. Only works when {@code
@@ -35,7 +35,8 @@ public final class Parcel {
    * @throws IOException If an I/O error occurs while saving the parcel
    * @throws ParcelException If other error occurs while saving the parcel
    */
-  public static void save(Level level, BlockPos pos, Vec3i size, Path parcelDir, boolean saveEntity)
+  public static void save(
+      Level level, BlockPos parcelOrigin, Vec3i parcelSize, Path parcelDir, boolean saveEntity)
       throws IOException, ParcelException {
 
     // Save metadata
@@ -46,18 +47,19 @@ public final class Parcel {
       throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
     }
 
-    if (!meta.size.equals(size)) {
-      meta.size = size;
+    if (!meta.size.equals(parcelSize)) {
+      meta.size = parcelSize;
       meta.save(metaFile);
     }
-    format.save(level, pos, meta.size, getDataDir(parcelDir), meta.includeEntity() && saveEntity);
+    format.save(
+        level, parcelOrigin, meta.size, getDataDir(parcelDir), meta.includeEntity() && saveEntity);
   }
 
   /**
    * Saves a parcel at the specified position in the specified level.
    *
    * @param level The level where the parcel is in
-   * @param pos The position to save the parcel at
+   * @param parcelOrigin Position of parcel origin in level
    * @param meta The metadata of the parcel
    * @param parcelDir The parcel directory, which contains the {@value #META_FILE_NAME} file and
    *     {@value #DATA_DIR_NAME} directory
@@ -67,39 +69,45 @@ public final class Parcel {
    * @throws ParcelException If other error occurs while saving the parcel
    */
   public static void save(
-      Level level, BlockPos pos, ParcelMeta meta, Path parcelDir, boolean saveEntity)
+      Level level, BlockPos parcelOrigin, ParcelMeta meta, Path parcelDir, boolean saveEntity)
       throws IOException, ParcelException {
     meta.save(getMetaFile(parcelDir));
     var format = meta.getFormatSaver();
     if (format == null) {
       throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
     }
-    format.save(level, pos, meta.size, getDataDir(parcelDir), meta.includeEntity() && saveEntity);
+    format.save(
+        level, parcelOrigin, meta.size, getDataDir(parcelDir), meta.includeEntity() && saveEntity);
   }
 
   /**
    * Loads a parcel at the specified position in the specified level.
    *
    * @param level The level to load the parcel into
-   * @param pos The position to load the parcel at
-   * @param dir The parcel directory, which should contain the {@value #META_FILE_NAME} file
-   * @param loadBlocks Whether to load the blocks in the parcel. Some formats may ignore it and
-   *     always load blocks
+   * @param parcelOrigin Position of parcel origin in level
+   * @param parcelDir The parcel directory, which contains the {@value #META_FILE_NAME} file and
+   *     {@value #DATA_DIR_NAME} directory
+   * @param loadBlocks Whether to load the blocks in the parcel. Only works when {@code
+   *     meta.includeEntity} is true
    * @param loadEntities Whether to load the entities in the parcel
    * @throws IOException If an I/O error occurs while loading the parcel
    * @throws ParcelException.InvalidParcel If the parcel is invalid
    * @throws ParcelException If other error occurs while loading the parcel
    */
   public static void load(
-      ServerLevel level, BlockPos pos, Path dir, boolean loadBlocks, boolean loadEntities)
+      ServerLevel level,
+      BlockPos parcelOrigin,
+      Path parcelDir,
+      boolean loadBlocks,
+      boolean loadEntities)
       throws IOException, ParcelException {
-    var meta = ParcelMeta.load(dir.resolve(META_FILE_NAME));
+    var meta = ParcelMeta.load(parcelDir.resolve(META_FILE_NAME));
     var loader = meta.getFormatLoader();
     if (loader == null) {
       throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
     }
 
-    var dataDir = dir.resolve(DATA_DIR_NAME);
-    loader.load(level, pos, dataDir, loadBlocks, loadEntities);
+    var dataDir = parcelDir.resolve(DATA_DIR_NAME);
+    loader.load(level, parcelOrigin, dataDir, loadBlocks, loadEntities);
   }
 }

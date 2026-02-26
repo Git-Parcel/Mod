@@ -58,14 +58,14 @@ public class ParcellaV0Test {
                 random.nextInt(-1000, 1000));
         Vec3i size = new Vec3i(random.nextInt(1, 50), random.nextInt(1, 50), random.nextInt(1, 50));
         BlockPos to = from.offset(size.getX() - 1, size.getY() - 1, size.getZ() - 1);
-        Vec3i gridOrigin =
+        Vec3i anchorPos =
             new Vec3i(
                 random.nextInt(-100, 100), //
                 random.nextInt(-100, 100),
                 random.nextInt(-100, 100));
 
         BoundingBox total = BoundingBox.fromCorners(from, to);
-        assertEqual(total, ParcellaV0.Save.subdivideParcel(from, size, gridOrigin));
+        assertEqual(total, ParcellaV0.Save.subdivideParcel(from, size, anchorPos));
       }
     }
 
@@ -80,7 +80,7 @@ public class ParcellaV0Test {
               System.out.println("  Actual: " + result);
               System.out.println("  Expected: " + expected);
 
-              throw new AssertionError("Axis division failed");
+              throw new AssertionError("subdivision failed");
             }
           };
 
@@ -99,9 +99,9 @@ public class ParcellaV0Test {
       for (int i = 0; i < 10000; i++) {
         int from = random.nextInt(-1000, 1000);
         int size = random.nextInt(1, 1000);
-        int gridOrigin = random.nextInt(-100, 100);
+        int anchorPos = random.nextInt(-100, 100);
 
-        var result = ParcellaV0.Save.subdivideParcel1D(from, size, gridOrigin);
+        var result = ParcellaV0.Save.subdivideParcel1D(from, size, anchorPos);
         int length = result.getLast() - result.getFirst();
         assert length == size;
       }

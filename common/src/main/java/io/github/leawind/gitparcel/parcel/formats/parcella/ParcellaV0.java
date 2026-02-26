@@ -144,7 +144,7 @@ public abstract class ParcellaV0 implements ParcelFormat {
       public boolean enableSnbtForBlockEntities = true;
       public boolean enableMicroparcel = false;
       public boolean enableSnbtForEntities = true;
-      public Vec3i subparcelOffset = Vec3i.ZERO;
+      public Vec3i anchorOffset = Vec3i.ZERO;
 
       public static @Nullable Options tryLoad(Path path) {
         try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
@@ -161,27 +161,29 @@ public abstract class ParcellaV0 implements ParcelFormat {
     }
 
     @Override
-    public void save(Level level, BlockPos from, Vec3i size, Path dir, boolean saveEntities)
+    public void save(
+        Level level, BlockPos parcelOrigin, Vec3i parcelSize, Path dataDir, boolean saveEntities)
         throws IOException {
       try (ProblemReporter.ScopedCollector problemReporter =
           new ProblemReporter.ScopedCollector(LOGGER)) {
-        Files.createDirectories(dir);
+        Files.createDirectories(dataDir);
 
-        Path formatOptionsFile = dir.resolve("format-options.json");
+        Path formatOptionsFile = dataDir.resolve("format-options.json");
         Options options = Options.tryLoadOrDefault(formatOptionsFile);
 
-        saveBlocks(level, from, size, dir, options);
+        saveBlocks(level, parcelOrigin, parcelSize, dataDir, options);
 
         if (saveEntities) {
-          saveEntities(problemReporter, level, from, size, dir, options);
+          saveEntities(problemReporter, level, parcelOrigin, parcelSize, dataDir, options);
         }
       }
     }
 
-    private void saveBlocks(Level level, BlockPos from, Vec3i size, Path dir, Options options)
+    private void saveBlocks(
+        Level level, BlockPos parcelOrigin, Vec3i parcelSize, Path dataDir, Options options)
         throws IOException {
 
-      Path blocksDir = dir.resolve(BLOCKS_DIR_NAME);
+      Path blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
 
       Files.createDirectories(blocksDir);
 
@@ -193,15 +195,15 @@ public abstract class ParcellaV0 implements ParcelFormat {
       Path subParcelsDir = blocksDir.resolve(SUB_PARCELS_DIR_NAME);
       Files.createDirectories(subParcelsDir);
 
-      BlockPos gridOrigin = from.offset(options.subparcelOffset);
-      Iterable<BoundingBox> subparcels = subdivideParcel(from, size, gridOrigin);
+      BlockPos anchorPos = parcelOrigin.offset(options.anchorOffset);
+      Iterable<BoundingBox> subparcels = subdivideParcel(parcelOrigin, parcelSize, anchorPos);
 
       for (var subparcel : subparcels) {
         long index =
             ZOrder3D.coordToIndexSigned(
-                (subparcel.minX() - gridOrigin.getX()) / 16,
-                (subparcel.minY() - gridOrigin.getY()) / 16,
-                (subparcel.minZ() - gridOrigin.getZ()) / 16);
+                (subparcel.minX() - anchorPos.getX()) / 16,
+                (subparcel.minY() - anchorPos.getY()) / 16,
+                (subparcel.minZ() - anchorPos.getZ()) / 16);
         Path subParcelFile = indexToPath(subParcelsDir, index);
         Files.createDirectories(subParcelFile.getParent());
 
@@ -331,32 +333,35 @@ public abstract class ParcellaV0 implements ParcelFormat {
     }
 
     /**
-     * @param from Start position of the parcel
-     * @param size Size of the parcel
-     * @param gridOrigin Absolute position of origin point
+     * @param parcelOrigin Start position of the parcel
+     * @param parcelSize Size of the parcel
+     * @param anchorPos Absolute position of origin point
      * @return Bounding boxes of subparcels, use absolute coordinates
      */
     public static Iterable<BoundingBox> subdivideParcel(
-        BlockPos from, Vec3i size, Vec3i gridOrigin) {
+        BlockPos parcelOrigin, Vec3i parcelSize, Vec3i anchorPos) {
       List<BoundingBox> subparcels = new ArrayList<>(1);
 
-      BlockPos to = from.offset(size);
-      List<Integer> xDivisions = subdivideParcel1D(from.getX(), size.getX(), gridOrigin.getX());
-      List<Integer> yDivisions = subdivideParcel1D(from.getY(), size.getY(), gridOrigin.getY());
-      List<Integer> zDivisions = subdivideParcel1D(from.getZ(), size.getZ(), gridOrigin.getZ());
+      BlockPos to = parcelOrigin.offset(parcelSize);
+      List<Integer> xDivisions =
+          subdivideParcel1D(parcelOrigin.getX(), parcelSize.getX(), anchorPos.getX());
+      List<Integer> yDivisions =
+          subdivideParcel1D(parcelOrigin.getY(), parcelSize.getY(), anchorPos.getY());
+      List<Integer> zDivisions =
+          subdivideParcel1D(parcelOrigin.getZ(), parcelSize.getZ(), anchorPos.getZ());
 
       for (int i = 0; i < xDivisions.size() - 1; i++) {
-        int minX = Math.max(xDivisions.get(i), from.getX());
+        int minX = Math.max(xDivisions.get(i), parcelOrigin.getX());
         int maxX = Math.min(xDivisions.get(i + 1), to.getX());
         if (minX >= maxX) continue;
 
         for (int j = 0; j < yDivisions.size() - 1; j++) {
-          int minY = Math.max(yDivisions.get(j), from.getY());
+          int minY = Math.max(yDivisions.get(j), parcelOrigin.getY());
           int maxY = Math.min(yDivisions.get(j + 1), to.getY());
           if (minY >= maxY) continue;
 
           for (int k = 0; k < zDivisions.size() - 1; k++) {
-            int minZ = Math.max(zDivisions.get(k), from.getZ());
+            int minZ = Math.max(zDivisions.get(k), parcelOrigin.getZ());
             int maxZ = Math.min(zDivisions.get(k + 1), to.getZ());
             if (minZ >= maxZ) continue;
 
@@ -372,14 +377,14 @@ public abstract class ParcellaV0 implements ParcelFormat {
      * @param size Must be positive
      * @return Divisions of the parcel, including start and end positions. Use absolute coordinates
      */
-    static List<Integer> subdivideParcel1D(int from, int size, int gridAxis) {
+    static List<Integer> subdivideParcel1D(int origin, int size, int anchorPos) {
       List<Integer> divisions = new ArrayList<>();
 
-      int current = from;
+      int current = origin;
       divisions.add(current);
-      current = ceilToGrid16(gridAxis, current);
+      current = ceilToGrid16(anchorPos, current);
 
-      int endExclusive = from + size;
+      int endExclusive = origin + size;
       while (current < endExclusive) {
         divisions.add(current);
         current += 16;
@@ -398,12 +403,12 @@ public abstract class ParcellaV0 implements ParcelFormat {
       return floorToGrid16(grid, value) + 16;
     }
 
-    static Path indexToPath(Path dir, long index) {
+    static Path indexToPath(Path root, long index) {
       if (index == 0) {
-        return dir.resolve("00.txt");
+        return root.resolve("00.txt");
       }
 
-      Path result = dir;
+      Path result = root;
       long value = index;
 
       List<String> parts = new ArrayList<>();

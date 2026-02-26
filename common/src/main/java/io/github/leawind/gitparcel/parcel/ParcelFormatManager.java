@@ -44,7 +44,7 @@ public class ParcelFormatManager {
    * @return null if no saver is found
    */
   public ParcelFormat.@Nullable Save getSaver(String id) {
-    return (ParcelFormat.Save) latest(savers, id);
+    return (ParcelFormat.Save) getLatest(savers, id);
   }
 
   public ParcelFormat.@Nullable Save getSaver(String id, int version) {
@@ -58,7 +58,7 @@ public class ParcelFormatManager {
    * @return null if no loader is found
    */
   public ParcelFormat.@Nullable Load getLoader(String id) {
-    return (ParcelFormat.Load) latest(loaders, id);
+    return (ParcelFormat.Load) getLatest(loaders, id);
   }
 
   public ParcelFormat.@Nullable Load getLoader(String id, int version) {
@@ -73,7 +73,7 @@ public class ParcelFormatManager {
     return loaders.keySet();
   }
 
-  private static @Nullable ParcelFormat latest(
+  private static @Nullable ParcelFormat getLatest(
       Map<String, Map<Integer, ParcelFormat>> formats, String id) {
     var versions = formats.get(id);
     if (versions == null) {

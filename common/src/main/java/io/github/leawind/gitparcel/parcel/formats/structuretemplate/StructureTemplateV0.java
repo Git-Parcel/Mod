@@ -34,15 +34,16 @@ public abstract class StructureTemplateV0 implements ParcelFormat {
 
   public static final class Save extends StructureTemplateV0 implements ParcelFormat.Save {
     @Override
-    public void save(Level level, BlockPos from, Vec3i size, Path dir, boolean saveEntities)
+    public void save(
+        Level level, BlockPos parcelOrigin, Vec3i parcelSize, Path dataDir, boolean saveEntities)
         throws IOException {
-      Files.createDirectories(dir);
+      Files.createDirectories(dataDir);
 
       StructureTemplate template = new StructureTemplate();
-      template.fillFromWorld(level, from, size, true, ImmutableList.of());
+      template.fillFromWorld(level, parcelOrigin, parcelSize, true, ImmutableList.of());
       CompoundTag tag = template.save(new CompoundTag());
 
-      Path structureFile = dir.resolve(NBT_FILE_NAME);
+      Path structureFile = dataDir.resolve(NBT_FILE_NAME);
       try (OutputStream outputStream = Files.newOutputStream(structureFile)) {
         NbtIo.writeCompressed(tag, outputStream);
       }
@@ -56,14 +57,24 @@ public abstract class StructureTemplateV0 implements ParcelFormat {
      */
     @Override
     public void load(
-        ServerLevel level, BlockPos pos, Path dir, boolean loadBlocks, boolean loadEntities)
+        ServerLevel level,
+        BlockPos parcelOrigin,
+        Path dataDir,
+        boolean loadBlocks,
+        boolean loadEntities)
         throws IOException, ParcelException {
-      Path structureFile = dir.resolve(NBT_FILE_NAME);
+      Path structureFile = dataDir.resolve(NBT_FILE_NAME);
       CompoundTag tag = NbtIo.readCompressed(structureFile, NbtAccounter.uncompressedQuota());
       StructureTemplate template = level.getServer().getStructureManager().readStructure(tag);
       StructurePlaceSettings settings = new StructurePlaceSettings();
       settings.setIgnoreEntities(!loadEntities);
-      template.placeInWorld(level, pos, pos, settings, RandomSource.create(pos.asLong()), 816);
+      template.placeInWorld(
+          level,
+          parcelOrigin,
+          parcelOrigin,
+          settings,
+          RandomSource.create(parcelOrigin.asLong()),
+          816);
     }
   }
 }
