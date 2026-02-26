@@ -3,8 +3,8 @@ package io.github.leawind.gitparcel.parcel.formats.parcella;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.stream.IntStream;
 
 public final class IndexPathCodec {
   static Path indexToPath(Path root, long index, String suffix) {
@@ -18,7 +18,7 @@ public final class IndexPathCodec {
 
   static List<String> indexToPathParts(long index) {
     if (index < CACHE_SIZE) {
-      return CACHE.get((int) index);
+      return Arrays.asList(CACHE[(int) index]);
     }
     return indexToPathPartsImpl(index);
   }
@@ -49,11 +49,12 @@ public final class IndexPathCodec {
   }
 
   private static final int CACHE_SIZE = 512;
-  private static final ArrayList<List<String>> CACHE = new ArrayList<>(CACHE_SIZE);
+  private static final String[][] CACHE = new String[CACHE_SIZE][];
 
   static {
-    IntStream.range(0, CACHE_SIZE)
-        .mapToObj(IndexPathCodec::indexToPathPartsImpl)
-        .forEach(CACHE::add);
+    for (int i = 0; i < CACHE_SIZE; i++) {
+      List<String> parts = indexToPathPartsImpl(i);
+      CACHE[i] = parts.toArray(new String[0]);
+    }
   }
 }
