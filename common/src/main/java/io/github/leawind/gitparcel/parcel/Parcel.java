@@ -1,6 +1,5 @@
 package io.github.leawind.gitparcel.parcel;
 
-import io.github.leawind.gitparcel.Constants;
 import java.io.IOException;
 import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
@@ -41,7 +40,7 @@ public final class Parcel {
     // Save metadata
     var metaFile = getMetaFile(parcelDir);
     var meta = ParcelMeta.load(metaFile);
-    var format = Constants.PARCEL_FORMATS.getSaver(meta.formatId, meta.formatVersion);
+    var format = meta.getFormatSaver();
     if (format == null) {
       throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
     }
@@ -70,7 +69,7 @@ public final class Parcel {
       Level level, BlockPos pos, ParcelMeta meta, Path parcelDir, boolean saveEntity)
       throws IOException, ParcelException {
     meta.save(getMetaFile(parcelDir));
-    var format = Constants.PARCEL_FORMATS.getSaver(meta.formatId, meta.formatVersion);
+    var format = meta.getFormatSaver();
     if (format == null) {
       throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
     }
@@ -94,7 +93,7 @@ public final class Parcel {
       ServerLevel level, BlockPos pos, Path dir, boolean loadBlocks, boolean loadEntities)
       throws IOException, ParcelException {
     var meta = ParcelMeta.load(dir.resolve(META_FILE_NAME));
-    var loader = Constants.PARCEL_FORMATS.getLoader(meta.formatId, meta.formatVersion);
+    var loader = meta.getFormatLoader();
     if (loader == null) {
       throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
     }
