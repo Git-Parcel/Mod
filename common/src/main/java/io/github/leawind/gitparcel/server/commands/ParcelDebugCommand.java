@@ -9,7 +9,7 @@ import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
-import io.github.leawind.gitparcel.server.commands.arguments.FilePathArgument;
+import io.github.leawind.gitparcel.server.commands.arguments.DirPathArgument;
 import io.github.leawind.gitparcel.server.commands.arguments.ParcelFormatArgument;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -35,7 +35,7 @@ public class ParcelDebugCommand {
                     .then(
                         Commands.argument("to", BlockPosArgument.blockPos())
                             .then(
-                                Commands.argument("path", FilePathArgument.filePath())
+                                Commands.argument("path", DirPathArgument.path())
                                     .executes(ParcelDebugCommand::saveDefaultFormat)
                                     .then(
                                         Commands.argument("format", ParcelFormatArgument.saver())
@@ -46,7 +46,7 @@ public class ParcelDebugCommand {
             .then(
                 Commands.argument("from", BlockPosArgument.blockPos())
                     .then(
-                        Commands.argument("path", FilePathArgument.filePath())
+                        Commands.argument("path", DirPathArgument.path())
                             .executes(ParcelDebugCommand::load)));
     var command =
         Commands.literal("parcel_debug")
@@ -63,7 +63,7 @@ public class ParcelDebugCommand {
         ctx.getSource(),
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
-        FilePathArgument.getPath(ctx, "path"),
+        DirPathArgument.getPath(ctx, "path"),
         Constants.PARCEL_FORMATS.defaultSaver());
   }
 
@@ -72,7 +72,7 @@ public class ParcelDebugCommand {
         ctx.getSource(),
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
-        FilePathArgument.getPath(ctx, "path"),
+        DirPathArgument.getPath(ctx, "path"),
         ParcelFormatArgument.getSaver(ctx, "format"));
   }
 
@@ -110,7 +110,7 @@ public class ParcelDebugCommand {
     return load(
         ctx.getSource(),
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
-        FilePathArgument.getPath(ctx, "path"));
+        DirPathArgument.getPath(ctx, "path"));
   }
 
   public static int load(CommandSourceStack source, BlockPos pos, Path path) {

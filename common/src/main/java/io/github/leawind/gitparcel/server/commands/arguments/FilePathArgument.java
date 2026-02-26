@@ -19,6 +19,7 @@ import net.minecraft.network.chat.Component;
 public class FilePathArgument implements ArgumentType<Path> {
   private static final Collection<String> EXAMPLES =
       Arrays.asList(
+          "dir/file.txt",
           "/home/steve/temp",
           "C:\\Users\\Steve\\temp",
           "./temp",
@@ -30,12 +31,16 @@ public class FilePathArgument implements ArgumentType<Path> {
   public static final SimpleCommandExceptionType ERROR_INVALID_CHAR =
       new SimpleCommandExceptionType(Component.translatable("argument.filepath.invalid_char"));
 
-  public static FilePathArgument filePath() {
+  public static FilePathArgument path() {
     return new FilePathArgument();
   }
 
   public static Path getPath(CommandContext<CommandSourceStack> context, String name) {
     return context.getArgument(name, Path.class);
+  }
+
+  protected String[] listDir(Path dir) {
+    return dir.toFile().list();
   }
 
   @Override
@@ -75,7 +80,7 @@ public class FilePathArgument implements ArgumentType<Path> {
             boolean endsWithSeperator = remaining.endsWith("/") || remaining.endsWith("\\");
 
             if (endsWithSeperator) {
-              var entries = path.toFile().list();
+              var entries = listDir(path);
               if (entries == null) {
                 break;
               }
@@ -91,7 +96,7 @@ public class FilePathArgument implements ArgumentType<Path> {
                 var half = path.getFileName().toString();
                 var beforeHalf = remaining.substring(0, remaining.length() - half.length());
 
-                var entries = parent.toFile().list();
+                var entries = listDir(parent);
                 if (entries != null) {
                   var suggestions =
                       Arrays.stream(entries)
@@ -103,7 +108,7 @@ public class FilePathArgument implements ArgumentType<Path> {
             }
 
           } else {
-            var entries = cwd.toFile().list();
+            var entries = listDir(cwd);
             if (entries != null) {
               var suggestions = Arrays.stream(entries).filter(entry -> entry.startsWith(remaining));
               return SharedSuggestionProvider.suggest(suggestions, builder);

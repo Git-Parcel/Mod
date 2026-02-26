@@ -5,6 +5,7 @@ import io.github.leawind.gitparcel.mixin.InvokeArgumentTypeInfos;
 import io.github.leawind.gitparcel.platform.Services;
 import io.github.leawind.gitparcel.server.commands.ParcelCommand;
 import io.github.leawind.gitparcel.server.commands.ParcelDebugCommand;
+import io.github.leawind.gitparcel.server.commands.arguments.DirPathArgument;
 import io.github.leawind.gitparcel.server.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.server.commands.arguments.ParcelFormatArgument;
 import net.minecraft.commands.CommandBuildContext;
@@ -20,7 +21,12 @@ public final class GameEvents {
         registry,
         "gitparcel:file_path",
         FilePathArgument.class,
-        SingletonArgumentInfo.contextFree(FilePathArgument::filePath));
+        SingletonArgumentInfo.contextFree(FilePathArgument::path));
+    InvokeArgumentTypeInfos.register(
+        registry,
+        "gitparcel:dir_path",
+        DirPathArgument.class,
+        SingletonArgumentInfo.contextFree(DirPathArgument::path));
 
     InvokeArgumentTypeInfos.register(
         registry,
