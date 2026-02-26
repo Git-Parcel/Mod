@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
@@ -111,7 +110,7 @@ public abstract class ParcellaV0 implements ParcelFormat {
         Vec3i coord = subparcel.getCoord(anchorPos);
         long index = ZOrder3D.coordToIndexSigned(coord);
 
-        Path subParcelFile = indexToPath(subParcelsDir, index);
+        Path subParcelFile = IndexPathCodec.indexToPath(subParcelsDir, index, ".txt");
         Files.createDirectories(subParcelFile.getParent());
 
         // Write sub-parcel data
@@ -227,29 +226,6 @@ public abstract class ParcellaV0 implements ParcelFormat {
         tag.put("nbt", output.buildResult().copy());
       }
       return tag;
-    }
-
-    static Path indexToPath(Path root, long index) {
-      if (index == 0) {
-        return root.resolve("00.txt");
-      }
-
-      Path result = root;
-      long value = index;
-
-      List<String> parts = new ArrayList<>();
-      while (value != 0) {
-        int b = (int) (value & 0xFF);
-        parts.add(String.format("%02X", b));
-        value >>>= 8;
-      }
-
-      int last = parts.size() - 1;
-      for (int i = 0; i < last; i++) {
-        result = result.resolve(parts.get(i));
-      }
-
-      return result.resolve(parts.get(last) + ".txt");
     }
   }
 }
