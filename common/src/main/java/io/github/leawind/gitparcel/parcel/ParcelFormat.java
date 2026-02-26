@@ -28,11 +28,9 @@ public interface ParcelFormat {
      * @param from Position in level
      * @param size Size of the parcel, must be positive
      * @param dir Path to an existing directory
-     * @param saveBlocks Whether to save blocks in the parcel
      * @param saveEntities Whether to save entities in the parcel
      */
-    void save(
-        Level level, BlockPos from, Vec3i size, Path dir, boolean saveBlocks, boolean saveEntities)
+    void save(Level level, BlockPos from, Vec3i size, Path dir, boolean saveEntities)
         throws IOException;
   }
 

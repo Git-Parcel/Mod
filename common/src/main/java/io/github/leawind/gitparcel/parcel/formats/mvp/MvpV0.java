@@ -32,8 +32,7 @@ public class MvpV0 implements ParcelFormat {
 
   public static final class Save extends MvpV0 implements ParcelFormat.Save {
     @Override
-    public void save(
-        Level level, BlockPos from, Vec3i size, Path dir, boolean saveBlocks, boolean saveEntities)
+    public void save(Level level, BlockPos from, Vec3i size, Path dir, boolean saveEntities)
         throws IOException {
       Files.createDirectories(dir);
 

@@ -35,7 +35,7 @@ public final class Parcel {
     }
     meta.size = size;
     meta.save(metaFile);
-    format.save(level, pos, size, dir, true, meta.includeEntity() && saveEntity);
+    format.save(level, pos, size, dir, meta.includeEntity() && saveEntity);
   }
 
   /**

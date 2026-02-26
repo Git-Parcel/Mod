@@ -88,7 +88,7 @@ public class ParcelDebugCommand {
       var meta = ParcelMeta.create(format.id(), format.version(), size);
       meta.description = "This parcel is for debug purpose only.";
       meta.saveToParcelDir(path);
-      format.save(source.getLevel(), from, size, path, true, true);
+      format.save(source.getLevel(), from, size, path, true);
 
       return 0;
     } catch (Exception e) {
