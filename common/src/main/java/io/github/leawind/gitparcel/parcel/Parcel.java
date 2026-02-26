@@ -3,6 +3,8 @@ package io.github.leawind.gitparcel.parcel;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import io.github.leawind.gitparcel.utils.json.JsonAccessException;
+import io.github.leawind.gitparcel.utils.json.JsonObjectAccessor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +32,10 @@ public final class Parcel {
    * @see <a href="https://git-parcel.github.io/schemas/ParcelMeta.json">Parcel Metadata Schema</a>
    */
   public static final class Metadata {
+    public record ModDependency(@Nullable String min, @Nullable String max) {
+      public static final ModDependency ANY = new ModDependency(null, null);
+    }
+
     /** Exceptions thrown when parsing or validating parcel metadata. */
     public static class ParcelMetadataException extends ParcelException {
       public ParcelMetadataException(String message) {
@@ -44,17 +50,24 @@ public final class Parcel {
     public static final String FILE_NAME = "parcel.json";
     public static final String SCHEMA_URL = "https://git-parcel.github.io/schemas/ParcelMeta.json";
 
-    public record ModDependency(@Nullable String min, @Nullable String max) {}
+    public static Metadata create(String formatId, int formatVersion, Vec3i size) {
+      return new Metadata(
+          formatId,
+          formatVersion,
+          SharedConstants.getCurrentVersion().dataVersion().version(),
+          size);
+    }
 
     public String formatId;
     public int formatVersion;
     public int dataVersion;
-    public Vec3i size;
 
+    public Vec3i size;
     public @Nullable String name = null;
     public @Nullable String description = null;
     public @Nullable List<String> tags = null;
     public @Nullable Map<String, ModDependency> mods = null;
+
     public @Nullable Boolean includeEntity = null;
 
     /** Extra fields. */
@@ -116,33 +129,25 @@ public final class Parcel {
       return json;
     }
 
-    public static Metadata create(String formatId, int formatVersion, Vec3i size) {
-      return new Metadata(
-          formatId,
-          formatVersion,
-          SharedConstants.getCurrentVersion().dataVersion().version(),
-          size);
-    }
-
-    public static Metadata fromJson(JsonObject json) throws ParcelMetadataException {
+    public static Metadata fromJson(JsonObject json) throws JsonAccessException {
+      var ja = new JsonObjectAccessor(json);
       Metadata metadata;
-      // Parse required fields
-      // TODO throw if missing: `Missing property "format"`
-      // TODO throw if type incorrect: `Incorrect type. Expected "number", got "string"`
+
       {
         String formatId;
         int formatVersion;
         {
-          JsonObject formatJson = json.getAsJsonObject("format");
+          ja.requireJsonObject("format");
+          formatId = ja.requireString("format", "id");
+          formatVersion = ja.requireNumber("format", "version").intValue();
           json.remove("format");
-          formatId = formatJson.get("id").getAsString();
-          formatVersion = formatJson.get("version").getAsInt();
         }
-        int dataVersion = json.get("dataVersion").getAsInt();
+        int dataVersion = ja.requireNumber("dataVersion").intValue();
+        json.remove("dataVersion");
 
         Vec3i size;
         {
-          JsonArray sizeJson = json.getAsJsonArray("size");
+          JsonArray sizeJson = ja.requireJsonArray("size");
           json.remove("size");
           int sizeX = sizeJson.get(0).getAsInt();
           int sizeY = sizeJson.get(1).getAsInt();
@@ -152,40 +157,53 @@ public final class Parcel {
         metadata = new Metadata(formatId, formatVersion, dataVersion, size);
       }
 
-      // Parse optional fields
-      // TODO throw if type incorrect: `Incorrect type. Expected "number", got "string"`
-      if (json.has("name")) {
-        metadata.name = json.get("name").getAsString();
+      {
+        metadata.name = ja.optionalString("name");
         json.remove("name");
       }
-      if (json.has("description")) {
-        metadata.description = json.get("description").getAsString();
+
+      {
+        metadata.description = ja.optionalString("description");
         json.remove("description");
       }
       if (json.has("tags")) {
-        JsonArray tagsJson = json.getAsJsonArray("tags");
-        json.remove("tags");
+        var tagsJson = ja.requireJsonArray("tags");
         List<String> tags = new ArrayList<>(tagsJson.size());
         for (JsonElement tagElement : tagsJson) {
           tags.add(tagElement.getAsString());
         }
         metadata.tags = tags;
+        json.remove("tags");
       }
+
       if (json.has("mods")) {
-        JsonObject modsJson = json.getAsJsonObject("mods");
-        json.remove("mods");
-        Map<String, ModDependency> mods = new HashMap<>();
+        var modsJson = ja.requireJsonObject("mods");
+        metadata.mods = new HashMap<>();
+
         for (var entry : modsJson.entrySet()) {
-          String modId = entry.getKey();
-          JsonObject modJson = entry.getValue().getAsJsonObject();
-          String min = modJson.has("min") ? modJson.get("min").getAsString() : null;
-          String max = modJson.has("max") ? modJson.get("max").getAsString() : null;
-          mods.put(modId, new ModDependency(min, max));
+          // "*" | {min?, max?}
+          JsonElement depJson = entry.getValue();
+          if (depJson.isJsonObject()) {
+            var modJson = depJson.getAsJsonObject();
+            var modJa = new JsonObjectAccessor(modJson);
+            metadata.mods.put(
+                entry.getKey(),
+                new ModDependency(
+                    modJa.optionalString("min"), //
+                    modJa.optionalString("max")));
+          } else {
+            var s = JsonObjectAccessor.requireString(depJson);
+            if (!s.equals("*")) {
+              throw new JsonAccessException.IncorrectType("\"*\"", "\"" + s + "\"");
+            }
+            metadata.mods.put(entry.getKey(), ModDependency.ANY);
+          }
         }
-        metadata.mods = mods;
+        json.remove("mods");
       }
-      if (json.has("includeEntity")) {
-        metadata.includeEntity = json.get("includeEntity").getAsBoolean();
+
+      {
+        metadata.includeEntity = ja.optionalBool("includeEntity");
         json.remove("includeEntity");
       }
       metadata.extra = json;
