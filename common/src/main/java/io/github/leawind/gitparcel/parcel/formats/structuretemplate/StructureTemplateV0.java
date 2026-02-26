@@ -19,7 +19,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlac
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
 /** Note: The loader of this format always load blocks regardless of the value of `loadBlocks` */
-public class StructureTemplateV0 implements ParcelFormat {
+public abstract class StructureTemplateV0 implements ParcelFormat {
   @Override
   public String id() {
     return "structure_template";

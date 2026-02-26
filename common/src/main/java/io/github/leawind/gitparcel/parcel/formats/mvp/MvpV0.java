@@ -18,7 +18,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class MvpV0 implements ParcelFormat {
+public abstract class MvpV0 implements ParcelFormat {
 
   @Override
   public String id() {

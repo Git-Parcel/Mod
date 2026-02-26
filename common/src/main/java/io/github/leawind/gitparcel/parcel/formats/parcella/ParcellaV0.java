@@ -36,7 +36,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
-public class ParcellaV0 implements ParcelFormat {
+public abstract class ParcellaV0 implements ParcelFormat {
   private static final Gson GSON = new Gson();
 
   private static final String OPTIONS_SCHEMA =
