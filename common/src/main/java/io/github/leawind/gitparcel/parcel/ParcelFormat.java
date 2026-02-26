@@ -5,7 +5,6 @@ import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import java.io.IOException;
 import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Vec3i;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
@@ -30,8 +29,7 @@ public interface ParcelFormat {
    * <p>It loads metadata file {@value #META_FILE_NAME} first and try to save as the same format
    *
    * @param level The level where the parcel is in
-   * @param parcelOrigin Position of parcel origin in level
-   * @param parcelSize Size of the parcel, must be positive
+   * @param parcel The parcel to save
    * @param parcelDir The parcel directory, which contains the {@value #META_FILE_NAME} file and
    *     {@value #DATA_DIR_NAME} directory
    * @param saveEntity Whether to save the entities in the parcel. Only works when {@code
@@ -39,8 +37,7 @@ public interface ParcelFormat {
    * @throws IOException If an I/O error occurs while saving the parcel
    * @throws ParcelException If other error occurs while saving the parcel
    */
-  static void save(
-      Level level, BlockPos parcelOrigin, Vec3i parcelSize, Path parcelDir, boolean saveEntity)
+  static void save(Level level, Parcel parcel, Path parcelDir, boolean saveEntity)
       throws IOException, ParcelException {
 
     // Save metadata
@@ -51,19 +48,18 @@ public interface ParcelFormat {
       throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
     }
 
-    if (!meta.size.equals(parcelSize)) {
-      meta.size = parcelSize;
+    if (!meta.size.equals(parcel.size)) {
+      meta.size = parcel.size;
       meta.save(metaFile);
     }
-    format.save(
-        level, parcelOrigin, meta.size, getDataDir(parcelDir), meta.includeEntity() && saveEntity);
+    format.save(level, parcel, getDataDir(parcelDir), meta.includeEntity() && saveEntity);
   }
 
   /**
    * Saves a parcel at the specified position in the specified level.
    *
    * @param level The level where the parcel is in
-   * @param parcelOrigin Position of parcel origin in level
+   * @param parcel The parcel to save
    * @param meta The metadata of the parcel
    * @param parcelDir The parcel directory, which contains the {@value #META_FILE_NAME} file and
    *     {@value #DATA_DIR_NAME} directory
@@ -72,16 +68,17 @@ public interface ParcelFormat {
    * @throws IOException If an I/O error occurs while saving the parcel
    * @throws ParcelException If other error occurs while saving the parcel
    */
-  static void save(
-      Level level, BlockPos parcelOrigin, ParcelMeta meta, Path parcelDir, boolean saveEntity)
+  static void save(Level level, Parcel parcel, ParcelMeta meta, Path parcelDir, boolean saveEntity)
       throws IOException, ParcelException {
+    meta.size = parcel.size;
     meta.save(getMetaFile(parcelDir));
+
     var format = meta.getFormatSaver();
     if (format == null) {
       throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
     }
-    format.save(
-        level, parcelOrigin, meta.size, getDataDir(parcelDir), meta.includeEntity() && saveEntity);
+
+    format.save(level, parcel, getDataDir(parcelDir), meta.includeEntity() && saveEntity);
   }
 
   /**
@@ -127,14 +124,11 @@ public interface ParcelFormat {
      * Save parcel content to directory
      *
      * @param level Level
-     * @param parcelOrigin Position of parcel origin in level
-     * @param parcelSize Size of the parcel, must be positive
+     * @param parcel Parcel to save
      * @param dataDir Path to parcel data directory
      * @param saveEntities Whether to save entities in the parcel
      */
-    void save(
-        Level level, BlockPos parcelOrigin, Vec3i parcelSize, Path dataDir, boolean saveEntities)
-        throws IOException;
+    void save(Level level, Parcel parcel, Path dataDir, boolean saveEntities) throws IOException;
   }
 
   interface Load extends ParcelFormat {

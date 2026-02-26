@@ -1,6 +1,7 @@
 package io.github.leawind.gitparcel.parcel.formats.structuretemplate;
 
 import com.google.common.collect.ImmutableList;
+import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import java.io.IOException;
@@ -34,13 +35,12 @@ public abstract class StructureTemplateV0 implements ParcelFormat {
 
   public static final class Save extends StructureTemplateV0 implements ParcelFormat.Save {
     @Override
-    public void save(
-        Level level, BlockPos parcelOrigin, Vec3i parcelSize, Path dataDir, boolean saveEntities)
+    public void save(Level level, Parcel parcel, Path dataDir, boolean saveEntities)
         throws IOException {
       Files.createDirectories(dataDir);
 
       StructureTemplate template = new StructureTemplate();
-      template.fillFromWorld(level, parcelOrigin, parcelSize, true, ImmutableList.of());
+      template.fillFromWorld(level, parcel.origin, parcel.size, true, ImmutableList.of());
       CompoundTag tag = template.save(new CompoundTag());
 
       Path structureFile = dataDir.resolve(NBT_FILE_NAME);

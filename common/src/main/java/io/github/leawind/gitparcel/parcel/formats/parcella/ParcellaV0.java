@@ -1,6 +1,7 @@
 package io.github.leawind.gitparcel.parcel.formats.parcella;
 
 import com.google.gson.Gson;
+import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -25,7 +26,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.storage.TagValueOutput;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
@@ -73,8 +73,7 @@ public abstract class ParcellaV0 implements ParcelFormat {
     }
 
     @Override
-    public void save(
-        Level level, BlockPos parcelOrigin, Vec3i parcelSize, Path dataDir, boolean saveEntities)
+    public void save(Level level, Parcel parcel, Path dataDir, boolean saveEntities)
         throws IOException {
       try (ProblemReporter.ScopedCollector problemReporter =
           new ProblemReporter.ScopedCollector(LOGGER)) {
@@ -83,16 +82,15 @@ public abstract class ParcellaV0 implements ParcelFormat {
         Path formatOptionsFile = dataDir.resolve("format-options.json");
         Options options = Options.tryLoadOrDefault(formatOptionsFile);
 
-        saveBlocks(level, parcelOrigin, parcelSize, dataDir, options);
+        saveBlocks(level, parcel, dataDir, options);
 
         if (saveEntities) {
-          saveEntities(problemReporter, level, parcelOrigin, parcelSize, dataDir, options);
+          saveEntities(problemReporter, level, parcel, dataDir, options);
         }
       }
     }
 
-    private void saveBlocks(
-        Level level, BlockPos parcelOrigin, Vec3i parcelSize, Path dataDir, Options options)
+    private void saveBlocks(Level level, Parcel parcel, Path dataDir, Options options)
         throws IOException {
 
       Path blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
@@ -107,8 +105,8 @@ public abstract class ParcellaV0 implements ParcelFormat {
       Path subParcelsDir = blocksDir.resolve(SUB_PARCELS_DIR_NAME);
       Files.createDirectories(subParcelsDir);
 
-      BlockPos anchorPos = parcelOrigin.offset(options.anchorOffset);
-      Iterable<BoundingBox> subparcels = subdivideParcel(parcelOrigin, parcelSize, anchorPos);
+      BlockPos anchorPos = parcel.origin.offset(options.anchorOffset);
+      Iterable<BoundingBox> subparcels = subdivideParcel(parcel.origin, parcel.size, anchorPos);
 
       for (var subparcel : subparcels) {
         long index =
@@ -159,12 +157,7 @@ public abstract class ParcellaV0 implements ParcelFormat {
     }
 
     private void saveEntities(
-        ProblemReporter problemReporter,
-        Level level,
-        BlockPos from,
-        Vec3i size,
-        Path dir,
-        Options options)
+        ProblemReporter problemReporter, Level level, Parcel parcel, Path dir, Options options)
         throws IOException {
 
       // TODO remove redundant entities
@@ -172,20 +165,12 @@ public abstract class ParcellaV0 implements ParcelFormat {
       Path entitiesDir = dir.resolve(ENTITIES_DIR_NAME);
       Files.createDirectories(entitiesDir);
 
-      AABB area =
-          new AABB(
-              from.getX(),
-              from.getY(),
-              from.getZ(),
-              from.getX() + size.getX(),
-              from.getY() + size.getY(),
-              from.getZ() + size.getZ());
       List<Entity> entities =
-          level.getEntities((Entity) null, area, entity -> !(entity instanceof Player));
+          level.getEntities((Entity) null, parcel.getAABB(), entity -> !(entity instanceof Player));
 
       int entityId = 0;
       for (Entity entity : entities) {
-        CompoundTag tag = getEntityNbt(problemReporter, from, entity);
+        CompoundTag tag = getEntityNbt(problemReporter, parcel.origin, entity);
         if (options.enableSnbtForEntities) {
           Files.writeString(entitiesDir.resolve(entityId + ".snbt"), tag.toString());
         } else {

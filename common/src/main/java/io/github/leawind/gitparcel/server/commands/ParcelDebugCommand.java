@@ -5,6 +5,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.Constants;
+import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
@@ -77,18 +78,18 @@ public class ParcelDebugCommand {
 
   public static int save(
       CommandSourceStack source,
-      BlockPos from,
-      Vec3i to,
+      BlockPos parcelFrom,
+      BlockPos parcelTo,
       Path parcelDir,
       ParcelFormat.Save format) {
     try {
-      var box = BoundingBox.fromCorners(from, to);
-      from = new BlockPos(box.minX(), box.minY(), box.minZ());
+      var box = BoundingBox.fromCorners(parcelFrom, parcelTo);
+      parcelFrom = new BlockPos(box.minX(), box.minY(), box.minZ());
       var size = new Vec3i(box.getXSpan(), box.getYSpan(), box.getZSpan());
 
       LOGGER.info(
           "Saving parcel (pos={}, size={}) with format {} to {}",
-          from,
+          parcelFrom,
           size,
           format.id(),
           parcelDir);
@@ -97,7 +98,8 @@ public class ParcelDebugCommand {
       meta.description = "This parcel is for debug purpose only.";
       meta.saveToParcelDir(parcelDir);
 
-      ParcelFormat.save(source.getLevel(), from, meta, parcelDir, true);
+      var parcel = new Parcel(parcelFrom, size);
+      ParcelFormat.save(source.getLevel(), parcel, parcelDir, true);
       return 0;
     } catch (Exception e) {
       LOGGER.error("Error while saving parcel", e);
