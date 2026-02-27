@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.leawind.gitparcel.parcel.Parcel;
+import io.github.leawind.gitparcel.test.RandomForMC;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -70,24 +71,10 @@ public class SubparcelTest {
       assertEquals(8, result.size());
     }
 
-    Random random = new Random(12138);
+    var random = new RandomForMC(12138);
     for (int i = 0; i < 1000; i++) {
-      BlockPos from =
-          new BlockPos(
-              random.nextInt(-1000, 1000),
-              random.nextInt(-1000, 1000),
-              random.nextInt(-1000, 1000));
-      Vec3i size = new Vec3i(random.nextInt(1, 50), random.nextInt(1, 50), random.nextInt(1, 50));
-
-      Parcel parcel = new Parcel(from, size);
-
-      Vec3i anchorPos =
-          new Vec3i(
-              random.nextInt(-100, 100), //
-              random.nextInt(-100, 100),
-              random.nextInt(-100, 100));
-
-      check(parcel, Subparcel.subdivideParcel(parcel, anchorPos));
+      Parcel parcel = new Parcel(random.nextBlockPos(-1000, 1000), random.nextVec3i(1, 50));
+      check(parcel, Subparcel.subdivideParcel(parcel, random.nextVec3i(-100, 100)));
     }
   }
 
@@ -109,7 +96,7 @@ public class SubparcelTest {
     test.accept(List.of(0, 17, 17), List.of(0, 1, 17));
     test.accept(List.of(-2, 17, 17), List.of(-2, 1, 15));
 
-    Random random = new Random(12138);
+    var random = new Random(12138);
     for (int i = 0; i < 10000; i++) {
       int from = random.nextInt(-1000, 1000);
       int size = random.nextInt(1, 1000);
