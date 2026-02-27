@@ -66,14 +66,16 @@ public abstract class StructureTemplateV0 implements ParcelFormat {
       CompoundTag tag = NbtIo.readCompressed(structureFile, NbtAccounter.uncompressedQuota());
       StructureTemplate template = level.getServer().getStructureManager().readStructure(tag);
       StructurePlaceSettings settings = new StructurePlaceSettings();
-      settings.setIgnoreEntities(!loadEntities);
+
+      boolean isStrict = true;
+      settings.setIgnoreEntities(!loadEntities).setKnownShape(isStrict);
       template.placeInWorld(
           level,
           parcelOrigin,
           parcelOrigin,
           settings,
           RandomSource.create(parcelOrigin.asLong()),
-          816);
+          2 | (isStrict ? 816 : 0));
     }
   }
 }
