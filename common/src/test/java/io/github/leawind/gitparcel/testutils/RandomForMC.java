@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.test;
+package io.github.leawind.gitparcel.testutils;
 
 import java.util.Random;
 import net.minecraft.core.BlockPos;

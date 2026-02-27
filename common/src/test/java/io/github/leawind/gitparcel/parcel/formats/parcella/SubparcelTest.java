@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.leawind.gitparcel.parcel.Parcel;
-import io.github.leawind.gitparcel.test.RandomForMC;
+import io.github.leawind.gitparcel.testutils.RandomForMC;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
