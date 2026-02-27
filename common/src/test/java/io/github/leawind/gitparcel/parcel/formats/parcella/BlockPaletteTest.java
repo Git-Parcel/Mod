@@ -247,23 +247,21 @@ class BlockPaletteTest {
   }
 
   @Test
-  void testLoadOrNewOnError(@TempDir Path tempDir) throws IOException {
+  void testLoadOrNewOnError(@TempDir Path tempDir) throws Exception {
     // Test loading from non-existent files should return new palette
     Path nonExistentPalette = tempDir.resolve("nonexistent.txt");
     Path nonExistentNbtDir = tempDir.resolve("nonexistent_nbt");
 
-    BlockPalette palette = BlockPalette.loadOrNew(nonExistentPalette, nonExistentNbtDir, false);
-    assertNotNull(palette);
-    assertEquals(0, palette.size());
+    BlockPalette palette = BlockPalette.loadIfExist(nonExistentPalette, nonExistentNbtDir, false);
+    assertNull(palette);
 
     // Test loading from invalid palette file
     Path invalidPalette = tempDir.resolve("invalid.txt");
     Files.writeString(invalidPalette, "invalid content without equals sign");
 
-    BlockPalette paletteFromInvalid =
-        BlockPalette.loadOrNew(invalidPalette, nonExistentNbtDir, false);
-    assertNotNull(paletteFromInvalid);
-    assertEquals(0, paletteFromInvalid.size());
+    assertThrows(
+        BlockPalette.InvalidPaletteException.class,
+        () -> BlockPalette.loadIfExist(invalidPalette, nonExistentNbtDir, false));
   }
 
   @Test

@@ -117,26 +117,12 @@ public class BlockPalette {
 
   public record Data(String blockStateString, @Nullable CompoundTag nbt) {}
 
-  /**
-   * Loads a block palette from the specified file and NBT directory. If an error occurs, returns a
-   * new palette.
-   *
-   * @param paletteFile the path to the palette file
-   * @param nbtDir the directory to store NBT files
-   * @param useSnbt whether to use SNBT format for NBT files. If false, NBT files will be saved in
-   *     binary format.
-   * @return the loaded block palette
-   */
-  public static BlockPalette loadOrNew(Path paletteFile, Path nbtDir, boolean useSnbt) {
-    try {
-      return load(paletteFile, nbtDir, useSnbt);
-    } catch (IOException
-        | InvalidPaletteException
-        | NumberFormatException
-        | CommandSyntaxException e) {
-      ParcelFormat.LOGGER.error("Error loading block palette: {}", e.getMessage(), e);
-      return new BlockPalette();
+  public static @Nullable BlockPalette loadIfExist(Path paletteFile, Path nbtDir, boolean useSnbt)
+      throws IOException, InvalidPaletteException, NumberFormatException, CommandSyntaxException {
+    if (!Files.exists(paletteFile)) {
+      return null;
     }
+    return load(paletteFile, nbtDir, useSnbt);
   }
 
   /**
