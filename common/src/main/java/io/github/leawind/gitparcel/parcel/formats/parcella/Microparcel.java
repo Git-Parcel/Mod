@@ -1,6 +1,6 @@
 package io.github.leawind.gitparcel.parcel.formats.parcella;
 
-import io.github.leawind.gitparcel.algorithms.subdivide.SubdivideImplV1;
+import io.github.leawind.gitparcel.algorithms.SubdivideAlgo;
 import io.github.leawind.gitparcel.parcel.Parcel;
 import java.util.ArrayList;
 import net.minecraft.core.BlockPos;
@@ -27,7 +27,6 @@ public class Microparcel extends Parcel implements Parcel.WithValue {
   }
 
   public static ArrayList<Microparcel> subdivide(Parcel parcel, Level level, BlockPalette palette) {
-    return SubdivideImplV1.INSTANCE.subdivide(
-        parcel, pos -> palette.collect(level, pos), Microparcel::new);
+    return SubdivideAlgo.V1.subdivide(parcel, pos -> palette.collect(level, pos), Microparcel::new);
   }
 }
