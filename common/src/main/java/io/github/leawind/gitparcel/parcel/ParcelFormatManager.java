@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.parcel;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
@@ -29,12 +30,22 @@ public class ParcelFormatManager {
     return register(format);
   }
 
-  public ParcelFormat.@Nullable Save defaultSaver() {
-    return defaultSaver;
+  /**
+   * Get the default saver.
+   *
+   * @throws NullPointerException if no default saver is set
+   */
+  public ParcelFormat.Save defaultSaver() throws NullPointerException {
+    return Objects.requireNonNull(defaultSaver);
   }
 
-  public ParcelFormat.@Nullable Load defaultLoader() {
-    return defaultLoader;
+  /**
+   * Get the default loader.
+   *
+   * @throws NullPointerException if no default loader is set
+   */
+  public ParcelFormat.Load defaultLoader() throws NullPointerException {
+    return Objects.requireNonNull(defaultLoader);
   }
 
   /**
