@@ -7,6 +7,7 @@ import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.Constants;
 import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.server.commands.arguments.DirPathArgument;
 import io.github.leawind.gitparcel.server.commands.arguments.ParcelFormatArgument;
@@ -88,9 +89,10 @@ public class ParcelDebugCommand {
           format.id(),
           parcelDir);
 
-      ParcelFormat.save(source.getLevel(), parcel, parcelDir, true);
+      var meta = ParcelMeta.create(format.id(), format.version(), parcel.getSize());
+      ParcelFormat.save(source.getLevel(), parcel, meta, parcelDir, true);
       return 0;
-    } catch (Exception e) {
+    } catch (IOException | ParcelException e) {
       LOGGER.error("Error while saving parcel", e);
       return 1;
     }
