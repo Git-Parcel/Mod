@@ -38,7 +38,13 @@ public class BlockPalette {
   }
 
   public int collect(BlockState blockState, @Nullable CompoundTag nbt) {
-    return collect(new Data(blockState, nbt));
+    String blockStateString =
+        BuiltInRegistries.BLOCK.wrapAsHolder(blockState.getBlock()).getRegisteredName();
+    return collect(blockStateString, nbt);
+  }
+
+  public int collect(String blockStateString, @Nullable CompoundTag nbt) {
+    return collect(new Data(blockStateString, nbt));
   }
 
   public int collect(Data data) {
@@ -65,9 +71,7 @@ public class BlockPalette {
     try (BufferedWriter writer = Files.newBufferedWriter(paletteFile, StandardCharsets.UTF_8)) {
       for (int i = 0; i < list.size(); i++) {
         Data data = list.get(i);
-        String blockStateString =
-            BuiltInRegistries.BLOCK.wrapAsHolder(data.blockState.getBlock()).getRegisteredName();
-        writer.write(Integer.toHexString(i) + "=" + blockStateString);
+        writer.write(Integer.toHexString(i) + "=" + data.blockStateString);
         writer.newLine();
       }
     }
@@ -86,7 +90,7 @@ public class BlockPalette {
     }
   }
 
-  public record Data(BlockState blockState, @Nullable CompoundTag nbt) {}
+  public record Data(String blockStateString, @Nullable CompoundTag nbt) {}
 
   public static BlockPalette tryLoad(Path paletteFile, Path nbtDir) throws IOException {
     BlockPalette palette = new BlockPalette();
