@@ -141,6 +141,7 @@ public abstract class ParcellaV0 implements ParcelFormat {
                   new BlockPos(subparcel.originX + i, subparcel.originY + j, subparcel.originZ + k);
               int id = palette.collect(level, pos);
               writer.write(HexUtils.toHexUpperCase(id));
+              writer.newLine();
             }
           }
         }
