@@ -99,7 +99,8 @@ public abstract class ParcellaV0 implements ParcelFormat {
       Path paletteFile = blocksDir.resolve(PALETTE_FILE_NAME);
       Path nbtDir = blocksDir.resolve(NBT_DIR_NAME);
 
-      BlockPalette palette = BlockPalette.tryLoad(paletteFile, nbtDir);
+      BlockPalette palette =
+          BlockPalette.loadOrNew(paletteFile, nbtDir, options.enableSnbtForBlockEntities);
 
       // Process sub-parcels with Z-Order encoding
       Path subParcelsDir = blocksDir.resolve(SUB_PARCELS_DIR_NAME);
