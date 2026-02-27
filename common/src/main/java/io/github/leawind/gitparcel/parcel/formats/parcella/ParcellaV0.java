@@ -112,21 +112,12 @@ public abstract class ParcellaV0 implements ParcelFormat {
 
         Path subparcelRelativePath = IndexPathCodec.indexToPath(index, ".txt");
         Path subparcelFile = subParcelsDir.resolve(subparcelRelativePath);
-
         Files.createDirectories(subparcelFile.getParent());
 
         // Write sub-parcel data
         try (BufferedWriter writer =
             Files.newBufferedWriter(subparcelFile, StandardCharsets.UTF_8)) {
-          BlockPos subparcelFrom =
-              new BlockPos(subparcel.originX, subparcel.originY, subparcel.originZ);
-          BlockPos subparcelTo =
-              new BlockPos(
-                  subparcel.originX + subparcel.sizeX,
-                  subparcel.originY + subparcel.sizeY,
-                  subparcel.originZ + subparcel.sizeZ);
-          writeSubparcel(
-              writer, level, subparcelFrom, subparcelTo, palette, options.enableMicroparcel);
+          writeSubparcel(writer, level, subparcel, palette, options.enableMicroparcel);
         }
       }
 
@@ -136,18 +127,18 @@ public abstract class ParcellaV0 implements ParcelFormat {
     private void writeSubparcel(
         BufferedWriter writer,
         Level level,
-        BlockPos from,
-        BlockPos to,
+        Subparcel subparcel,
         BlockPalette palette,
         boolean enableMicroparcel)
         throws IOException {
       if (!enableMicroparcel) {
-        for (int x = from.getX(); x < to.getX(); x++) {
-          for (int y = from.getY(); y < to.getY(); y++) {
-            for (int z = from.getZ(); z < to.getZ(); z++) {
-              int id = palette.collect(level, new BlockPos(x, y, z));
-              writer.write(Integer.toHexString(id));
-              writer.newLine();
+        for (int i = 0; i < subparcel.sizeX; i++) {
+          for (int j = 0; j < subparcel.sizeY; j++) {
+            for (int k = 0; k < subparcel.sizeZ; k++) {
+              var pos =
+                  new BlockPos(subparcel.originX + i, subparcel.originY + j, subparcel.originZ + k);
+              int id = palette.collect(level, pos);
+              writer.write(String.format("%X\n", id));
             }
           }
         }
