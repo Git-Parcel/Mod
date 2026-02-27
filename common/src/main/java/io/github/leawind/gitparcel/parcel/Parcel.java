@@ -13,6 +13,16 @@ public class Parcel {
   public final int sizeY;
   public final int sizeZ;
 
+  public Parcel(BoundingBox boundingBox) {
+    this(
+        boundingBox.minX(),
+        boundingBox.minY(),
+        boundingBox.minZ(),
+        boundingBox.getXSpan(),
+        boundingBox.getYSpan(),
+        boundingBox.getZSpan());
+  }
+
   public Parcel(BlockPos origin, Vec3i size) {
     this(origin.getX(), origin.getY(), origin.getZ(), size.getX(), size.getY(), size.getZ());
   }
@@ -78,14 +88,8 @@ public class Parcel {
     return new AABB(originX, originY, originZ, getEndX(), getEndY(), getEndZ());
   }
 
-  public static Parcel fromCorners(BlockPos from, BlockPos to) {
-    return new Parcel(
-        from.getX(),
-        from.getY(),
-        from.getZ(),
-        to.getX() - from.getX() + 1,
-        to.getY() - from.getY() + 1,
-        to.getZ() - from.getZ() + 1);
+  public static Parcel fromCorners(BlockPos corner1, BlockPos corner2) {
+    return new Parcel(BoundingBox.fromCorners(corner1, corner2));
   }
 
   public static Parcel startEnd(Vec3i start, Vec3i end) {

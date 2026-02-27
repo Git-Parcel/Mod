@@ -7,7 +7,6 @@ import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.Constants;
 import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
-import io.github.leawind.gitparcel.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.server.commands.arguments.DirPathArgument;
 import io.github.leawind.gitparcel.server.commands.arguments.ParcelFormatArgument;
@@ -18,8 +17,6 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Vec3i;
-import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import org.slf4j.Logger;
 
 public class ParcelDebugCommand {
@@ -78,27 +75,19 @@ public class ParcelDebugCommand {
 
   public static int save(
       CommandSourceStack source,
-      BlockPos parcelFrom,
-      BlockPos parcelTo,
+      BlockPos corner1,
+      BlockPos corner2,
       Path parcelDir,
       ParcelFormat.Save format) {
     try {
-      var box = BoundingBox.fromCorners(parcelFrom, parcelTo);
-      parcelFrom = new BlockPos(box.minX(), box.minY(), box.minZ());
-      var size = new Vec3i(box.getXSpan(), box.getYSpan(), box.getZSpan());
-
+      var parcel = Parcel.fromCorners(corner1, corner2);
       LOGGER.info(
           "Saving parcel (pos={}, size={}) with format {} to {}",
-          parcelFrom,
-          size,
+          parcel.getOrigin(),
+          parcel.getSize(),
           format.id(),
           parcelDir);
 
-      var meta = ParcelMeta.create(format.id(), format.version(), size);
-      meta.description = "This parcel is for debug purpose only.";
-      meta.saveToParcelDir(parcelDir);
-
-      var parcel = new Parcel(parcelFrom, size);
       ParcelFormat.save(source.getLevel(), parcel, parcelDir, true);
       return 0;
     } catch (Exception e) {
