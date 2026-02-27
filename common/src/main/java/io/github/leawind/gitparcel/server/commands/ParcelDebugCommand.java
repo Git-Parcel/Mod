@@ -18,6 +18,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 
 public class ParcelDebugCommand {
@@ -91,9 +92,11 @@ public class ParcelDebugCommand {
 
       var meta = ParcelMeta.create(format.id(), format.version(), parcel.getSize());
       ParcelFormat.save(source.getLevel(), parcel, meta, parcelDir, true);
+      source.sendSuccess(() -> Component.translatable("command.parcel_debug.save.success"), true);
       return 0;
     } catch (IOException | ParcelException e) {
       LOGGER.error("Error while saving parcel", e);
+      source.sendFailure(Component.translatable("command.parcel_debug.save.failure"));
       return 1;
     }
   }
@@ -110,9 +113,12 @@ public class ParcelDebugCommand {
       LOGGER.info("Loading parcel at {} from {}", pos, path);
       // TODO load entities
       ParcelFormat.load(source.getLevel(), pos, path, true, false);
+
+      source.sendSuccess(() -> Component.translatable("command.parcel_debug.load.success"), true);
       return 0;
     } catch (IOException | ParcelException e) {
       LOGGER.error("Error while loading parcel", e);
+      source.sendFailure(Component.translatable("command.parcel_debug.load.failure"));
       return 1;
     }
   }
