@@ -236,4 +236,8 @@ public class Parcel {
   public static Parcel fromCorners(BlockPos corner1, BlockPos corner2) {
     return new Parcel(BoundingBox.fromCorners(corner1, corner2));
   }
+
+  public interface WithValue {
+    int getValue();
+  }
 }
