@@ -27,14 +27,6 @@ public class BlockPalette {
 
   private int nextPaletteId = 0;
 
-  public final Path palettePath;
-  public final Path nbtDir;
-
-  public BlockPalette(Path palettePath, Path nbtDir) {
-    this.palettePath = palettePath;
-    this.nbtDir = nbtDir;
-  }
-
   public int collect(Level level, BlockPos pos) {
     BlockState blockState = level.getBlockState(pos);
     BlockEntity blockEntity = level.getBlockEntity(pos);
@@ -68,13 +60,9 @@ public class BlockPalette {
     nextPaletteId = 0;
   }
 
-  public void tryLoad() {
-    // TODO try load block palette
-  }
-
-  public void save(boolean useSnbt) throws IOException {
+  public void save(Path paletteFile, Path nbtDir, boolean useSnbt) throws IOException {
     Files.createDirectories(nbtDir);
-    try (BufferedWriter writer = Files.newBufferedWriter(palettePath, StandardCharsets.UTF_8)) {
+    try (BufferedWriter writer = Files.newBufferedWriter(paletteFile, StandardCharsets.UTF_8)) {
       for (int i = 0; i < list.size(); i++) {
         Data data = list.get(i);
         String blockStateString =
@@ -99,4 +87,10 @@ public class BlockPalette {
   }
 
   public record Data(BlockState blockState, @Nullable CompoundTag nbt) {}
+
+  public static BlockPalette tryLoad(Path paletteFile, Path nbtDir) throws IOException {
+    BlockPalette palette = new BlockPalette();
+    // TODO
+    return palette;
+  }
 }
