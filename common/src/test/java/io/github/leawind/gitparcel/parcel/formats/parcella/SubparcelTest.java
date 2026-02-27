@@ -20,7 +20,7 @@ public class SubparcelTest {
    * @param parcel Total bounding box, including corners
    * @param subparcels Bounding boxes of each subparcel, including their corners
    */
-  private static void check(Parcel parcel, Iterable<Subparcel> subparcels) {
+  public static <T extends Parcel> void assertParcelEqual(Parcel parcel, Iterable<T> subparcels) {
     Set<BlockPos> blocks = new HashSet<>();
 
     for (var subparcel : subparcels) {
@@ -42,10 +42,10 @@ public class SubparcelTest {
 
   @Test
   void testCheck() {
-    check(
+    assertParcelEqual(
         new Parcel(0, 0, 0, 16, 16, 16), //
         List.of(new Subparcel(0, 0, 0, 16, 16, 16)));
-    check(
+    assertParcelEqual(
         new Parcel(0, 0, 0, 16, 16, 16), //
         List.of(
             new Subparcel(0, 0, 0, 16, 8, 16), //
@@ -74,7 +74,7 @@ public class SubparcelTest {
     var random = new RandomForMC(12138);
     for (int i = 0; i < 1000; i++) {
       Parcel parcel = new Parcel(random.nextBlockPos(-1000, 1000), random.nextVec3i(1, 50));
-      check(parcel, Subparcel.subdivideParcel(parcel, random.nextVec3i(-100, 100)));
+      assertParcelEqual(parcel, Subparcel.subdivideParcel(parcel, random.nextVec3i(-100, 100)));
     }
   }
 
