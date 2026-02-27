@@ -33,6 +33,31 @@ public final class Subparcel extends Parcel {
         Math.floorDiv(originZ - anchorZ, 16));
   }
 
+  public String toString() {
+    return String.format(
+        "Subparcel[origin=(%d, %d, %d), size=(%d, %d, %d)]",
+        originX, originY, originZ, sizeX, sizeY, sizeZ);
+  }
+
+  public boolean equals(Object other) {
+    if (this == other) {
+      return true;
+    }
+    if (other instanceof Subparcel sp) {
+      return this.originX == sp.originX
+          && this.originY == sp.originY
+          && this.originZ == sp.originZ
+          && this.sizeX == sp.sizeX
+          && this.sizeY == sp.sizeY
+          && this.sizeZ == sp.sizeZ;
+    }
+    return false;
+  }
+
+  public int hashCode() {
+    return Objects.hash(originX, originY, originZ, sizeX, sizeY, sizeZ);
+  }
+
   /**
    * Divide a parcel into subparcels, each subparcel has a size of 16x16x16 blocks.
    *
@@ -103,30 +128,5 @@ public final class Subparcel extends Parcel {
 
   static int ceilToGrid16(int grid, int value) {
     return floorToGrid16(grid, value) + 16;
-  }
-
-  public String toString() {
-    return String.format(
-        "Subparcel[origin=(%d, %d, %d), size=(%d, %d, %d)]",
-        originX, originY, originZ, sizeX, sizeY, sizeZ);
-  }
-
-  public boolean equals(Object other) {
-    if (this == other) {
-      return true;
-    }
-    if (other instanceof Subparcel sp) {
-      return this.originX == sp.originX
-          && this.originY == sp.originY
-          && this.originZ == sp.originZ
-          && this.sizeX == sp.sizeX
-          && this.sizeY == sp.sizeY
-          && this.sizeZ == sp.sizeZ;
-    }
-    return false;
-  }
-
-  public int hashCode() {
-    return Objects.hash(originX, originY, originZ, sizeX, sizeY, sizeZ);
   }
 }
