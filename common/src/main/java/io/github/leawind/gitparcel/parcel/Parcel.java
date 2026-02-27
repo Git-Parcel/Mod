@@ -91,14 +91,4 @@ public class Parcel {
   public static Parcel fromCorners(BlockPos corner1, BlockPos corner2) {
     return new Parcel(BoundingBox.fromCorners(corner1, corner2));
   }
-
-  public static Parcel startEnd(Vec3i start, Vec3i end) {
-    return new Parcel(
-        start.getX(),
-        start.getY(),
-        start.getZ(),
-        end.getX() - start.getX(),
-        end.getY() - start.getY(),
-        end.getZ() - start.getZ());
-  }
 }
