@@ -1,5 +1,8 @@
 package io.github.leawind.gitparcel.parcel;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import io.github.leawind.gitparcel.parcel.formats.mvp.MvpV0;
 import io.github.leawind.gitparcel.parcel.formats.parcella.ParcellaV0;
 import io.github.leawind.gitparcel.parcel.formats.structuretemplate.StructureTemplateV0;
@@ -13,10 +16,10 @@ public class ParcelFormatManagerTest {
         .register(new StructureTemplateV0.Save())
         .register(new MvpV0.Save());
 
-    assert mgr.defaultSaver() == mgr.getSaver("parcella");
+    assertEquals(mgr.defaultSaver(), mgr.getSaver("parcella"));
 
-    assert mgr.getSaver("parcella") != null;
-    assert mgr.getSaver("mvp") != null;
-    assert mgr.getSaver("structure_template") != null;
+    assertNotNull(mgr.getSaver("parcella"));
+    assertNotNull(mgr.getSaver("mvp"));
+    assertNotNull(mgr.getSaver("structure_template"));
   }
 }

@@ -62,7 +62,7 @@ public class SubparcelTest {
     {
       Parcel parcel = new Parcel(0, 0, 0, 16, 16, 16);
       var result = Subparcel.subdivideParcel(parcel, BlockPos.ZERO);
-      assert result.equals(List.of(new Subparcel(0, 0, 0, 16, 16, 16)));
+      assertEquals(List.of(new Subparcel(0, 0, 0, 16, 16, 16)), result);
     }
     {
       Parcel parcel = new Parcel(0, 0, 0, 16, 16, 16);
@@ -127,37 +127,37 @@ public class SubparcelTest {
 
   @Test
   void testFloorToGrid16() {
-    assert Subparcel.floorToGrid16(0, -1) == -16;
-    assert Subparcel.floorToGrid16(0, 0) == 0;
-    assert Subparcel.floorToGrid16(0, 15) == 0;
-    assert Subparcel.floorToGrid16(0, 16) == 16;
-    assert Subparcel.floorToGrid16(0, 17) == 16;
+    assertEquals(-16, Subparcel.floorToGrid16(0, -1));
+    assertEquals(0, Subparcel.floorToGrid16(0, 0));
+    assertEquals(0, Subparcel.floorToGrid16(0, 15));
+    assertEquals(16, Subparcel.floorToGrid16(0, 16));
+    assertEquals(16, Subparcel.floorToGrid16(0, 17));
 
-    assert Subparcel.floorToGrid16(1, 1) == 1;
-    assert Subparcel.floorToGrid16(1, 0) == -15;
+    assertEquals(1, Subparcel.floorToGrid16(1, 1));
+    assertEquals(-15, Subparcel.floorToGrid16(1, 0));
 
-    assert Subparcel.floorToGrid16(32, 1) == 0;
-    assert Subparcel.floorToGrid16(33, 0) == -15;
+    assertEquals(0, Subparcel.floorToGrid16(32, 1));
+    assertEquals(-15, Subparcel.floorToGrid16(33, 0));
 
-    assert Subparcel.floorToGrid16(-32, 0) == 0;
-    assert Subparcel.floorToGrid16(-30, 17) == 2;
+    assertEquals(0, Subparcel.floorToGrid16(-32, 0));
+    assertEquals(2, Subparcel.floorToGrid16(-30, 17));
   }
 
   @Test
   void testCeilToGrid16() {
-    assert Subparcel.ceilToGrid16(0, -1) == 0;
-    assert Subparcel.ceilToGrid16(0, 0) == 16;
-    assert Subparcel.ceilToGrid16(0, 15) == 16;
-    assert Subparcel.ceilToGrid16(0, 16) == 32;
-    assert Subparcel.ceilToGrid16(0, 17) == 32;
+    assertEquals(0, Subparcel.ceilToGrid16(0, -1));
+    assertEquals(16, Subparcel.ceilToGrid16(0, 0));
+    assertEquals(16, Subparcel.ceilToGrid16(0, 15));
+    assertEquals(32, Subparcel.ceilToGrid16(0, 16));
+    assertEquals(32, Subparcel.ceilToGrid16(0, 17));
 
-    assert Subparcel.ceilToGrid16(1, 1) == 17;
-    assert Subparcel.ceilToGrid16(1, 0) == 1;
+    assertEquals(17, Subparcel.ceilToGrid16(1, 1));
+    assertEquals(1, Subparcel.ceilToGrid16(1, 0));
 
-    assert Subparcel.ceilToGrid16(32, 1) == 16;
-    assert Subparcel.ceilToGrid16(33, 0) == 1;
+    assertEquals(16, Subparcel.ceilToGrid16(32, 1));
+    assertEquals(1, Subparcel.ceilToGrid16(33, 0));
 
-    assert Subparcel.ceilToGrid16(-32, 0) == 16;
-    assert Subparcel.ceilToGrid16(-30, 17) == 18;
+    assertEquals(16, Subparcel.ceilToGrid16(-32, 0));
+    assertEquals(18, Subparcel.ceilToGrid16(-30, 17));
   }
 }

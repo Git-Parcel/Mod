@@ -1,5 +1,9 @@
 package io.github.leawind.gitparcel.parcel.formats.parcella;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.HashSet;
 import java.util.Set;
 import org.joml.Vector3i;
@@ -16,7 +20,7 @@ class ZOrder3DTest {
     for (long i = 0; i < 384 * 256 * 256; i++) {
       Vector3i coord = ZOrder3D.indexToCoord(i);
       long index = ZOrder3D.coordToIndex(coord);
-      assert index == i;
+      assertEquals(i, index);
     }
   }
 
@@ -29,15 +33,14 @@ class ZOrder3DTest {
     Set<Vector3i> set = new HashSet<>();
     for (long i = 0; i < 8 * 8 * 8; i++) {
       Vector3i coord = ZOrder3D.indexToCoord(i);
-      assert !set.contains(coord);
+      assertFalse(set.contains(coord));
       set.add(coord);
     }
-    assert (set.size() == 512);
+    assertEquals(8 * 8 * 8, set.size());
     for (int x = 0; x < 8; x++) {
       for (int y = 0; y < 8; y++) {
         for (int z = 0; z < 8; z++) {
-          Vector3i coord = new Vector3i(x, y, z);
-          assert (set.contains(coord));
+          assertTrue(set.contains(new Vector3i(x, y, z)));
         }
       }
     }
@@ -52,7 +55,7 @@ class ZOrder3DTest {
     for (long i = 0; i < 512; i++) {
       Vector3i coord = ZOrder3D.indexToCoordSigned(i);
       long index = ZOrder3D.coordToIndexSigned(coord);
-      assert index == i;
+      assertEquals(i, index);
     }
   }
 
@@ -65,15 +68,15 @@ class ZOrder3DTest {
     Set<Vector3i> set = new HashSet<>();
     for (long i = 0; i < 512; i++) {
       Vector3i coord = ZOrder3D.indexToCoordSigned(i);
-      assert !set.contains(coord);
+      assertFalse(set.contains(coord));
       set.add(coord);
     }
-    assert (set.size() == 512);
+    assertEquals(512, set.size());
     for (int x = -4; x < 4; x++) {
       for (int y = -4; y < 4; y++) {
         for (int z = -4; z < 4; z++) {
           Vector3i coord = new Vector3i(x, y, z);
-          assert (set.contains(coord));
+          assertTrue(set.contains(coord));
         }
       }
     }
