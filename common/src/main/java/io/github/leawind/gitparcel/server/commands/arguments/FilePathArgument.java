@@ -110,7 +110,10 @@ public class FilePathArgument implements ArgumentType<Path> {
           } else {
             var entries = listDir(cwd);
             if (entries != null) {
-              var suggestions = Arrays.stream(entries).filter(entry -> entry.startsWith(remaining));
+              var suggestions =
+                  Arrays.stream(entries)
+                      .filter(entry -> entry.startsWith(remaining))
+                      .map(entry -> "'" + entry);
               return SharedSuggestionProvider.suggest(suggestions, builder);
             }
           }
