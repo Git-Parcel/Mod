@@ -1,5 +1,6 @@
 package io.github.leawind.gitparcel.parcel.formats.parcella;
 
+import io.github.leawind.gitparcel.utils.hex.HexUtils;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -77,32 +78,10 @@ public final class IndexPathCodec {
 
     var parts = new ArrayList<String>(32);
     do {
-      parts.add(toHex((int) (index & 0xFF)));
+      parts.add(HexUtils.byteToHexUpperCase((int) (index & 0xFF)));
       index >>>= 8;
     } while (index != 0);
     return parts;
-  }
-
-  /**
-   * Converts the given byte value (0–255) into a two-digit uppercase hexadecimal string.
-   *
-   * @param value an integer in the range {@code 0x00} to {@code 0xFF}
-   * @return the two-character uppercase hexadecimal representation
-   */
-  static String toHex(int value) {
-    return HEX_DIGITS[value];
-  }
-
-  /**
-   * Lookup table mapping byte values {@code 0x00}–{@code 0xFF} to their two-digit uppercase
-   * hexadecimal string representations.
-   */
-  static final String[] HEX_DIGITS = new String[0x100];
-
-  static {
-    for (int i = 0; i < 256; i++) {
-      HEX_DIGITS[i] = String.format("%02X", i);
-    }
   }
 
   private static final int CACHE_SIZE = 512;

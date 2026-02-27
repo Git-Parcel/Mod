@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.parcel.formats.parcella;
 import com.google.gson.Gson;
 import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.utils.hex.HexUtils;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -138,7 +139,7 @@ public abstract class ParcellaV0 implements ParcelFormat {
               var pos =
                   new BlockPos(subparcel.originX + i, subparcel.originY + j, subparcel.originZ + k);
               int id = palette.collect(level, pos);
-              writer.write(String.format("%X\n", id));
+              writer.write(HexUtils.toHexUpperCase(id));
             }
           }
         }
