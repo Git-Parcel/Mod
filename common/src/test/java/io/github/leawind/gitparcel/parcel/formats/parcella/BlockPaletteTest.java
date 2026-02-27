@@ -14,6 +14,7 @@ import io.github.leawind.gitparcel.utils.hex.HexUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import org.junit.jupiter.api.Test;
@@ -28,33 +29,28 @@ class BlockPaletteTest {
     // Collect same data multiple times should return same id
     int id1 = palette.collect("minecraft:stone", null);
     assertEquals(0, id1); // First item gets id 0
-    assertEquals(1, palette.byId.size());
-    assertEquals(1, palette.byData.size());
+    assertEquals(1, palette.size());
 
     // Collect same data again should return same id
     int id2 = palette.collect("minecraft:stone", null);
     assertEquals(0, id2); // Same id as before
-    assertEquals(1, palette.byId.size()); // Size unchanged
-    assertEquals(1, palette.byData.size()); // Size unchanged
+    assertEquals(1, palette.size()); // Size unchanged
 
     // Collect different data should return new id
     int id3 = palette.collect("minecraft:dirt", null);
     assertEquals(1, id3); // Second item gets id 1
-    assertEquals(2, palette.byId.size());
-    assertEquals(2, palette.byData.size());
+    assertEquals(2, palette.size());
 
     // Verify data was stored correctly
-    BlockPalette.Data data1 = palette.byId.get(0);
+    BlockPalette.Data data1 = palette.get(0);
+    assertNotNull(data1);
     assertEquals("minecraft:stone", data1.blockStateString());
     assertNull(data1.nbt());
 
-    BlockPalette.Data data2 = palette.byId.get(1);
+    BlockPalette.Data data2 = palette.get(1);
+    assertNotNull(data2);
     assertEquals("minecraft:dirt", data2.blockStateString());
     assertNull(data2.nbt());
-
-    // Verify reverse mapping
-    assertEquals(Integer.valueOf(0), palette.byData.get(data1));
-    assertEquals(Integer.valueOf(1), palette.byData.get(data2));
   }
 
   @Test
@@ -68,11 +64,9 @@ class BlockPaletteTest {
     int id = palette.collect("minecraft:chest", nbt);
     assertEquals(0, id);
 
-    // Check that the id is in blockEntities set
-    assertTrue(palette.blockEntities.contains(0));
-
     // Verify data was stored correctly
-    BlockPalette.Data data = palette.byId.get(0);
+    BlockPalette.Data data = palette.get(0);
+    assertNotNull(data);
     assertEquals("minecraft:chest", data.blockStateString());
     assertNotNull(data.nbt());
     assertEquals("test_value", data.nbt().getString("test_key").get());
@@ -87,7 +81,6 @@ class BlockPaletteTest {
     differentNbt.putString("different_key", "different_value");
     int differentId = palette.collect("minecraft:chest", differentNbt);
     assertEquals(1, differentId);
-    assertTrue(palette.blockEntities.contains(1));
   }
 
   @Test
@@ -102,25 +95,18 @@ class BlockPaletteTest {
     palette.collect("minecraft:chest", nbt);
 
     // Verify data was added
-    assertEquals(3, palette.byId.size());
-    assertEquals(3, palette.byData.size());
-    assertEquals(1, palette.blockEntities.size()); // Only 1 item has NBT (the chest)
+    assertEquals(3, palette.size());
 
     // Clear the palette
     palette.clear();
 
     // Verify everything was cleared
-    assertEquals(0, palette.byId.size());
-    assertEquals(0, palette.byData.size());
-    assertEquals(0, palette.blockEntities.size());
+    assertEquals(0, palette.size());
   }
 
   @Test
   void testSaveAndLoadBinary(@TempDir Path tempDir)
-      throws IOException,
-          BlockPalette.InvalidPaletteException,
-          NumberFormatException,
-          CommandSyntaxException {
+      throws IOException, NumberFormatException, CommandSyntaxException {
     // Create test palette
     BlockPalette originalPalette = new BlockPalette();
 
@@ -182,48 +168,37 @@ class BlockPaletteTest {
     }
 
     // Verify loaded palette matches original
-    assertEquals(4, loadedPalette.byId.size());
-    assertEquals(4, loadedPalette.byData.size());
-    assertEquals(2, loadedPalette.blockEntities.size()); // 2 items had NBT
+    assertEquals(4, loadedPalette.size());
 
     // Check individual entries
-    BlockPalette.Data stone = loadedPalette.byId.get(0);
+    BlockPalette.Data stone = loadedPalette.get(0);
     assertNotNull(stone);
     assertEquals("minecraft:stone", stone.blockStateString());
     assertNull(stone.nbt());
 
-    BlockPalette.Data dirt = loadedPalette.byId.get(1);
+    BlockPalette.Data dirt = loadedPalette.get(1);
     assertNotNull(dirt);
     assertEquals("minecraft:dirt", dirt.blockStateString());
     assertNull(dirt.nbt());
 
-    BlockPalette.Data chest = loadedPalette.byId.get(2);
+    BlockPalette.Data chest = loadedPalette.get(2);
     assertNotNull(chest);
     assertEquals("minecraft:chest", chest.blockStateString());
     assertNotNull(chest.nbt());
     assertEquals("chest", chest.nbt().getString("id").get());
     assertEquals(5, chest.nbt().getInt("Items").get());
 
-    BlockPalette.Data furnace = loadedPalette.byId.get(3);
+    BlockPalette.Data furnace = loadedPalette.get(3);
     assertNotNull(furnace);
     assertEquals("minecraft:furnace", furnace.blockStateString());
     assertNotNull(furnace.nbt());
     assertEquals("furnace", furnace.nbt().getString("id").get());
     assertEquals(100, furnace.nbt().getInt("BurnTime").get());
-
-    // Verify blockEntities set
-    assertTrue(loadedPalette.blockEntities.contains(2));
-    assertTrue(loadedPalette.blockEntities.contains(3));
-    assertFalse(loadedPalette.blockEntities.contains(0));
-    assertFalse(loadedPalette.blockEntities.contains(1));
   }
 
   @Test
   void testSaveAndLoadSNBT(@TempDir Path tempDir)
-      throws IOException,
-          BlockPalette.InvalidPaletteException,
-          NumberFormatException,
-          CommandSyntaxException {
+      throws IOException, NumberFormatException, CommandSyntaxException {
     // Create test palette
     BlockPalette originalPalette = new BlockPalette();
 
@@ -253,19 +228,17 @@ class BlockPaletteTest {
     }
 
     // Verify loaded palette matches original
-    assertEquals(2, loadedPalette.byId.size());
-    assertEquals(2, loadedPalette.byData.size());
-    assertEquals(2, loadedPalette.blockEntities.size());
+    assertEquals(2, loadedPalette.size());
 
     // Check individual entries
-    BlockPalette.Data chest = loadedPalette.byId.get(0);
+    BlockPalette.Data chest = loadedPalette.get(0);
     assertNotNull(chest);
     assertEquals("minecraft:chest", chest.blockStateString());
     assertNotNull(chest.nbt());
     assertEquals("chest", chest.nbt().getString("id").get());
     assertEquals(5, chest.nbt().getInt("Items").get());
 
-    BlockPalette.Data furnace = loadedPalette.byId.get(1);
+    BlockPalette.Data furnace = loadedPalette.get(1);
     assertNotNull(furnace);
     assertEquals("minecraft:furnace", furnace.blockStateString());
     assertNotNull(furnace.nbt());
@@ -281,9 +254,7 @@ class BlockPaletteTest {
 
     BlockPalette palette = BlockPalette.loadOrNew(nonExistentPalette, nonExistentNbtDir, false);
     assertNotNull(palette);
-    assertEquals(0, palette.byId.size());
-    assertEquals(0, palette.byData.size());
-    assertEquals(0, palette.blockEntities.size());
+    assertEquals(0, palette.size());
 
     // Test loading from invalid palette file
     Path invalidPalette = tempDir.resolve("invalid.txt");
@@ -292,9 +263,7 @@ class BlockPaletteTest {
     BlockPalette paletteFromInvalid =
         BlockPalette.loadOrNew(invalidPalette, nonExistentNbtDir, false);
     assertNotNull(paletteFromInvalid);
-    assertEquals(0, paletteFromInvalid.byId.size());
-    assertEquals(0, paletteFromInvalid.byData.size());
-    assertEquals(0, paletteFromInvalid.blockEntities.size());
+    assertEquals(0, paletteFromInvalid.size());
   }
 
   @Test
@@ -310,14 +279,12 @@ class BlockPaletteTest {
 
       assertThrows(
           BlockPalette.InvalidPaletteException.class,
-          () -> {
-            BlockPalette.load(paletteFile, nbtDir, false);
-          });
+          () -> BlockPalette.load(paletteFile, nbtDir, false));
     } finally {
       // Clean up temporary directory
       try {
         Files.walk(tempDir)
-            .sorted((a, b) -> b.compareTo(a))
+            .sorted(Comparator.reverseOrder())
             .forEach(
                 path -> {
                   try {
@@ -334,10 +301,7 @@ class BlockPaletteTest {
 
   @Test
   void testLoadDuplicateIds(@TempDir Path tempDir)
-      throws IOException,
-          BlockPalette.InvalidPaletteException,
-          NumberFormatException,
-          CommandSyntaxException {
+      throws IOException, NumberFormatException, CommandSyntaxException {
     Path paletteFile = tempDir.resolve("palette.txt");
     Path nbtDir = tempDir.resolve("nbt");
     Files.createDirectories(nbtDir);
@@ -356,8 +320,7 @@ class BlockPaletteTest {
       fail("Failed to load palette: " + e.getMessage());
     }
     // Should still load, but will have a warning logged (the second entry overwrites the first)
-    assertEquals(1, palette.byId.size());
-    assertEquals(1, palette.byData.size());
+    assertEquals(1, palette.size());
   }
 
   @Test

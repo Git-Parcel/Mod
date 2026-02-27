@@ -26,10 +26,18 @@ import org.jspecify.annotations.Nullable;
 public class BlockPalette {
   private int nextId = 0;
 
-  public final Map<Integer, Data> byId = new HashMap<>();
-  public final Map<Data, Integer> byData = new HashMap<>();
+  final Map<Integer, Data> byId = new HashMap<>();
+  final Map<Data, Integer> byData = new HashMap<>();
 
-  public final Set<Integer> blockEntities = new HashSet<>();
+  final Set<Integer> blockEntities = new HashSet<>();
+
+  public int size() {
+    return byId.size();
+  }
+
+  public @Nullable Data get(int id) {
+    return byId.get(id);
+  }
 
   public int collect(Level level, BlockPos pos) {
     BlockState blockState = level.getBlockState(pos);
