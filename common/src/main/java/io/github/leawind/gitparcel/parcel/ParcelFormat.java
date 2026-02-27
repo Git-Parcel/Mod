@@ -48,7 +48,7 @@ public interface ParcelFormat {
       throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
     }
 
-    if (!meta.size.equals(parcel.getSize())) {
+    if (!parcel.sizeEquals(meta.size)) {
       meta.size = parcel.getSize();
       meta.save(metaFile);
     }

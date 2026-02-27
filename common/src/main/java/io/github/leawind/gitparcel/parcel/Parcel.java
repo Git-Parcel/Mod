@@ -209,6 +209,16 @@ public class Parcel {
   }
 
   /**
+   * Returns whether this parcel has the same size as the given vector.
+   *
+   * @param size the size vector to compare against
+   * @return true if the sizes are equal, false otherwise
+   */
+  public boolean sizeEquals(Vec3i size) {
+    return sizeX == size.getX() && sizeY == size.getY() && sizeZ == size.getZ();
+  }
+
+  /**
    * Creates a parcel from two corner positions.
    *
    * <p>The resulting parcel spans the axis-aligned region defined by the two corners.
