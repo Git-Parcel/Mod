@@ -208,6 +208,12 @@ public class Parcel {
     return new AABB(originX, originY, originZ, getEndX(), getEndY(), getEndZ());
   }
 
+  @Override
+  public String toString() {
+    return String.format(
+        "Parcel:%dx%dx%d@(%d,%d,%d)", sizeX, sizeY, sizeZ, originX, originY, originZ);
+  }
+
   /**
    * Returns whether this parcel has the same size as the given vector.
    *
