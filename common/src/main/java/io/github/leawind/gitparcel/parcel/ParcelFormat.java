@@ -1,6 +1,7 @@
 package io.github.leawind.gitparcel.parcel;
 
 import com.mojang.logging.LogUtils;
+import io.github.leawind.gitparcel.Constants;
 import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -39,19 +40,31 @@ public interface ParcelFormat {
    */
   static void save(Level level, Parcel parcel, Path parcelDir, boolean saveEntity)
       throws IOException, ParcelException {
+    ParcelFormat.Save format;
 
     // Save metadata
     var metaFile = getMetaFile(parcelDir);
-    var meta = ParcelMeta.load(metaFile);
-    var format = meta.getFormatSaver();
-    if (format == null) {
-      throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
+    ParcelMeta meta = ParcelMeta.loadIfExist(metaFile);
+
+    if (meta == null) {
+      // If metadata file does not exist, create a new one
+      format = Constants.PARCEL_FORMATS.defaultSaver();
+      meta = ParcelMeta.create(format.id(), format.version(), parcel.getSize());
+      meta.save(metaFile);
+    } else {
+      // If metadata size does not match, update it
+      if (!parcel.sizeEquals(meta.size)) {
+        meta.size = parcel.getSize();
+        meta.save(metaFile);
+      }
+
+      format = meta.getFormatSaver();
+      if (format == null) {
+        throw new ParcelException(
+            "Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
+      }
     }
 
-    if (!parcel.sizeEquals(meta.size)) {
-      meta.size = parcel.getSize();
-      meta.save(metaFile);
-    }
     format.save(level, parcel, getDataDir(parcelDir), meta.includeEntity() && saveEntity);
   }
 

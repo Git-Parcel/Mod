@@ -157,14 +157,22 @@ public final class ParcelMeta {
     return json;
   }
 
+  public static @Nullable ParcelMeta loadIfExist(Path metaFile)
+      throws IOException, InvalidParcelMetaException {
+    if (!Files.exists(metaFile)) {
+      return null;
+    }
+    return load(metaFile);
+  }
+
   /**
    * @param metaFile File path to the {@value FILE_NAME} file
    * @return The parsed {@link ParcelMeta} object
    * @throws IOException If an I/O error occurs while reading the file
    */
   public static ParcelMeta load(Path metaFile) throws IOException, InvalidParcelMetaException {
-    var json = GSON.fromJson(Files.readString(metaFile), JsonObject.class);
     try {
+      var json = GSON.fromJson(Files.readString(metaFile), JsonObject.class);
       return fromJsonObject(json);
     } catch (JsonAccessException e) {
       throw new InvalidParcelMetaException("Invalid parcel metadata at " + metaFile, e);
