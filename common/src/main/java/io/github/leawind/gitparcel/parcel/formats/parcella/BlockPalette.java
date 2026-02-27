@@ -70,6 +70,7 @@ public class BlockPalette {
   public void clear() {
     byData.clear();
     byId.clear();
+    blockEntities.clear();
     nextId = 0;
   }
 
@@ -133,6 +134,8 @@ public class BlockPalette {
   /**
    * Loads a block palette from the specified file and NBT directory.
    *
+   * <p>For duplicate IDs, only the first one will be used.
+   *
    * @param paletteFile the path to the palette file
    * @param nbtDir the directory to store NBT files
    * @param useSnbt whether to use SNBT format for NBT files. If false, NBT files will be saved in
@@ -186,10 +189,10 @@ public class BlockPalette {
               "Duplicate id {} in palette file {}. Did someone tweak the file by hand? ",
               id,
               paletteFile);
+        } else {
+          palette.byId.put(id, data);
+          palette.byData.put(data, id);
         }
-
-        palette.byId.put(id, data);
-        palette.byData.put(data, id);
 
         if (nbt != null) {
           palette.blockEntities.add(id);
