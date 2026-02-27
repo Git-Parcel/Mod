@@ -182,7 +182,7 @@ public class Parcel {
    *
    * @return the volume in blocks
    */
-  public int getBlockCount() {
+  public int getVolume() {
     return sizeX * sizeY * sizeZ;
   }
 

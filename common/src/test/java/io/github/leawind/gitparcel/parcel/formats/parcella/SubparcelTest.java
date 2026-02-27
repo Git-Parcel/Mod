@@ -36,7 +36,7 @@ public class SubparcelTest {
       }
     }
 
-    assertEquals(parcel.getBlockCount(), blocks.size());
+    assertEquals(parcel.getVolume(), blocks.size());
   }
 
   @Test
