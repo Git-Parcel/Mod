@@ -98,6 +98,9 @@ public class ParcelDebugCommand {
       LOGGER.error("Error while saving parcel", e);
       source.sendFailure(Component.translatable("command.parcel_debug.save.failure"));
       return 1;
+    } catch (Exception e) {
+      LOGGER.error("Unexpected error while saving parcel", e);
+      return 2;
     }
   }
 
@@ -120,6 +123,9 @@ public class ParcelDebugCommand {
       LOGGER.error("Error while loading parcel", e);
       source.sendFailure(Component.translatable("command.parcel_debug.load.failure"));
       return 1;
+    } catch (Exception e) {
+      LOGGER.error("Unexpected error while loading parcel", e);
+      return 2;
     }
   }
 }

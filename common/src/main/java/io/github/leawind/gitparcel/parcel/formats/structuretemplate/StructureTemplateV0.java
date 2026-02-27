@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
+import net.minecraft.nbt.NbtAccounterException;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -62,13 +63,24 @@ public abstract class StructureTemplateV0 implements ParcelFormat {
         boolean loadBlocks,
         boolean loadEntities)
         throws IOException, ParcelException {
+
       Path structureFile = dataDir.resolve(NBT_FILE_NAME);
-      CompoundTag tag = NbtIo.readCompressed(structureFile, NbtAccounter.uncompressedQuota());
+
+      CompoundTag tag;
+      try {
+        // NbtAccounterException will be thrown when the NBT file is too large
+        tag = NbtIo.readCompressed(structureFile, NbtAccounter.unlimitedHeap());
+      } catch (NbtAccounterException e) {
+        throw new ParcelException.InvalidParcel("The NBT file is too large", e);
+      }
+
       StructureTemplate template = level.getServer().getStructureManager().readStructure(tag);
-      StructurePlaceSettings settings = new StructurePlaceSettings();
 
       boolean isStrict = true;
-      settings.setIgnoreEntities(!loadEntities).setKnownShape(isStrict);
+
+      StructurePlaceSettings settings =
+          new StructurePlaceSettings().setIgnoreEntities(!loadEntities).setKnownShape(isStrict);
+
       template.placeInWorld(
           level,
           parcelOrigin,
