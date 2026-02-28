@@ -1,5 +1,6 @@
 package io.github.leawind.gitparcel.parcel;
 
+import io.github.leawind.gitparcel.parcel.config.ParcelFormatConfig;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -12,7 +13,7 @@ public class ParcelFormatManager {
   private ParcelFormat.@Nullable Save<?> defaultSaver;
   private ParcelFormat.@Nullable Load<?> defaultLoader;
 
-  public <C> ParcelFormatManager register(ParcelFormat<C> format) {
+  public <C extends ParcelFormatConfig<C>> ParcelFormatManager register(ParcelFormat<C> format) {
     if (format instanceof ParcelFormat.Save<C> saver) {
       savers.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), saver);
     } else if (format instanceof ParcelFormat.Load<C> loader) {
@@ -21,7 +22,8 @@ public class ParcelFormatManager {
     return this;
   }
 
-  public <C> ParcelFormatManager registerDefault(ParcelFormat<C> format) {
+  public <C extends ParcelFormatConfig<C>> ParcelFormatManager registerDefault(
+      ParcelFormat<C> format) {
     if (format instanceof ParcelFormat.Save<C> saver) {
       defaultSaver = saver;
     } else if (format instanceof ParcelFormat.Load<C> loader) {

@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.github.leawind.gitparcel.parcel.config.ParcelFormatConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -18,7 +20,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-public abstract class MvpFormatV0 implements ParcelFormat<Void> {
+public abstract class MvpFormatV0 implements ParcelFormat<ParcelFormatConfig.None> {
 
   @Override
   public String id() {
@@ -30,9 +32,15 @@ public abstract class MvpFormatV0 implements ParcelFormat<Void> {
     return 0;
   }
 
-  public static final class Save extends MvpFormatV0 implements ParcelFormat.Save<Void> {
+  public static final class Save extends MvpFormatV0
+      implements ParcelFormat.Save<ParcelFormatConfig.None> {
     @Override
-    public void save(Level level, Parcel parcel, Path dataDir, boolean saveEntities, Void config)
+    public void save(
+        Level level,
+        Parcel parcel,
+        Path dataDir,
+        boolean saveEntities,
+        ParcelFormatConfig.None config)
         throws IOException {
       Files.createDirectories(dataDir);
 

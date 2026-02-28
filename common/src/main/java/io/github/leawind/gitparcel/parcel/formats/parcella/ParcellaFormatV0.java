@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.parcel.formats.parcella;
 import com.google.gson.Gson;
 import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.parcel.config.ParcelFormatConfig;
 import io.github.leawind.gitparcel.parcel.formats.NbtFormat;
 import io.github.leawind.gitparcel.utils.hex.HexUtils;
 import java.io.BufferedReader;
@@ -57,7 +58,8 @@ public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.
     return new Config();
   }
 
-  public static class Config {
+  // NOW
+  public static class Config extends ParcelFormatConfig<Config> {
     private static final String SCHEMA_URL =
         "https://git-parcel.github.io/schemas/ParcellaFormatConfig.json";
 

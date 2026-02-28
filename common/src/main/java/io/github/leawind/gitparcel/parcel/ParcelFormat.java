@@ -1,6 +1,7 @@
 package io.github.leawind.gitparcel.parcel;
 
 import com.mojang.logging.LogUtils;
+import io.github.leawind.gitparcel.parcel.config.ParcelFormatConfig;
 import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -11,7 +12,7 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
 /** A format for saving or loading parcels. */
-public interface ParcelFormat<C> {
+public interface ParcelFormat<C extends ParcelFormatConfig<C>> {
   Logger LOGGER = LogUtils.getLogger();
   String META_FILE_NAME = "parcel.json";
   String DATA_DIR_NAME = "data";
@@ -46,7 +47,7 @@ public interface ParcelFormat<C> {
    * @throws ParcelException If other error occurs while saving the parcel
    */
   @SuppressWarnings("unchecked")
-  static <C> void save(
+  static <C extends ParcelFormatConfig<C>> void save(
       Level level,
       Parcel parcel,
       ParcelMeta meta,
@@ -120,7 +121,7 @@ public interface ParcelFormat<C> {
     return null;
   }
 
-  interface Save<C> extends ParcelFormat<C> {
+  interface Save<C extends ParcelFormatConfig<C>> extends ParcelFormat<C> {
 
     /**
      * Save parcel content to directory.
@@ -137,7 +138,7 @@ public interface ParcelFormat<C> {
         throws IOException;
   }
 
-  interface Load<C> extends ParcelFormat<C> {
+  interface Load<C extends ParcelFormatConfig<C>> extends ParcelFormat<C> {
 
     /**
      * Load parcel content from directory

@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.parcel.formats.structuretemplate;
 import com.google.common.collect.ImmutableList;
 import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.parcel.config.ParcelFormatConfig;
 import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -20,7 +21,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlac
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
 /** Note: The loader of this format always load blocks regardless of the value of `loadBlocks` */
-public abstract class StructureTemplateFormatV0 implements ParcelFormat<Void> {
+public abstract class StructureTemplateFormatV0 implements ParcelFormat<ParcelFormatConfig.None> {
   public static final String NBT_FILE_NAME = "structure.nbt";
 
   @Override
@@ -34,9 +35,14 @@ public abstract class StructureTemplateFormatV0 implements ParcelFormat<Void> {
   }
 
   public static final class Save extends StructureTemplateFormatV0
-      implements ParcelFormat.Save<Void> {
+      implements ParcelFormat.Save<ParcelFormatConfig.None> {
     @Override
-    public void save(Level level, Parcel parcel, Path dataDir, boolean saveEntities, Void config)
+    public void save(
+        Level level,
+        Parcel parcel,
+        Path dataDir,
+        boolean saveEntities,
+        ParcelFormatConfig.None config)
         throws IOException {
       Files.createDirectories(dataDir);
 
@@ -52,7 +58,7 @@ public abstract class StructureTemplateFormatV0 implements ParcelFormat<Void> {
   }
 
   public static final class Load extends StructureTemplateFormatV0
-      implements ParcelFormat.Load<Void> {
+      implements ParcelFormat.Load<ParcelFormatConfig.None> {
 
     /**
      * @param loadBlocks This parameter is ignored, it always loads blocks
