@@ -80,22 +80,41 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
     return (Self) this;
   }
 
+  /**
+   * Gets the name of this configuration item.
+   * @return the configuration item name
+   */
   public String name() {
     return name;
   }
 
+  /**
+   * Gets the description of this configuration item.
+   * @return the configuration item description
+   */
   public String description() {
     return description;
   }
 
+  /**
+   * Gets the default value of this configuration item.
+   * @return the default value
+   */
   public T defaultValue() {
     return defaultValue;
   }
 
+  /**
+   * Resets the configuration item to its default value.
+   */
   public void reset() {
     set(defaultValue);
   }
 
+  /**
+   * Gets the current value of this configuration item.
+   * @return the current value
+   */
   public T get() {
     return Objects.requireNonNull(getter).get();
   }
@@ -133,10 +152,18 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
     }
   }
 
+  /**
+   * Checks if this configuration item is visible to users.
+   * @return true if the item is user-visible
+   */
   public boolean userVisible() {
     return userVisible;
   }
 
+  /**
+   * Configures this item to store its value locally.
+   * @return this configuration item for chaining
+   */
   public Self storeRightHere() {
     var box = new Box(defaultValue());
     this.getter = box::get;
@@ -144,21 +171,41 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
     return self();
   }
 
+  /**
+   * Sets the description for this configuration item.
+   * @param description the description text
+   * @return this configuration item for chaining
+   */
   public Self description(@Nullable String description) {
     this.description = description;
     return self();
   }
 
+  /**
+   * Sets the getter function for this configuration item.
+   * @param getter the getter function
+   * @return this configuration item for chaining
+   */
   public Self getter(Supplier<T> getter) {
     this.getter = getter;
     return self();
   }
 
+  /**
+   * Sets the setter function for this configuration item.
+   * @param setter the setter function
+   * @return this configuration item for chaining
+   */
   public Self setter(Consumer<T> setter) {
     this.setter = setter;
     return self();
   }
 
+  /**
+   * Sets the default value for this configuration item.
+   * @param defaultValue the default value
+   * @return this configuration item for chaining
+   */
   public Self defaultValue(T defaultValue) {
     this.defaultValue = defaultValue;
     return self();
@@ -180,6 +227,11 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
     return self();
   }
 
+  /**
+   * Sets the user visibility for this configuration item.
+   * @param value true to make the item user-visible
+   * @return this configuration item for chaining
+   */
   public Self userVisible(boolean value) {
     userVisible = value;
     return self();
