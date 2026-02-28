@@ -37,17 +37,20 @@ public abstract class ParcelFormatConfig<Self extends ParcelFormatConfig<Self>> 
     return json;
   }
 
-  public void setFromJson(JsonElement jsonElement) throws IllegalArgumentException {
-    if (jsonElement instanceof JsonObject json) {
-      for (var item : listConfigItems()) {
-        try {
-          item.setFromJson(json.get(item.name()));
-        } catch (IllegalArgumentException e) {
-          item.reset();
-        }
+  /**
+   * Set values from json element
+   *
+   * <p>All values will be set.
+   *
+   * <p>Missing fields will be set to default
+   */
+  public void setFromJson(JsonObject json) throws IllegalArgumentException {
+    for (var item : listConfigItems()) {
+      try {
+        item.setFromJson(json.get(item.name()));
+      } catch (IllegalArgumentException e) {
+        item.reset();
       }
-    } else {
-      throw new IllegalArgumentException("Expected JsonObject, but got " + jsonElement.getClass());
     }
   }
 
