@@ -29,7 +29,7 @@ import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
-public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.Config> {
+public abstract class ParcellaFormatV0 implements ParcelFormat.Impl<ParcellaFormatV0.Config> {
   public static final String BLOCKS_DIR_NAME = "blocks";
   public static final String ENTITIES_DIR_NAME = "entities";
   public static final String NBT_DIR_NAME = "nbt";

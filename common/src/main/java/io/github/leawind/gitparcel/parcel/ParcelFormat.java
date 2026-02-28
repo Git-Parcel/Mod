@@ -12,7 +12,8 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
 /** A format for saving or loading parcels. */
-public interface ParcelFormat<C extends ParcelFormatConfig<C>> {
+public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
+    permits ParcelFormat.Save, ParcelFormat.Load, ParcelFormat.Impl {
   Logger LOGGER = LogUtils.getLogger();
   String META_FILE_NAME = "parcel.json";
   String CONFIG_FILE_NAME = "config.json";
@@ -150,7 +151,7 @@ public interface ParcelFormat<C extends ParcelFormatConfig<C>> {
     return null;
   }
 
-  interface Save<C extends ParcelFormatConfig<C>> extends ParcelFormat<C> {
+  non-sealed interface Save<C extends ParcelFormatConfig<C>> extends ParcelFormat<C> {
 
     /**
      * Save parcel content to directory.
@@ -168,7 +169,7 @@ public interface ParcelFormat<C extends ParcelFormatConfig<C>> {
         throws IOException;
   }
 
-  interface Load<C extends ParcelFormatConfig<C>> extends ParcelFormat<C> {
+  non-sealed interface Load<C extends ParcelFormatConfig<C>> extends ParcelFormat<C> {
 
     /**
      * Load parcel content from directory
@@ -187,4 +188,6 @@ public interface ParcelFormat<C extends ParcelFormatConfig<C>> {
         boolean loadEntities)
         throws IOException, ParcelException;
   }
+
+  non-sealed interface Impl<C extends ParcelFormatConfig<C>> extends ParcelFormat<C> {}
 }

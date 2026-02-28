@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
-public abstract class MvpFormatV0 implements ParcelFormat<ParcelFormatConfig.None> {
+public abstract class MvpFormatV0 implements ParcelFormat.Impl<ParcelFormatConfig.None> {
 
   @Override
   public String id() {
