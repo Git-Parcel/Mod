@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 public class SubdivideAlgoTest {
 
-  static class ParcelWithValue extends Parcel implements Parcel.WithValue {
+  public static class ParcelWithValue extends Parcel implements Parcel.WithValue {
     private final int value;
 
     public ParcelWithValue(
@@ -25,7 +25,7 @@ public class SubdivideAlgoTest {
     }
   }
 
-  record TestCase(Parcel parcel, int[][][] valuesArray) {
+  public record TestCase(Parcel parcel, int[][][] valuesArray) {
     int get(BlockPos pos) {
       return valuesArray[pos.getX() - parcel.originX][pos.getY() - parcel.originY][
           pos.getZ() - parcel.originZ];
@@ -40,11 +40,12 @@ public class SubdivideAlgoTest {
     }
   }
 
-  @Test
-  void testSubdivide() {
+  static void testAlgo(SubdivideAlgo algo, int maxVariances) {
     var random = new RandomForMC(12138);
 
-    for (int variance = 1; variance <= 8; variance++) {
+    System.out.println("Testing " + algo);
+
+    for (int variance = 1; variance <= maxVariances; variance++) {
       double ratioSum = 0;
       double weightSum = 0;
       for (int i = 0; i < 4096; i++) {
@@ -54,8 +55,7 @@ public class SubdivideAlgoTest {
 
         var testCase = TestCase.create(random, parcel, variance);
 
-        var groups =
-            SubdivideAlgo.V1.subdivide(testCase.parcel, testCase::get, ParcelWithValue::new);
+        var groups = algo.subdivide(testCase.parcel, testCase::get, ParcelWithValue::new);
         SubparcelTest.assertParcelEqual(testCase.parcel, groups);
 
         int volume = parcel.getVolume();
@@ -66,5 +66,12 @@ public class SubdivideAlgoTest {
       var ratio = ratioSum / weightSum;
       System.out.printf("Variance: %d, Average rate: %.2f\n", variance, ratio);
     }
+  }
+
+  @Test
+  void testSubdivide() {
+    testAlgo(SubdivideAlgo.V1, 8);
+    testAlgo(SubdivideAlgo.V2, 8);
+    testAlgo(SubdivideAlgo.V3, 8);
   }
 }
