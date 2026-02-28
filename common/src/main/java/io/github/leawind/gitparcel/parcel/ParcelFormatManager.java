@@ -1,6 +1,5 @@
 package io.github.leawind.gitparcel.parcel;
 
-import io.github.leawind.gitparcel.parcel.config.ParcelFormatConfig;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;

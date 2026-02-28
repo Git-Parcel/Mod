@@ -3,7 +3,7 @@ package io.github.leawind.gitparcel.parcel.formats.structuretemplate;
 import com.google.common.collect.ImmutableList;
 import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
-import io.github.leawind.gitparcel.parcel.config.ParcelFormatConfig;
+import io.github.leawind.gitparcel.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import java.io.IOException;
 import java.io.OutputStream;

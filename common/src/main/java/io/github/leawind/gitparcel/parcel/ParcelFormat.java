@@ -1,7 +1,6 @@
 package io.github.leawind.gitparcel.parcel;
 
 import com.mojang.logging.LogUtils;
-import io.github.leawind.gitparcel.parcel.config.ParcelFormatConfig;
 import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import java.io.IOException;
 import java.nio.file.Path;
