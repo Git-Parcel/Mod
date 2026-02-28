@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.github.leawind.gitparcel.parcel.formats.NbtFormat;
 import io.github.leawind.gitparcel.utils.hex.HexUtils;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -129,7 +130,7 @@ class BlockPaletteTest {
     Path nbtDir = tempDir.resolve("nbt");
 
     // Save the palette (binary format)
-    originalPalette.save(paletteFile, nbtDir, false);
+    originalPalette.save(paletteFile, nbtDir, NbtFormat.Binary);
 
     // Verify files were created
     assertTrue(Files.exists(paletteFile));
@@ -162,7 +163,7 @@ class BlockPaletteTest {
     // Load the palette back
     BlockPalette loadedPalette = null;
     try {
-      loadedPalette = BlockPalette.load(paletteFile, nbtDir, false);
+      loadedPalette = BlockPalette.load(paletteFile, nbtDir, NbtFormat.Binary);
     } catch (BlockPalette.InvalidPaletteException e) {
       fail("Failed to load palette: " + e.getMessage());
     }
@@ -211,7 +212,7 @@ class BlockPaletteTest {
     Path nbtDir = tempDir.resolve("nbt");
 
     // Save the palette (SNBT format)
-    originalPalette.save(paletteFile, nbtDir, true);
+    originalPalette.save(paletteFile, nbtDir, NbtFormat.Text);
 
     // Verify files were created
     assertTrue(Files.exists(paletteFile));
@@ -222,7 +223,7 @@ class BlockPaletteTest {
     // Load the palette back
     BlockPalette loadedPalette = null;
     try {
-      loadedPalette = BlockPalette.load(paletteFile, nbtDir, true);
+      loadedPalette = BlockPalette.load(paletteFile, nbtDir, NbtFormat.Text);
     } catch (BlockPalette.InvalidPaletteException e) {
       fail("Failed to load palette: " + e.getMessage());
     }
@@ -252,7 +253,8 @@ class BlockPaletteTest {
     Path nonExistentPalette = tempDir.resolve("nonexistent.txt");
     Path nonExistentNbtDir = tempDir.resolve("nonexistent_nbt");
 
-    BlockPalette palette = BlockPalette.loadIfExist(nonExistentPalette, nonExistentNbtDir, false);
+    BlockPalette palette =
+        BlockPalette.loadIfExist(nonExistentPalette, nonExistentNbtDir, NbtFormat.Text);
     assertNull(palette);
 
     // Test loading from invalid palette file
@@ -261,7 +263,7 @@ class BlockPaletteTest {
 
     assertThrows(
         BlockPalette.InvalidPaletteException.class,
-        () -> BlockPalette.loadIfExist(invalidPalette, nonExistentNbtDir, false));
+        () -> BlockPalette.loadIfExist(invalidPalette, nonExistentNbtDir, NbtFormat.Text));
   }
 
   @Test
@@ -277,7 +279,7 @@ class BlockPaletteTest {
 
       assertThrows(
           BlockPalette.InvalidPaletteException.class,
-          () -> BlockPalette.load(paletteFile, nbtDir, false));
+          () -> BlockPalette.load(paletteFile, nbtDir, NbtFormat.Text));
     } finally {
       // Clean up temporary directory
       try {
@@ -313,7 +315,7 @@ class BlockPaletteTest {
 
     BlockPalette palette = null;
     try {
-      palette = BlockPalette.load(paletteFile, nbtDir, false);
+      palette = BlockPalette.load(paletteFile, nbtDir, NbtFormat.Text);
     } catch (BlockPalette.InvalidPaletteException e) {
       fail("Failed to load palette: " + e.getMessage());
     }

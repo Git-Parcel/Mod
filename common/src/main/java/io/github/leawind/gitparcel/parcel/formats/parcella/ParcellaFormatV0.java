@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.parcel.formats.parcella;
 import com.google.gson.Gson;
 import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.parcel.formats.NbtFormat;
 import io.github.leawind.gitparcel.utils.hex.HexUtils;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -17,7 +18,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.DoubleTag;
 import net.minecraft.nbt.IntTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtIo;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.painting.Painting;
@@ -37,6 +37,10 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
   public static final String PALETTE_FILE_NAME = "palette.txt";
   public static final String SUB_PARCELS_DIR_NAME = "subparcels";
 
+  protected NbtFormat blockEntityDataFormat = NbtFormat.Text;
+  protected NbtFormat entityDataFormat = NbtFormat.Text;
+  protected boolean enableMicroparcel = true;
+
   @Override
   public String id() {
     return "parcella";
@@ -48,13 +52,11 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
   }
 
   public static final class Save extends ParcellaFormatV0 implements ParcelFormat.Save {
+
     public static class Options {
       private static final String SCHEMA_URL =
           "https://git-parcel.github.io/schemas/ParcellaFormatOptions.json";
 
-      public boolean enableSnbtForBlockEntities = true;
-      public boolean enableMicroparcel = false;
-      public boolean enableSnbtForEntities = true;
       public Vec3i anchorOffset = Vec3i.ZERO;
 
       public static @Nullable Options tryLoad(Path path) {
@@ -101,7 +103,7 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
 
       BlockPalette palette = null;
       try {
-        palette = BlockPalette.loadIfExist(paletteFile, nbtDir, options.enableSnbtForBlockEntities);
+        palette = BlockPalette.loadIfExist(paletteFile, nbtDir, blockEntityDataFormat);
       } catch (Exception e) {
         LOGGER.error("Error loading block palette: {}", e.getMessage(), e);
       }
@@ -127,11 +129,11 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
         // Write sub-parcel data
         try (BufferedWriter writer =
             Files.newBufferedWriter(subparcelFile, StandardCharsets.UTF_8)) {
-          writeSubparcel(writer, level, subparcel, palette, options.enableMicroparcel);
+          writeSubparcel(writer, level, subparcel, palette, enableMicroparcel);
         }
       }
 
-      palette.save(paletteFile, nbtDir, options.enableSnbtForBlockEntities);
+      palette.save(paletteFile, nbtDir, blockEntityDataFormat);
     }
 
     private void writeSubparcel(
@@ -174,11 +176,8 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
       int entityId = 0;
       for (Entity entity : entities) {
         CompoundTag tag = getEntityNbt(problemReporter, parcel.getOrigin(), entity);
-        if (options.enableSnbtForEntities) {
-          Files.writeString(entitiesDir.resolve(entityId + ".snbt"), tag.toString());
-        } else {
-          NbtIo.write(tag, entitiesDir.resolve(entityId + ".nbt"));
-        }
+        Path path = entitiesDir.resolve(entityId + entityDataFormat.suffix);
+        entityDataFormat.write(path, tag);
 
         entityId++;
       }

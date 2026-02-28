@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.parcel.formats.parcella;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
+import io.github.leawind.gitparcel.parcel.formats.NbtFormat;
 import io.github.leawind.gitparcel.utils.hex.HexUtils;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -16,8 +17,6 @@ import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtIo;
-import net.minecraft.nbt.TagParser;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -87,11 +86,10 @@ public class BlockPalette {
    *
    * @param paletteFile the path to the palette file
    * @param nbtDir the directory to store NBT files
-   * @param useSnbt whether to use SNBT format for NBT files. If false, NBT files will be saved in
-   *     binary format.
+   * @param nbtFormat the format to use for NBT files
    * @throws IOException if an I/O error occurs while saving the palette
    */
-  public void save(Path paletteFile, Path nbtDir, boolean useSnbt) throws IOException {
+  public void save(Path paletteFile, Path nbtDir, NbtFormat nbtFormat) throws IOException {
     Files.createDirectories(nbtDir);
     try (BufferedWriter writer = Files.newBufferedWriter(paletteFile, StandardCharsets.UTF_8)) {
       for (var entry : byId.entrySet()) {
@@ -105,24 +103,21 @@ public class BlockPalette {
     for (int id : blockEntities) {
       Data data = byId.get(id);
       if (data.nbt != null) {
-        if (useSnbt) {
-          // TODO format
-          Files.writeString(nbtDir.resolve(id + ".snbt"), data.nbt.toString());
-        } else {
-          NbtIo.write(data.nbt, nbtDir.resolve(id + ".nbt"));
-        }
+        var nbtFile = nbtDir.resolve(id + nbtFormat.suffix);
+        nbtFormat.write(nbtFile, data.nbt, true);
       }
     }
   }
 
   public record Data(String blockStateString, @Nullable CompoundTag nbt) {}
 
-  public static @Nullable BlockPalette loadIfExist(Path paletteFile, Path nbtDir, boolean useSnbt)
+  public static @Nullable BlockPalette loadIfExist(
+      Path paletteFile, Path nbtDir, NbtFormat nbtFormat)
       throws IOException, InvalidPaletteException, NumberFormatException, CommandSyntaxException {
     if (!Files.exists(paletteFile)) {
       return null;
     }
-    return load(paletteFile, nbtDir, useSnbt);
+    return load(paletteFile, nbtDir, nbtFormat);
   }
 
   /**
@@ -132,15 +127,14 @@ public class BlockPalette {
    *
    * @param paletteFile the path to the palette file
    * @param nbtDir the directory to store NBT files
-   * @param useSnbt whether to use SNBT format for NBT files. If false, NBT files will be saved in
-   *     binary format.
+   * @param nbtFormat the format to use for NBT files
    * @return the loaded block palette
    * @throws IOException if an I/O error occurs
    * @throws InvalidPaletteException if the palette file is malformed
    * @throws NumberFormatException if an ID in the palette file is not a valid hexadecimal number
    * @throws CommandSyntaxException if the snbt format is used and the NBT file is malformed
    */
-  public static BlockPalette load(Path paletteFile, Path nbtDir, boolean useSnbt)
+  public static BlockPalette load(Path paletteFile, Path nbtDir, NbtFormat nbtFormat)
       throws IOException, InvalidPaletteException, NumberFormatException, CommandSyntaxException {
     try (var reader = Files.newBufferedReader(paletteFile, StandardCharsets.UTF_8)) {
       BlockPalette palette = new BlockPalette();
@@ -164,15 +158,12 @@ public class BlockPalette {
 
         CompoundTag nbt = null;
 
-        Path nbtFile = nbtDir.resolve(id + (useSnbt ? ".snbt" : ".nbt"));
+        Path nbtFile = nbtDir.resolve(id + nbtFormat.suffix);
 
         if (Files.exists(nbtFile)) {
-          if (useSnbt) {
-            String snbt = Files.readString(nbtFile);
-            // CommandSyntaxException
-            nbt = TagParser.parseCompoundFully(snbt);
-          } else {
-            nbt = NbtIo.read(nbtFile);
+          switch (nbtFormat) {
+            case Binary -> nbt = NbtFormat.readBinary(nbtFile);
+            case Text -> nbt = NbtFormat.readReadable(nbtFile);
           }
         }
 
