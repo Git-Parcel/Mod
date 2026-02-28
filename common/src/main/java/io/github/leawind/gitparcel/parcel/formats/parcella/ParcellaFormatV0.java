@@ -51,27 +51,27 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
     return 0;
   }
 
-  public static class Save extends ParcellaFormatV0 implements ParcelFormat.Save {
+  public static class ParcellaFormatMeta {
+    private static final String SCHEMA_URL =
+        "https://git-parcel.github.io/schemas/ParcellaFormatMeta.json";
 
-    public static class Options {
-      private static final String SCHEMA_URL =
-          "https://git-parcel.github.io/schemas/ParcellaFormatOptions.json";
+    public Vec3i anchorOffset = Vec3i.ZERO;
 
-      public Vec3i anchorOffset = Vec3i.ZERO;
-
-      public static @Nullable Options tryLoad(Path path) {
-        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-          return GSON.fromJson(reader, Options.class);
-        } catch (IOException e) {
-          return null;
-        }
-      }
-
-      public static Options tryLoadOrDefault(Path path) {
-        Options options = Options.tryLoad(path);
-        return options != null ? options : new Options();
+    public static ParcellaFormatV0.Save.@Nullable ParcellaFormatMeta tryLoad(Path path) {
+      try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+        return GSON.fromJson(reader, ParcellaFormatMeta.class);
+      } catch (IOException e) {
+        return null;
       }
     }
+
+    public static ParcellaFormatMeta tryLoadOrDefault(Path path) {
+      ParcellaFormatMeta formatMeta = ParcellaFormatMeta.tryLoad(path);
+      return formatMeta != null ? formatMeta : new ParcellaFormatMeta();
+    }
+  }
+
+  public static class Save extends ParcellaFormatV0 implements ParcelFormat.Save {
 
     @Override
     public void save(Level level, Parcel parcel, Path dataDir, boolean saveEntities)
@@ -80,18 +80,19 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
           new ProblemReporter.ScopedCollector(LOGGER)) {
         Files.createDirectories(dataDir);
 
-        Path formatOptionsFile = dataDir.resolve("format-options.json");
-        Options options = Options.tryLoadOrDefault(formatOptionsFile);
+        Path formatMetaFile = dataDir.resolve("format-meta.json");
+        ParcellaFormatMeta formatMeta = ParcellaFormatMeta.tryLoadOrDefault(formatMetaFile);
 
-        saveBlocks(level, parcel, dataDir, options);
+        saveBlocks(level, parcel, dataDir, formatMeta);
 
         if (saveEntities) {
-          saveEntities(problemReporter, level, parcel, dataDir, options);
+          saveEntities(problemReporter, level, parcel, dataDir, formatMeta);
         }
       }
     }
 
-    protected void saveBlocks(Level level, Parcel parcel, Path dataDir, Options options)
+    protected void saveBlocks(
+        Level level, Parcel parcel, Path dataDir, ParcellaFormatMeta formatMeta)
         throws IOException {
 
       Path blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
@@ -107,7 +108,7 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
       Path subParcelsDir = blocksDir.resolve(SUB_PARCELS_DIR_NAME);
       Files.createDirectories(subParcelsDir);
 
-      BlockPos anchorPos = parcel.getOrigin().offset(options.anchorOffset);
+      BlockPos anchorPos = parcel.getOrigin().offset(formatMeta.anchorOffset);
       Iterable<Subparcel> subparcels = Subparcel.subdivideParcel(parcel, anchorPos);
 
       for (var subparcel : subparcels) {
@@ -200,7 +201,11 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
     }
 
     protected void saveEntities(
-        ProblemReporter problemReporter, Level level, Parcel parcel, Path dir, Options options)
+        ProblemReporter problemReporter,
+        Level level,
+        Parcel parcel,
+        Path dir,
+        ParcellaFormatMeta formatMeta)
         throws IOException {
 
       // TODO remove redundant entities
