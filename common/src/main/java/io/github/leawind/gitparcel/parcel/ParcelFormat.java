@@ -45,6 +45,7 @@ public interface ParcelFormat<C> {
    * @throws IOException If an I/O error occurs while saving the parcel
    * @throws ParcelException If other error occurs while saving the parcel
    */
+  @SuppressWarnings("unchecked")
   static <C> void save(
       Level level,
       Parcel parcel,
@@ -56,7 +57,7 @@ public interface ParcelFormat<C> {
     meta.size = parcel.getSize();
     meta.save(getMetaFile(parcelDir));
 
-    var format = meta.getFormatSaver();
+    var format = (Save<C>) meta.getFormatSaver();
     if (format == null) {
       throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
     }
@@ -66,7 +67,7 @@ public interface ParcelFormat<C> {
         parcel,
         getDataDir(parcelDir),
         meta.includeEntity() && saveEntity,
-        format.validateConfigType(config));
+        format.castConfig(config));
   }
 
   /**
@@ -106,17 +107,13 @@ public interface ParcelFormat<C> {
   /** Version of the format. */
   int version();
 
-  /**
-   * Validates the config type.
-   *
-   * @param config The config to validate
-   * @return The validated config
-   * @param <T> The type of the config
-   * @throws IllegalArgumentException If the config type is invalid
-   */
-  @SuppressWarnings("unchecked")
-  default <T, D> D validateConfigType(@Nullable T config) throws IllegalArgumentException {
-    return (D) config;
+  default <T> C castConfig(T config) throws ClassCastException {
+    var clazz = configClass();
+    return clazz == null ? null : clazz.cast(config);
+  }
+
+  default Class<C> configClass() {
+    return null;
   }
 
   default C getDefaultConfig() {

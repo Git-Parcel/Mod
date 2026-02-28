@@ -37,10 +37,6 @@ public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.
   public static final String PALETTE_FILE_NAME = "palette.txt";
   public static final String SUB_PARCELS_DIR_NAME = "subparcels";
 
-  protected NbtFormat blockEntityDataFormat = NbtFormat.Text;
-  protected NbtFormat entityDataFormat = NbtFormat.Text;
-  protected boolean enableMicroparcel = true;
-
   @Override
   public String id() {
     return "parcella";
@@ -51,11 +47,25 @@ public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.
     return 0;
   }
 
+  @Override
+  public <T> Config castConfig(T config) throws ClassCastException {
+    return (Config) config;
+  }
+
+  @Override
+  public Config getDefaultConfig() {
+    return new Config();
+  }
+
   public static class Config {
     private static final String SCHEMA_URL =
         "https://git-parcel.github.io/schemas/ParcellaFormatConfig.json";
 
     public Vec3i anchorOffset = Vec3i.ZERO;
+
+    public NbtFormat blockEntityDataFormat = NbtFormat.Text;
+    public NbtFormat entityDataFormat = NbtFormat.Text;
+    public boolean enableMicroparcel = true;
 
     /**
      * Load parcella format config from file.
@@ -115,7 +125,7 @@ public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.
 
       // Load or create block palette
       BlockPalette palette =
-          loadBlockPaletteIfExistElseCreate(paletteFile, nbtDir, blockEntityDataFormat);
+          loadBlockPaletteIfExistElseCreate(paletteFile, nbtDir, config.blockEntityDataFormat);
 
       // Process sub-parcels with Z-Order encoding
       Path subParcelsDir = blocksDir.resolve(SUB_PARCELS_DIR_NAME);
@@ -135,11 +145,11 @@ public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.
         // Write sub-parcel data
         try (BufferedWriter writer =
             Files.newBufferedWriter(subparcelFile, StandardCharsets.UTF_8)) {
-          writeSubparcel(writer, level, subparcel, palette, enableMicroparcel);
+          writeSubparcel(writer, level, subparcel, palette, config.enableMicroparcel);
         }
       }
 
-      palette.save(paletteFile, nbtDir, blockEntityDataFormat);
+      palette.save(paletteFile, nbtDir, config.blockEntityDataFormat);
     }
 
     protected BlockPalette loadBlockPaletteIfExistElseCreate(
@@ -228,8 +238,8 @@ public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.
       int entityId = 0;
       for (Entity entity : entities) {
         CompoundTag tag = getEntityNbt(problemReporter, parcel.getOrigin(), entity);
-        Path path = entitiesDir.resolve(entityId + entityDataFormat.suffix);
-        entityDataFormat.write(path, tag);
+        Path path = entitiesDir.resolve(entityId + config.entityDataFormat.suffix);
+        config.entityDataFormat.write(path, tag);
 
         entityId++;
       }
