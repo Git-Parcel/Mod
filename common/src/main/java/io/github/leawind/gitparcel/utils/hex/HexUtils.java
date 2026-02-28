@@ -3,9 +3,16 @@ package io.github.leawind.gitparcel.utils.hex;
 import org.jetbrains.annotations.Range;
 
 public final class HexUtils {
+  /** Array of uppercase hexadecimal digits (0-9, A-F). */
   public static final char[] UPPER_HEX_DIGITS = "0123456789ABCDEF".toCharArray();
+
+  /** Cache of 256 precomputed uppercase hexadecimal strings for byte values (0x00 to 0xFF). */
   public static final String[] BYTES_UPPER_CACHE = new String[256];
+
+  /** Array of lowercase hexadecimal digits (0-9, a-f). */
   public static final char[] LOWER_HEX_DIGITS = "0123456789abcdef".toCharArray();
+
+  /** Cache of 256 precomputed lowercase hexadecimal strings for byte values (0x00 to 0xFF). */
   public static final String[] BYTES_LOWER_CACHE = new String[256];
 
   static {
@@ -46,6 +53,13 @@ public final class HexUtils {
     return BYTES_LOWER_CACHE[b];
   }
 
+  /**
+   * Converts an integer to its uppercase hexadecimal string representation. The result does not
+   * include leading zeros and uses uppercase letters (A-F).
+   *
+   * @param i Integer value to convert (must be non-negative)
+   * @return Hexadecimal string representation in uppercase
+   */
   public static String toHexUpperCase(@Range(from = 0x00, to = Integer.MAX_VALUE) int i) {
     if (i == 0) {
       return "0";
@@ -59,6 +73,13 @@ public final class HexUtils {
     return new String(buf, pos, 8 - pos);
   }
 
+  /**
+   * Converts a long integer to its lowercase hexadecimal string representation. The result does not
+   * include leading zeros and uses lowercase letters (a-f).
+   *
+   * @param i Long integer value to convert (must be non-negative)
+   * @return Hexadecimal string representation in lowercase
+   */
   public static String toHexLowerCase(@Range(from = 0x00, to = Long.MAX_VALUE) long i) {
     if (i == 0L) {
       return "0";
@@ -72,6 +93,13 @@ public final class HexUtils {
     return new String(buf, pos, 16 - pos);
   }
 
+  /**
+   * Converts a long integer to its uppercase hexadecimal string representation. The result does not
+   * include leading zeros and uses uppercase letters (A-F).
+   *
+   * @param i Long integer value to convert (must be non-negative)
+   * @return Hexadecimal string representation in uppercase
+   */
   public static String toHexUpperCase(@Range(from = 0x00, to = Long.MAX_VALUE) long i) {
     if (i == 0L) {
       return "0";
