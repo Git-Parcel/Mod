@@ -5,7 +5,6 @@ import java.util.ArrayList;
 
 @FunctionalInterface
 public interface SubdivideAlgo {
-
   <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
       Parcel parcel, Values values, ResultFactory<T> factory);
 
@@ -19,194 +18,102 @@ public interface SubdivideAlgo {
 
   SubdivideAlgo V1 =
       new SubdivideAlgo() {
+
         @Override
         public <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
             Parcel parcel, Values values, ResultFactory<T> factory) {
 
-          ArrayList<T> result = new ArrayList<>();
-          int sizeX = parcel.sizeX;
-          int sizeY = parcel.sizeY;
-          int sizeZ = parcel.sizeZ;
-          int originX = parcel.originX;
-          int originY = parcel.originY;
-          int originZ = parcel.originZ;
+          final int sizeX = parcel.sizeX;
+          final int sizeY = parcel.sizeY;
+          final int sizeZ = parcel.sizeZ;
+          final int originX = parcel.originX;
+          final int originY = parcel.originY;
+          final int originZ = parcel.originZ;
 
-          int[] valueGridFlat = new int[sizeX * sizeY * sizeZ];
-          for (int z = 0; z < sizeZ; z++) {
-            int baseZY = z * sizeY * sizeX;
-            for (int y = 0; y < sizeY; y++) {
-              int baseYX = baseZY + y * sizeX;
-              for (int x = 0; x < sizeX; x++) {
-                valueGridFlat[baseYX + x] = values.get(originX + x, originY + y, originZ + z);
+          final int sizeXZ = sizeX * sizeZ;
+          final int totalSize = sizeY * sizeXZ;
+
+          ArrayList<T> result = new ArrayList<>(totalSize / 2 + 1);
+
+          final int[] valueGrid = new int[totalSize];
+          final boolean[] visited = new boolean[totalSize];
+          for (int y = 0; y < sizeY; y++) {
+            final int yOffset = y * sizeXZ;
+            for (int x = 0; x < sizeX; x++) {
+              final int xOffset = yOffset + x * sizeZ;
+              for (int z = 0; z < sizeZ; z++) {
+                // idx = xOffset + z;
+                valueGrid[xOffset + z] = values.get(originX + x, originY + y, originZ + z);
               }
             }
           }
 
-          boolean[] visited = new boolean[sizeX * sizeY * sizeZ];
+          for (int y = 0; y < sizeY; y++) {
+            final int yOffset = y * sizeXZ;
 
-          for (int z = 0; z < sizeZ; z++) {
-            int offsetZ = z * sizeX * sizeY;
-            for (int y = 0; y < sizeY; y++) {
-              int offsetY = offsetZ + y * sizeX;
-              for (int x = 0; x < sizeX; x++) {
-                int idx = offsetY + x;
-                if (!visited[idx]) {
-                  int value = valueGridFlat[idx];
+            for (int x = 0; x < sizeX; x++) {
+              final int xSizeZ = x * sizeZ;
+              final int xOffset = yOffset + xSizeZ;
 
-                  int maxX = x;
-                  while (maxX + 1 < sizeX) {
-                    int nextIdx = offsetY + (maxX + 1);
-                    if (visited[nextIdx] || valueGridFlat[nextIdx] != value) break;
-                    maxX++;
-                  }
-                  int lenX = maxX - x + 1;
+              for (int z = 0; z < sizeZ; z++) {
+                final int idx = xOffset + z;
 
-                  int maxY = y;
-                  boolean canExtendY = true;
-                  while (canExtendY && maxY + 1 < sizeY) {
-                    int nextRowOffset = offsetZ + (maxY + 1) * sizeX;
-                    for (int curX = x; curX <= maxX; curX++) {
-                      int checkIdx = nextRowOffset + curX;
-                      if (visited[checkIdx] || valueGridFlat[checkIdx] != value) {
-                        canExtendY = false;
-                        break;
-                      }
-                    }
-                    if (canExtendY) maxY++;
-                  }
-                  int lenY = maxY - y + 1;
-
-                  int maxZ = z;
-                  boolean canExtendZ = true;
-                  while (canExtendZ && maxZ + 1 < sizeZ) {
-                    int nextSliceOffset = (maxZ + 1) * sizeX * sizeY;
-                    outerZ:
-                    for (int curY = y; curY <= maxY; curY++) {
-                      int rowOffset = nextSliceOffset + curY * sizeX;
-                      for (int curX = x; curX <= maxX; curX++) {
-                        int checkIdx = rowOffset + curX;
-                        if (visited[checkIdx] || valueGridFlat[checkIdx] != value) {
-                          canExtendZ = false;
-                          break outerZ;
-                        }
-                      }
-                    }
-                    if (canExtendZ) maxZ++;
-                  }
-                  int lenZ = maxZ - z + 1;
-
-                  for (int cz = z; cz <= maxZ; cz++) {
-                    int sliceOffset = cz * sizeX * sizeY;
-                    for (int cy = y; cy <= maxY; cy++) {
-                      int rowOffset = sliceOffset + cy * sizeX;
-                      for (int cx = x; cx <= maxX; cx++) {
-                        visited[rowOffset + cx] = true;
-                      }
-                    }
-                  }
-
-                  result.add(
-                      factory.create(
-                          value, originX + x, originY + y, originZ + z, lenX, lenY, lenZ));
-                }
-              }
-            }
-          }
-          return result;
-        }
-      };
-
-  SubdivideAlgo V2 =
-      new SubdivideAlgo() {
-        @Override
-        public <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
-            Parcel parcel, Values values, ResultFactory<T> factory) {
-
-          ArrayList<T> result = new ArrayList<>();
-          int sizeX = parcel.sizeX;
-          int sizeY = parcel.sizeY;
-          int sizeZ = parcel.sizeZ;
-          int originX = parcel.originX;
-          int originY = parcel.originY;
-          int originZ = parcel.originZ;
-
-          int totalSize = sizeX * sizeY * sizeZ;
-          int[] valueGrid = new int[totalSize];
-          boolean[] visited = new boolean[totalSize];
-
-          for (int z = 0; z < sizeZ; z++) {
-            int zOffset = z * sizeX * sizeY;
-            for (int y = 0; y < sizeY; y++) {
-              int yOffset = zOffset + y * sizeX;
-              for (int x = 0; x < sizeX; x++) {
-                valueGrid[yOffset + x] = values.get(originX + x, originY + y, originZ + z);
-              }
-            }
-          }
-
-          for (int z = 0; z < sizeZ; z++) {
-            int zOffset = z * sizeX * sizeY;
-            for (int y = 0; y < sizeY; y++) {
-              int yOffset = zOffset + y * sizeX;
-              for (int x = 0; x < sizeX; x++) {
-                int idx = yOffset + x;
                 if (visited[idx]) continue;
 
-                int value = valueGrid[idx];
+                final int value = valueGrid[idx];
 
-                int maxX = x;
-                while (maxX + 1 < sizeX) {
-                  int nextIdx = yOffset + (maxX + 1);
-                  if (visited[nextIdx] || valueGrid[nextIdx] != value) break;
-                  maxX++;
+                int boundY = y + 1;
+                int boundX = x + 1;
+                int boundZ = z + 1;
+
+                // Y
+                while (boundY < sizeY) {
+                  final int tryIdx = boundY * sizeXZ + xSizeZ + z;
+                  if (visited[tryIdx] || valueGrid[tryIdx] != value) break;
+                  boundY++;
                 }
 
-                int maxY = y;
-                boolean canExtendY = true;
-                while (canExtendY && maxY + 1 < sizeY) {
-                  int nextYOffset = zOffset + (maxY + 1) * sizeX;
-                  for (int curX = x; curX <= maxX; curX++) {
-                    int checkIdx = nextYOffset + curX;
-                    if (visited[checkIdx] || valueGrid[checkIdx] != value) {
-                      canExtendY = false;
-                      break;
+                // X
+                extendX:
+                while (boundX < sizeX) {
+                  for (int tryY = y; tryY < boundY; tryY++) {
+                    final int tryIdx = tryY * sizeXZ + boundX * sizeZ + z;
+                    if (visited[tryIdx] || valueGrid[tryIdx] != value) break extendX;
+                  }
+                  boundX++;
+                }
+
+                // Z
+                extendZ:
+                while (boundZ < sizeZ) {
+                  for (int tryY = y; tryY < boundY; tryY++) {
+                    for (int tryX = x; tryX < boundX; tryX++) {
+                      final int tryIdx = tryY * sizeXZ + tryX * sizeZ + boundZ;
+                      if (visited[tryIdx] || valueGrid[tryIdx] != value) break extendZ;
                     }
                   }
-                  if (canExtendY) maxY++;
+                  boundZ++;
                 }
 
-                int maxZ = z;
-                outerZ:
-                while (maxZ + 1 < sizeZ) {
-                  int nextZOffset = (maxZ + 1) * sizeX * sizeY;
-                  for (int curY = y; curY <= maxY; curY++) {
-                    int rowOffset = nextZOffset + curY * sizeX;
-                    for (int curX = x; curX <= maxX; curX++) {
-                      int checkIdx = rowOffset + curX;
-                      if (visited[checkIdx] || valueGrid[checkIdx] != value) {
-                        break outerZ;
-                      }
-                    }
-                  }
-                  maxZ++;
-                }
-
-                int lenX = maxX - x + 1;
-                int lenY = maxY - y + 1;
-                int lenZ = maxZ - z + 1;
-
-                for (int cz = z; cz <= maxZ; cz++) {
-                  int sliceOffset = cz * sizeX * sizeY;
-                  for (int cy = y; cy <= maxY; cy++) {
-                    int rowOffset = sliceOffset + cy * sizeX;
-                    for (int cx = x; cx <= maxX; cx++) {
-                      visited[rowOffset + cx] = true;
+                // Mark as visited
+                for (int cy = y; cy < boundY; cy++) {
+                  final int cyOffset = cy * sizeXZ;
+                  for (int cx = x; cx < boundX; cx++) {
+                    final int cxOffset = cyOffset + cx * sizeZ;
+                    for (int cz = z; cz < boundZ; cz++) {
+                      visited[cxOffset + cz] = true;
                     }
                   }
                 }
-
                 result.add(
-                    factory.create(value, originX + x, originY + y, originZ + z, lenX, lenY, lenZ));
+                    factory.create(
+                        value,
+                        originX + x,
+                        originY + y,
+                        originZ + z,
+                        boundX - x,
+                        boundY - y,
+                        boundZ - z));
               }
             }
           }
@@ -215,104 +122,111 @@ public interface SubdivideAlgo {
         }
       };
 
-  SubdivideAlgo V3 =
+  SubdivideAlgo V2 =
       new SubdivideAlgo() {
+
         @Override
         public <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
             Parcel parcel, Values values, ResultFactory<T> factory) {
 
-          int sizeX = parcel.sizeX;
-          int sizeY = parcel.sizeY;
-          int originX = parcel.originX;
-          int sizeZ = parcel.sizeZ;
-          int originY = parcel.originY;
-          int originZ = parcel.originZ;
+          final int sizeX = parcel.sizeX;
+          final int sizeY = parcel.sizeY;
+          final int sizeZ = parcel.sizeZ;
+          final int originX = parcel.originX;
+          final int originY = parcel.originY;
+          final int originZ = parcel.originZ;
 
-          int sizeXY = sizeX * sizeY;
-          int totalSize = sizeXY * sizeZ;
-          ArrayList<T> result = new ArrayList<>(totalSize);
+          final int sizeXZ = sizeX * sizeZ;
+          final int totalSize = sizeY * sizeXZ;
 
-          int[] valueGrid = new int[totalSize];
+          ArrayList<T> result = new ArrayList<>(totalSize / 2 + 1);
 
-          for (int z = 0; z < sizeZ; z++) {
-            int zOffset = z * sizeXY;
-            for (int y = 0; y < sizeY; y++) {
-              int yOffset = zOffset + y * sizeX;
-              for (int x = 0; x < sizeX; x++) {
-                valueGrid[yOffset + x] = values.get(originX + x, originY + y, originZ + z);
+          final int[] valueGrid = new int[totalSize];
+          final boolean[] visited = new boolean[totalSize];
+          for (int y = 0; y < sizeY; y++) {
+            final int yOffset = y * sizeXZ;
+            for (int x = 0; x < sizeX; x++) {
+              final int xOffset = yOffset + x * sizeZ;
+              for (int z = 0; z < sizeZ; z++) {
+                // idx = xOffset + z;
+                valueGrid[xOffset + z] = values.get(originX + x, originY + y, originZ + z);
               }
             }
           }
 
-          boolean[] visited = new boolean[totalSize];
+          int[] groupIndices = new int[totalSize];
+          int groupIndicesSize = 0;
 
-          for (int z = 0; z < sizeZ; z++) {
-            int zOffset = z * sizeXY;
-            for (int y = 0; y < sizeY; y++) {
-              int yOffset = zOffset + y * sizeX;
-              for (int x = 0; x < sizeX; x++) {
-                int idx = yOffset + x;
+          for (int y = 0; y < sizeY; y++) {
+            final int yOffset = y * sizeXZ;
+
+            for (int x = 0; x < sizeX; x++) {
+              final int xSizeZ = x * sizeZ;
+              final int xOffset = yOffset + xSizeZ;
+
+              for (int z = 0; z < sizeZ; z++) {
+                final int idx = xOffset + z;
+
                 if (visited[idx]) continue;
+                groupIndicesSize = 0;
 
-                int value = valueGrid[idx];
+                final int value = valueGrid[idx];
 
-                int maxX = x;
-                while (maxX + 1 < sizeX) {
-                  int nextIdx = yOffset + (maxX + 1);
-                  if (visited[nextIdx] || valueGrid[nextIdx] != value) break;
-                  maxX++;
+                int boundY = y + 1;
+                int boundX = x + 1;
+                int boundZ = z + 1;
+
+                // Y
+                while (boundY < sizeY) {
+                  final int tryIdx = boundY * sizeXZ + xSizeZ + z;
+                  if (visited[tryIdx] || valueGrid[tryIdx] != value) break;
+                  visited[tryIdx] = true;
+
+                  groupIndices[groupIndicesSize++] = tryIdx;
+                  boundY++;
                 }
 
-                int maxY = y;
-                boolean canExtendY = true;
-                while (canExtendY && maxY + 1 < sizeY) {
-                  int nextYOffset = zOffset + (maxY + 1) * sizeX;
+                // X
+                extendX:
+                while (boundX < sizeX) {
+                  int i = 0;
+                  for (int tryY = y; tryY < boundY; tryY++) {
+                    final int tryIdx = tryY * sizeXZ + boundX * sizeZ + z;
+                    if (visited[tryIdx] || valueGrid[tryIdx] != value) break extendX;
+                    groupIndices[groupIndicesSize + i++] = tryIdx;
+                  }
+                  groupIndicesSize += i;
+                  boundX++;
+                }
 
-                  for (int curX = x; curX <= maxX; curX++) {
-                    int checkIdx = nextYOffset + curX;
-                    if (visited[checkIdx] || valueGrid[checkIdx] != value) {
-                      canExtendY = false;
-                      break;
+                // Z
+                extendZ:
+                while (boundZ < sizeZ) {
+                  int i = 0;
+                  for (int tryY = y; tryY < boundY; tryY++) {
+                    for (int tryX = x; tryX < boundX; tryX++) {
+                      final int tryIdx = tryY * sizeXZ + tryX * sizeZ + boundZ;
+                      if (visited[tryIdx] || valueGrid[tryIdx] != value) break extendZ;
+                      groupIndices[groupIndicesSize + i++] = tryIdx;
                     }
                   }
-                  if (canExtendY) maxY++;
+                  groupIndicesSize += i;
+                  boundZ++;
                 }
 
-                int maxZ = z;
-                outerZ:
-                while (maxZ + 1 < sizeZ) {
-                  int nextZOffset = (maxZ + 1) * sizeXY;
-
-                  for (int curY = y; curY <= maxY; curY++) {
-                    int rowOffset = nextZOffset + curY * sizeX;
-
-                    for (int curX = x; curX <= maxX; curX++) {
-                      int checkIdx = rowOffset + curX;
-                      if (visited[checkIdx] || valueGrid[checkIdx] != value) {
-                        break outerZ;
-                      }
-                    }
-                  }
-                  maxZ++;
+                // Mark as visited
+                for (int i = 0; i < groupIndicesSize; i++) {
+                  visited[groupIndices[i]] = true;
                 }
-
-                int lenX = maxX - x + 1;
-                int lenY = maxY - y + 1;
-                int lenZ = maxZ - z + 1;
-
-                for (int cz = z; cz <= maxZ; cz++) {
-                  int sliceOffset = cz * sizeXY;
-                  for (int cy = y; cy <= maxY; cy++) {
-                    int rowOffset = sliceOffset + cy * sizeX;
-
-                    for (int cx = x; cx <= maxX; cx++) {
-                      visited[rowOffset + cx] = true;
-                    }
-                  }
-                }
-
                 result.add(
-                    factory.create(value, originX + x, originY + y, originZ + z, lenX, lenY, lenZ));
+                    factory.create(
+                        value,
+                        originX + x,
+                        originY + y,
+                        originZ + z,
+                        boundX - x,
+                        boundY - y,
+                        boundZ - z));
               }
             }
           }

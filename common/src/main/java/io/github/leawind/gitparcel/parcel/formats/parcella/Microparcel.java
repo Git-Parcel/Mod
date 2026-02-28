@@ -27,7 +27,7 @@ public class Microparcel extends Parcel implements Parcel.WithValue {
   }
 
   public static ArrayList<Microparcel> subdivide(Parcel parcel, Level level, BlockPalette palette) {
-    return SubdivideAlgo.V3.subdivide(
+    return SubdivideAlgo.V1.subdivide(
         parcel, (x, y, z) -> palette.collect(level, new BlockPos(x, y, z)), Microparcel::new);
   }
 }

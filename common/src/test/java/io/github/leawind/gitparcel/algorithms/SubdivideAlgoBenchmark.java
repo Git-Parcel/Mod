@@ -11,11 +11,11 @@ import org.openjdk.jmh.infra.Blackhole;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @Fork(value = 2)
-@Warmup(iterations = 3, time = 1)
-@Measurement(iterations = 3, time = 1)
+@Warmup(iterations = 2, time = 1)
+@Measurement(iterations = 3, time = 3)
 public class SubdivideAlgoBenchmark {
 
-  @Param({"2"})
+  @Param({"4"})
   private int variance;
 
   private Parcel parcel;
@@ -29,9 +29,7 @@ public class SubdivideAlgoBenchmark {
     int size = 16;
     parcel = new Parcel(0, 0, 0, size, size, size);
     factory = SubdivideAlgoTest.ParcelWithValue::new;
-
-    var testCase = SubdivideAlgoTest.TestCase.create(random, parcel, variance);
-    values = testCase;
+    values = new SubdivideAlgoTest.TestedValues(parcel, variance, random);
   }
 
   @Benchmark
@@ -43,12 +41,6 @@ public class SubdivideAlgoBenchmark {
   @Benchmark
   public void benchmarkV2(Blackhole bh) {
     var result = SubdivideAlgo.V2.subdivide(parcel, values, factory);
-    bh.consume(result);
-  }
-
-  @Benchmark
-  public void benchmarkV3(Blackhole bh) {
-    var result = SubdivideAlgo.V3.subdivide(parcel, values, factory);
     bh.consume(result);
   }
 }
