@@ -18,6 +18,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jspecify.annotations.Nullable;
 
 public abstract class MvpFormatV0 implements ParcelFormat<ParcelFormatConfig.None> {
 
@@ -39,7 +40,7 @@ public abstract class MvpFormatV0 implements ParcelFormat<ParcelFormatConfig.Non
         Parcel parcel,
         Path dataDir,
         boolean saveEntities,
-        ParcelFormatConfig.None config)
+        ParcelFormatConfig.@Nullable None config)
         throws IOException {
       Files.createDirectories(dataDir);
 

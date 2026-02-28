@@ -64,17 +64,19 @@ public interface ParcelFormat<C extends ParcelFormatConfig<C>> {
     }
 
     var config = format.getDefaultConfig();
-    var configFile = getConfigFile(parcelDir);
-    if (Files.exists(configFile)) {
-      try {
-        config.load(configFile);
-      } catch (Exception e) {
-        LOGGER.error("Failed to load format config: {}", e.getMessage(), e);
-        config.resetToDefault();
+    if (config != null) {
+      var configFile = getConfigFile(parcelDir);
+      if (Files.exists(configFile)) {
+        try {
+          config.load(configFile);
+        } catch (Exception e) {
+          LOGGER.error("Failed to load format config: {}", e.getMessage(), e);
+          config.resetToDefault();
+          config.save(configFile);
+        }
+      } else {
         config.save(configFile);
       }
-    } else {
-      config.save(configFile);
     }
 
     format.save(level, parcel, getDataDir(parcelDir), meta.includeEntity() && saveEntity, config);
@@ -141,6 +143,9 @@ public interface ParcelFormat<C extends ParcelFormatConfig<C>> {
     return null;
   }
 
+  /**
+   * @return might be null
+   */
   default C getDefaultConfig() {
     return null;
   }
@@ -157,6 +162,7 @@ public interface ParcelFormat<C extends ParcelFormatConfig<C>> {
      * @param parcel Parcel to save.
      * @param dataDir Path to parcel data directory. Will be created if not exist.
      * @param saveEntities Whether to save entities in the parcel
+     * @param config format config, can be null
      */
     void save(Level level, Parcel parcel, Path dataDir, boolean saveEntities, @Nullable C config)
         throws IOException;

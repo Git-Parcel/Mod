@@ -19,6 +19,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import org.jspecify.annotations.Nullable;
 
 /** Note: The loader of this format always load blocks regardless of the value of `loadBlocks` */
 public abstract class StructureTemplateFormatV0 implements ParcelFormat<ParcelFormatConfig.None> {
@@ -42,7 +43,7 @@ public abstract class StructureTemplateFormatV0 implements ParcelFormat<ParcelFo
         Parcel parcel,
         Path dataDir,
         boolean saveEntities,
-        ParcelFormatConfig.None config)
+        ParcelFormatConfig.@Nullable None config)
         throws IOException {
       Files.createDirectories(dataDir);
 

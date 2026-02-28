@@ -27,6 +27,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
 
 public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.Config> {
   public static final String BLOCKS_DIR_NAME = "blocks";
@@ -80,8 +81,13 @@ public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.
   public static class Save extends ParcellaFormatV0 implements ParcelFormat.Save<Config> {
 
     @Override
-    public void save(Level level, Parcel parcel, Path dataDir, boolean saveEntities, Config config)
+    public void save(
+        Level level, Parcel parcel, Path dataDir, boolean saveEntities, @Nullable Config config)
         throws IOException {
+      if (config == null) {
+        config = new Config();
+      }
+
       try (ProblemReporter.ScopedCollector problemReporter =
           new ProblemReporter.ScopedCollector(LOGGER)) {
 
@@ -169,9 +175,9 @@ public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.
               .append(hex[microparcel.originZ]);
 
           if (microparcel.sizeX != 0 || microparcel.sizeY != 0 || microparcel.sizeZ != 0) {
-            sb.append(hex[microparcel.sizeX])
-                .append(hex[microparcel.sizeY])
-                .append(hex[microparcel.sizeZ]);
+            sb.append(hex[microparcel.sizeX - 1])
+                .append(hex[microparcel.sizeY - 1])
+                .append(hex[microparcel.sizeZ - 1]);
           }
 
           sb.append('=').append(HexUtils.toHexUpperCase(microparcel.value)).append('\n');
