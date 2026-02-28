@@ -3,10 +3,10 @@ package io.github.leawind.gitparcel.utils.hex;
 import org.jetbrains.annotations.Range;
 
 public final class HexUtils {
-  private static final char[] UPPER_HEX_DIGITS = "0123456789ABCDEF".toCharArray();
-  private static final String[] BYTES_UPPER_CACHE = new String[256];
-  private static final char[] LOWER_HEX_DIGITS = "0123456789abcdef".toCharArray();
-  private static final String[] BYTES_LOWER_CACHE = new String[256];
+  public static final char[] UPPER_HEX_DIGITS = "0123456789ABCDEF".toCharArray();
+  public static final String[] BYTES_UPPER_CACHE = new String[256];
+  public static final char[] LOWER_HEX_DIGITS = "0123456789abcdef".toCharArray();
+  public static final String[] BYTES_LOWER_CACHE = new String[256];
 
   static {
     for (int i = 0; i < 256; i++) {
