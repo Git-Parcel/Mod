@@ -51,7 +51,7 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
     return 0;
   }
 
-  public static final class Save extends ParcellaFormatV0 implements ParcelFormat.Save {
+  public static class Save extends ParcellaFormatV0 implements ParcelFormat.Save {
 
     public static class Options {
       private static final String SCHEMA_URL =
@@ -91,7 +91,7 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
       }
     }
 
-    private void saveBlocks(Level level, Parcel parcel, Path dataDir, Options options)
+    protected void saveBlocks(Level level, Parcel parcel, Path dataDir, Options options)
         throws IOException {
 
       Path blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
@@ -128,7 +128,7 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
       palette.save(paletteFile, nbtDir, blockEntityDataFormat);
     }
 
-    private void writeSubparcel(
+    protected BlockPalette loadBlockPaletteIfExistElseCreate(
         Path paletteFile, Path nbtDir, NbtFormat blockEntityDataFormat) {
       try {
         return BlockPalette.loadIfExist(paletteFile, nbtDir, blockEntityDataFormat);
@@ -138,6 +138,7 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
       }
     }
 
+    protected void writeSubparcel(
         BufferedWriter writer,
         Level level,
         Subparcel subparcel,
@@ -198,7 +199,7 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
       }
     }
 
-    private void saveEntities(
+    protected void saveEntities(
         ProblemReporter problemReporter, Level level, Parcel parcel, Path dir, Options options)
         throws IOException {
 
@@ -228,7 +229,7 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
      * @param entity Entity to save
      * @return NBT tag of the entity
      */
-    private CompoundTag getEntityNbt(
+    protected CompoundTag getEntityNbt(
         ProblemReporter problemReporter, BlockPos from, Entity entity) {
       CompoundTag tag = new CompoundTag();
       Vec3 pos =
