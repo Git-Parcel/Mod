@@ -25,8 +25,6 @@ import org.jspecify.annotations.Nullable;
  * @see <a href="https://git-parcel.github.io/schemas/ParcelMeta.json">Parcel Metadata Schema</a>
  */
 public final class ParcelMeta {
-  public static final String FILE_NAME = "parcel.json";
-
   public record ModDependency(@Nullable String min, @Nullable String max) {
     public static final ModDependency ANY = new ModDependency(null, null);
   }
@@ -79,25 +77,10 @@ public final class ParcelMeta {
   }
 
   /**
-   * Save the metadata to the given directory.
-   *
-   * <ul>
-   *   <li>Overwrite the file if it already exists.
-   *   <li>Create the parent directories if they do not exist.
-   * </ul>
-   *
-   * @param parcelDir The parcel directory to save the {@value FILE_NAME} file to
-   * @throws IOException If an I/O error occurs while writing the file
-   */
-  public void saveToParcelDir(Path parcelDir) throws IOException {
-    save(parcelDir.resolve(FILE_NAME));
-  }
-
-  /**
    * Save the metadata to the given file path.
    *
-   * @param metaFile Path to the {@value FILE_NAME} file. The parent directories will be created if
-   *     not exist. File will be overwritten if it already exists.
+   * @param metaFile Path to the file. The parent directories will be created if not exist. File
+   *     will be overwritten if it already exists.
    * @throws IOException If an I/O error occurs while writing the file
    */
   public void save(Path metaFile) throws IOException {
@@ -162,7 +145,7 @@ public final class ParcelMeta {
   }
 
   /**
-   * @param metaFile File path to the {@value FILE_NAME} file
+   * @param metaFile File path to the file
    * @return The parsed {@link ParcelMeta} object
    * @throws IOException If an I/O error occurs while reading the file
    */
