@@ -2,18 +2,51 @@ package io.github.leawind.gitparcel.algorithms;
 
 import io.github.leawind.gitparcel.parcel.Parcel;
 import java.util.ArrayList;
+import org.jetbrains.annotations.Range;
 
 @FunctionalInterface
 public interface SubdivideAlgo {
+  /**
+   * Subdivide the given parcel into smaller parcels.
+   *
+   * @param sizeX The size of the parcel in the X axis.
+   * @param sizeY The size of the parcel in the Y axis.
+   * @param sizeZ The size of the parcel in the Z axis.
+   * @param values The values to use for the subdivided parcels.
+   * @param factory The factory to use for creating the subdivided parcels.
+   * @return The subdivided parcels.
+   * @param <T> The type of the subdivided parcels.
+   */
   <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
-      Parcel parcel, Values values, ResultFactory<T> factory);
+      @Range(from = 1, to = 16) int sizeX,
+      @Range(from = 1, to = 16) int sizeY,
+      @Range(from = 1, to = 16) int sizeZ,
+      Values values,
+      ResultFactory<T> factory);
 
   interface Values {
-    int get(int x, int y, int z);
+    /**
+     * Get the value at the given position.
+     *
+     * <p>Note: The position is relative to the origin of the parcel.
+     *
+     * @return The value at the given position.
+     */
+    int get(
+        @Range(from = 0, to = 15) int x,
+        @Range(from = 0, to = 15) int y,
+        @Range(from = 0, to = 15) int z);
   }
 
   interface ResultFactory<T> {
-    T create(int value, int originX, int originY, int originZ, int sizeX, int sizeY, int sizeZ);
+    T create(
+        int value,
+        @Range(from = 0, to = 15) int originX,
+        @Range(from = 0, to = 15) int originY,
+        @Range(from = 0, to = 15) int originZ,
+        @Range(from = 1, to = 16) int sizeX,
+        @Range(from = 1, to = 16) int sizeY,
+        @Range(from = 1, to = 16) int sizeZ);
   }
 
   SubdivideAlgo V1 =
@@ -21,14 +54,11 @@ public interface SubdivideAlgo {
 
         @Override
         public <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
-            Parcel parcel, Values values, ResultFactory<T> factory) {
+            int sizeX, int sizeY, int sizeZ, Values values, ResultFactory<T> factory) {
 
-          final int sizeX = parcel.sizeX;
-          final int sizeY = parcel.sizeY;
-          final int sizeZ = parcel.sizeZ;
-          final int originX = parcel.originX;
-          final int originY = parcel.originY;
-          final int originZ = parcel.originZ;
+          final int originX = 0;
+          final int originY = 0;
+          final int originZ = 0;
 
           final int sizeXZ = sizeX * sizeZ;
           final int totalSize = sizeY * sizeXZ;
@@ -127,14 +157,11 @@ public interface SubdivideAlgo {
 
         @Override
         public <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
-            Parcel parcel, Values values, ResultFactory<T> factory) {
+            int sizeX, int sizeY, int sizeZ, Values values, ResultFactory<T> factory) {
 
-          final int sizeX = parcel.sizeX;
-          final int sizeY = parcel.sizeY;
-          final int sizeZ = parcel.sizeZ;
-          final int originX = parcel.originX;
-          final int originY = parcel.originY;
-          final int originZ = parcel.originZ;
+          final int originX = 0;
+          final int originY = 0;
+          final int originZ = 0;
 
           final int sizeXZ = sizeX * sizeZ;
           final int totalSize = sizeY * sizeXZ;

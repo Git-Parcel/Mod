@@ -26,8 +26,8 @@ public class SubdivideAlgoTest {
     @Override
     public int get(int x, int y, int z) {
       try {
-
-        return valuesArray[x - parcel.originX][y - parcel.originY][z - parcel.originZ];
+        // 新的 SubdivideAlgo 接口传递的是相对坐标（0-15），直接使用即可
+        return valuesArray[x][y][z];
       } catch (IndexOutOfBoundsException e) {
         throw e;
       }
@@ -64,7 +64,13 @@ public class SubdivideAlgoTest {
 
         var testCase = new TestedValues(parcel, variance, random);
 
-        var groups = algo.subdivide(testCase.parcel, testCase, ParcelWithValue::new);
+        var groups =
+            algo.subdivide(
+                testCase.parcel.sizeX,
+                testCase.parcel.sizeY,
+                testCase.parcel.sizeZ,
+                testCase,
+                ParcelWithValue::new);
         SubparcelTest.assertParcelEqual(testCase.parcel, groups);
 
         int volume = parcel.getVolume();
