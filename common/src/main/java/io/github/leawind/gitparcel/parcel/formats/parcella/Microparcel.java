@@ -27,11 +27,13 @@ public class Microparcel extends Parcel implements Parcel.WithValue {
   }
 
   public static ArrayList<Microparcel> subdivide(Parcel parcel, Level level, BlockPalette palette) {
-    return SubdivideAlgo.V1.subdivide(
+    return SubdivideAlgo.INSTANCE.subdivide(
         parcel.sizeX,
         parcel.sizeY,
         parcel.sizeZ,
-        (x, y, z) -> palette.collect(level, new BlockPos(parcel.originX + x, parcel.originY + y, parcel.originZ + z)),
+        (x, y, z) ->
+            palette.collect(
+                level, new BlockPos(parcel.originX + x, parcel.originY + y, parcel.originZ + z)),
         Microparcel::new);
   }
 }

@@ -237,4 +237,6 @@ public interface SubdivideAlgo {
           return result;
         }
       };
+
+  SubdivideAlgo INSTANCE = V2;
 }
