@@ -77,6 +77,10 @@ public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.
     public BooleanConfigItem enableMicroparcel =
         new BooleanConfigItem("enableMicroparcel").defaultValue(true).storeRightHere();
 
+    public Config() {
+      register(blockEntityDataFormat).register(entityDataFormat).register(enableMicroparcel);
+    }
+
     /**
      * Load parcella format config from file.
      *

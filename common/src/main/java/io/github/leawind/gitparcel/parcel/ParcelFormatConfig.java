@@ -3,21 +3,30 @@ package io.github.leawind.gitparcel.parcel;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.github.leawind.gitparcel.utils.config.ConfigItem;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Base class for parcel format configuration.
  *
- * @param <C> The type of the configuration class
+ * @param <Self> The type of the configuration class
  */
-public abstract class ParcelFormatConfig<C extends ParcelFormatConfig<C>> {
+public abstract class ParcelFormatConfig<Self extends ParcelFormatConfig<Self>> {
+  protected Map<String, ConfigItem<?, ?>> configItems = new HashMap<>();
 
-  public C getDefaultConfig() {
-    return null;
+  @SuppressWarnings("unchecked")
+  private Self self() {
+    return (Self) this;
   }
 
-  public List<ConfigItem<?, ?>> listConfigItems() {
-    return List.of();
+  protected Self register(ConfigItem<?, ?> item) {
+    configItems.put(item.name(), item);
+    return self();
+  }
+
+  public Collection<ConfigItem<?, ?>> listConfigItems() {
+    return configItems.values();
   }
 
   public JsonElement toJson() {
