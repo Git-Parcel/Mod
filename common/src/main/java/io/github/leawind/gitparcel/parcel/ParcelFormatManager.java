@@ -13,20 +13,26 @@ public class ParcelFormatManager {
   private ParcelFormat.@Nullable Load<?> defaultLoader;
 
   public <C extends ParcelFormatConfig<C>> ParcelFormatManager register(ParcelFormat<C> format) {
-    if (format instanceof ParcelFormat.Save<C> saver) {
-      savers.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), saver);
-    } else if (format instanceof ParcelFormat.Load<C> loader) {
-      loaders.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), loader);
+    switch (format) {
+      case ParcelFormat.Save<C> saver ->
+          savers.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), saver);
+      case ParcelFormat.Load<C> loader ->
+          loaders.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), loader);
+      case ParcelFormat.Impl<C> ignored ->
+          throw new IllegalArgumentException(
+              "Expected a saver or loader, got " + format.getClass().getSimpleName());
     }
     return this;
   }
 
   public <C extends ParcelFormatConfig<C>> ParcelFormatManager registerDefault(
       ParcelFormat<C> format) {
-    if (format instanceof ParcelFormat.Save<C> saver) {
-      defaultSaver = saver;
-    } else if (format instanceof ParcelFormat.Load<C> loader) {
-      defaultLoader = loader;
+    switch (format) {
+      case ParcelFormat.Save<C> saver -> defaultSaver = saver;
+      case ParcelFormat.Load<C> loader -> defaultLoader = loader;
+      case ParcelFormat.Impl<C> ignored ->
+          throw new IllegalArgumentException(
+              "Expected a saver or loader, got " + format.getClass().getSimpleName());
     }
     return register(format);
   }
