@@ -35,16 +35,16 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
   private static final Logger LOGGER = LogUtils.getLogger();
 
   private final String name;
-
   private @Nullable String description = null;
 
   private T defaultValue = null;
 
   private @Nullable Supplier<T> getter = null;
-
   private @Nullable Consumer<T> setter = null;
 
   private @Nullable Function<T, @Nullable String> validator = null;
+
+  private boolean userVisible = true;
 
   public abstract JsonElement toJson();
 
@@ -132,6 +132,10 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
     }
   }
 
+  public boolean userVisible() {
+    return userVisible;
+  }
+
   public Self storeRightHere() {
     var box = new Box(defaultValue());
     this.getter = box::get;
@@ -172,6 +176,11 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
    */
   public Self validator(Function<T, @Nullable String> validator) {
     this.validator = validator;
+    return self();
+  }
+
+  public Self userVisible(boolean value) {
+    userVisible = value;
     return self();
   }
 }
