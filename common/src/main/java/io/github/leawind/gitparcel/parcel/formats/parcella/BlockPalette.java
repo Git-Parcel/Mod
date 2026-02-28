@@ -84,12 +84,14 @@ public class BlockPalette {
   /**
    * Saves this block palette to the specified file and NBT directory.
    *
-   * @param paletteFile the path to the palette file
-   * @param nbtDir the directory to store NBT files
+   * @param paletteFile the path to the palette file. Its parent directory will be created if it
+   *     does not exist.
+   * @param nbtDir the directory to store NBT files. Will be created if it does not exist.
    * @param nbtFormat the format to use for NBT files
    * @throws IOException if an I/O error occurs while saving the palette
    */
   public void save(Path paletteFile, Path nbtDir, NbtFormat nbtFormat) throws IOException {
+    Files.createDirectories(paletteFile.getParent());
     Files.createDirectories(nbtDir);
     try (BufferedWriter writer = Files.newBufferedWriter(paletteFile, StandardCharsets.UTF_8)) {
       for (var entry : byId.entrySet()) {
@@ -111,6 +113,20 @@ public class BlockPalette {
 
   public record Data(String blockStateString, @Nullable CompoundTag nbt) {}
 
+  /**
+   * Loads a block palette from the specified file and NBT directory if it exists.
+   *
+   * <p>If the palette file does not exist, {@code null} will be returned.
+   *
+   * @param paletteFile the path to the palette file. If not exist, {@code null} will be returned.
+   * @param nbtDir the directory to store NBT files
+   * @param nbtFormat the format to use for NBT files
+   * @return the loaded block palette, or {@code null} if the palette file does not exist
+   * @throws IOException if an I/O error occurs
+   * @throws InvalidPaletteException if the palette file is malformed
+   * @throws NumberFormatException if an ID in the palette file is not a valid hexadecimal number
+   * @throws CommandSyntaxException if the snbt format is used and the NBT file is malformed
+   */
   public static @Nullable BlockPalette loadIfExist(
       Path paletteFile, Path nbtDir, NbtFormat nbtFormat)
       throws IOException, InvalidPaletteException, NumberFormatException, CommandSyntaxException {
@@ -125,14 +141,14 @@ public class BlockPalette {
    *
    * <p>For duplicate IDs, only the first one will be used.
    *
-   * @param paletteFile the path to the palette file
+   * @param paletteFile the path to the palette file. Must exist.
    * @param nbtDir the directory to store NBT files
    * @param nbtFormat the format to use for NBT files
    * @return the loaded block palette
    * @throws IOException if an I/O error occurs
    * @throws InvalidPaletteException if the palette file is malformed
    * @throws NumberFormatException if an ID in the palette file is not a valid hexadecimal number
-   * @throws CommandSyntaxException if the snbt format is used and the NBT file is malformed
+   * @throws CommandSyntaxException if the NBT format is text and the NBT file is malformed
    */
   public static BlockPalette load(Path paletteFile, Path nbtDir, NbtFormat nbtFormat)
       throws IOException, InvalidPaletteException, NumberFormatException, CommandSyntaxException {
@@ -163,7 +179,7 @@ public class BlockPalette {
         if (Files.exists(nbtFile)) {
           switch (nbtFormat) {
             case Binary -> nbt = NbtFormat.readBinary(nbtFile);
-            case Text -> nbt = NbtFormat.readReadable(nbtFile);
+            case Text -> nbt = NbtFormat.readText(nbtFile);
           }
         }
 

@@ -16,10 +16,20 @@ public interface ParcelFormat {
   String META_FILE_NAME = "parcel.json";
   String DATA_DIR_NAME = "data";
 
+  /**
+   * Returns the path of the metadata file in the specified parcel directory.
+   *
+   * @param parcelDir The parcel directory
+   */
   static Path getMetaFile(Path parcelDir) {
     return parcelDir.resolve(META_FILE_NAME);
   }
 
+  /**
+   * Returns the path of the data directory in the specified parcel directory.
+   *
+   * @param parcelDir The parcel directory
+   */
   static Path getDataDir(Path parcelDir) {
     return parcelDir.resolve(DATA_DIR_NAME);
   }
@@ -71,11 +81,11 @@ public interface ParcelFormat {
   /**
    * Saves a parcel at the specified position in the specified level.
    *
-   * @param level The level where the parcel is in
-   * @param parcel The parcel to save
-   * @param meta The metadata of the parcel
+   * @param level The level where the parcel is in.
+   * @param parcel The parcel to save.
+   * @param meta The metadata of the parcel. Will be updated to the size of the parcel.
    * @param parcelDir The parcel directory, which contains the {@value #META_FILE_NAME} file and
-   *     {@value #DATA_DIR_NAME} directory
+   *     {@value #DATA_DIR_NAME} directory. Will be created if not exists.
    * @param saveEntity Whether to save the entities in the parcel. Only works when {@code
    *     meta.includeEntity} is true
    * @throws IOException If an I/O error occurs while saving the parcel
@@ -134,11 +144,17 @@ public interface ParcelFormat {
   interface Save extends ParcelFormat {
 
     /**
-     * Save parcel content to directory
+     * Save parcel content to directory.
+     *
+     * <p>The metadata file (If it exists) in data directory may be considered, and saved in the
+     * same way, depending on the implementation.
+     *
+     * <p>For implementation, you should save the parcel content to the {@code dataDir} directory
+     * and nowhere else.
      *
      * @param level Level
-     * @param parcel Parcel to save
-     * @param dataDir Path to parcel data directory
+     * @param parcel Parcel to save.
+     * @param dataDir Path to parcel data directory. Will be created if not exist.
      * @param saveEntities Whether to save entities in the parcel
      */
     void save(Level level, Parcel parcel, Path dataDir, boolean saveEntities) throws IOException;

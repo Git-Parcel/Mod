@@ -57,6 +57,12 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
 
     public Vec3i anchorOffset = Vec3i.ZERO;
 
+    /**
+     * Load parcella format meta from file.
+     *
+     * @param path Path to format meta file
+     * @return ParcellaFormatMeta if loaded successfully, otherwise null
+     */
     public static ParcellaFormatV0.Save.@Nullable ParcellaFormatMeta tryLoad(Path path) {
       try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
         return GSON.fromJson(reader, ParcellaFormatMeta.class);
@@ -65,6 +71,12 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
       }
     }
 
+    /**
+     * Load parcella format meta from file, or return a default meta if failed.
+     *
+     * @param path Path to format meta file
+     * @return ParcellaFormatMeta if loaded successfully, otherwise a default meta
+     */
     public static ParcellaFormatMeta tryLoadOrDefault(Path path) {
       ParcellaFormatMeta formatMeta = ParcellaFormatMeta.tryLoad(path);
       return formatMeta != null ? formatMeta : new ParcellaFormatMeta();
@@ -78,7 +90,6 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
         throws IOException {
       try (ProblemReporter.ScopedCollector problemReporter =
           new ProblemReporter.ScopedCollector(LOGGER)) {
-        Files.createDirectories(dataDir);
 
         Path formatMetaFile = dataDir.resolve("format-meta.json");
         ParcellaFormatMeta formatMeta = ParcellaFormatMeta.tryLoadOrDefault(formatMetaFile);
@@ -91,6 +102,13 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
       }
     }
 
+    /**
+     * Save blocks in parcella format.
+     *
+     * @param dataDir Path to parcel data directory. Will be created if not exist.
+     * @param formatMeta Parcella format meta.
+     * @throws IOException If an I/O error occurs
+     */
     protected void saveBlocks(
         Level level, Parcel parcel, Path dataDir, ParcellaFormatMeta formatMeta)
         throws IOException {

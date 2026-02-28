@@ -96,12 +96,8 @@ public final class ParcelMeta {
   /**
    * Save the metadata to the given file path.
    *
-   * <ul>
-   *   <li>Overwrite the file if it already exists.
-   *   <li>Create the parent directories if they do not exist.
-   * </ul>
-   *
-   * @param metaFile Path to the {@value FILE_NAME} file
+   * @param metaFile Path to the {@value FILE_NAME} file. The parent directories will be created if
+   *     not exist. File will be overwritten if it already exists.
    * @throws IOException If an I/O error occurs while writing the file
    */
   public void save(Path metaFile) throws IOException {

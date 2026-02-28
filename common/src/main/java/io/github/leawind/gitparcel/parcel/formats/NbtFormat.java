@@ -14,10 +14,25 @@ public enum NbtFormat {
 
   public final String suffix;
 
+  /**
+   * Writes the given NBT tag to the specified path in the format of this NBT format.
+   *
+   * @param path the path to write the NBT tag to. Must exist.
+   * @param tag the NBT tag to write.
+   * @throws IOException if an I/O error occurs while writing the NBT tag to the path.
+   */
   public void write(Path path, CompoundTag tag) throws IOException {
     write(path, tag, false);
   }
 
+  /**
+   * Writes the given NBT tag to the specified path in the format of this NBT format.
+   *
+   * @param path the path to write the NBT tag to. Must exist.
+   * @param tag the NBT tag to write.
+   * @param format whether to format the NBT tag in a readable way.
+   * @throws IOException if an I/O error occurs while writing the NBT tag to the path.
+   */
   public void write(Path path, CompoundTag tag, boolean format) throws IOException {
     switch (this) {
       case Binary:
@@ -36,11 +51,26 @@ public enum NbtFormat {
     this.suffix = suffix;
   }
 
+  /**
+   * Reads an NBT tag from the specified path in binary format.
+   *
+   * @param path the path to read the NBT tag from.
+   * @return the NBT tag read from the path.
+   * @throws IOException if an I/O error occurs while reading the NBT tag from the path.
+   */
   public static CompoundTag readBinary(Path path) throws IOException {
     return NbtIo.read(path);
   }
 
-  public static CompoundTag readReadable(Path path) throws IOException, CommandSyntaxException {
+  /**
+   * Reads an NBT tag from the specified path in text format.
+   *
+   * @param path the path to read the NBT tag from. Must exist.
+   * @return the NBT tag read from the path.
+   * @throws IOException if an I/O error occurs while reading the NBT tag from the path.
+   * @throws CommandSyntaxException if the NBT tag in the path is not valid.
+   */
+  public static CompoundTag readText(Path path) throws IOException, CommandSyntaxException {
     return TagParser.parseCompoundFully(Files.readString(path));
   }
 }
