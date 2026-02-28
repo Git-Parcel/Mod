@@ -14,8 +14,24 @@ import org.slf4j.Logger;
  *
  * @param <T> The type of the configuration value
  */
-public abstract sealed class ConfigItem<T, Self extends ConfigItem<?, ?>>
+public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
     permits StringConfigItem, BooleanConfigItem, LongConfigItem, DoubleConfigItem, EnumConfigItem {
+  private class Box {
+    private T value;
+
+    public Box(T value) {
+      this.value = value;
+    }
+
+    public T get() {
+      return value;
+    }
+
+    public void set(T value) {
+      this.value = value;
+    }
+  }
+
   private static final Logger LOGGER = LogUtils.getLogger();
 
   private final String name;
@@ -25,6 +41,7 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<?, ?>>
   private T defaultValue = null;
 
   private @Nullable Supplier<T> getter = null;
+
   private @Nullable Consumer<T> setter = null;
 
   private @Nullable Function<T, @Nullable String> validator = null;
@@ -113,6 +130,13 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<?, ?>>
       LOGGER.error("The error message will be used as the validation result");
       return "Validator error: " + e.getMessage();
     }
+  }
+
+  public Self storeRightHere() {
+    var box = new Box(defaultValue());
+    this.getter = box::get;
+    this.setter = box::set;
+    return self();
   }
 
   public Self description(@Nullable String description) {

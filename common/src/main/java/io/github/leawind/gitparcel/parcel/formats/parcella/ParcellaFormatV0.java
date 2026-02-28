@@ -5,6 +5,8 @@ import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.parcel.formats.NbtFormat;
+import io.github.leawind.gitparcel.utils.config.BooleanConfigItem;
+import io.github.leawind.gitparcel.utils.config.EnumConfigItem;
 import io.github.leawind.gitparcel.utils.hex.HexUtils;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -64,9 +66,16 @@ public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.
 
     public Vec3i anchorOffset = Vec3i.ZERO;
 
-    public NbtFormat blockEntityDataFormat = NbtFormat.Text;
-    public NbtFormat entityDataFormat = NbtFormat.Text;
-    public boolean enableMicroparcel = true;
+    public EnumConfigItem<NbtFormat> blockEntityDataFormat =
+        new EnumConfigItem<NbtFormat>("blockEntityDataFormat")
+            .defaultValue(NbtFormat.Text)
+            .storeRightHere();
+    public EnumConfigItem<NbtFormat> entityDataFormat =
+        new EnumConfigItem<NbtFormat>("entityDataFormat")
+            .defaultValue(NbtFormat.Text)
+            .storeRightHere();
+    public BooleanConfigItem enableMicroparcel =
+        new BooleanConfigItem("enableMicroparcel").defaultValue(true).storeRightHere();
 
     /**
      * Load parcella format config from file.
@@ -126,7 +135,8 @@ public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.
 
       // Load or create block palette
       BlockPalette palette =
-          loadBlockPaletteIfExistElseCreate(paletteFile, nbtDir, config.blockEntityDataFormat);
+          loadBlockPaletteIfExistElseCreate(
+              paletteFile, nbtDir, config.blockEntityDataFormat.get());
 
       // Process sub-parcels with Z-Order encoding
       Path subParcelsDir = blocksDir.resolve(SUB_PARCELS_DIR_NAME);
@@ -146,11 +156,11 @@ public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.
         // Write sub-parcel data
         try (BufferedWriter writer =
             Files.newBufferedWriter(subparcelFile, StandardCharsets.UTF_8)) {
-          writeSubparcel(writer, level, subparcel, palette, config.enableMicroparcel);
+          writeSubparcel(writer, level, subparcel, palette, config.enableMicroparcel.get());
         }
       }
 
-      palette.save(paletteFile, nbtDir, config.blockEntityDataFormat);
+      palette.save(paletteFile, nbtDir, config.blockEntityDataFormat.get());
     }
 
     protected BlockPalette loadBlockPaletteIfExistElseCreate(
@@ -239,8 +249,8 @@ public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.
       int entityId = 0;
       for (Entity entity : entities) {
         CompoundTag tag = getEntityNbt(problemReporter, parcel.getOrigin(), entity);
-        Path path = entitiesDir.resolve(entityId + config.entityDataFormat.suffix);
-        config.entityDataFormat.write(path, tag);
+        Path path = entitiesDir.resolve(entityId + config.entityDataFormat.get().suffix);
+        config.entityDataFormat.get().write(path, tag);
 
         entityId++;
       }
