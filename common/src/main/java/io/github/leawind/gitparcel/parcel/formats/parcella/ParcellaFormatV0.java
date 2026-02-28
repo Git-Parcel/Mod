@@ -143,21 +143,57 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
         BlockPalette palette,
         boolean enableMicroparcel)
         throws IOException {
-      if (!enableMicroparcel) {
-        for (int i = 0; i < subparcel.sizeX; i++) {
-          for (int j = 0; j < subparcel.sizeY; j++) {
-            for (int k = 0; k < subparcel.sizeZ; k++) {
-              var pos =
-                  new BlockPos(subparcel.originX + i, subparcel.originY + j, subparcel.originZ + k);
-              int id = palette.collect(level, pos);
-              writer.write(HexUtils.toHexUpperCase(id));
-              writer.newLine();
-            }
+      StringBuilder sb = new StringBuilder(8192);
+
+      if (enableMicroparcel) {
+        char[] hex = HexUtils.UPPER_HEX_DIGITS;
+
+        for (var microparcel : Microparcel.subdivide(subparcel, level, palette)) {
+          sb.append(hex[microparcel.originX])
+              .append(hex[microparcel.originY])
+              .append(hex[microparcel.originZ]);
+
+          if (microparcel.sizeX != 0 || microparcel.sizeY != 0 || microparcel.sizeZ != 0) {
+            sb.append(hex[microparcel.sizeX])
+                .append(hex[microparcel.sizeY])
+                .append(hex[microparcel.sizeZ]);
+          }
+
+          sb.append('=').append(HexUtils.toHexUpperCase(microparcel.value)).append('\n');
+
+          if (sb.length() > 8000) {
+            writer.write(sb.toString());
+            sb.setLength(0);
           }
         }
       } else {
-        // TODO microparcel
-        LOGGER.warn("Microparcel is not implemented yet");
+        int originX = subparcel.originX;
+        int originY = subparcel.originY;
+        int originZ = subparcel.originZ;
+        int sizeX = subparcel.sizeX;
+        int sizeY = subparcel.sizeY;
+        int sizeZ = subparcel.sizeZ;
+
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+
+        for (int i = 0, x = originX; i < sizeX; i++, x++) {
+          for (int j = 0, y = originY; j < sizeY; j++, y++) {
+            for (int k = 0, z = originZ; k < sizeZ; k++, z++) {
+              int id = palette.collect(level, pos.set(x, y, z));
+
+              sb.append(HexUtils.toHexUpperCase(id)).append('\n');
+
+              if (sb.length() > 8000) {
+                writer.write(sb.toString());
+                sb.setLength(0);
+              }
+            }
+          }
+        }
+      }
+
+      if (!sb.isEmpty()) {
+        writer.write(sb.toString());
       }
     }
 
