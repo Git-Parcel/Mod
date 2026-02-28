@@ -95,21 +95,13 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
         throws IOException {
 
       Path blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
-
       Files.createDirectories(blocksDir);
-
       Path paletteFile = blocksDir.resolve(PALETTE_FILE_NAME);
       Path nbtDir = blocksDir.resolve(NBT_DIR_NAME);
 
-      BlockPalette palette = null;
-      try {
-        palette = BlockPalette.loadIfExist(paletteFile, nbtDir, blockEntityDataFormat);
-      } catch (Exception e) {
-        LOGGER.error("Error loading block palette: {}", e.getMessage(), e);
-      }
-      if (palette == null) {
-        palette = new BlockPalette();
-      }
+      // Load or create block palette
+      BlockPalette palette =
+          loadBlockPaletteIfExistElseCreate(paletteFile, nbtDir, blockEntityDataFormat);
 
       // Process sub-parcels with Z-Order encoding
       Path subParcelsDir = blocksDir.resolve(SUB_PARCELS_DIR_NAME);
@@ -137,6 +129,15 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
     }
 
     private void writeSubparcel(
+        Path paletteFile, Path nbtDir, NbtFormat blockEntityDataFormat) {
+      try {
+        return BlockPalette.loadIfExist(paletteFile, nbtDir, blockEntityDataFormat);
+      } catch (Exception e) {
+        LOGGER.error("Error loading block palette: {}", e.getMessage(), e);
+        return new BlockPalette();
+      }
+    }
+
         BufferedWriter writer,
         Level level,
         Subparcel subparcel,
