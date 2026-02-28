@@ -1,6 +1,5 @@
 package io.github.leawind.gitparcel.parcel.formats.parcella;
 
-import com.google.gson.Gson;
 import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.parcel.ParcelFormatConfig;
@@ -8,7 +7,6 @@ import io.github.leawind.gitparcel.parcel.formats.NbtFormat;
 import io.github.leawind.gitparcel.utils.config.BooleanConfigItem;
 import io.github.leawind.gitparcel.utils.config.EnumConfigItem;
 import io.github.leawind.gitparcel.utils.hex.HexUtils;
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -29,11 +27,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.Vec3;
-import org.jspecify.annotations.Nullable;
 
 public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.Config> {
-  private static final Gson GSON = new Gson();
-
   public static final String BLOCKS_DIR_NAME = "blocks";
   public static final String ENTITIES_DIR_NAME = "entities";
   public static final String NBT_DIR_NAME = "nbt";
@@ -79,31 +74,6 @@ public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.
 
     public Config() {
       register(blockEntityDataFormat).register(entityDataFormat).register(enableMicroparcel);
-    }
-
-    /**
-     * Load parcella format config from file.
-     *
-     * @param path Path to config file
-     * @return Config if loaded successfully, otherwise null
-     */
-    public static @Nullable Config tryLoad(Path path) {
-      try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-        return GSON.fromJson(reader, Config.class);
-      } catch (IOException e) {
-        return null;
-      }
-    }
-
-    /**
-     * Load parcella format config from file, or return a default config if failed.
-     *
-     * @param path Path to config file
-     * @return Config if loaded successfully, otherwise a new one
-     */
-    public static Config tryLoadOrDefault(Path path) {
-      Config config = Config.tryLoad(path);
-      return config != null ? config : new Config();
     }
   }
 
