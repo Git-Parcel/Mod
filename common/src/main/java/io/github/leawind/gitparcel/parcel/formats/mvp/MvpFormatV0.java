@@ -18,7 +18,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-public abstract class MvpFormatV0 implements ParcelFormat {
+public abstract class MvpFormatV0 implements ParcelFormat<Void> {
 
   @Override
   public String id() {
@@ -30,9 +30,9 @@ public abstract class MvpFormatV0 implements ParcelFormat {
     return 0;
   }
 
-  public static final class Save extends MvpFormatV0 implements ParcelFormat.Save {
+  public static final class Save extends MvpFormatV0 implements ParcelFormat.Save<Void> {
     @Override
-    public void save(Level level, Parcel parcel, Path dataDir, boolean saveEntities)
+    public void save(Level level, Parcel parcel, Path dataDir, boolean saveEntities, Void config)
         throws IOException {
       Files.createDirectories(dataDir);
 

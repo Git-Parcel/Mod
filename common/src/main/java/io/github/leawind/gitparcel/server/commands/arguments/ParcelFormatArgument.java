@@ -29,20 +29,20 @@ public final class ParcelFormatArgument {
     return new Loader();
   }
 
-  public static ParcelFormat.Save getSaver(
+  public static ParcelFormat.Save<?> getSaver(
       CommandContext<CommandSourceStack> context, String name) {
     return context.getArgument(name, ParcelFormat.Save.class);
   }
 
-  public static ParcelFormat.Load getLoader(
+  public static ParcelFormat.Load<?> getLoader(
       CommandContext<CommandSourceStack> context, String name) {
     return context.getArgument(name, ParcelFormat.Load.class);
   }
 
-  public static class Saver implements ArgumentType<ParcelFormat.Save> {
+  public static class Saver implements ArgumentType<ParcelFormat.Save<?>> {
 
     @Override
-    public ParcelFormat.Save parse(StringReader reader) throws CommandSyntaxException {
+    public ParcelFormat.Save<?> parse(StringReader reader) throws CommandSyntaxException {
       var format = Constants.PARCEL_FORMATS.getSaver(reader.readString());
       if (format == null) {
         throw ERROR_INVALID.createWithContext(reader);
@@ -64,10 +64,10 @@ public final class ParcelFormatArgument {
     }
   }
 
-  public static class Loader implements ArgumentType<ParcelFormat.Load> {
+  public static class Loader implements ArgumentType<ParcelFormat.Load<?>> {
 
     @Override
-    public ParcelFormat.Load parse(StringReader reader) throws CommandSyntaxException {
+    public ParcelFormat.Load<?> parse(StringReader reader) throws CommandSyntaxException {
       var format = Constants.PARCEL_FORMATS.getLoader(reader.readString());
       if (format == null) {
         throw ERROR_INVALID.createWithContext(reader);

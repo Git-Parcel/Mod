@@ -28,7 +28,7 @@ import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
-public abstract class ParcellaFormatV0 implements ParcelFormat {
+public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.Config> {
   private static final Gson GSON = new Gson();
 
   public static final String BLOCKS_DIR_NAME = "blocks";
@@ -51,53 +51,50 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
     return 0;
   }
 
-  public static class ParcellaFormatMeta {
+  public static class Config {
     private static final String SCHEMA_URL =
-        "https://git-parcel.github.io/schemas/ParcellaFormatMeta.json";
+        "https://git-parcel.github.io/schemas/ParcellaFormatConfig.json";
 
     public Vec3i anchorOffset = Vec3i.ZERO;
 
     /**
-     * Load parcella format meta from file.
+     * Load parcella format config from file.
      *
-     * @param path Path to format meta file
-     * @return ParcellaFormatMeta if loaded successfully, otherwise null
+     * @param path Path to config file
+     * @return Config if loaded successfully, otherwise null
      */
-    public static ParcellaFormatV0.Save.@Nullable ParcellaFormatMeta tryLoad(Path path) {
+    public static @Nullable Config tryLoad(Path path) {
       try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-        return GSON.fromJson(reader, ParcellaFormatMeta.class);
+        return GSON.fromJson(reader, Config.class);
       } catch (IOException e) {
         return null;
       }
     }
 
     /**
-     * Load parcella format meta from file, or return a default meta if failed.
+     * Load parcella format config from file, or return a default config if failed.
      *
-     * @param path Path to format meta file
-     * @return ParcellaFormatMeta if loaded successfully, otherwise a default meta
+     * @param path Path to config file
+     * @return Config if loaded successfully, otherwise a new one
      */
-    public static ParcellaFormatMeta tryLoadOrDefault(Path path) {
-      ParcellaFormatMeta formatMeta = ParcellaFormatMeta.tryLoad(path);
-      return formatMeta != null ? formatMeta : new ParcellaFormatMeta();
+    public static Config tryLoadOrDefault(Path path) {
+      Config config = Config.tryLoad(path);
+      return config != null ? config : new Config();
     }
   }
 
-  public static class Save extends ParcellaFormatV0 implements ParcelFormat.Save {
+  public static class Save extends ParcellaFormatV0 implements ParcelFormat.Save<Config> {
 
     @Override
-    public void save(Level level, Parcel parcel, Path dataDir, boolean saveEntities)
+    public void save(Level level, Parcel parcel, Path dataDir, boolean saveEntities, Config config)
         throws IOException {
       try (ProblemReporter.ScopedCollector problemReporter =
           new ProblemReporter.ScopedCollector(LOGGER)) {
 
-        Path formatMetaFile = dataDir.resolve("format-meta.json");
-        ParcellaFormatMeta formatMeta = ParcellaFormatMeta.tryLoadOrDefault(formatMetaFile);
-
-        saveBlocks(level, parcel, dataDir, formatMeta);
+        saveBlocks(level, parcel, dataDir, config);
 
         if (saveEntities) {
-          saveEntities(problemReporter, level, parcel, dataDir, formatMeta);
+          saveEntities(problemReporter, level, parcel, dataDir, config);
         }
       }
     }
@@ -106,11 +103,9 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
      * Save blocks in parcella format.
      *
      * @param dataDir Path to parcel data directory. Will be created if not exist.
-     * @param formatMeta Parcella format meta.
      * @throws IOException If an I/O error occurs
      */
-    protected void saveBlocks(
-        Level level, Parcel parcel, Path dataDir, ParcellaFormatMeta formatMeta)
+    protected void saveBlocks(Level level, Parcel parcel, Path dataDir, Config config)
         throws IOException {
 
       Path blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
@@ -126,7 +121,7 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
       Path subParcelsDir = blocksDir.resolve(SUB_PARCELS_DIR_NAME);
       Files.createDirectories(subParcelsDir);
 
-      BlockPos anchorPos = parcel.getOrigin().offset(formatMeta.anchorOffset);
+      BlockPos anchorPos = parcel.getOrigin().offset(config.anchorOffset);
       Iterable<Subparcel> subparcels = Subparcel.subdivideParcel(parcel, anchorPos);
 
       for (var subparcel : subparcels) {
@@ -219,11 +214,7 @@ public abstract class ParcellaFormatV0 implements ParcelFormat {
     }
 
     protected void saveEntities(
-        ProblemReporter problemReporter,
-        Level level,
-        Parcel parcel,
-        Path dir,
-        ParcellaFormatMeta formatMeta)
+        ProblemReporter problemReporter, Level level, Parcel parcel, Path dir, Config config)
         throws IOException {
 
       // TODO remove redundant entities

@@ -1,17 +1,17 @@
 package io.github.leawind.gitparcel.parcel;
 
 import com.mojang.logging.LogUtils;
-import io.github.leawind.gitparcel.Constants;
 import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import java.io.IOException;
 import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
 /** A format for saving or loading parcels. */
-public interface ParcelFormat {
+public interface ParcelFormat<C> {
   Logger LOGGER = LogUtils.getLogger();
   String META_FILE_NAME = "parcel.json";
   String DATA_DIR_NAME = "data";
@@ -37,52 +37,6 @@ public interface ParcelFormat {
   /**
    * Saves a parcel at the specified position in the specified level.
    *
-   * <p>It loads metadata file {@value #META_FILE_NAME} first and try to save as the same format
-   *
-   * @param level The level where the parcel is in
-   * @param parcel The parcel to save
-   * @param parcelDir The parcel directory, which contains the {@value #META_FILE_NAME} file and
-   *     {@value #DATA_DIR_NAME} directory
-   * @param saveEntity Whether to save the entities in the parcel. Only works when {@code
-   *     meta.includeEntity} is true
-   * @throws IOException If an I/O error occurs while saving the parcel
-   * @throws ParcelException If other error occurs while saving the parcel
-   */
-  static void save(Level level, Parcel parcel, Path parcelDir, boolean saveEntity)
-      throws IOException, ParcelException {
-    ParcelFormat.Save format;
-
-    // Save metadata
-    var metaFile = getMetaFile(parcelDir);
-    ParcelMeta meta = ParcelMeta.loadIfExist(metaFile);
-
-    if (meta == null) {
-      // If metadata file does not exist, create a new one
-      format = Constants.PARCEL_FORMATS.defaultSaver();
-      meta = ParcelMeta.create(format.id(), format.version(), parcel.getSize());
-      meta.save(metaFile);
-    } else {
-      // If metadata size does not match, update it
-      if (!parcel.sizeEquals(meta.size)) {
-        meta.size = parcel.getSize();
-        meta.save(metaFile);
-      }
-
-      format = meta.getFormatSaver();
-      if (format == null) {
-        throw new ParcelException(
-            "Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
-      }
-    }
-
-    format.save(level, parcel, getDataDir(parcelDir), meta.includeEntity() && saveEntity);
-  }
-
-  /**
-   * Saves a parcel at the specified position in the specified level.
-   *
-   * @param level The level where the parcel is in.
-   * @param parcel The parcel to save.
    * @param meta The metadata of the parcel. Will be updated to the size of the parcel.
    * @param parcelDir The parcel directory, which contains the {@value #META_FILE_NAME} file and
    *     {@value #DATA_DIR_NAME} directory. Will be created if not exists.
@@ -91,7 +45,13 @@ public interface ParcelFormat {
    * @throws IOException If an I/O error occurs while saving the parcel
    * @throws ParcelException If other error occurs while saving the parcel
    */
-  static void save(Level level, Parcel parcel, ParcelMeta meta, Path parcelDir, boolean saveEntity)
+  static <C> void save(
+      Level level,
+      Parcel parcel,
+      ParcelMeta meta,
+      Path parcelDir,
+      boolean saveEntity,
+      @Nullable C config)
       throws IOException, ParcelException {
     meta.size = parcel.getSize();
     meta.save(getMetaFile(parcelDir));
@@ -101,7 +61,12 @@ public interface ParcelFormat {
       throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
     }
 
-    format.save(level, parcel, getDataDir(parcelDir), meta.includeEntity() && saveEntity);
+    format.save(
+        level,
+        parcel,
+        getDataDir(parcelDir),
+        meta.includeEntity() && saveEntity,
+        format.validateConfigType(config));
   }
 
   /**
@@ -141,13 +106,27 @@ public interface ParcelFormat {
   /** Version of the format. */
   int version();
 
-  interface Save extends ParcelFormat {
+  /**
+   * Validates the config type.
+   *
+   * @param config The config to validate
+   * @return The validated config
+   * @param <T> The type of the config
+   * @throws IllegalArgumentException If the config type is invalid
+   */
+  @SuppressWarnings("unchecked")
+  default <T, D> D validateConfigType(@Nullable T config) throws IllegalArgumentException {
+    return (D) config;
+  }
+
+  default C getDefaultConfig() {
+    return null;
+  }
+
+  interface Save<C> extends ParcelFormat<C> {
 
     /**
      * Save parcel content to directory.
-     *
-     * <p>The metadata file (If it exists) in data directory may be considered, and saved in the
-     * same way, depending on the implementation.
      *
      * <p>For implementation, you should save the parcel content to the {@code dataDir} directory
      * and nowhere else.
@@ -157,10 +136,11 @@ public interface ParcelFormat {
      * @param dataDir Path to parcel data directory. Will be created if not exist.
      * @param saveEntities Whether to save entities in the parcel
      */
-    void save(Level level, Parcel parcel, Path dataDir, boolean saveEntities) throws IOException;
+    void save(Level level, Parcel parcel, Path dataDir, boolean saveEntities, @Nullable C config)
+        throws IOException;
   }
 
-  interface Load extends ParcelFormat {
+  interface Load<C> extends ParcelFormat<C> {
 
     /**
      * Load parcel content from directory

@@ -7,24 +7,24 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 public class ParcelFormatManager {
-  private final Map<String, Map<Integer, ParcelFormat>> savers = new HashMap<>();
-  private final Map<String, Map<Integer, ParcelFormat>> loaders = new HashMap<>();
-  private ParcelFormat.@Nullable Save defaultSaver;
-  private ParcelFormat.@Nullable Load defaultLoader;
+  private final Map<String, Map<Integer, ParcelFormat<?>>> savers = new HashMap<>();
+  private final Map<String, Map<Integer, ParcelFormat<?>>> loaders = new HashMap<>();
+  private ParcelFormat.@Nullable Save<?> defaultSaver;
+  private ParcelFormat.@Nullable Load<?> defaultLoader;
 
-  public ParcelFormatManager register(ParcelFormat format) {
-    if (format instanceof ParcelFormat.Save saver) {
+  public <C> ParcelFormatManager register(ParcelFormat<C> format) {
+    if (format instanceof ParcelFormat.Save<C> saver) {
       savers.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), saver);
-    } else if (format instanceof ParcelFormat.Load loader) {
+    } else if (format instanceof ParcelFormat.Load<C> loader) {
       loaders.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), loader);
     }
     return this;
   }
 
-  public ParcelFormatManager registerDefault(ParcelFormat format) {
-    if (format instanceof ParcelFormat.Save saver) {
+  public <C> ParcelFormatManager registerDefault(ParcelFormat<C> format) {
+    if (format instanceof ParcelFormat.Save<C> saver) {
       defaultSaver = saver;
-    } else if (format instanceof ParcelFormat.Load loader) {
+    } else if (format instanceof ParcelFormat.Load<C> loader) {
       defaultLoader = loader;
     }
     return register(format);
@@ -35,7 +35,7 @@ public class ParcelFormatManager {
    *
    * @throws NullPointerException if no default saver is set
    */
-  public ParcelFormat.Save defaultSaver() throws NullPointerException {
+  public ParcelFormat.Save<?> defaultSaver() throws NullPointerException {
     return Objects.requireNonNull(defaultSaver);
   }
 
@@ -44,7 +44,7 @@ public class ParcelFormatManager {
    *
    * @throws NullPointerException if no default loader is set
    */
-  public ParcelFormat.Load defaultLoader() throws NullPointerException {
+  public ParcelFormat.Load<?> defaultLoader() throws NullPointerException {
     return Objects.requireNonNull(defaultLoader);
   }
 
@@ -54,12 +54,12 @@ public class ParcelFormatManager {
    * @param id The format id.
    * @return null if no saver is found
    */
-  public ParcelFormat.@Nullable Save getSaver(String id) {
-    return (ParcelFormat.Save) getLatest(savers, id);
+  public ParcelFormat.@Nullable Save<?> getSaver(String id) {
+    return (ParcelFormat.Save<?>) getLatest(savers, id);
   }
 
-  public ParcelFormat.@Nullable Save getSaver(String id, int version) {
-    return (ParcelFormat.Save) savers.getOrDefault(id, Map.of()).get(version);
+  public ParcelFormat.@Nullable Save<?> getSaver(String id, int version) {
+    return (ParcelFormat.Save<?>) savers.getOrDefault(id, Map.of()).get(version);
   }
 
   /**
@@ -68,12 +68,12 @@ public class ParcelFormatManager {
    * @param id The format id.
    * @return null if no loader is found
    */
-  public ParcelFormat.@Nullable Load getLoader(String id) {
-    return (ParcelFormat.Load) getLatest(loaders, id);
+  public ParcelFormat.@Nullable Load<?> getLoader(String id) {
+    return (ParcelFormat.Load<?>) getLatest(loaders, id);
   }
 
-  public ParcelFormat.@Nullable Load getLoader(String id, int version) {
-    return (ParcelFormat.Load) loaders.getOrDefault(id, Map.of()).get(version);
+  public ParcelFormat.@Nullable Load<?> getLoader(String id, int version) {
+    return (ParcelFormat.Load<?>) loaders.getOrDefault(id, Map.of()).get(version);
   }
 
   public Set<String> getSaverNames() {
@@ -84,8 +84,8 @@ public class ParcelFormatManager {
     return loaders.keySet();
   }
 
-  private static @Nullable ParcelFormat getLatest(
-      Map<String, Map<Integer, ParcelFormat>> formats, String id) {
+  private static @Nullable ParcelFormat<?> getLatest(
+      Map<String, Map<Integer, ParcelFormat<?>>> formats, String id) {
     var versions = formats.get(id);
     if (versions == null) {
       return null;

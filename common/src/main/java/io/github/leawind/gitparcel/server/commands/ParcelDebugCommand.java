@@ -80,7 +80,7 @@ public class ParcelDebugCommand {
       BlockPos corner1,
       BlockPos corner2,
       Path parcelDir,
-      ParcelFormat.Save format) {
+      ParcelFormat.Save<?> format) {
     try {
       var parcel = Parcel.fromCorners(corner1, corner2);
       LOGGER.info(
@@ -91,7 +91,7 @@ public class ParcelDebugCommand {
           parcelDir);
 
       var meta = ParcelMeta.create(format.id(), format.version(), parcel.getSize());
-      ParcelFormat.save(source.getLevel(), parcel, meta, parcelDir, true);
+      ParcelFormat.save(source.getLevel(), parcel, meta, parcelDir, true, null);
       source.sendSuccess(() -> Component.translatable("command.parcel_debug.save.success"), true);
       return 0;
     } catch (IOException | ParcelException e) {

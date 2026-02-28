@@ -58,11 +58,11 @@ public final class ParcelMeta {
   /** Extra fields. */
   public JsonObject extra = new JsonObject();
 
-  public ParcelFormat.@Nullable Save getFormatSaver() {
+  public ParcelFormat.@Nullable Save<?> getFormatSaver() {
     return Constants.PARCEL_FORMATS.getSaver(formatId, formatVersion);
   }
 
-  public ParcelFormat.@Nullable Load getFormatLoader() {
+  public ParcelFormat.@Nullable Load<?> getFormatLoader() {
     return Constants.PARCEL_FORMATS.getLoader(formatId, formatVersion);
   }
 
