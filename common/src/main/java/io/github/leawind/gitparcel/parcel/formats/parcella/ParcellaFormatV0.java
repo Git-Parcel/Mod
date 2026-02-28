@@ -139,10 +139,14 @@ public abstract class ParcellaFormatV0 implements ParcelFormat<ParcellaFormatV0.
 
     protected BlockPalette loadBlockPaletteIfExistElseCreate(
         Path paletteFile, Path nbtDir, NbtFormat blockEntityDataFormat) {
-      try {
-        return BlockPalette.loadIfExist(paletteFile, nbtDir, blockEntityDataFormat);
-      } catch (Exception e) {
-        LOGGER.error("Error loading block palette: {}", e.getMessage(), e);
+      if (Files.exists(paletteFile)) {
+        try {
+          return BlockPalette.load(paletteFile, nbtDir, blockEntityDataFormat);
+        } catch (Exception e) {
+          LOGGER.error("Error loading block palette: {}", e.getMessage(), e);
+          return new BlockPalette();
+        }
+      } else {
         return new BlockPalette();
       }
     }
