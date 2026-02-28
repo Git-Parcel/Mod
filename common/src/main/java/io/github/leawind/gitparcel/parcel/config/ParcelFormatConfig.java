@@ -25,7 +25,12 @@ public abstract class ParcelFormatConfig<C extends ParcelFormatConfig<C>> {
    *
    * @param <T> The type of the configuration value
    */
-  public abstract static class ConfigItem<Self, T> {
+  public abstract static sealed class ConfigItem<T, Self extends ConfigItem<?, ?>>
+      permits StringConfigItem,
+          BooleanConfigItem,
+          LongConfigItem,
+          DoubleConfigItem,
+          EnumConfigItem {
     protected String name;
     protected String description;
     protected T defaultValue;
@@ -74,7 +79,7 @@ public abstract class ParcelFormatConfig<C extends ParcelFormatConfig<C>> {
     }
   }
 
-  public static class BooleanConfigItem extends ConfigItem<BooleanConfigItem, Boolean> {
+  public static final class BooleanConfigItem extends ConfigItem<Boolean, BooleanConfigItem> {
     public @Nullable String describeTrue = null;
     public @Nullable String describeFalse = null;
 
@@ -83,39 +88,40 @@ public abstract class ParcelFormatConfig<C extends ParcelFormatConfig<C>> {
     }
   }
 
-  public static class StringConfigItem extends ConfigItem<StringConfigItem, String> {
+  public static final class StringConfigItem extends ConfigItem<String, StringConfigItem> {
     public boolean isLarge = false;
-    public @Nullable Function<String, @Nullable String> validator;
+    public @Nullable Function<String, @Nullable String> validator = null;
 
-    protected StringConfigItem(String name, String description) {
+    public StringConfigItem(String name, String description) {
       super(name, description);
     }
   }
 
-  public static class LongConfigItem extends ConfigItem<LongConfigItem, Long> {
+  public static final class LongConfigItem extends ConfigItem<Long, LongConfigItem> {
     public long min = 0;
     public long max = Integer.MAX_VALUE;
 
-    protected LongConfigItem(String name, String description) {
+    public LongConfigItem(String name, String description) {
       super(name, description);
     }
   }
 
-  public static class DoubleConfigItem extends ConfigItem<DoubleConfigItem, Double> {
-    public long min = 0;
-    public long max = Integer.MAX_VALUE;
+  public static final class DoubleConfigItem extends ConfigItem<Double, DoubleConfigItem> {
+    public double min = 0;
+    public double max = Integer.MAX_VALUE;
 
-    protected DoubleConfigItem(String name, String description) {
+    public DoubleConfigItem(String name, String description) {
       super(name, description);
     }
   }
 
-  public static class EnumConfigItem<E extends Enum<?>> extends ConfigItem<EnumConfigItem<E>, E> {
+  public static final class EnumConfigItem<E extends Enum<?>>
+      extends ConfigItem<E, EnumConfigItem<E>> {
 
     public List<E> values;
     public Function<E, String> describeValue = Enum::name;
 
-    protected EnumConfigItem(String name, String description) {
+    public EnumConfigItem(String name, String description) {
       super(name, description);
     }
   }
