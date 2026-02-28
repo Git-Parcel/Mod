@@ -1,5 +1,6 @@
 package io.github.leawind.gitparcel.utils.config;
 
+import com.google.gson.JsonElement;
 import com.mojang.logging.LogUtils;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -28,13 +29,32 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<?, ?>>
 
   private @Nullable Function<T, @Nullable String> validator = null;
 
-  protected ConfigItem(String name) {
-    this.name = name;
+  public abstract JsonElement toJson();
+
+  /**
+   * Parse json element to value
+   *
+   * <p>Note: This method does not validate the value
+   *
+   * @param json json element to parse
+   * @return parsed value
+   * @throws IllegalArgumentException if json element is invalid
+   * @see #setFromJson(JsonElement)
+   */
+  public abstract T fromJson(JsonElement json) throws IllegalArgumentException;
+
+  /**
+   * Parse json element and set value
+   *
+   * @param json json element to parse
+   * @throws IllegalArgumentException if json element is invalid
+   */
+  public void setFromJson(JsonElement json) throws IllegalArgumentException {
+    set(fromJson(json));
   }
 
-  protected ConfigItem(String name, String description) {
+  protected ConfigItem(String name) {
     this.name = name;
-    this.description = description;
   }
 
   @SuppressWarnings("unchecked")
