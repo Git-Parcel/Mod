@@ -25,10 +25,10 @@ public class SubdivideAlgoTest {
     }
   }
 
-  public record TestCase(Parcel parcel, int[][][] valuesArray) {
-    int get(BlockPos pos) {
-      return valuesArray[pos.getX() - parcel.originX][pos.getY() - parcel.originY][
-          pos.getZ() - parcel.originZ];
+  public record TestCase(Parcel parcel, int[][][] valuesArray) implements SubdivideAlgo.Values {
+    @Override
+    public int get(int x, int y, int z) {
+      return valuesArray[x - parcel.originX][y - parcel.originY][z - parcel.originZ];
     }
 
     static TestCase create(RandomForMC random, Parcel parcel, int valueVariance) {
@@ -55,7 +55,7 @@ public class SubdivideAlgoTest {
 
         var testCase = TestCase.create(random, parcel, variance);
 
-        var groups = algo.subdivide(testCase.parcel, testCase::get, ParcelWithValue::new);
+        var groups = algo.subdivide(testCase.parcel, testCase, ParcelWithValue::new);
         SubparcelTest.assertParcelEqual(testCase.parcel, groups);
 
         int volume = parcel.getVolume();

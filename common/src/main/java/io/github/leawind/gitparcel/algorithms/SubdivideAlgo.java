@@ -2,14 +2,16 @@ package io.github.leawind.gitparcel.algorithms;
 
 import io.github.leawind.gitparcel.parcel.Parcel;
 import java.util.ArrayList;
-import java.util.function.Function;
-import net.minecraft.core.BlockPos;
 
 @FunctionalInterface
 public interface SubdivideAlgo {
 
   <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
-      Parcel parcel, Function<BlockPos, Integer> values, ResultFactory<T> factory);
+      Parcel parcel, Values values, ResultFactory<T> factory);
+
+  interface Values {
+    int get(int x, int y, int z);
+  }
 
   interface ResultFactory<T> {
     T create(int value, int originX, int originY, int originZ, int sizeX, int sizeY, int sizeZ);
@@ -19,7 +21,7 @@ public interface SubdivideAlgo {
       new SubdivideAlgo() {
         @Override
         public <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
-            Parcel parcel, Function<BlockPos, Integer> values, ResultFactory<T> factory) {
+            Parcel parcel, Values values, ResultFactory<T> factory) {
 
           ArrayList<T> result = new ArrayList<>();
           int sizeX = parcel.sizeX;
@@ -35,8 +37,7 @@ public interface SubdivideAlgo {
             for (int y = 0; y < sizeY; y++) {
               int baseYX = baseZY + y * sizeX;
               for (int x = 0; x < sizeX; x++) {
-                BlockPos pos = new BlockPos(originX + x, originY + y, originZ + z);
-                valueGridFlat[baseYX + x] = values.apply(pos);
+                valueGridFlat[baseYX + x] = values.get(originX + x, originY + y, originZ + z);
               }
             }
           }
@@ -119,7 +120,7 @@ public interface SubdivideAlgo {
       new SubdivideAlgo() {
         @Override
         public <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
-            Parcel parcel, Function<BlockPos, Integer> values, ResultFactory<T> factory) {
+            Parcel parcel, Values values, ResultFactory<T> factory) {
 
           ArrayList<T> result = new ArrayList<>();
           int sizeX = parcel.sizeX;
@@ -138,8 +139,7 @@ public interface SubdivideAlgo {
             for (int y = 0; y < sizeY; y++) {
               int yOffset = zOffset + y * sizeX;
               for (int x = 0; x < sizeX; x++) {
-                BlockPos pos = new BlockPos(originX + x, originY + y, originZ + z);
-                valueGrid[yOffset + x] = values.apply(pos);
+                valueGrid[yOffset + x] = values.get(originX + x, originY + y, originZ + z);
               }
             }
           }
@@ -219,7 +219,7 @@ public interface SubdivideAlgo {
       new SubdivideAlgo() {
         @Override
         public <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
-            Parcel parcel, Function<BlockPos, Integer> values, ResultFactory<T> factory) {
+            Parcel parcel, Values values, ResultFactory<T> factory) {
 
           int sizeX = parcel.sizeX;
           int sizeY = parcel.sizeY;
@@ -239,8 +239,7 @@ public interface SubdivideAlgo {
             for (int y = 0; y < sizeY; y++) {
               int yOffset = zOffset + y * sizeX;
               for (int x = 0; x < sizeX; x++) {
-                BlockPos pos = new BlockPos(originX + x, originY + y, originZ + z);
-                valueGrid[yOffset + x] = values.apply(pos);
+                valueGrid[yOffset + x] = values.get(originX + x, originY + y, originZ + z);
               }
             }
           }

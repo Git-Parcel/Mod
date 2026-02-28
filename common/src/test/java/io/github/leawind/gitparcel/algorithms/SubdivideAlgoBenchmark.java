@@ -3,8 +3,6 @@ package io.github.leawind.gitparcel.algorithms;
 import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.testutils.RandomForMC;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import net.minecraft.core.BlockPos;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -21,7 +19,7 @@ public class SubdivideAlgoBenchmark {
   private int variance;
 
   private Parcel parcel;
-  private Function<BlockPos, Integer> values;
+  private SubdivideAlgo.Values values;
   private SubdivideAlgo.ResultFactory<SubdivideAlgoTest.ParcelWithValue> factory;
 
   @Setup
@@ -33,7 +31,7 @@ public class SubdivideAlgoBenchmark {
     factory = SubdivideAlgoTest.ParcelWithValue::new;
 
     var testCase = SubdivideAlgoTest.TestCase.create(random, parcel, variance);
-    values = testCase::get;
+    values = testCase;
   }
 
   @Benchmark
