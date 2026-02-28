@@ -20,7 +20,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlac
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
 /** Note: The loader of this format always load blocks regardless of the value of `loadBlocks` */
-public abstract class StructureTemplateV0 implements ParcelFormat {
+public abstract class StructureTemplateFormatV0 implements ParcelFormat {
   public static final String NBT_FILE_NAME = "structure.nbt";
 
   @Override
@@ -33,7 +33,7 @@ public abstract class StructureTemplateV0 implements ParcelFormat {
     return 0;
   }
 
-  public static final class Save extends StructureTemplateV0 implements ParcelFormat.Save {
+  public static final class Save extends StructureTemplateFormatV0 implements ParcelFormat.Save {
     @Override
     public void save(Level level, Parcel parcel, Path dataDir, boolean saveEntities)
         throws IOException {
@@ -50,7 +50,7 @@ public abstract class StructureTemplateV0 implements ParcelFormat {
     }
   }
 
-  public static final class Load extends StructureTemplateV0 implements ParcelFormat.Load {
+  public static final class Load extends StructureTemplateFormatV0 implements ParcelFormat.Load {
 
     /**
      * @param loadBlocks This parameter is ignored, it always loads blocks

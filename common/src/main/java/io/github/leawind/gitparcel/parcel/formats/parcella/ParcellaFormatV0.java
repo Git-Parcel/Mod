@@ -28,7 +28,7 @@ import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
-public abstract class ParcellaV0 implements ParcelFormat {
+public abstract class ParcellaFormatV0 implements ParcelFormat {
   private static final Gson GSON = new Gson();
 
   public static final String BLOCKS_DIR_NAME = "blocks";
@@ -47,7 +47,7 @@ public abstract class ParcellaV0 implements ParcelFormat {
     return 0;
   }
 
-  public static final class Save extends ParcellaV0 implements ParcelFormat.Save {
+  public static final class Save extends ParcellaFormatV0 implements ParcelFormat.Save {
     public static class Options {
       private static final String SCHEMA_URL =
           "https://git-parcel.github.io/schemas/ParcellaFormatOptions.json";
