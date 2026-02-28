@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 public interface ParcelFormat<C extends ParcelFormatConfig<C>> {
   Logger LOGGER = LogUtils.getLogger();
   String META_FILE_NAME = "parcel.json";
+  String CONFIG_FILE_NAME = "config.json";
   String DATA_DIR_NAME = "data";
 
   /**
@@ -23,6 +24,10 @@ public interface ParcelFormat<C extends ParcelFormatConfig<C>> {
    */
   static Path getMetaFile(Path parcelDir) {
     return parcelDir.resolve(META_FILE_NAME);
+  }
+
+  static Path getConfigFile(Path parcelDir) {
+    return parcelDir.resolve(CONFIG_FILE_NAME);
   }
 
   /**
@@ -47,12 +52,7 @@ public interface ParcelFormat<C extends ParcelFormatConfig<C>> {
    */
   @SuppressWarnings("unchecked")
   static <C extends ParcelFormatConfig<C>> void save(
-      Level level,
-      Parcel parcel,
-      ParcelMeta meta,
-      Path parcelDir,
-      boolean saveEntity,
-      @Nullable C config)
+      Level level, Parcel parcel, ParcelMeta meta, Path parcelDir, boolean saveEntity)
       throws IOException, ParcelException {
     meta.size = parcel.getSize();
     meta.save(getMetaFile(parcelDir));
@@ -62,12 +62,15 @@ public interface ParcelFormat<C extends ParcelFormatConfig<C>> {
       throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
     }
 
-    format.save(
-        level,
-        parcel,
-        getDataDir(parcelDir),
-        meta.includeEntity() && saveEntity,
-        format.castConfig(config));
+    var config = format.getDefaultConfig();
+    try {
+      config.setFromJsonFile(getConfigFile(parcelDir));
+    } catch (Exception e) {
+      LOGGER.error("Failed to load format config: {}", e.getMessage(), e);
+      config.resetToDefault();
+    }
+
+    format.save(level, parcel, getDataDir(parcelDir), meta.includeEntity() && saveEntity, config);
   }
 
   /**
@@ -107,9 +110,24 @@ public interface ParcelFormat<C extends ParcelFormatConfig<C>> {
   /** Version of the format. */
   int version();
 
+  /**
+   * Safely casts a config object to the current format's configuration type.
+   *
+   * @param config The config object to cast, may be null
+   * @param <T> The type of the input config object
+   * @return The cast config object, or null if both configClass() returns null and config is null
+   * @throws ClassCastException If configClass() returns null but config is non-null, or if the
+   *     config object cannot be cast to the target type
+   */
   default <T> C castConfig(T config) throws ClassCastException {
     var clazz = configClass();
-    return clazz == null ? null : clazz.cast(config);
+    if (clazz != null) {
+      return clazz.cast(config);
+    }
+    if (config == null) {
+      return null;
+    }
+    throw new ClassCastException("Expected null, got {}" + config);
   }
 
   default Class<C> configClass() {

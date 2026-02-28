@@ -1,8 +1,13 @@
 package io.github.leawind.gitparcel.parcel;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import io.github.leawind.gitparcel.utils.config.ConfigItem;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,6 +18,8 @@ import java.util.Map;
  * @param <Self> The type of the configuration class
  */
 public abstract class ParcelFormatConfig<Self extends ParcelFormatConfig<Self>> {
+  private static final Gson GSON = new Gson();
+
   protected Map<String, ConfigItem<?, ?>> configItems = new HashMap<>();
 
   @SuppressWarnings("unchecked")
@@ -31,8 +38,8 @@ public abstract class ParcelFormatConfig<Self extends ParcelFormatConfig<Self>> 
 
   public JsonElement toJson() {
     JsonObject json = new JsonObject();
-    for (var configItem : listConfigItems()) {
-      json.add(configItem.name(), configItem.toJson());
+    for (var item : listConfigItems()) {
+      json.add(item.name(), item.toJson());
     }
     return json;
   }
@@ -51,6 +58,17 @@ public abstract class ParcelFormatConfig<Self extends ParcelFormatConfig<Self>> 
       } catch (IllegalArgumentException e) {
         item.reset();
       }
+    }
+  }
+
+  public void setFromJsonFile(Path file)
+      throws IOException, JsonSyntaxException, IllegalArgumentException {
+    setFromJson(GSON.fromJson(Files.readString(file), JsonObject.class));
+  }
+
+  public void resetToDefault() {
+    for (var item : listConfigItems()) {
+      item.reset();
     }
   }
 

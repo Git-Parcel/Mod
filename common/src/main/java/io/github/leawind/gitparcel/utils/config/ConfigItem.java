@@ -16,6 +16,7 @@ import org.slf4j.Logger;
  */
 public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
     permits StringConfigItem, BooleanConfigItem, LongConfigItem, DoubleConfigItem, EnumConfigItem {
+
   private class Box {
     private T value;
 
