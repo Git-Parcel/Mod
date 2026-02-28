@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.parcel;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -63,11 +64,17 @@ public interface ParcelFormat<C extends ParcelFormatConfig<C>> {
     }
 
     var config = format.getDefaultConfig();
-    try {
-      config.setFromJsonFile(getConfigFile(parcelDir));
-    } catch (Exception e) {
-      LOGGER.error("Failed to load format config: {}", e.getMessage(), e);
-      config.resetToDefault();
+    var configFile = getConfigFile(parcelDir);
+    if (Files.exists(configFile)) {
+      try {
+        config.load(configFile);
+      } catch (Exception e) {
+        LOGGER.error("Failed to load format config: {}", e.getMessage(), e);
+        config.resetToDefault();
+        config.save(configFile);
+      }
+    } else {
+      config.save(configFile);
     }
 
     format.save(level, parcel, getDataDir(parcelDir), meta.includeEntity() && saveEntity, config);
