@@ -56,10 +56,6 @@ public interface SubdivideAlgo {
         public <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
             int sizeX, int sizeY, int sizeZ, Values values, ResultFactory<T> factory) {
 
-          final int originX = 0;
-          final int originY = 0;
-          final int originZ = 0;
-
           final int sizeXZ = sizeX * sizeZ;
           final int totalSize = sizeY * sizeXZ;
 
@@ -73,7 +69,7 @@ public interface SubdivideAlgo {
               final int xOffset = yOffset + x * sizeZ;
               for (int z = 0; z < sizeZ; z++) {
                 // idx = xOffset + z;
-                valueGrid[xOffset + z] = values.get(originX + x, originY + y, originZ + z);
+                valueGrid[xOffset + z] = values.get(x, y, z);
               }
             }
           }
@@ -135,15 +131,7 @@ public interface SubdivideAlgo {
                     }
                   }
                 }
-                result.add(
-                    factory.create(
-                        value,
-                        originX + x,
-                        originY + y,
-                        originZ + z,
-                        boundX - x,
-                        boundY - y,
-                        boundZ - z));
+                result.add(factory.create(value, x, y, z, boundX - x, boundY - y, boundZ - z));
               }
             }
           }
@@ -159,10 +147,6 @@ public interface SubdivideAlgo {
         public <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
             int sizeX, int sizeY, int sizeZ, Values values, ResultFactory<T> factory) {
 
-          final int originX = 0;
-          final int originY = 0;
-          final int originZ = 0;
-
           final int sizeXZ = sizeX * sizeZ;
           final int totalSize = sizeY * sizeXZ;
 
@@ -176,7 +160,7 @@ public interface SubdivideAlgo {
               final int xOffset = yOffset + x * sizeZ;
               for (int z = 0; z < sizeZ; z++) {
                 // idx = xOffset + z;
-                valueGrid[xOffset + z] = values.get(originX + x, originY + y, originZ + z);
+                valueGrid[xOffset + z] = values.get(x, y, z);
               }
             }
           }
@@ -245,15 +229,7 @@ public interface SubdivideAlgo {
                 for (int i = 0; i < groupIndicesSize; i++) {
                   visited[groupIndices[i]] = true;
                 }
-                result.add(
-                    factory.create(
-                        value,
-                        originX + x,
-                        originY + y,
-                        originZ + z,
-                        boundX - x,
-                        boundY - y,
-                        boundZ - z));
+                result.add(factory.create(value, x, y, z, boundX - x, boundY - y, boundZ - z));
               }
             }
           }
