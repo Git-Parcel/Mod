@@ -77,7 +77,9 @@ public class IntIdPalette<T> {
     int idSpan = idSpan();
 
     for (int i = 0; i < idSpan; i++) {
-      nextId = (nextId - minId) % idSpan;
+      if (nextId < minId || nextId > maxId) {
+        nextId = minId;
+      }
 
       if (byId.containsKey(nextId)) {
         nextId++;
