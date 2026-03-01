@@ -27,14 +27,13 @@ public class ParcelFormatManager {
 
   public <C extends ParcelFormatConfig<C>> ParcelFormatManager registerDefault(
       ParcelFormat<C> format) {
+    register(format);
     switch (format) {
       case ParcelFormat.Save<C> saver -> defaultSaver = saver;
       case ParcelFormat.Load<C> loader -> defaultLoader = loader;
-      case ParcelFormat.Impl<C> ignored ->
-          throw new IllegalArgumentException(
-              "Expected a saver or loader, got " + format.getClass().getSimpleName());
+      case ParcelFormat.Impl<C> ignored -> {}
     }
-    return register(format);
+    return this;
   }
 
   /**
