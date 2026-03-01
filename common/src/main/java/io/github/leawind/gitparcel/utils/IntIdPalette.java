@@ -6,8 +6,8 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 public class IntIdPalette<T> {
-  protected int minId;
-  protected int maxId;
+  private int minId;
+  private int maxId;
 
   protected Map<Integer, T> byId = new Int2ObjectRBTreeMap<>();
   protected Map<T, Integer> byData = new Object2IntArrayMap<>();
@@ -39,6 +39,18 @@ public class IntIdPalette<T> {
     setIdRange(minId, maxId);
   }
 
+  protected int minId() {
+    return minId;
+  }
+
+  protected int maxid() {
+    return maxId;
+  }
+
+  public int idSpan() {
+    return maxId - minId;
+  }
+
   /**
    * Sets the id range of the palette.
    *
@@ -57,10 +69,6 @@ public class IntIdPalette<T> {
     }
     this.minId = minId;
     this.maxId = maxId;
-  }
-
-  public int idSpan() {
-    return maxId - minId;
   }
 
   protected IllegalStateException createIdExhaustedException() {
