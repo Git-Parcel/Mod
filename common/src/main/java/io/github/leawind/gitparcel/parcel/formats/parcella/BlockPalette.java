@@ -189,10 +189,9 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
    * @throws IOException if an I/O error occurs
    * @throws InvalidPaletteException if the palette file is malformed
    * @throws NumberFormatException if an ID in the palette file is not a valid hexadecimal number
-   * @throws CommandSyntaxException if the NBT format is text and the NBT file is malformed
    */
   public static BlockPalette load(Path paletteFile, Path nbtDir, NbtFormat nbtFormat)
-      throws IOException, InvalidPaletteException, CommandSyntaxException {
+      throws IOException, InvalidPaletteException {
     try (var reader = Files.newBufferedReader(paletteFile, StandardCharsets.UTF_8)) {
       BlockPalette palette = new BlockPalette();
 
@@ -245,7 +244,16 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
             CompoundTag nbt =
                 switch (nbtFormat) {
                   case Binary -> NbtFormat.readBinary(nbtFile);
-                  case Text -> NbtFormat.readText(nbtFile);
+                  case Text -> {
+                    try {
+                      yield NbtFormat.readText(nbtFile);
+                    } catch (CommandSyntaxException e) {
+                      throw new InvalidPaletteException(
+                          String.format(
+                              "Invalid palette entry. Invalid snbt %s in line %s", buffer, line),
+                          e);
+                    }
+                  }
                 };
             palette.insert(id, new Data(buffer.toString(), nbt));
           }
@@ -259,6 +267,10 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
   public static class InvalidPaletteException extends ParcelException.InvalidParcel {
     public InvalidPaletteException(String message) {
       super(message);
+    }
+
+    public InvalidPaletteException(String message, Exception e) {
+      super(message, e);
     }
   }
 }
