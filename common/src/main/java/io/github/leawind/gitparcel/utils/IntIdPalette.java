@@ -1,68 +1,122 @@
 package io.github.leawind.gitparcel.utils;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectRBTreeMap;
-import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
-import java.util.Map;
+import it.unimi.dsi.fastutil.ints.Int2ObjectSortedMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * A bidirectional mapping between integer IDs and data objects.
+ *
+ * <p>This class maintains an N to 1 relationship between IDs and data.
+ *
+ * <p>An ID is considered as unused if any of the following conditions is satisfied:
+ *
+ * <ul>
+ *   <li>It's not in {@link #byId}.
+ *   <li>It maps to {@code null}
+ *   <li>It maps to a data object that is not in {@link #byData}.
+ * </ul>
+ *
+ * @param <T> the type of data objects
+ */
 public class IntIdPalette<T> {
+  /** Used as the returned id when a data object is not in {@link #byData}. */
+  public static final int VOID_ID = Integer.MIN_VALUE;
+
   private int minId;
   private int maxId;
+  private volatile int nextId;
 
-  protected Map<Integer, T> byId = new Int2ObjectRBTreeMap<>();
-  protected Map<T, Integer> byData = new Object2IntArrayMap<>();
+  /**
+   * Mapping from integer IDs to data objects. Protected by read-write lock.
+   *
+   * <p>If an id is not in use, it maps to {@code null} or a data object that is not in {@link
+   * #byData}.
+   */
+  protected final Int2ObjectSortedMap<T> byId;
 
-  public int nextId = 0;
+  /**
+   * Mapping from data objects to integer IDs. Protected by read-write lock.
+   *
+   * <p>Every data in this map must maps to the corresponding id in {@link #byId}.
+   */
+  protected final Object2IntMap<T> byData;
 
-  /** Creates a new int id palette with the default id range [0, {@value Integer#MAX_VALUE}]. */
+  /** Creates a new palette with default range [0, {@value Integer#MAX_VALUE}]. */
   public IntIdPalette() {
     this(Integer.MAX_VALUE);
   }
 
   /**
-   * Creates a new int id palette with the specified maximum id.
+   * Creates a new palette with specified maximum id.
    *
-   * @param maxId the maximum id of the palette
+   * @param maxId the maximum id
    */
   public IntIdPalette(int maxId) {
     this(0, maxId);
   }
 
   /**
-   * Creates a new int id palette with the specified id range.
+   * Creates a new palette with specified id range.
    *
-   * @param minId the minimum id of the palette
-   * @param maxId the maximum id of the palette
-   * @throws IllegalArgumentException if minId is not less than maxId
+   * @param minId the minimum id
+   * @param maxId the maximum id
+   * @throws IllegalArgumentException if minId >= maxId
    */
   public IntIdPalette(int minId, int maxId) throws IllegalArgumentException {
-    setIdRange(minId, maxId);
+    this(minId, maxId, new Int2ObjectRBTreeMap<>(), new Object2IntOpenHashMap<>());
   }
 
+  /**
+   * Creates a new palette with specified id range and mappings.
+   *
+   * @param minId the minimum id
+   * @param maxId the maximum id
+   * @param byId the mapping from integer IDs to data objects
+   * @param byData the mapping from data objects to integer IDs
+   * @throws IllegalArgumentException if {@code minId >= maxId} or {@code minId} is {@value
+   *     #VOID_ID}
+   */
+  public IntIdPalette(int minId, int maxId, Int2ObjectSortedMap<T> byId, Object2IntMap<T> byData)
+      throws IllegalArgumentException {
+    setIdRange(minId, maxId);
+    this.byId = byId;
+    this.byData = byData;
+    this.byData.defaultReturnValue(VOID_ID);
+
+    nextId = minId;
+  }
+
+  /** Returns the minimum ID value. */
   protected int minId() {
     return minId;
   }
 
-  protected int maxid() {
+  /** Returns the maximum ID value. */
+  protected int maxId() {
     return maxId;
   }
 
+  /** Returns the span of available IDs. */
   public int idSpan() {
     return maxId - minId;
   }
 
   /**
-   * Sets the id range of the palette.
+   * Sets the ID range (inclusive).
    *
-   * <p>Note that the id range is inclusive.
+   * <p>This only affects future ID allocations. Existing entries are retained even if outside the
+   * new range.
    *
-   * <p>All existing data in the palette are reserved even if their ids are out of the new id range
-   *
-   * @param minId the minimum id of the palette
-   * @param maxId the maximum id of the palette
-   * @throws IllegalArgumentException if minId is not less than maxId
+   * @throws IllegalArgumentException if {@code minId >= maxId} or {@code minId} is {@value
+   *     #VOID_ID}
    */
   public void setIdRange(int minId, int maxId) throws IllegalArgumentException {
+    if (minId == VOID_ID) {
+      throw new IllegalArgumentException("minId must not be VOID_ID: " + VOID_ID);
+    }
     if (minId >= maxId) {
       throw new IllegalArgumentException(
           String.format("minId must be less than maxId, but %d >= %d", minId, maxId));
@@ -71,25 +125,26 @@ public class IntIdPalette<T> {
     this.maxId = maxId;
   }
 
+  /** Creates an exception indicating that all IDs have been exhausted. */
   protected IllegalStateException createIdExhaustedException() {
     return new IllegalStateException(String.format("ID exhausted in [%d, %d]", minId, maxId));
   }
 
   /**
-   * Finds the next available id in the palette.
+   * Returns the next available ID.
    *
-   * @return the next available id
-   * @throws IllegalStateException if no available id is found
+   * <p>This method modifies {@link #nextId}
+   *
+   * @throws IllegalStateException if no ID is available
    */
-  protected int findNextId() throws IllegalStateException {
-    int idSpan = idSpan();
-
-    for (int i = 0; i < idSpan; i++) {
+  @SuppressWarnings("NonAtomicOperationOnVolatileField")
+  protected int getNextId() throws IllegalStateException {
+    for (int i = idSpan(); i > 0; i--) {
       if (nextId < minId || nextId > maxId) {
         nextId = minId;
       }
 
-      if (byId.containsKey(nextId)) {
+      if (byId.containsKey(nextId) || nextId == VOID_ID) {
         nextId++;
       } else {
         return nextId;
@@ -99,64 +154,94 @@ public class IntIdPalette<T> {
     throw createIdExhaustedException();
   }
 
-  protected int findNextIdMinimum() throws IllegalStateException {
-    for (int i = minId; i <= maxId; i++) {
-      if (!byId.containsKey(i)) {
-        return i;
-      }
-    }
-
-    throw createIdExhaustedException();
+  /**
+   * Returns whether the given ID is in use.
+   *
+   * @param id the ID
+   * @return {@code true} if the ID is in use, {@code false} otherwise
+   */
+  public boolean isIdInUse(int id) {
+    var data = byId.get(id);
+    return data != null && byData.containsKey(data);
   }
 
+  /** Returns the number of all IDs, including unused IDs. */
   public int size() {
     return byId.size();
   }
 
+  /**
+   * Returns the data associated with the given ID.
+   *
+   * @param id the ID
+   * @return the associated data, or {@code null} if absent
+   */
   public @Nullable T get(int id) {
-    return byId.get(id);
+    var data = byId.get(id);
+    // if the data is not in byData, it means the id is not in use.
+    // So we return null.
+    if (byData.containsKey(data)) {
+      return data;
+    } else {
+      return null;
+    }
   }
 
   /**
-   * Get the id of the given data.
+   * Returns the ID associated with the given data.
    *
-   * @param data the data to get id for
-   * @return the id of the data, or -1 if the data is not in this palette
+   * @param data the data
+   * @return the ID, or {@value #VOID_ID} if absent
    */
   public int getId(T data) {
-    var id = byData.get(data);
-    if (id == null) {
-      return -1;
+    return byData.getInt(data);
+  }
+
+  /**
+   * Ensures the given data exists in the palette and returns its ID. If absent, a new ID is
+   * assigned.
+   *
+   * @param data the data to collect
+   * @return the ID
+   * @throws IllegalStateException if no ID is available
+   */
+  public int collect(T data) throws IllegalStateException {
+    var existingId = byData.getInt(data);
+
+    if (existingId != VOID_ID) {
+      return existingId;
     }
+
+    var id = getNextId();
+    insert(id, data);
     return id;
   }
 
   /**
-   * Collects the given data. If the data is not in this palette, a new id will be assigned to it.
+   * Inserts the given data with the specified ID.
    *
-   * @param data the data to collect
-   * @return the id of the data
-   * @throws IllegalStateException if no available id is found
+   * <p>This method:
+   *
+   * <ul>
+   *   <li>does not check if the ID is already in use.
+   *   <li>does not check if the ID is in range.
+   * </ul>
+   *
+   * @param id ID
+   * @param data the data to insert
+   * @throws IllegalArgumentException if {@code id} is {@value #VOID_ID}
    */
-  public int collect(T data) throws IllegalStateException {
-    var id = byData.get(data);
-
-    if (id == null) {
-      id = findNextId();
-      insert(id, data);
+  protected void insert(int id, T data) throws IllegalArgumentException {
+    if (id == VOID_ID) {
+      throw new IllegalArgumentException("id must not be VOID_ID: " + VOID_ID);
     }
-
-    return id;
-  }
-
-  protected void insert(int id, T data) {
     byId.put(id, data);
     byData.put(data, id);
     onAfterInserted(id, data);
   }
 
   /**
-   * Called after a new item is inserted to this palette
+   * Callback invoked after a successful insertion.
    *
    * <ul>
    *   <li>Collecting visited data does not trigger this method
@@ -169,51 +254,50 @@ public class IntIdPalette<T> {
   protected void onAfterInserted(int id, T data) {}
 
   /**
-   * Removes the data with the given id.
+   * Removes the data associated with the given ID.
    *
-   * @param id id of the data to remove
-   * @return the removed data, or null if the id is not in this palette
+   * @param id the ID
+   * @return the removed data, or {@code null} if absent
    */
   public @Nullable T removeById(int id) {
     var data = byId.remove(id);
     if (data != null) {
-      byData.remove(data);
+      byData.removeInt(data);
       onAfterRemoved(id, data);
     }
     return data;
   }
 
   /**
-   * Removes data.
+   * Removes the given data.
    *
-   * @param data the data to remove
-   * @return the id of the removed data, or -1 if the data is not in this palette
+   * <p>Note: If there are multiple IDs associated with the same data in {@link #byId}, only the one
+   * exists in {@link #byData} will be removed.
+   *
+   * @param data the data
+   * @return the removed ID, or {@value #VOID_ID} if absent
    */
   public int removeByData(T data) {
-    var id = byData.remove(data);
-    if (id != null) {
-      byId.remove(id);
-      onAfterRemoved(id, data);
-      return id;
-    }
-    return -1;
+    var id = byData.removeInt(data);
+    byId.remove(id);
+    onAfterRemoved(id, data);
+    return id;
   }
 
   /**
-   * Called after an item is removed from this palette
+   * Callback invoked after a successful removal.
    *
    * <ul>
    *   <li>Removing non-existent data does not trigger this method
    *   <li>This method do nothing unless it is overridden by a subclass
    * </ul>
-   *
-   * @param id id of the removed item
-   * @param data the removed item
    */
   protected void onAfterRemoved(int id, T data) {}
 
+  /** Removes all entries and resets the ID counter. */
   public void clear() {
     byData.clear();
     byId.clear();
+    nextId = minId;
   }
 }
