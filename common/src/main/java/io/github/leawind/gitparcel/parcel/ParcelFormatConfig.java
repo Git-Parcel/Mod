@@ -74,7 +74,8 @@ public abstract class ParcelFormatConfig<Self extends ParcelFormatConfig<Self>> 
     }
     if (!errors.isEmpty()) {
       var msg = errors.stream().map(e -> "  " + e.getMessage()).collect(Collectors.joining("\n"));
-      throw new IllegalArgumentException("{} items failed to parse:\n" + msg);
+      throw new IllegalArgumentException(
+          String.format("%d items failed to parse:\n%s", errors.size(), msg));
     }
   }
 
