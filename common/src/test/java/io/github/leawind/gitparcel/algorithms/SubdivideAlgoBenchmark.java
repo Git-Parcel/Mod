@@ -33,13 +33,6 @@ public class SubdivideAlgoBenchmark {
   }
 
   @Benchmark
-  public void benchmarkV1(Blackhole bh) {
-    var result =
-        SubdivideAlgo.V1.subdivide(parcel.sizeX, parcel.sizeY, parcel.sizeZ, values, factory);
-    bh.consume(result);
-  }
-
-  @Benchmark
   public void benchmarkV2(Blackhole bh) {
     var result =
         SubdivideAlgo.V2.subdivide(parcel.sizeX, parcel.sizeY, parcel.sizeZ, values, factory);
