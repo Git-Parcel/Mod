@@ -72,7 +72,12 @@ class BlockPaletteTest {
     assertEquals(42, data.nbt().getInt("test_int").get());
 
     // Collect same data with same NBT should return same id
-    int id2 = palette.collect("minecraft:chest", nbt1);
+    CompoundTag nbt2 = new CompoundTag();
+    nbt2.putString("test_key", "test_value");
+    nbt2.putInt("test_int", 42);
+    assertEquals(nbt1, nbt2);
+
+    int id2 = palette.collect("minecraft:chest", nbt2);
     assertEquals(id1, id2);
 
     // Collect same block type but different NBT should return different id
