@@ -31,6 +31,15 @@ import org.jspecify.annotations.Nullable;
 public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
   protected final Set<Integer> blockEntities = new IntArraySet();
 
+  /**
+   * Stores visited block ids.
+   *
+   * <p>Updated every time a block is collected.
+   *
+   * @see #onAfterInserted(int, Data)
+   */
+  protected final Set<Integer> visited = new IntArraySet();
+
   public BlockPalette() {
     super();
   }
@@ -57,6 +66,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
 
   @Override
   public void onAfterInserted(int id, Data data) {
+    visited.add(id);
     if (data.nbt != null) {
       blockEntities.add(id);
     }
@@ -65,6 +75,20 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
   @Override
   public void onAfterRemoved(int id, Data data) {
     blockEntities.remove(id);
+  }
+
+  /** Clears all visited blocks. */
+  public void clearVisited() {
+    visited.clear();
+  }
+
+  /** Removes all unvisited blocks from this palette. */
+  public void clearUnvisited() {
+    for (int id : byId.keySet()) {
+      if (!visited.contains(id)) {
+        removeById(id);
+      }
+    }
   }
 
   /**
