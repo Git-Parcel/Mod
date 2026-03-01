@@ -164,50 +164,76 @@ public abstract class ParcellaFormatV0 implements ParcelFormat.Impl<ParcellaForm
         BlockPalette palette,
         boolean enableMicroparcel)
         throws IOException {
+      if (enableMicroparcel) {
+        writeSubparcelWithMicroparcels(writer, level, subparcel, palette);
+      } else {
+        writeSubparcelFlat(writer, level, subparcel, palette);
+      }
+    }
+
+    protected void writeSubparcelWithMicroparcels(
+        BufferedWriter writer, Level level, Subparcel subparcel, BlockPalette palette)
+        throws IOException {
+      StringBuilder sb = new StringBuilder(8192);
+      char[] hex = HexUtils.UPPER_HEX_DIGITS;
+
+      for (var microparcel : Microparcel.subdivide(subparcel, level, palette)) {
+        sb.append(hex[microparcel.originX])
+            .append(hex[microparcel.originY])
+            .append(hex[microparcel.originZ]);
+
+        if (microparcel.sizeX != 0 || microparcel.sizeY != 0 || microparcel.sizeZ != 0) {
+          sb.append(hex[microparcel.sizeX - 1])
+              .append(hex[microparcel.sizeY - 1])
+              .append(hex[microparcel.sizeZ - 1]);
+        }
+
+        sb.append('=').append(HexUtils.toHexUpperCase(microparcel.value)).append('\n');
+
+        if (sb.length() > 8000) {
+          writer.write(sb.toString());
+          sb.setLength(0);
+        }
+      }
+
+      if (!sb.isEmpty()) {
+        writer.write(sb.toString());
+      }
+    }
+
+    /**
+     * Writes subparcel data using traditional per-block format.
+     *
+     * @param writer the writer to write data to
+     * @param level the level containing the blocks
+     * @param subparcel the subparcel to write
+     * @param palette the block palette for ID mapping
+     * @throws IOException if an I/O error occurs
+     */
+    protected void writeSubparcelFlat(
+        BufferedWriter writer, Level level, Subparcel subparcel, BlockPalette palette)
+        throws IOException {
       StringBuilder sb = new StringBuilder(8192);
 
-      if (enableMicroparcel) {
-        char[] hex = HexUtils.UPPER_HEX_DIGITS;
+      int originX = subparcel.originX;
+      int originY = subparcel.originY;
+      int originZ = subparcel.originZ;
+      int sizeX = subparcel.sizeX;
+      int sizeY = subparcel.sizeY;
+      int sizeZ = subparcel.sizeZ;
 
-        for (var microparcel : Microparcel.subdivide(subparcel, level, palette)) {
-          sb.append(hex[microparcel.originX])
-              .append(hex[microparcel.originY])
-              .append(hex[microparcel.originZ]);
+      BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
-          if (microparcel.sizeX != 0 || microparcel.sizeY != 0 || microparcel.sizeZ != 0) {
-            sb.append(hex[microparcel.sizeX - 1])
-                .append(hex[microparcel.sizeY - 1])
-                .append(hex[microparcel.sizeZ - 1]);
-          }
+      for (int i = 0, x = originX; i < sizeX; i++, x++) {
+        for (int j = 0, y = originY; j < sizeY; j++, y++) {
+          for (int k = 0, z = originZ; k < sizeZ; k++, z++) {
+            int id = palette.collect(level, pos.set(x, y, z));
 
-          sb.append('=').append(HexUtils.toHexUpperCase(microparcel.value)).append('\n');
+            sb.append(HexUtils.toHexUpperCase(id)).append('\n');
 
-          if (sb.length() > 8000) {
-            writer.write(sb.toString());
-            sb.setLength(0);
-          }
-        }
-      } else {
-        int originX = subparcel.originX;
-        int originY = subparcel.originY;
-        int originZ = subparcel.originZ;
-        int sizeX = subparcel.sizeX;
-        int sizeY = subparcel.sizeY;
-        int sizeZ = subparcel.sizeZ;
-
-        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-
-        for (int i = 0, x = originX; i < sizeX; i++, x++) {
-          for (int j = 0, y = originY; j < sizeY; j++, y++) {
-            for (int k = 0, z = originZ; k < sizeZ; k++, z++) {
-              int id = palette.collect(level, pos.set(x, y, z));
-
-              sb.append(HexUtils.toHexUpperCase(id)).append('\n');
-
-              if (sb.length() > 8000) {
-                writer.write(sb.toString());
-                sb.setLength(0);
-              }
+            if (sb.length() > 8000) {
+              writer.write(sb.toString());
+              sb.setLength(0);
             }
           }
         }
