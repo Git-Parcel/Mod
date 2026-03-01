@@ -21,23 +21,21 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlac
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import org.jspecify.annotations.Nullable;
 
-/** Note: The loader of this format always load blocks regardless of the value of `loadBlocks` */
-public abstract class StructureTemplateFormatV0
-    implements ParcelFormat.Impl<ParcelFormatConfig.None> {
-  public static final String NBT_FILE_NAME = "structure.nbt";
+public interface StructureTemplateFormatV0 extends ParcelFormat.Impl<ParcelFormatConfig.None> {
+  String NBT_FILE_NAME = "structure.nbt";
 
   @Override
-  public String id() {
+  default String id() {
     return "structure_template";
   }
 
   @Override
-  public int version() {
+  default int version() {
     return 0;
   }
 
-  public static final class Save extends StructureTemplateFormatV0
-      implements ParcelFormat.Save<ParcelFormatConfig.None> {
+  final class Save
+      implements StructureTemplateFormatV0, ParcelFormat.Save<ParcelFormatConfig.None> {
     @Override
     public void save(
         Level level,
@@ -59,8 +57,8 @@ public abstract class StructureTemplateFormatV0
     }
   }
 
-  public static final class Load extends StructureTemplateFormatV0
-      implements ParcelFormat.Load<ParcelFormatConfig.None> {
+  final class Load
+      implements StructureTemplateFormatV0, ParcelFormat.Load<ParcelFormatConfig.None> {
 
     /**
      * @param loadBlocks This parameter is ignored, it always loads blocks

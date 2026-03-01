@@ -29,34 +29,34 @@ import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
-public abstract class ParcellaFormatV0 implements ParcelFormat.Impl<ParcellaFormatV0.Config> {
-  public static final String BLOCKS_DIR_NAME = "blocks";
-  public static final String ENTITIES_DIR_NAME = "entities";
-  public static final String NBT_DIR_NAME = "nbt";
-  public static final String PALETTE_FILE_NAME = "palette.txt";
-  public static final String SUB_PARCELS_DIR_NAME = "subparcels";
+public interface ParcellaFormatV0 extends ParcelFormat.Impl<ParcellaFormatV0.Config> {
+  String BLOCKS_DIR_NAME = "blocks";
+  String ENTITIES_DIR_NAME = "entities";
+  String NBT_DIR_NAME = "nbt";
+  String PALETTE_FILE_NAME = "palette.txt";
+  String SUB_PARCELS_DIR_NAME = "subparcels";
 
   @Override
-  public String id() {
+  default String id() {
     return "parcella";
   }
 
   @Override
-  public int version() {
+  default int version() {
     return 0;
   }
 
   @Override
-  public <T> Config castConfig(T config) throws ClassCastException {
+  default <T> Config castConfig(T config) throws ClassCastException {
     return (Config) config;
   }
 
   @Override
-  public Config getDefaultConfig() {
+  default Config getDefaultConfig() {
     return new Config();
   }
 
-  public static class Config extends ParcelFormatConfig<Config> {
+  class Config extends ParcelFormatConfig<Config> {
     private static final String SCHEMA_URL =
         "https://git-parcel.github.io/schemas/ParcellaFormatConfig.json";
 
@@ -78,7 +78,7 @@ public abstract class ParcellaFormatV0 implements ParcelFormat.Impl<ParcellaForm
     }
   }
 
-  public static class Save extends ParcellaFormatV0 implements ParcelFormat.Save<Config> {
+  class Save implements ParcellaFormatV0, ParcelFormat.Save<Config> {
 
     @Override
     public void save(

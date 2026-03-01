@@ -20,20 +20,19 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
-public abstract class MvpFormatV0 implements ParcelFormat.Impl<ParcelFormatConfig.None> {
+public interface MvpFormatV0 extends ParcelFormat.Impl<ParcelFormatConfig.None> {
 
   @Override
-  public String id() {
+  default String id() {
     return "mvp";
   }
 
   @Override
-  public int version() {
+  default int version() {
     return 0;
   }
 
-  public static final class Save extends MvpFormatV0
-      implements ParcelFormat.Save<ParcelFormatConfig.None> {
+  final class Save implements MvpFormatV0, ParcelFormat.Save<ParcelFormatConfig.None> {
     @Override
     public void save(
         Level level,
