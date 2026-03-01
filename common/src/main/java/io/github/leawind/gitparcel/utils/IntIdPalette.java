@@ -25,9 +25,11 @@ public class IntIdPalette<T> {
   /** Used as the returned id when a data object is not in {@link #byData}. */
   public static final int VOID_ID = Integer.MIN_VALUE;
 
-  private int minId;
-  private int maxId;
-  private volatile int nextId;
+  public static final int MAX_ID_SPAN = Integer.MAX_VALUE;
+
+  private int idRangeStart;
+  private int idRangeEnd;
+  private volatile int lastId = VOID_ID;
 
   /**
    * Mapping from integer IDs to data objects. Protected by read-write lock.
@@ -52,56 +54,57 @@ public class IntIdPalette<T> {
   /**
    * Creates a new palette with specified maximum id.
    *
-   * @param maxId the maximum id
+   * @param idRangeEnd the maximum id
    */
-  public IntIdPalette(int maxId) {
-    this(0, maxId);
+  public IntIdPalette(int idRangeEnd) {
+    this(0, idRangeEnd);
   }
 
   /**
    * Creates a new palette with specified id range.
    *
-   * @param minId the minimum id
-   * @param maxId the maximum id
+   * @param minId the minimum id (inclusive)
+   * @param idRangeEnd the maximum id (inclusive)
    * @throws IllegalArgumentException if minId >= maxId
    */
-  public IntIdPalette(int minId, int maxId) throws IllegalArgumentException {
-    this(minId, maxId, new Int2ObjectRBTreeMap<>(), new Object2IntOpenHashMap<>());
+  public IntIdPalette(int minId, int idRangeEnd) throws IllegalArgumentException {
+    this(minId, idRangeEnd, new Int2ObjectRBTreeMap<>(), new Object2IntOpenHashMap<>());
   }
 
   /**
    * Creates a new palette with specified id range and mappings.
    *
-   * @param minId the minimum id
-   * @param maxId the maximum id
+   * @param minId the minimum id (inclusive)
+   * @param idRangeEnd the maximum id (inclusive)
    * @param byId the mapping from integer IDs to data objects
    * @param byData the mapping from data objects to integer IDs
    * @throws IllegalArgumentException if {@code minId >= maxId} or {@code minId} is {@value
    *     #VOID_ID}
    */
-  public IntIdPalette(int minId, int maxId, Int2ObjectSortedMap<T> byId, Object2IntMap<T> byData)
+  public IntIdPalette(
+      int minId, int idRangeEnd, Int2ObjectSortedMap<T> byId, Object2IntMap<T> byData)
       throws IllegalArgumentException {
-    setIdRange(minId, maxId);
+    setIdRange(minId, idRangeEnd);
     this.byId = byId;
     this.byData = byData;
     this.byData.defaultReturnValue(VOID_ID);
 
-    nextId = minId;
+    lastId = minId;
   }
 
-  /** Returns the minimum ID value. */
-  protected int minId() {
-    return minId;
+  /** the minimum ID value (inclusive). */
+  protected int idRangeStart() {
+    return idRangeStart;
   }
 
-  /** Returns the maximum ID value. */
-  protected int maxId() {
-    return maxId;
+  /** the exclusive end ID value */
+  protected int idRangeEnd() {
+    return idRangeEnd;
   }
 
-  /** Returns the span of available IDs. */
+  /** Returns count of available IDs. */
   public int idSpan() {
-    return maxId - minId;
+    return idRangeEnd - idRangeStart;
   }
 
   /**
@@ -110,45 +113,56 @@ public class IntIdPalette<T> {
    * <p>This only affects future ID allocations. Existing entries are retained even if outside the
    * new range.
    *
-   * @throws IllegalArgumentException if {@code minId >= maxId} or {@code minId} is {@value
-   *     #VOID_ID}
+   * @throws IllegalArgumentException if {@code start >= end}, or {@code start} is {@value
+   *     #VOID_ID}, or {@code end} is {@value #VOID_ID}
    */
-  public void setIdRange(int minId, int maxId) throws IllegalArgumentException {
-    if (minId == VOID_ID) {
-      throw new IllegalArgumentException("minId must not be VOID_ID: " + VOID_ID);
+  public void setIdRange(int start, int end) throws IllegalArgumentException {
+    if (start == VOID_ID) {
+      throw new IllegalArgumentException("start must not be VOID_ID: " + VOID_ID);
     }
-    if (minId >= maxId) {
+    if (start >= end) {
       throw new IllegalArgumentException(
-          String.format("minId must be less than maxId, but %d >= %d", minId, maxId));
+          String.format("start must be less than end, but %d >= %d", start, end));
     }
-    this.minId = minId;
-    this.maxId = maxId;
+    if ((long) end - start > MAX_ID_SPAN) {
+      throw new IllegalArgumentException(
+          String.format("ID span must be less than %d, but got %d", MAX_ID_SPAN, end - start + 1));
+    }
+    this.idRangeStart = start;
+    this.idRangeEnd = end;
   }
 
   /** Creates an exception indicating that all IDs have been exhausted. */
   protected IllegalStateException createIdExhaustedException() {
-    return new IllegalStateException(String.format("ID exhausted in [%d, %d]", minId, maxId));
+    return new IllegalStateException(
+        String.format("ID exhausted in [%d, %d)", idRangeStart, idRangeEnd));
   }
 
   /**
    * Returns the next unused ID.
    *
-   * <p>This method modifies {@link #nextId}
+   * <p>This method modifies {@link #lastId}
    *
    * @throws IllegalStateException if no ID is available
    */
-  @SuppressWarnings("NonAtomicOperationOnVolatileField")
   protected int getNextUnusedId() throws IllegalStateException {
-    for (int i = idSpan(); i > 0; i--) {
-      if (nextId < minId || nextId > maxId) {
-        nextId = minId;
+    int id;
+    if (lastId < idRangeStart || lastId >= idRangeEnd) {
+      id = idRangeStart;
+    } else {
+      id = lastId;
+    }
+    int span = idSpan();
+
+    int i = 0;
+    while (i < span) {
+      if (!isIdInUse(id)) {
+        lastId = id + 1;
+        return id;
       }
 
-      if (isIdInUse(nextId) || nextId == VOID_ID) {
-        nextId++;
-      } else {
-        return nextId;
-      }
+      id++;
+      i++;
     }
 
     throw createIdExhaustedException();
@@ -302,6 +316,6 @@ public class IntIdPalette<T> {
   public void clear() {
     byData.clear();
     byId.clear();
-    nextId = minId;
+    lastId = idRangeStart;
   }
 }
