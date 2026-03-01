@@ -131,20 +131,20 @@ public class IntIdPalette<T> {
   }
 
   /**
-   * Returns the next available ID.
+   * Returns the next unused ID.
    *
    * <p>This method modifies {@link #nextId}
    *
    * @throws IllegalStateException if no ID is available
    */
   @SuppressWarnings("NonAtomicOperationOnVolatileField")
-  protected int getNextId() throws IllegalStateException {
+  protected int getNextUnusedId() throws IllegalStateException {
     for (int i = idSpan(); i > 0; i--) {
       if (nextId < minId || nextId > maxId) {
         nextId = minId;
       }
 
-      if (byId.containsKey(nextId) || nextId == VOID_ID) {
+      if (isIdInUse(nextId) || nextId == VOID_ID) {
         nextId++;
       } else {
         return nextId;
@@ -212,7 +212,7 @@ public class IntIdPalette<T> {
       return existingId;
     }
 
-    var id = getNextId();
+    var id = getNextUnusedId();
     insert(id, data);
     return id;
   }
