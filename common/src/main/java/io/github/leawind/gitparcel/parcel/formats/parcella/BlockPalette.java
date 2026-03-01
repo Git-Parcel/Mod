@@ -165,12 +165,10 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
    * @return the loaded block palette, or {@code null} if the palette file does not exist
    * @throws IOException if an I/O error occurs
    * @throws InvalidPaletteException if the palette file is malformed
-   * @throws NumberFormatException if an ID in the palette file is not a valid hexadecimal number
-   * @throws CommandSyntaxException if the snbt format is used and the NBT file is malformed
    */
   public static @Nullable BlockPalette loadIfExist(
       Path paletteFile, Path nbtDir, NbtFormat nbtFormat)
-      throws IOException, InvalidPaletteException, NumberFormatException, CommandSyntaxException {
+      throws IOException, InvalidPaletteException {
     if (!Files.exists(paletteFile)) {
       return null;
     }
@@ -188,7 +186,6 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
    * @return the loaded block palette
    * @throws IOException if an I/O error occurs
    * @throws InvalidPaletteException if the palette file is malformed
-   * @throws NumberFormatException if an ID in the palette file is not a valid hexadecimal number
    */
   public static BlockPalette load(Path paletteFile, Path nbtDir, NbtFormat nbtFormat)
       throws IOException, InvalidPaletteException {
@@ -197,66 +194,64 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
 
       String line;
       while ((line = reader.readLine()) != null) {
-
-        char type = '\0';
-        String idString = null;
-        StringBuilder buffer = new StringBuilder(32);
-
-        for (char ch : line.toCharArray()) {
-          switch (ch) {
-            case '=', '>', '?' -> {
-              type = ch;
-              idString = buffer.toString();
-              buffer.setLength(0);
-            }
-            default -> buffer.append(ch);
-          }
-        }
-
-        if (type == '\0') {
-          throw new InvalidPaletteException(
-              String.format(
-                  "Invalid palette entry. No type char ( '=', '>', '?' ) found: %s", line));
-        }
-
-        int id;
         try {
+          char type = '\0';
+          String idString = null;
+          StringBuilder buffer = new StringBuilder(32);
+
+          for (char ch : line.toCharArray()) {
+            switch (ch) {
+              case '=', '>', '?' -> {
+                type = ch;
+                idString = buffer.toString();
+                buffer.setLength(0);
+              }
+              default -> buffer.append(ch);
+            }
+          }
+
+          if (type == '\0') {
+            throw new InvalidPaletteException(
+                String.format(
+                    "Invalid palette entry. No type char ( '=', '>', '?' ) found: %s", line));
+          }
+
+          int id;
 
           id = Integer.parseInt(idString, 16);
-        } catch (NumberFormatException e) {
-          throw new InvalidPaletteException(
-              String.format("Invalid palette entry. Invalid id %s in line %s", idString, line));
-        }
 
-        if (palette.byId.containsKey(id)) {
-          ParcelFormat.LOGGER.warn(
-              "Duplicate id {} in palette file {}. Did someone tweak the file by hand? ",
-              id,
-              paletteFile);
-          continue;
-        }
-
-        switch (type) {
-          case '?' -> palette.insert(id, null);
-          case '=' -> palette.insert(id, new Data(buffer.toString(), null));
-          case '>' -> {
-            Path nbtFile = nbtDir.resolve(idString + nbtFormat.suffix);
-            CompoundTag nbt =
-                switch (nbtFormat) {
-                  case Binary -> NbtFormat.readBinary(nbtFile);
-                  case Text -> {
-                    try {
-                      yield NbtFormat.readText(nbtFile);
-                    } catch (CommandSyntaxException e) {
-                      throw new InvalidPaletteException(
-                          String.format(
-                              "Invalid palette entry. Invalid snbt %s in line %s", buffer, line),
-                          e);
-                    }
-                  }
-                };
-            palette.insert(id, new Data(buffer.toString(), nbt));
+          if (palette.byId.containsKey(id)) {
+            ParcelFormat.LOGGER.warn(
+                "Duplicate id {} in palette file {}. Did someone tweak the file by hand? ",
+                id,
+                paletteFile);
+            continue;
           }
+
+          switch (type) {
+            case '?' -> palette.insert(id, null);
+            case '=' -> palette.insert(id, new Data(buffer.toString(), null));
+            case '>' -> {
+              Path nbtFile = nbtDir.resolve(idString + nbtFormat.suffix);
+              CompoundTag nbt =
+                  switch (nbtFormat) {
+                    case Binary -> NbtFormat.readBinary(nbtFile);
+                    case Text -> {
+                      try {
+                        yield NbtFormat.readText(nbtFile);
+                      } catch (CommandSyntaxException e) {
+                        throw InvalidPaletteException.invalidNbtData(nbtFile, e);
+                      }
+                    }
+                  };
+              palette.insert(id, new Data(buffer.toString(), nbt));
+            }
+          }
+        } catch (NumberFormatException e) {
+          throw new InvalidPaletteException(String.format("Invalid palette line: %s", line), e);
+        } catch (InvalidPaletteException e) {
+          ParcelFormat.LOGGER.error(
+              "Error occurred while loading palette file {}.", paletteFile, e);
         }
       }
 
@@ -271,6 +266,11 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
 
     public InvalidPaletteException(String message, Exception e) {
       super(message, e);
+    }
+
+    public static InvalidPaletteException invalidNbtData(Path path, CommandSyntaxException e) {
+      return new InvalidPaletteException(
+          String.format("Invalid NBT data in file %s.", path.toString()), e);
     }
   }
 }
