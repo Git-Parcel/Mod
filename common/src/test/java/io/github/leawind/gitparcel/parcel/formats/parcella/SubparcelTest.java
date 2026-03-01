@@ -54,27 +54,28 @@ public class SubparcelTest {
 
   @Test
   void testGetCoord() {
-    assertEquals(Vec3i.ZERO, new Subparcel(3, 4, 5, 3, 4, 5).getCoord(Vec3i.ZERO));
-    assertEquals(new Vec3i(-1, -1, -1), new Subparcel(-3, -4, -5, 3, 4, 5).getCoord(Vec3i.ZERO));
+    assertEquals(Vec3i.ZERO, new Subparcel(3, 4, 5, 3, 4, 5).getCoord(16, Vec3i.ZERO));
+    assertEquals(
+        new Vec3i(-1, -1, -1), new Subparcel(-3, -4, -5, 3, 4, 5).getCoord(16, Vec3i.ZERO));
   }
 
   @Test
   void testSubdivideSubparcel() {
     {
       Parcel parcel = new Parcel(0, 0, 0, 16, 16, 16);
-      var result = Subparcel.subdivideParcel(parcel, BlockPos.ZERO);
+      var result = Subparcel.subdivideParcel(16, parcel, BlockPos.ZERO);
       assertEquals(List.of(new Subparcel(0, 0, 0, 16, 16, 16)), result);
     }
     {
       Parcel parcel = new Parcel(0, 0, 0, 16, 16, 16);
-      var result = Subparcel.subdivideParcel(parcel, new BlockPos(4, 5, 6));
+      var result = Subparcel.subdivideParcel(16, parcel, new BlockPos(4, 5, 6));
       assertEquals(8, result.size());
     }
 
     var random = new RandomForMC(12138);
     for (int i = 0; i < 1000; i++) {
       Parcel parcel = new Parcel(random.nextBlockPos(-1000, 1000), random.nextVec3i(1, 50));
-      assertParcelEqual(parcel, Subparcel.subdivideParcel(parcel, random.nextVec3i(-100, 100)));
+      assertParcelEqual(parcel, Subparcel.subdivideParcel(16, parcel, random.nextVec3i(-100, 100)));
     }
   }
 
@@ -82,7 +83,7 @@ public class SubparcelTest {
   void testSubdivideParcel1D() {
     BiConsumer<List<Integer>, List<Integer>> test =
         (args, expected) -> {
-          var result = Subparcel.subdivideParcel1D(args.get(0), args.get(1), args.get(2));
+          var result = Subparcel.subdivideParcel1D(16, args.get(0), args.get(1), args.get(2));
           assertEquals(expected, result);
         };
 
@@ -102,7 +103,7 @@ public class SubparcelTest {
       int size = random.nextInt(1, 1000);
       int anchor = random.nextInt(-100, 100);
 
-      var result = Subparcel.subdivideParcel1D(from, size, anchor);
+      var result = Subparcel.subdivideParcel1D(16, from, size, anchor);
       // assert ascending order
       for (int j = 0; j < result.size() - 1; j++) {
         assertTrue(result.get(j) <= result.get(j + 1));
@@ -114,37 +115,37 @@ public class SubparcelTest {
 
   @Test
   void testFloorToGrid16() {
-    assertEquals(-16, Subparcel.floorToGrid16(0, -1));
-    assertEquals(0, Subparcel.floorToGrid16(0, 0));
-    assertEquals(0, Subparcel.floorToGrid16(0, 15));
-    assertEquals(16, Subparcel.floorToGrid16(0, 16));
-    assertEquals(16, Subparcel.floorToGrid16(0, 17));
+    assertEquals(-16, Subparcel.floorToGrid(16, 0, -1));
+    assertEquals(0, Subparcel.floorToGrid(16, 0, 0));
+    assertEquals(0, Subparcel.floorToGrid(16, 0, 15));
+    assertEquals(16, Subparcel.floorToGrid(16, 0, 16));
+    assertEquals(16, Subparcel.floorToGrid(16, 0, 17));
 
-    assertEquals(1, Subparcel.floorToGrid16(1, 1));
-    assertEquals(-15, Subparcel.floorToGrid16(1, 0));
+    assertEquals(1, Subparcel.floorToGrid(16, 1, 1));
+    assertEquals(-15, Subparcel.floorToGrid(16, 1, 0));
 
-    assertEquals(0, Subparcel.floorToGrid16(32, 1));
-    assertEquals(-15, Subparcel.floorToGrid16(33, 0));
+    assertEquals(0, Subparcel.floorToGrid(16, 32, 1));
+    assertEquals(-15, Subparcel.floorToGrid(16, 33, 0));
 
-    assertEquals(0, Subparcel.floorToGrid16(-32, 0));
-    assertEquals(2, Subparcel.floorToGrid16(-30, 17));
+    assertEquals(0, Subparcel.floorToGrid(16, -32, 0));
+    assertEquals(2, Subparcel.floorToGrid(16, -30, 17));
   }
 
   @Test
   void testCeilToGrid16() {
-    assertEquals(0, Subparcel.ceilToGrid16(0, -1));
-    assertEquals(16, Subparcel.ceilToGrid16(0, 0));
-    assertEquals(16, Subparcel.ceilToGrid16(0, 15));
-    assertEquals(32, Subparcel.ceilToGrid16(0, 16));
-    assertEquals(32, Subparcel.ceilToGrid16(0, 17));
+    assertEquals(0, Subparcel.ceilToGrid(16, 0, -1));
+    assertEquals(16, Subparcel.ceilToGrid(16, 0, 0));
+    assertEquals(16, Subparcel.ceilToGrid(16, 0, 15));
+    assertEquals(32, Subparcel.ceilToGrid(16, 0, 16));
+    assertEquals(32, Subparcel.ceilToGrid(16, 0, 17));
 
-    assertEquals(17, Subparcel.ceilToGrid16(1, 1));
-    assertEquals(1, Subparcel.ceilToGrid16(1, 0));
+    assertEquals(17, Subparcel.ceilToGrid(16, 1, 1));
+    assertEquals(1, Subparcel.ceilToGrid(16, 1, 0));
 
-    assertEquals(16, Subparcel.ceilToGrid16(32, 1));
-    assertEquals(1, Subparcel.ceilToGrid16(33, 0));
+    assertEquals(16, Subparcel.ceilToGrid(16, 32, 1));
+    assertEquals(1, Subparcel.ceilToGrid(16, 33, 0));
 
-    assertEquals(16, Subparcel.ceilToGrid16(-32, 0));
-    assertEquals(18, Subparcel.ceilToGrid16(-30, 17));
+    assertEquals(16, Subparcel.ceilToGrid(16, -32, 0));
+    assertEquals(18, Subparcel.ceilToGrid(16, -30, 17));
   }
 }

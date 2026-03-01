@@ -12,25 +12,23 @@ public final class Subparcel extends Parcel {
     super(originX, originY, originZ, sizeX, sizeY, sizeZ);
   }
 
-  /**
-   * @see #getCoord(int, int, int)
-   */
-  public Vec3i getCoord(Vec3i anchorPos) {
-    return getCoord(anchorPos.getX(), anchorPos.getY(), anchorPos.getZ());
+  public Vec3i getCoord(int gridSize, Vec3i anchorPos) {
+    return getCoord(gridSize, anchorPos.getX(), anchorPos.getY(), anchorPos.getZ());
   }
 
   /**
    * Get the coordinate of this subparcel based on the anchor position.
    *
+   * @param gridSize Size of a grid
    * @param anchorX Absolute X coordinate of the anchor position
    * @param anchorY Absolute Y coordinate of the anchor position
    * @param anchorZ Absolute Z coordinate of the anchor position
    */
-  public Vec3i getCoord(int anchorX, int anchorY, int anchorZ) {
+  public Vec3i getCoord(int gridSize, int anchorX, int anchorY, int anchorZ) {
     return new Vec3i(
-        Math.floorDiv(originX - anchorX, 16),
-        Math.floorDiv(originY - anchorY, 16),
-        Math.floorDiv(originZ - anchorZ, 16));
+        Math.floorDiv(originX - anchorX, gridSize),
+        Math.floorDiv(originY - anchorY, gridSize),
+        Math.floorDiv(originZ - anchorZ, gridSize));
   }
 
   public String toString() {
@@ -65,12 +63,15 @@ public final class Subparcel extends Parcel {
    * @param anchorPos Absolute position of origin point
    * @return Bounding boxes of subparcels, use absolute coordinates
    */
-  public static ArrayList<Subparcel> subdivideParcel(Parcel parcel, Vec3i anchorPos) {
+  public static ArrayList<Subparcel> subdivideParcel(int gridSize, Parcel parcel, Vec3i anchorPos) {
     ArrayList<Subparcel> subparcels = new ArrayList<>(1);
 
-    List<Integer> xDivisions = subdivideParcel1D(parcel.originX, parcel.sizeX, anchorPos.getX());
-    List<Integer> yDivisions = subdivideParcel1D(parcel.originY, parcel.sizeY, anchorPos.getY());
-    List<Integer> zDivisions = subdivideParcel1D(parcel.originZ, parcel.sizeZ, anchorPos.getZ());
+    List<Integer> xDivisions =
+        subdivideParcel1D(gridSize, parcel.originX, parcel.sizeX, anchorPos.getX());
+    List<Integer> yDivisions =
+        subdivideParcel1D(gridSize, parcel.originY, parcel.sizeY, anchorPos.getY());
+    List<Integer> zDivisions =
+        subdivideParcel1D(gridSize, parcel.originZ, parcel.sizeZ, anchorPos.getZ());
 
     for (int i = 0; i < xDivisions.size() - 1; i++) {
       int startX = Math.max(xDivisions.get(i), parcel.originX);
@@ -96,25 +97,17 @@ public final class Subparcel extends Parcel {
     return subparcels;
   }
 
-  /**
-   * Divide a 1D line into subparcels, each subparcel has a size of 16 blocks.
-   *
-   * @param origin Start position of the line
-   * @param size Total length of the line, must be positive
-   * @param anchor Anchor position, used to align the subparcels
-   * @return List of subparcel edges
-   */
-  static List<Integer> subdivideParcel1D(int origin, int size, int anchor) {
+  static List<Integer> subdivideParcel1D(int gridSize, int origin, int size, int anchor) {
     List<Integer> divisions = new ArrayList<>(1);
 
     int current = origin;
     divisions.add(current);
-    current = ceilToGrid16(anchor, current);
+    current = ceilToGrid(gridSize, anchor, current);
 
     int end = origin + size;
     while (current < end) {
       divisions.add(current);
-      current += 16;
+      current += gridSize;
     }
 
     divisions.add(end);
@@ -122,11 +115,11 @@ public final class Subparcel extends Parcel {
     return divisions;
   }
 
-  static int floorToGrid16(int grid, int value) {
-    return value - Math.floorMod(value - grid, 16);
+  static int floorToGrid(int gridSize, int gridOffset, int value) {
+    return value - Math.floorMod(value - gridOffset, gridSize);
   }
 
-  static int ceilToGrid16(int grid, int value) {
-    return floorToGrid16(grid, value) + 16;
+  static int ceilToGrid(int gridSize, int gridOffset, int value) {
+    return value - Math.floorMod(value - gridOffset, gridSize) + gridSize;
   }
 }

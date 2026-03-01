@@ -91,7 +91,7 @@ public abstract class ParcellaFormatV0 implements ParcelFormat.Impl<ParcellaForm
       try (ProblemReporter.ScopedCollector problemReporter =
           new ProblemReporter.ScopedCollector(LOGGER)) {
 
-        saveBlocks(level, parcel, dataDir, config);
+        saveBlocks(16, level, parcel, dataDir, config);
 
         if (saveEntities) {
           saveEntities(problemReporter, level, parcel, dataDir, config);
@@ -105,7 +105,7 @@ public abstract class ParcellaFormatV0 implements ParcelFormat.Impl<ParcellaForm
      * @param dataDir Path to parcel data directory. Will be created if not exist.
      * @throws IOException If an I/O error occurs
      */
-    protected void saveBlocks(Level level, Parcel parcel, Path dataDir, Config config)
+    protected void saveBlocks(int gridSize, Level level, Parcel parcel, Path dataDir, Config config)
         throws IOException {
 
       Path blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
@@ -123,10 +123,10 @@ public abstract class ParcellaFormatV0 implements ParcelFormat.Impl<ParcellaForm
       Files.createDirectories(subParcelsDir);
 
       BlockPos anchorPos = parcel.getOrigin().offset(config.anchorOffset);
-      Iterable<Subparcel> subparcels = Subparcel.subdivideParcel(parcel, anchorPos);
+      Iterable<Subparcel> subparcels = Subparcel.subdivideParcel(gridSize, parcel, anchorPos);
 
       for (var subparcel : subparcels) {
-        Vec3i coord = subparcel.getCoord(anchorPos);
+        Vec3i coord = subparcel.getCoord(gridSize, anchorPos);
         long index = ZOrder3D.coordToIndexSigned(coord);
 
         Path subparcelRelativePath = IndexPathCodec.indexToPath(index, ".txt");
@@ -165,13 +165,13 @@ public abstract class ParcellaFormatV0 implements ParcelFormat.Impl<ParcellaForm
         boolean enableMicroparcel)
         throws IOException {
       if (enableMicroparcel) {
-        writeSubparcelWithMicroparcels(writer, level, subparcel, palette);
+        writeSubparcelWithMicroparcelsD16(writer, level, subparcel, palette);
       } else {
         writeSubparcelFlat(writer, level, subparcel, palette);
       }
     }
 
-    protected void writeSubparcelWithMicroparcels(
+    protected void writeSubparcelWithMicroparcelsD16(
         BufferedWriter writer, Level level, Subparcel subparcel, BlockPalette palette)
         throws IOException {
       StringBuilder sb = new StringBuilder(8192);
