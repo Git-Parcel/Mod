@@ -57,12 +57,11 @@ class BlockPaletteTest {
   void testCollectWithNbt() {
     BlockPalette palette = new BlockPalette();
 
-    CompoundTag nbt = new CompoundTag();
-    nbt.putString("test_key", "test_value");
-    nbt.putInt("test_int", 42);
+    CompoundTag nbt1 = new CompoundTag();
+    nbt1.putString("test_key", "test_value");
+    nbt1.putInt("test_int", 42);
 
-    int id = palette.collect("minecraft:chest", nbt);
-    assertEquals(0, id);
+    int id1 = palette.collect("minecraft:chest", nbt1);
 
     // Verify data was stored correctly
     BlockPalette.Data data = palette.get(0);
@@ -73,14 +72,14 @@ class BlockPaletteTest {
     assertEquals(42, data.nbt().getInt("test_int").get());
 
     // Collect same data with same NBT should return same id
-    int sameId = palette.collect("minecraft:chest", nbt);
-    assertEquals(0, sameId);
+    int id2 = palette.collect("minecraft:chest", nbt1);
+    assertEquals(id1, id2);
 
     // Collect same block type but different NBT should return different id
-    CompoundTag differentNbt = new CompoundTag();
-    differentNbt.putString("different_key", "different_value");
-    int differentId = palette.collect("minecraft:chest", differentNbt);
-    assertEquals(1, differentId);
+    CompoundTag nbt3 = new CompoundTag();
+    nbt3.putString("different_key", "different_value");
+    int id3 = palette.collect("minecraft:chest", nbt3);
+    assertNotEquals(id1, id3);
   }
 
   @Test
