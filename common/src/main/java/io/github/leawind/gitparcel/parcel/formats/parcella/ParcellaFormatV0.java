@@ -182,7 +182,7 @@ public abstract class ParcellaFormatV0 implements ParcelFormat.Impl<ParcellaForm
             .append(hex[microparcel.originY])
             .append(hex[microparcel.originZ]);
 
-        if (microparcel.sizeX != 0 || microparcel.sizeY != 0 || microparcel.sizeZ != 0) {
+        if (microparcel.sizeX != 1 || microparcel.sizeY != 1 || microparcel.sizeZ != 1) {
           sb.append(hex[microparcel.sizeX - 1])
               .append(hex[microparcel.sizeY - 1])
               .append(hex[microparcel.sizeZ - 1]);
