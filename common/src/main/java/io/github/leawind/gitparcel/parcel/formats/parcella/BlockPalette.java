@@ -6,7 +6,6 @@ import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.parcel.formats.NbtFormat;
 import io.github.leawind.gitparcel.utils.IntIdPalette;
 import io.github.leawind.gitparcel.utils.hex.HexUtils;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntArraySet;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -83,7 +82,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
   @Override
   public void onAfterInserted(int id, @Nullable Data data) {
     visited.add(id);
-    if (data != null && data.nbt != null) {
+    if (data != null && data.hasNbt()) {
       blockEntities.add(id);
     }
   }
@@ -139,15 +138,11 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
     // Save NBTs
     for (int id : blockEntities) {
       Data data = byId.get(id);
-      if (data.nbt != null) {
+      if (data.hasNbt()) {
         var nbtFile = nbtDir.resolve(HexUtils.toHexUpperCase(id) + nbtFormat.suffix);
         nbtFormat.write(nbtFile, data.nbt, true);
       }
     }
-  }
-
-  private static int getId(Int2ObjectMap.Entry<Data> entry) {
-    return entry.getIntKey();
   }
 
   public record Data(String blockStateString, @Nullable CompoundTag nbt) {
