@@ -15,8 +15,11 @@ import org.openjdk.jmh.infra.Blackhole;
 @Measurement(iterations = 3, time = 3)
 public class SubdivideAlgoBenchmark {
 
-  @Param({"4"})
+  @Param({"2", "4", "8"})
   private int variance;
+
+  @Param({"16", "32", "64"})
+  private int size;
 
   private Parcel parcel;
   private SubdivideAlgo.Values values;
@@ -26,7 +29,6 @@ public class SubdivideAlgoBenchmark {
   public void setup() {
     var random = new RandomForMC(12138);
 
-    int size = 16;
     parcel = new Parcel(0, 0, 0, size, size, size);
     factory = SubdivideAlgoTest.ParcelWithValue::new;
     values = new SubdivideAlgoTest.TestedValues(parcel, variance, random);
