@@ -22,7 +22,8 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import org.jspecify.annotations.Nullable;
 
 /** Note: The loader of this format always load blocks regardless of the value of `loadBlocks` */
-public abstract class StructureTemplateFormatV0 implements ParcelFormat.Impl<ParcelFormatConfig.None> {
+public abstract class StructureTemplateFormatV0
+    implements ParcelFormat.Impl<ParcelFormatConfig.None> {
   public static final String NBT_FILE_NAME = "structure.nbt";
 
   @Override

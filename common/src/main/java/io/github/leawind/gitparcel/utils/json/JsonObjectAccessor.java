@@ -6,9 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Provides convenient access to JSON objects with type safety and error handling.
- */
+/** Provides convenient access to JSON objects with type safety and error handling. */
 public class JsonObjectAccessor {
   public JsonObject json;
 
@@ -18,6 +16,7 @@ public class JsonObjectAccessor {
 
   /**
    * Retrieves a JSON element at the specified path.
+   *
    * @param path the path to the element
    * @return the JSON element at the path
    * @throws JsonAccessException.MissingProperty if the property is missing
@@ -42,6 +41,7 @@ public class JsonObjectAccessor {
 
   /**
    * Retrieves a JSON primitive at the specified path.
+   *
    * @param path the path to the primitive
    * @return the JSON primitive at the path
    * @throws JsonAccessException.MissingProperty if the property is missing
@@ -54,6 +54,7 @@ public class JsonObjectAccessor {
 
   /**
    * Retrieves a JSON object at the specified path.
+   *
    * @param path the path to the object
    * @return the JSON object at the path
    * @throws JsonAccessException.MissingProperty if the property is missing
@@ -66,6 +67,7 @@ public class JsonObjectAccessor {
 
   /**
    * Retrieves a JSON array at the specified path.
+   *
    * @param path the path to the array
    * @return the JSON array at the path
    * @throws JsonAccessException.MissingProperty if the property is missing
@@ -78,6 +80,7 @@ public class JsonObjectAccessor {
 
   /**
    * Retrieves a string value at the specified path.
+   *
    * @param path the path to the string
    * @return the string value at the path
    * @throws JsonAccessException.MissingProperty if the property is missing
@@ -90,6 +93,7 @@ public class JsonObjectAccessor {
 
   /**
    * Retrieves a number value at the specified path.
+   *
    * @param path the path to the number
    * @return the number value at the path
    * @throws JsonAccessException.MissingProperty if the property is missing
@@ -102,6 +106,7 @@ public class JsonObjectAccessor {
 
   /**
    * Retrieves a boolean value at the specified path.
+   *
    * @param path the path to the boolean
    * @return the boolean value at the path
    * @throws JsonAccessException.MissingProperty if the property is missing
@@ -114,6 +119,7 @@ public class JsonObjectAccessor {
 
   /**
    * Retrieves a JSON object at the specified path, or null if not found.
+   *
    * @param path the path to the object
    * @return the JSON object at the path, or null if not found
    */
@@ -127,6 +133,7 @@ public class JsonObjectAccessor {
 
   /**
    * Retrieves a JSON array at the specified path, or null if not found.
+   *
    * @param path the path to the array
    * @return the JSON array at the path, or null if not found
    */
@@ -140,6 +147,7 @@ public class JsonObjectAccessor {
 
   /**
    * Retrieves a string value at the specified path, or null if not found.
+   *
    * @param path the path to the string
    * @return the string value at the path, or null if not found
    */
@@ -153,6 +161,7 @@ public class JsonObjectAccessor {
 
   /**
    * Retrieves a boolean value at the specified path, or null if not found.
+   *
    * @param path the path to the boolean
    * @return the boolean value at the path, or null if not found
    */
@@ -166,6 +175,7 @@ public class JsonObjectAccessor {
 
   /**
    * Converts a JSON element to a JSON object.
+   *
    * @param json the JSON element to convert
    * @return the JSON object
    * @throws JsonAccessException.IncorrectType if the element is not a JSON object
@@ -181,6 +191,7 @@ public class JsonObjectAccessor {
 
   /**
    * Converts a JSON element to a JSON array.
+   *
    * @param json the JSON element to convert
    * @return the JSON array
    * @throws JsonAccessException.IncorrectType if the element is not a JSON array
@@ -196,6 +207,7 @@ public class JsonObjectAccessor {
 
   /**
    * Converts a JSON element to a JSON primitive.
+   *
    * @param json the JSON element to convert
    * @return the JSON primitive
    * @throws JsonAccessException.IncorrectType if the element is not a JSON primitive
@@ -211,6 +223,7 @@ public class JsonObjectAccessor {
 
   /**
    * Converts a JSON element to a string.
+   *
    * @param json the JSON element to convert
    * @return the string value
    * @throws JsonAccessException.IncorrectType if the element is not a string
@@ -229,6 +242,7 @@ public class JsonObjectAccessor {
 
   /**
    * Converts a JSON element to a number.
+   *
    * @param json the JSON element to convert
    * @return the number value
    * @throws JsonAccessException.IncorrectType if the element is not a number
@@ -247,6 +261,7 @@ public class JsonObjectAccessor {
 
   /**
    * Converts a JSON element to a boolean.
+   *
    * @param json the JSON element to convert
    * @return the boolean value
    * @throws JsonAccessException.IncorrectType if the element is not a boolean

@@ -82,6 +82,7 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
 
   /**
    * Gets the name of this configuration item.
+   *
    * @return the configuration item name
    */
   public String name() {
@@ -90,6 +91,7 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
 
   /**
    * Gets the description of this configuration item.
+   *
    * @return the configuration item description
    */
   public String description() {
@@ -98,21 +100,21 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
 
   /**
    * Gets the default value of this configuration item.
+   *
    * @return the default value
    */
   public T defaultValue() {
     return defaultValue;
   }
 
-  /**
-   * Resets the configuration item to its default value.
-   */
+  /** Resets the configuration item to its default value. */
   public void reset() {
     set(defaultValue);
   }
 
   /**
    * Gets the current value of this configuration item.
+   *
    * @return the current value
    */
   public T get() {
@@ -154,6 +156,7 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
 
   /**
    * Checks if this configuration item is visible to users.
+   *
    * @return true if the item is user-visible
    */
   public boolean userVisible() {
@@ -162,6 +165,7 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
 
   /**
    * Configures this item to store its value locally.
+   *
    * @return this configuration item for chaining
    */
   public Self storeRightHere() {
@@ -173,6 +177,7 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
 
   /**
    * Sets the description for this configuration item.
+   *
    * @param description the description text
    * @return this configuration item for chaining
    */
@@ -183,6 +188,7 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
 
   /**
    * Sets the getter function for this configuration item.
+   *
    * @param getter the getter function
    * @return this configuration item for chaining
    */
@@ -193,6 +199,7 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
 
   /**
    * Sets the setter function for this configuration item.
+   *
    * @param setter the setter function
    * @return this configuration item for chaining
    */
@@ -203,6 +210,7 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
 
   /**
    * Sets the default value for this configuration item.
+   *
    * @param defaultValue the default value
    * @return this configuration item for chaining
    */
@@ -229,6 +237,7 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
 
   /**
    * Sets the user visibility for this configuration item.
+   *
    * @param value true to make the item user-visible
    * @return this configuration item for chaining
    */

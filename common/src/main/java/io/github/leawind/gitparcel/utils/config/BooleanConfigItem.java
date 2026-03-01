@@ -4,9 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Configuration item for boolean values.
- */
+/** Configuration item for boolean values. */
 public final class BooleanConfigItem extends ConfigItem<Boolean, BooleanConfigItem> {
   public @Nullable String describeTrue = null;
   public @Nullable String describeFalse = null;
@@ -27,6 +25,7 @@ public final class BooleanConfigItem extends ConfigItem<Boolean, BooleanConfigIt
 
   /**
    * Creates a new boolean configuration item.
+   *
    * @param name the name of the configuration item
    */
   public BooleanConfigItem(String name) {

@@ -10,9 +10,7 @@ import java.util.Collection;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 
-/**
- * Command argument for directory paths.
- */
+/** Command argument for directory paths. */
 public class DirPathArgument extends FilePathArgument {
   private static final Collection<String> EXAMPLES =
       Arrays.asList(
