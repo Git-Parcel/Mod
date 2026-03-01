@@ -54,10 +54,10 @@ public class SubdivideAlgoTest {
 
     System.out.println("Testing " + name);
 
-    for (int variance = 1; variance <= maxVariances; variance++) {
+    for (int variance = 1; variance <= maxVariances; variance *= 2) {
       double ratioSum = 0;
       double weightSum = 0;
-      for (int i = 0; i < 4096; i++) {
+      for (int i = 0; i < 32768; i += 17) {
         var size = ZOrder3D.indexToCoord(i).add(1, 1, 1);
         Parcel parcel =
             new Parcel(random.nextBlockPos(-100, 100), new Vec3i(size.x, size.y, size.z));

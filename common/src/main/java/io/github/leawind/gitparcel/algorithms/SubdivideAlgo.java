@@ -2,27 +2,22 @@ package io.github.leawind.gitparcel.algorithms;
 
 import io.github.leawind.gitparcel.parcel.Parcel;
 import java.util.ArrayList;
-import org.jetbrains.annotations.Range;
 
 @FunctionalInterface
 public interface SubdivideAlgo {
   /**
    * Subdivide the given parcel into smaller parcels.
    *
-   * @param sizeX The size of the parcel in the X axis.
-   * @param sizeY The size of the parcel in the Y axis.
-   * @param sizeZ The size of the parcel in the Z axis.
+   * @param sizeX The size of the X axis. Must be positive.
+   * @param sizeY The size of the Y axis. Must be positive.
+   * @param sizeZ The size of the Z axis. Must be positive.
    * @param values The values to use for the subdivided parcels.
    * @param factory The factory to use for creating the subdivided parcels.
    * @return The subdivided parcels.
    * @param <T> The type of the subdivided parcels.
    */
   <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
-      @Range(from = 1, to = 16) int sizeX,
-      @Range(from = 1, to = 16) int sizeY,
-      @Range(from = 1, to = 16) int sizeZ,
-      Values values,
-      ResultFactory<T> factory);
+      int sizeX, int sizeY, int sizeZ, Values values, ResultFactory<T> factory);
 
   interface Values {
     /**
@@ -30,23 +25,16 @@ public interface SubdivideAlgo {
      *
      * <p>Note: The position is relative to the origin of the parcel.
      *
+     * @param x The X position. Range [0, sizeX)
+     * @param y The Y position. Range [0, sizeY)
+     * @param z The Z position. Range [0, sizeZ)
      * @return The value at the given position.
      */
-    int get(
-        @Range(from = 0, to = 15) int x,
-        @Range(from = 0, to = 15) int y,
-        @Range(from = 0, to = 15) int z);
+    int get(int x, int y, int z);
   }
 
   interface ResultFactory<T> {
-    T create(
-        int value,
-        @Range(from = 0, to = 15) int originX,
-        @Range(from = 0, to = 15) int originY,
-        @Range(from = 0, to = 15) int originZ,
-        @Range(from = 1, to = 16) int sizeX,
-        @Range(from = 1, to = 16) int sizeY,
-        @Range(from = 1, to = 16) int sizeZ);
+    T create(int value, int originX, int originY, int originZ, int sizeX, int sizeY, int sizeZ);
   }
 
   SubdivideAlgo V2 =
