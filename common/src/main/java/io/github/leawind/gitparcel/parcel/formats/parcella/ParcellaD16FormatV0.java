@@ -29,7 +29,7 @@ import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
-public interface ParcellaFormatV0 extends ParcelFormat.Impl<ParcellaFormatV0.Config> {
+public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16FormatV0.Config> {
   String BLOCKS_DIR_NAME = "blocks";
   String ENTITIES_DIR_NAME = "entities";
   String NBT_DIR_NAME = "nbt";
@@ -38,7 +38,7 @@ public interface ParcellaFormatV0 extends ParcelFormat.Impl<ParcellaFormatV0.Con
 
   @Override
   default String id() {
-    return "parcella";
+    return "parcella_d16";
   }
 
   @Override
@@ -78,7 +78,7 @@ public interface ParcellaFormatV0 extends ParcelFormat.Impl<ParcellaFormatV0.Con
     }
   }
 
-  class Save implements ParcellaFormatV0, ParcelFormat.Save<Config> {
+  class Save implements ParcellaD16FormatV0, ParcelFormat.Save<Config> {
 
     @Override
     public void save(
@@ -165,13 +165,13 @@ public interface ParcellaFormatV0 extends ParcelFormat.Impl<ParcellaFormatV0.Con
         boolean enableMicroparcel)
         throws IOException {
       if (enableMicroparcel) {
-        writeSubparcelWithMicroparcelsD16(writer, level, subparcel, palette);
+        writeSubparcelWithMicroparcels(writer, level, subparcel, palette);
       } else {
         writeSubparcelFlat(writer, level, subparcel, palette);
       }
     }
 
-    protected void writeSubparcelWithMicroparcelsD16(
+    protected void writeSubparcelWithMicroparcels(
         BufferedWriter writer, Level level, Subparcel subparcel, BlockPalette palette)
         throws IOException {
       StringBuilder sb = new StringBuilder(8192);
