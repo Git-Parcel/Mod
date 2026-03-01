@@ -140,7 +140,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
     for (int id : blockEntities) {
       Data data = byId.get(id);
       if (data.nbt != null) {
-        var nbtFile = nbtDir.resolve(id + nbtFormat.suffix);
+        var nbtFile = nbtDir.resolve(HexUtils.toHexUpperCase(id) + nbtFormat.suffix);
         nbtFormat.write(nbtFile, data.nbt, true);
       }
     }
@@ -236,7 +236,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
           case '?' -> palette.insert(id, null);
           case '=' -> palette.insert(id, new Data(buffer.toString(), null));
           case '>' -> {
-            Path nbtFile = nbtDir.resolve(id + nbtFormat.suffix);
+            Path nbtFile = nbtDir.resolve(idString + nbtFormat.suffix);
             CompoundTag nbt =
                 switch (nbtFormat) {
                   case Binary -> NbtFormat.readBinary(nbtFile);
