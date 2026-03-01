@@ -56,10 +56,15 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
   }
 
   @Override
-  public void onInserted(int id, Data data) {
+  public void onAfterInserted(int id, Data data) {
     if (data.nbt != null) {
       blockEntities.add(id);
     }
+  }
+
+  @Override
+  public void onAfterRemoved(int id, Data data) {
+    blockEntities.remove(id);
   }
 
   /**

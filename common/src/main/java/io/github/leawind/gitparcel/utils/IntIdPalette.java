@@ -143,14 +143,30 @@ public class IntIdPalette<T> {
 
     if (id == null) {
       id = findNextId();
-      byId.put(id, data);
-      byData.put(data, id);
-
-      onInserted(id, data);
+      insert(id, data);
     }
 
     return id;
   }
+
+  protected void insert(int id, T data) {
+    byId.put(id, data);
+    byData.put(data, id);
+    onAfterInserted(id, data);
+  }
+
+  /**
+   * Called after a new item is inserted to this palette
+   *
+   * <ul>
+   *   <li>Collecting visited data does not trigger this method
+   *   <li>This method do nothing unless it is overridden by a subclass
+   * </ul>
+   *
+   * @param id id of the inserted new item
+   * @param data the inserted new item
+   */
+  protected void onAfterInserted(int id, T data) {}
 
   /**
    * Removes the data with the given id.
@@ -162,7 +178,7 @@ public class IntIdPalette<T> {
     var data = byId.remove(id);
     if (data != null) {
       byData.remove(data);
-      onRemoved(id, data);
+      onAfterRemoved(id, data);
     }
     return data;
   }
@@ -177,24 +193,11 @@ public class IntIdPalette<T> {
     var id = byData.remove(data);
     if (id != null) {
       byId.remove(id);
-      onRemoved(id, data);
+      onAfterRemoved(id, data);
       return id;
     }
     return -1;
   }
-
-  /**
-   * Called after a new item is inserted to this palette
-   *
-   * <ul>
-   *   <li>Collecting visited data does not trigger this method
-   *   <li>This method do nothing unless it is overridden by a subclass
-   * </ul>
-   *
-   * @param id id of the inserted new item
-   * @param data the inserted new item
-   */
-  protected void onInserted(int id, T data) {}
 
   /**
    * Called after an item is removed from this palette
@@ -207,7 +210,7 @@ public class IntIdPalette<T> {
    * @param id id of the removed item
    * @param data the removed item
    */
-  protected void onRemoved(int id, T data) {}
+  protected void onAfterRemoved(int id, T data) {}
 
   public void clear() {
     byData.clear();
