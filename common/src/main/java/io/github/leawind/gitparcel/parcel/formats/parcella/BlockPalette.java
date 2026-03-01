@@ -6,6 +6,7 @@ import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.parcel.formats.NbtFormat;
 import io.github.leawind.gitparcel.utils.IntIdPalette;
 import io.github.leawind.gitparcel.utils.hex.HexUtils;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntArraySet;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -26,7 +27,18 @@ import org.jspecify.annotations.Nullable;
  *
  * <p>Data: BlockState string + Optional NBT Data
  *
- * <p>Id range: [0, 2147483647]
+ * <p>Id range: [0, {@value Integer#MAX_VALUE}]
+ *
+ * <p>Ids of block without NBT data are marked with {@code =}.
+ * <p>Ids of block entities are marked with {@code >}.
+ * <p>Unused ids are marked with {@code ?}.
+ * <p>Example:
+ *
+ * <pre>
+ *     0=minecraft:air
+ *     1=minecraft:stone
+ *     2>minecraft:chest
+ *     3?
  */
 public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
   protected final Set<Integer> blockEntities = new IntArraySet();
@@ -104,12 +116,21 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
     Files.createDirectories(paletteFile.getParent());
     Files.createDirectories(nbtDir);
     try (BufferedWriter writer = Files.newBufferedWriter(paletteFile, StandardCharsets.UTF_8)) {
-      for (var entry : byId.entrySet()) {
-        int id = entry.getKey();
+      var sb = new StringBuilder();
+      for (var entry : byId.int2ObjectEntrySet()) {
         Data data = entry.getValue();
-        writer.write(HexUtils.toHexUpperCase(id) + "=" + data.blockStateString);
-        writer.newLine();
+
+        sb.append(HexUtils.toHexUpperCase(getId(entry)));
+        if (data == null) {
+          sb.append('?');
+        } else {
+          sb.append(data.hasNbt() ? '>' : '=');
+          sb.append(data.blockStateString);
+        }
+        sb.append('\n');
       }
+
+      writer.write(sb.toString());
     }
     // Save NBTs
     for (int id : blockEntities) {
@@ -121,7 +142,16 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
     }
   }
 
-  public record Data(String blockStateString, @Nullable CompoundTag nbt) {}
+  private static int getId(Int2ObjectMap.Entry<Data> entry) {
+    int id = entry.getIntKey();
+    return id;
+  }
+
+  public record Data(String blockStateString, @Nullable CompoundTag nbt) {
+    public boolean hasNbt() {
+      return nbt != null;
+    }
+  }
 
   /**
    * Loads a block palette from the specified file and NBT directory if it exists.
@@ -164,49 +194,53 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
       throws IOException, InvalidPaletteException, NumberFormatException, CommandSyntaxException {
     try (var reader = Files.newBufferedReader(paletteFile, StandardCharsets.UTF_8)) {
       BlockPalette palette = new BlockPalette();
+
       String line;
-      int maxId = 0;
-
       while ((line = reader.readLine()) != null) {
-        line = line.stripTrailing();
-        if (line.isEmpty()) continue;
 
-        int equalsIndex = line.indexOf('=');
-        if (equalsIndex == -1) {
-          throw new InvalidPaletteException("Invalid palette entry: " + line);
-        }
+        char type = '\0';
+        String idString = null;
+        StringBuilder buffer = new StringBuilder(32);
 
-        // NumberFormatException
-        int id = Integer.parseInt(line, 0, equalsIndex, 16);
-        maxId = Math.max(maxId, id);
-
-        String blockStateString = line.substring(equalsIndex + 1);
-
-        CompoundTag nbt = null;
-
-        Path nbtFile = nbtDir.resolve(id + nbtFormat.suffix);
-
-        if (Files.exists(nbtFile)) {
-          switch (nbtFormat) {
-            case Binary -> nbt = NbtFormat.readBinary(nbtFile);
-            case Text -> nbt = NbtFormat.readText(nbtFile);
+        for (char ch : line.toCharArray()) {
+          switch (ch) {
+            case '=', '>', '?' -> {
+              type = ch;
+              idString = buffer.toString();
+              buffer.setLength(0);
+            }
+            default -> buffer.append(ch);
           }
         }
 
-        Data data = new Data(blockStateString, nbt);
+        if (type == '\0') {
+          throw new InvalidPaletteException(
+              String.format(
+                  "Invalid palette entry. No type char ( '=', '>', '?' ) found: %s", line));
+        }
+
+        int id = Integer.parseInt(idString, 16);
 
         if (palette.byId.containsKey(id)) {
-          ParcelFormat.LOGGER.error(
+          ParcelFormat.LOGGER.warn(
               "Duplicate id {} in palette file {}. Did someone tweak the file by hand? ",
               id,
               paletteFile);
-        } else {
-          palette.byId.put(id, data);
-          palette.byData.put(data, id);
+          continue;
         }
 
-        if (nbt != null) {
-          palette.blockEntities.add(id);
+        switch (type) {
+          case '?' -> palette.insert(id, null);
+          case '=' -> palette.insert(id, new Data(buffer.toString(), null));
+          case '>' -> {
+            Path nbtFile = nbtDir.resolve(id + nbtFormat.suffix);
+            CompoundTag nbt =
+                switch (nbtFormat) {
+                  case Binary -> NbtFormat.readBinary(nbtFile);
+                  case Text -> NbtFormat.readText(nbtFile);
+                };
+            palette.insert(id, new Data(buffer.toString(), nbt));
+          }
         }
       }
 
