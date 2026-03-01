@@ -33,8 +33,9 @@ public final class EnumConfigItem<E extends Enum<?>> extends ConfigItem<E, EnumC
     }
   }
 
-  public EnumConfigItem(String name) {
+  public EnumConfigItem(Class<E> enumClass, String name) {
     super(name);
+    values = List.of(enumClass.getEnumConstants());
   }
 
   @Override

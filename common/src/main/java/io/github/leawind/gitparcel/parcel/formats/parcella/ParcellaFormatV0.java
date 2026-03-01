@@ -63,11 +63,11 @@ public abstract class ParcellaFormatV0 implements ParcelFormat.Impl<ParcellaForm
     public Vec3i anchorOffset = Vec3i.ZERO;
 
     public EnumConfigItem<NbtFormat> blockEntityDataFormat =
-        new EnumConfigItem<NbtFormat>("blockEntityDataFormat")
+        new EnumConfigItem<>(NbtFormat.class, "blockEntityDataFormat")
             .defaultValue(NbtFormat.Text)
             .storeRightHere();
     public EnumConfigItem<NbtFormat> entityDataFormat =
-        new EnumConfigItem<NbtFormat>("entityDataFormat")
+        new EnumConfigItem<>(NbtFormat.class, "entityDataFormat")
             .defaultValue(NbtFormat.Text)
             .storeRightHere();
     public BooleanConfigItem enableMicroparcel =
