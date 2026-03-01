@@ -1,6 +1,7 @@
 package io.github.leawind.gitparcel.server.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
@@ -35,10 +36,14 @@ public class ParcelDebugCommand {
                         Commands.argument("to", BlockPosArgument.blockPos())
                             .then(
                                 Commands.argument("path", DirPathArgument.path())
-                                    .executes(ParcelDebugCommand::saveDefaultFormat)
+                                    .executes(ParcelDebugCommand::save1)
                                     .then(
                                         Commands.argument("format", ParcelFormatArgument.saver())
-                                            .executes(ParcelDebugCommand::save)))));
+                                            .executes(ParcelDebugCommand::save2)
+                                            .then(
+                                                Commands.argument(
+                                                        "save_entities", BoolArgumentType.bool())
+                                                    .executes(ParcelDebugCommand::save3))))));
 
     var commandLoad =
         Commands.literal("load")
@@ -56,23 +61,34 @@ public class ParcelDebugCommand {
     dispatcher.register(command);
   }
 
-  private static int saveDefaultFormat(CommandContext<CommandSourceStack> ctx)
-      throws CommandSyntaxException {
+  private static int save1(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
     return save(
         ctx.getSource(),
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         DirPathArgument.getPath(ctx, "path"),
-        Constants.PARCEL_FORMATS.defaultSaver());
+        Constants.PARCEL_FORMATS.defaultSaver(),
+        false);
   }
 
-  private static int save(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+  private static int save2(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
     return save(
         ctx.getSource(),
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         DirPathArgument.getPath(ctx, "path"),
-        ParcelFormatArgument.getSaver(ctx, "format"));
+        ParcelFormatArgument.getSaver(ctx, "format"),
+        false);
+  }
+
+  private static int save3(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+    return save(
+        ctx.getSource(),
+        BlockPosArgument.getLoadedBlockPos(ctx, "from"),
+        BlockPosArgument.getLoadedBlockPos(ctx, "to"),
+        DirPathArgument.getPath(ctx, "path"),
+        ParcelFormatArgument.getSaver(ctx, "format"),
+        BoolArgumentType.getBool(ctx, "save_entities"));
   }
 
   public static int save(
@@ -80,7 +96,8 @@ public class ParcelDebugCommand {
       BlockPos corner1,
       BlockPos corner2,
       Path parcelDir,
-      ParcelFormat.Save<?> format) {
+      ParcelFormat.Save<?> format,
+      boolean saveEntities) {
     try {
       var parcel = Parcel.fromCorners(corner1, corner2);
       LOGGER.info(
@@ -91,8 +108,9 @@ public class ParcelDebugCommand {
           parcelDir);
 
       var meta = ParcelMeta.create(format.id(), format.version(), parcel.getSize());
-      ParcelFormat.save(source.getLevel(), parcel, meta, parcelDir, true);
-      source.sendSuccess(() -> Component.translatable("command.parcel_debug.save.success"), true);
+      ParcelFormat.save(source.getLevel(), parcel, meta, parcelDir, saveEntities);
+      source.sendSuccess(
+          () -> Component.translatable("command.parcel_debug.save.success"), saveEntities);
       return 0;
     } catch (IOException | ParcelException e) {
       LOGGER.error("Error while saving parcel", e);
