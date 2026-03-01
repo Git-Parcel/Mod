@@ -15,7 +15,6 @@ import io.github.leawind.gitparcel.utils.hex.HexUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import org.junit.jupiter.api.Test;
@@ -106,6 +105,26 @@ class BlockPaletteTest {
   }
 
   @Test
+  void testClearVisitedAndUnvisited() {
+    BlockPalette palette = new BlockPalette();
+
+    // Add some data
+    palette.collect("minecraft:stone", null);
+    palette.collect("minecraft:dirt", null);
+    CompoundTag nbt = new CompoundTag();
+    nbt.putString("key", "value");
+    palette.collect("minecraft:chest", nbt);
+
+    // Clear visited - should not affect the palette
+    palette.clearVisited();
+    assertEquals(3, palette.size());
+
+    // Clear unvisited - should remove all entries since none were visited
+    palette.clearUnvisited();
+    assertEquals(0, palette.size());
+  }
+
+  @Test
   void testSaveAndLoadBinary(@TempDir Path tempDir)
       throws IOException, NumberFormatException, CommandSyntaxException {
     // Create test palette
@@ -149,10 +168,10 @@ class BlockPaletteTest {
             .anyMatch(line -> line.startsWith(HexUtils.toHexUpperCase(1) + "=minecraft:dirt")));
     assertTrue(
         lines.stream()
-            .anyMatch(line -> line.startsWith(HexUtils.toHexUpperCase(2) + "=minecraft:chest")));
+            .anyMatch(line -> line.startsWith(HexUtils.toHexUpperCase(2) + ">minecraft:chest")));
     assertTrue(
         lines.stream()
-            .anyMatch(line -> line.startsWith(HexUtils.toHexUpperCase(3) + "=minecraft:furnace")));
+            .anyMatch(line -> line.startsWith(HexUtils.toHexUpperCase(3) + ">minecraft:furnace")));
 
     // Verify NBT files were created
     assertTrue(Files.exists(nbtDir.resolve("2.nbt")));
@@ -248,8 +267,8 @@ class BlockPaletteTest {
   }
 
   @Test
-  void testLoadOrNewOnError(@TempDir Path tempDir) throws Exception {
-    // Test loading from non-existent files should return new palette
+  void testLoadIfExist(@TempDir Path tempDir) throws Exception {
+    // Test loading from non-existent files should return null
     Path nonExistentPalette = tempDir.resolve("nonexistent.txt");
     Path nonExistentNbtDir = tempDir.resolve("nonexistent_nbt");
 
@@ -257,46 +276,31 @@ class BlockPaletteTest {
         BlockPalette.loadIfExist(nonExistentPalette, nonExistentNbtDir, NbtFormat.Text);
     assertNull(palette);
 
-    // Test loading from invalid palette file
-    Path invalidPalette = tempDir.resolve("invalid.txt");
-    Files.writeString(invalidPalette, "invalid content without equals sign");
+    // Test loading from existing files
+    Path paletteFile = tempDir.resolve("palette.txt");
+    Path nbtDir = tempDir.resolve("nbt");
+    Files.createDirectories(nbtDir);
 
-    assertThrows(
-        BlockPalette.InvalidPaletteException.class,
-        () -> BlockPalette.loadIfExist(invalidPalette, nonExistentNbtDir, NbtFormat.Text));
+    // Create a valid palette file with only blocks without NBT
+    Files.writeString(paletteFile, "0=minecraft:stone\n1=minecraft:dirt");
+
+    BlockPalette loadedPalette = BlockPalette.loadIfExist(paletteFile, nbtDir, NbtFormat.Text);
+    assertNotNull(loadedPalette);
+    assertEquals(2, loadedPalette.size());
   }
 
   @Test
-  void testLoadInvalidPaletteEntry() throws IOException {
-    Path tempDir = Files.createTempDirectory("test");
-    try {
-      Path paletteFile = tempDir.resolve("palette.txt");
-      Path nbtDir = tempDir.resolve("nbt");
-      Files.createDirectories(nbtDir);
+  void testLoadInvalidPaletteEntry(@TempDir Path tempDir) throws IOException {
+    Path paletteFile = tempDir.resolve("palette.txt");
+    Path nbtDir = tempDir.resolve("nbt");
+    Files.createDirectories(nbtDir);
 
-      // Write an invalid palette entry (missing =)
-      Files.writeString(paletteFile, "invalid_entry_without_equals_sign");
+    // Write an invalid palette entry (missing type character)
+    Files.writeString(paletteFile, "invalid_entry_without_type_char");
 
-      assertThrows(
-          BlockPalette.InvalidPaletteException.class,
-          () -> BlockPalette.load(paletteFile, nbtDir, NbtFormat.Text));
-    } finally {
-      // Clean up temporary directory
-      try {
-        Files.walk(tempDir)
-            .sorted(Comparator.reverseOrder())
-            .forEach(
-                path -> {
-                  try {
-                    Files.delete(path);
-                  } catch (IOException e) {
-                    // Ignore cleanup errors
-                  }
-                });
-      } catch (IOException e) {
-        // Ignore cleanup errors
-      }
-    }
+    assertThrows(
+        BlockPalette.InvalidPaletteException.class,
+        () -> BlockPalette.load(paletteFile, nbtDir, NbtFormat.Text));
   }
 
   @Test
@@ -319,8 +323,42 @@ class BlockPaletteTest {
     } catch (BlockPalette.InvalidPaletteException e) {
       fail("Failed to load palette: " + e.getMessage());
     }
-    // Should still load, but will have a warning logged (the second entry overwrites the first)
+    // Should still load, but will have a warning logged (the second entry is ignored)
     assertEquals(1, palette.size());
+  }
+
+  @Test
+  void testLoadWithUnusedMarkers(@TempDir Path tempDir)
+      throws IOException, NumberFormatException, CommandSyntaxException {
+    Path paletteFile = tempDir.resolve("palette.txt");
+    Path nbtDir = tempDir.resolve("nbt");
+    Files.createDirectories(nbtDir);
+
+    // Create NBT file for chest
+    CompoundTag chestNbt = new CompoundTag();
+    chestNbt.putString("id", "chest");
+    chestNbt.putInt("Items", 5);
+    Files.writeString(nbtDir.resolve("2.snbt"), chestNbt.toString());
+
+    // Write palette with unused markers
+    Files.write(
+        paletteFile,
+        List.of(
+            "0=minecraft:stone",
+            "1?", // Unused ID
+            "2>minecraft:chest"));
+
+    BlockPalette palette = null;
+    try {
+      palette = BlockPalette.load(paletteFile, nbtDir, NbtFormat.Text);
+    } catch (BlockPalette.InvalidPaletteException e) {
+      fail("Failed to load palette: " + e.getMessage());
+    }
+
+    assertEquals(3, palette.size());
+    assertNotNull(palette.get(0));
+    assertNull(palette.get(1)); // Unused ID should be null
+    assertNotNull(palette.get(2));
   }
 
   @Test
