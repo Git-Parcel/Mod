@@ -47,14 +47,14 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
    * @param meta The metadata of the parcel. Will be updated to the size of the parcel.
    * @param parcelDir The parcel directory, which contains the {@value #META_FILE_NAME} file and
    *     {@value #DATA_DIR_NAME} directory. Will be created if not exists.
-   * @param saveEntity Whether to save the entities in the parcel. Only works when {@code
+   * @param saveEntities Whether to save the entities in the parcel. Only works when {@code
    *     meta.includeEntity} is true
    * @throws IOException If an I/O error occurs while saving the parcel
    * @throws ParcelException If other error occurs while saving the parcel
    */
   @SuppressWarnings("unchecked")
   static <C extends ParcelFormatConfig<C>> void save(
-      Level level, Parcel parcel, ParcelMeta meta, Path parcelDir, boolean saveEntity)
+      Level level, Parcel parcel, ParcelMeta meta, Path parcelDir, boolean saveEntities)
       throws IOException, ParcelException {
     meta.size = parcel.getSize();
     meta.save(getMetaFile(parcelDir));
@@ -80,7 +80,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
       }
     }
 
-    format.save(level, parcel, getDataDir(parcelDir), meta.includeEntity() && saveEntity, config);
+    format.save(level, parcel, getDataDir(parcelDir), meta.includeEntity() && saveEntities, config);
   }
 
   /**
