@@ -192,7 +192,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
    * @throws CommandSyntaxException if the NBT format is text and the NBT file is malformed
    */
   public static BlockPalette load(Path paletteFile, Path nbtDir, NbtFormat nbtFormat)
-      throws IOException, InvalidPaletteException, NumberFormatException, CommandSyntaxException {
+      throws IOException, InvalidPaletteException, CommandSyntaxException {
     try (var reader = Files.newBufferedReader(paletteFile, StandardCharsets.UTF_8)) {
       BlockPalette palette = new BlockPalette();
 
@@ -220,7 +220,14 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
                   "Invalid palette entry. No type char ( '=', '>', '?' ) found: %s", line));
         }
 
-        int id = Integer.parseInt(idString, 16);
+        int id;
+        try {
+
+          id = Integer.parseInt(idString, 16);
+        } catch (NumberFormatException e) {
+          throw new InvalidPaletteException(
+              String.format("Invalid palette entry. Invalid id %s in line %s", idString, line));
+        }
 
         if (palette.byId.containsKey(id)) {
           ParcelFormat.LOGGER.warn(
