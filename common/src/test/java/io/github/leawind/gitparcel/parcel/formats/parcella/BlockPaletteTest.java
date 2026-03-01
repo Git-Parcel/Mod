@@ -177,11 +177,13 @@ class BlockPaletteTest {
         lines.stream()
             .anyMatch(line -> line.startsWith(HexUtils.toHexUpperCase(3) + ">minecraft:furnace")));
 
-    // Verify NBT files were created
-    assertTrue(Files.exists(nbtDir.resolve("2.nbt")));
-    assertTrue(Files.exists(nbtDir.resolve("3.nbt")));
-    assertFalse(Files.exists(nbtDir.resolve("0.nbt"))); // No NBT for stone
-    assertFalse(Files.exists(nbtDir.resolve("1.nbt"))); // No NBT for dirt
+    // Verify NBT files were created (using hex file names)
+    assertTrue(Files.exists(nbtDir.resolve(HexUtils.toHexUpperCase(2) + ".nbt")));
+    assertTrue(Files.exists(nbtDir.resolve(HexUtils.toHexUpperCase(3) + ".nbt")));
+    assertFalse(
+        Files.exists(nbtDir.resolve(HexUtils.toHexUpperCase(0) + ".nbt"))); // No NBT for stone
+    assertFalse(
+        Files.exists(nbtDir.resolve(HexUtils.toHexUpperCase(1) + ".nbt"))); // No NBT for dirt
 
     // Load the palette back
     BlockPalette loadedPalette = null;
@@ -237,11 +239,11 @@ class BlockPaletteTest {
     // Save the palette (SNBT format)
     originalPalette.save(paletteFile, nbtDir, NbtFormat.Text);
 
-    // Verify files were created
+    // Verify files were created (using hex file names)
     assertTrue(Files.exists(paletteFile));
     assertTrue(Files.exists(nbtDir));
-    assertTrue(Files.exists(nbtDir.resolve("0.snbt")));
-    assertTrue(Files.exists(nbtDir.resolve("1.snbt")));
+    assertTrue(Files.exists(nbtDir.resolve(HexUtils.toHexUpperCase(0) + ".snbt")));
+    assertTrue(Files.exists(nbtDir.resolve(HexUtils.toHexUpperCase(1) + ".snbt")));
 
     // Load the palette back
     BlockPalette loadedPalette = null;
@@ -294,7 +296,8 @@ class BlockPaletteTest {
   }
 
   @Test
-  void testLoadInvalidPaletteEntry(@TempDir Path tempDir) throws IOException {
+  void testLoadInvalidPaletteEntry(@TempDir Path tempDir)
+      throws IOException, BlockPalette.InvalidPaletteException {
     Path paletteFile = tempDir.resolve("palette.txt");
     Path nbtDir = tempDir.resolve("nbt");
     Files.createDirectories(nbtDir);
@@ -302,9 +305,11 @@ class BlockPaletteTest {
     // Write an invalid palette entry (missing type character)
     Files.writeString(paletteFile, "invalid_entry_without_type_char");
 
-    assertThrows(
-        BlockPalette.InvalidPaletteException.class,
-        () -> BlockPalette.load(paletteFile, nbtDir, NbtFormat.Text));
+    // With the new error handling, invalid entries are logged but loading continues
+    // The method should still return a palette (possibly empty)
+    BlockPalette palette = BlockPalette.load(paletteFile, nbtDir, NbtFormat.Text);
+    assertNotNull(palette);
+    // The palette might be empty due to the invalid entry
   }
 
   @Test
@@ -338,11 +343,11 @@ class BlockPaletteTest {
     Path nbtDir = tempDir.resolve("nbt");
     Files.createDirectories(nbtDir);
 
-    // Create NBT file for chest
+    // Create NBT file for chest (using hex file name)
     CompoundTag chestNbt = new CompoundTag();
     chestNbt.putString("id", "chest");
     chestNbt.putInt("Items", 5);
-    Files.writeString(nbtDir.resolve("2.snbt"), chestNbt.toString());
+    Files.writeString(nbtDir.resolve(HexUtils.toHexUpperCase(2) + ".snbt"), chestNbt.toString());
 
     // Write palette with unused markers
     Files.write(
@@ -363,6 +368,33 @@ class BlockPaletteTest {
     assertNotNull(palette.get(0));
     assertNull(palette.get(1)); // Unused ID should be null
     assertNotNull(palette.get(2));
+  }
+
+  @Test
+  void testLoadWithInvalidHexId(@TempDir Path tempDir) throws IOException {
+    Path paletteFile = tempDir.resolve("palette.txt");
+    Path nbtDir = tempDir.resolve("nbt");
+    Files.createDirectories(nbtDir);
+
+    // Write palette with invalid hex ID
+    Files.writeString(paletteFile, "invalid_hex=minecraft:stone");
+
+    assertThrows(
+        BlockPalette.InvalidPaletteException.class,
+        () -> BlockPalette.load(paletteFile, nbtDir, NbtFormat.Text));
+  }
+
+  @Test
+  void testLoadWithMissingNbtFile(@TempDir Path tempDir) throws IOException {
+    Path paletteFile = tempDir.resolve("palette.txt");
+    Path nbtDir = tempDir.resolve("nbt");
+    Files.createDirectories(nbtDir);
+
+    // Write palette with block entity marker but no NBT file
+    Files.writeString(paletteFile, HexUtils.toHexUpperCase(0) + ">minecraft:chest");
+
+    // Should throw IOException due to missing NBT file
+    assertThrows(IOException.class, () -> BlockPalette.load(paletteFile, nbtDir, NbtFormat.Text));
   }
 
   @Test
