@@ -68,8 +68,8 @@ class BlockPaletteTest {
     assertNotNull(data);
     assertEquals("minecraft:chest", data.blockStateString());
     assertNotNull(data.nbt());
-    assertEquals("test_value", data.nbt().getString("test_key").get());
-    assertEquals(42, data.nbt().getInt("test_int").get());
+    assertEquals("test_value", data.nbt().getString("test_key").orElseThrow());
+    assertEquals(42, data.nbt().getInt("test_int").orElseThrow());
 
     // Collect same data with same NBT should return same id
     CompoundTag nbt2 = new CompoundTag();
@@ -209,15 +209,15 @@ class BlockPaletteTest {
     assertNotNull(chest);
     assertEquals("minecraft:chest", chest.blockStateString());
     assertNotNull(chest.nbt());
-    assertEquals("chest", chest.nbt().getString("id").get());
-    assertEquals(5, chest.nbt().getInt("Items").get());
+    assertEquals("chest", chest.nbt().getString("id").orElseThrow());
+    assertEquals(5, chest.nbt().getInt("Items").orElseThrow());
 
     BlockPalette.Data furnace = loadedPalette.get(3);
     assertNotNull(furnace);
     assertEquals("minecraft:furnace", furnace.blockStateString());
     assertNotNull(furnace.nbt());
-    assertEquals("furnace", furnace.nbt().getString("id").get());
-    assertEquals(100, furnace.nbt().getInt("BurnTime").get());
+    assertEquals("furnace", furnace.nbt().getString("id").orElseThrow());
+    assertEquals(100, furnace.nbt().getInt("BurnTime").orElseThrow());
   }
 
   @Test
@@ -259,15 +259,15 @@ class BlockPaletteTest {
     assertNotNull(chest);
     assertEquals("minecraft:chest", chest.blockStateString());
     assertNotNull(chest.nbt());
-    assertEquals("chest", chest.nbt().getString("id").get());
-    assertEquals(5, chest.nbt().getInt("Items").get());
+    assertEquals("chest", chest.nbt().getString("id").orElseThrow());
+    assertEquals(5, chest.nbt().getInt("Items").orElseThrow());
 
     BlockPalette.Data furnace = loadedPalette.get(1);
     assertNotNull(furnace);
     assertEquals("minecraft:furnace", furnace.blockStateString());
     assertNotNull(furnace.nbt());
-    assertEquals("furnace", furnace.nbt().getString("id").get());
-    assertEquals(100, furnace.nbt().getInt("Items").get());
+    assertEquals("furnace", furnace.nbt().getString("id").orElseThrow());
+    assertEquals(100, furnace.nbt().getInt("Items").orElseThrow());
   }
 
   @Test
