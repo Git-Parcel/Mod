@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.parcel.formats.NbtFormat;
-import io.github.leawind.gitparcel.utils.hex.HexUtils;
+import io.github.leawind.gitparcel.utils.numbase.HexUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

@@ -5,7 +5,7 @@ import io.github.leawind.gitparcel.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.parcel.formats.NbtFormat;
 import io.github.leawind.gitparcel.utils.IntIdPalette;
-import io.github.leawind.gitparcel.utils.hex.HexUtils;
+import io.github.leawind.gitparcel.utils.numbase.HexUtils;
 import it.unimi.dsi.fastutil.ints.IntArraySet;
 import java.io.BufferedWriter;
 import java.io.IOException;

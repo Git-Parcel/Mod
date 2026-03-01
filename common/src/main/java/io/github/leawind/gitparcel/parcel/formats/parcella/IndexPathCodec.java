@@ -1,6 +1,6 @@
 package io.github.leawind.gitparcel.parcel.formats.parcella;
 
-import io.github.leawind.gitparcel.utils.hex.HexUtils;
+import io.github.leawind.gitparcel.utils.numbase.HexUtils;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;

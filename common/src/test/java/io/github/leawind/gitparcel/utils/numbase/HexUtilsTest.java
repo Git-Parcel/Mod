@@ -1,9 +1,8 @@
-package io.github.leawind.gitparcel.utils;
+package io.github.leawind.gitparcel.utils.numbase;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import io.github.leawind.gitparcel.utils.hex.HexUtils;
 import org.junit.jupiter.api.Test;
 
 public class HexUtilsTest {

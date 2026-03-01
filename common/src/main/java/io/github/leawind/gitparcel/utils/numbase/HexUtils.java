@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.utils.hex;
+package io.github.leawind.gitparcel.utils.numbase;
 
 import org.jetbrains.annotations.Range;
 

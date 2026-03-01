@@ -6,7 +6,7 @@ import io.github.leawind.gitparcel.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.parcel.formats.NbtFormat;
 import io.github.leawind.gitparcel.utils.config.BooleanConfigItem;
 import io.github.leawind.gitparcel.utils.config.EnumConfigItem;
-import io.github.leawind.gitparcel.utils.hex.HexUtils;
+import io.github.leawind.gitparcel.utils.numbase.HexUtils;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
