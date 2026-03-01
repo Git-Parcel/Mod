@@ -30,8 +30,11 @@ import org.jspecify.annotations.Nullable;
  * <p>Id range: [0, {@value Integer#MAX_VALUE}]
  *
  * <p>Ids of block without NBT data are marked with {@code =}.
+ *
  * <p>Ids of block entities are marked with {@code >}.
+ *
  * <p>Unused ids are marked with {@code ?}.
+ *
  * <p>Example:
  *
  * <pre>
@@ -39,6 +42,7 @@ import org.jspecify.annotations.Nullable;
  *     1=minecraft:stone
  *     2>minecraft:chest
  *     3?
+ * </pre>
  */
 public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
   protected final Set<Integer> blockEntities = new IntArraySet();
@@ -77,9 +81,9 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
   }
 
   @Override
-  public void onAfterInserted(int id, Data data) {
+  public void onAfterInserted(int id, @Nullable Data data) {
     visited.add(id);
-    if (data.nbt != null) {
+    if (data != null && data.nbt != null) {
       blockEntities.add(id);
     }
   }
@@ -120,7 +124,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
       for (var entry : byId.int2ObjectEntrySet()) {
         Data data = entry.getValue();
 
-        sb.append(HexUtils.toHexUpperCase(getId(entry)));
+        sb.append(HexUtils.toHexUpperCase(entry.getIntKey()));
         if (data == null) {
           sb.append('?');
         } else {
@@ -143,8 +147,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
   }
 
   private static int getId(Int2ObjectMap.Entry<Data> entry) {
-    int id = entry.getIntKey();
-    return id;
+    return entry.getIntKey();
   }
 
   public record Data(String blockStateString, @Nullable CompoundTag nbt) {

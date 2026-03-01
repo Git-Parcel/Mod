@@ -227,16 +227,18 @@ public class IntIdPalette<T> {
    *   <li>does not check if the ID is in range.
    * </ul>
    *
-   * @param id ID
-   * @param data the data to insert
+   * @param id ID, must not be {@value #VOID_ID}
+   * @param data the data to insert, or {@code null} to insert an unused ID
    * @throws IllegalArgumentException if {@code id} is {@value #VOID_ID}
    */
-  protected void insert(int id, T data) throws IllegalArgumentException {
+  protected void insert(int id, @Nullable T data) throws IllegalArgumentException {
     if (id == VOID_ID) {
       throw new IllegalArgumentException("id must not be VOID_ID: " + VOID_ID);
     }
     byId.put(id, data);
-    byData.put(data, id);
+    if (data != null) {
+      byData.put(data, id);
+    }
     onAfterInserted(id, data);
   }
 
@@ -244,14 +246,14 @@ public class IntIdPalette<T> {
    * Callback invoked after a successful insertion.
    *
    * <ul>
-   *   <li>Collecting visited data does not trigger this method
+   *   <li>Collecting a known data does not trigger this method
    *   <li>This method do nothing unless it is overridden by a subclass
    * </ul>
    *
    * @param id id of the inserted new item
-   * @param data the inserted new item
+   * @param data the inserted new item, might be {@code null}
    */
-  protected void onAfterInserted(int id, T data) {}
+  protected void onAfterInserted(int id, @Nullable T data) {}
 
   /**
    * Removes the data associated with the given ID.
@@ -278,9 +280,11 @@ public class IntIdPalette<T> {
    * @return the removed ID, or {@value #VOID_ID} if absent
    */
   public int removeByData(T data) {
-    var id = byData.removeInt(data);
-    byId.remove(id);
-    onAfterRemoved(id, data);
+    int id = byData.removeInt(data);
+    if (id != VOID_ID) {
+      byId.remove(id);
+      onAfterRemoved(id, data);
+    }
     return id;
   }
 
@@ -292,7 +296,7 @@ public class IntIdPalette<T> {
    *   <li>This method do nothing unless it is overridden by a subclass
    * </ul>
    */
-  protected void onAfterRemoved(int id, T data) {}
+  protected void onAfterRemoved(int id, @Nullable T data) {}
 
   /** Removes all entries and resets the ID counter. */
   public void clear() {
