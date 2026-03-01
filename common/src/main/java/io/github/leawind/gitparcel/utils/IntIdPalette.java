@@ -143,6 +143,37 @@ public class IntIdPalette<T> {
   }
 
   /**
+   * Removes the data with the given id.
+   *
+   * @param id id of the data to remove
+   * @return the removed data, or null if the id is not in this palette
+   */
+  public @Nullable T removeById(int id) {
+    var data = byId.remove(id);
+    if (data != null) {
+      byData.remove(data);
+      onRemoved(id, data);
+    }
+    return data;
+  }
+
+  /**
+   * Removes data.
+   *
+   * @param data the data to remove
+   * @return the id of the removed data, or -1 if the data is not in this palette
+   */
+  public int removeByData(T data) {
+    var id = byData.remove(data);
+    if (id != null) {
+      byId.remove(id);
+      onRemoved(id, data);
+      return id;
+    }
+    return -1;
+  }
+
+  /**
    * Called after a new item is inserted to this palette
    *
    * <ul>
@@ -154,6 +185,19 @@ public class IntIdPalette<T> {
    * @param data the inserted new item
    */
   protected void onInserted(int id, T data) {}
+
+  /**
+   * Called after an item is removed from this palette
+   *
+   * <ul>
+   *   <li>Removing non-existent data does not trigger this method
+   *   <li>This method do nothing unless it is overridden by a subclass
+   * </ul>
+   *
+   * @param id id of the removed item
+   * @param data the removed item
+   */
+  protected void onRemoved(int id, T data) {}
 
   public void clear() {
     byData.clear();
