@@ -4,15 +4,14 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.parcel.formats.NbtFormat;
+import io.github.leawind.gitparcel.utils.IntIdPalette;
 import io.github.leawind.gitparcel.utils.hex.HexUtils;
+import it.unimi.dsi.fastutil.ints.IntArraySet;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -22,20 +21,18 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
-public class BlockPalette {
-  private int nextId = 0;
+/**
+ * Block palette
+ *
+ * <p>Data: BlockState string + Optional NBT Data
+ *
+ * <p>Id range: [0, 2147483647]
+ */
+public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
+  protected final Set<Integer> blockEntities = new IntArraySet();
 
-  final Map<Integer, Data> byId = new HashMap<>();
-  final Map<Data, Integer> byData = new HashMap<>();
-
-  final Set<Integer> blockEntities = new HashSet<>();
-
-  public int size() {
-    return byId.size();
-  }
-
-  public @Nullable Data get(int id) {
-    return byId.get(id);
+  public BlockPalette() {
+    super();
   }
 
   public int collect(Level level, BlockPos pos) {
@@ -58,27 +55,11 @@ public class BlockPalette {
     return collect(new Data(blockStateString, nbt));
   }
 
-  public int collect(Data data) {
-    if (!byData.containsKey(data)) {
-      int id = nextId++;
-
-      byId.put(id, data);
-      byData.put(data, id);
-
-      if (data.nbt != null) {
-        blockEntities.add(id);
-      }
-
-      return id;
+  @Override
+  public void onInserted(int id, Data data) {
+    if (data.nbt != null) {
+      blockEntities.add(id);
     }
-    return byData.get(data);
-  }
-
-  public void clear() {
-    byData.clear();
-    byId.clear();
-    blockEntities.clear();
-    nextId = 0;
   }
 
   /**
@@ -200,7 +181,6 @@ public class BlockPalette {
         }
       }
 
-      palette.nextId = maxId + 1;
       return palette;
     }
   }
