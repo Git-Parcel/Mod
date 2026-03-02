@@ -22,7 +22,7 @@ public class GitParcelMod {
 
     if (Services.PLATFORM.isDevelopmentEnvironment()) {
       formatManager.register(new ParcellaD16FormatV0.Save());
-      formatManager.register(new MvpFormatV0.Save());
+      formatManager.register(new MvpFormatV0());
     }
   }
 }
