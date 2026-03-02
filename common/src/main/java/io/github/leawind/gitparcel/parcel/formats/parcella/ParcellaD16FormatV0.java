@@ -7,7 +7,6 @@ import io.github.leawind.gitparcel.parcel.formats.NbtFormat;
 import io.github.leawind.gitparcel.utils.config.BooleanConfigItem;
 import io.github.leawind.gitparcel.utils.config.EnumConfigItem;
 import io.github.leawind.gitparcel.utils.numbase.HexUtils;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -146,13 +145,9 @@ public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16Format
 
         Path subparcelRelativePath = IndexPathCodec.indexToPath(index, ".txt");
         Path subparcelFile = subParcelsDir.resolve(subparcelRelativePath);
-        Files.createDirectories(subparcelFile.getParent());
 
-        // Write sub-parcel data
-        try (BufferedWriter writer =
-            Files.newBufferedWriter(subparcelFile, StandardCharsets.UTF_8)) {
-          writeSubparcel(ctx, writer, subparcel);
-        }
+        Files.createDirectories(subparcelFile.getParent());
+        writeSubparcel(ctx, subparcelFile, subparcel);
       }
 
       ctx.blockPalette.save(
@@ -176,18 +171,17 @@ public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16Format
       }
     }
 
-    protected void writeSubparcel(Context ctx, BufferedWriter writer, Subparcel subparcel)
-        throws IOException {
+    protected void writeSubparcel(Context ctx, Path file, Subparcel subparcel) throws IOException {
       if (ctx.config.enableMicroparcel.get()) {
-        writeSubparcelWithMicroparcels(ctx, writer, subparcel);
+        writeSubparcelWithMicroparcels(ctx, file, subparcel);
       } else {
-        writeSubparcelFlat(ctx, writer, subparcel);
+        writeSubparcelFlat(ctx, file, subparcel);
       }
     }
 
-    protected void writeSubparcelWithMicroparcels(
-        Context ctx, BufferedWriter writer, Subparcel subparcel) throws IOException {
-      StringBuilder sb = new StringBuilder(8192);
+    protected void writeSubparcelWithMicroparcels(Context ctx, Path file, Subparcel subparcel)
+        throws IOException {
+      var sb = new StringBuilder(8192);
       char[] hex = HexUtils.UPPER_HEX_DIGITS;
 
       for (var microparcel : Microparcel.subdivide(subparcel, ctx.level, ctx.blockPalette)) {
@@ -202,19 +196,11 @@ public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16Format
         }
 
         sb.append('=').append(HexUtils.toHexUpperCase(microparcel.value)).append('\n');
-
-        if (sb.length() > 8000) {
-          writer.write(sb.toString());
-          sb.setLength(0);
-        }
       }
-
-      if (!sb.isEmpty()) {
-        writer.write(sb.toString());
-      }
+      Files.writeString(file, sb, StandardCharsets.UTF_8);
     }
 
-    protected void writeSubparcelFlat(Context ctx, BufferedWriter writer, Subparcel subparcel)
+    protected void writeSubparcelFlat(Context ctx, Path path, Subparcel subparcel)
         throws IOException {
       StringBuilder sb = new StringBuilder(8192);
 
@@ -237,18 +223,11 @@ public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16Format
             int id = palette.collect(level, pos.set(x, y, z));
 
             sb.append(HexUtils.toHexUpperCase(id)).append('\n');
-
-            if (sb.length() > 8000) {
-              writer.write(sb.toString());
-              sb.setLength(0);
-            }
           }
         }
       }
 
-      if (!sb.isEmpty()) {
-        writer.write(sb.toString());
-      }
+      Files.writeString(path, sb, StandardCharsets.UTF_8);
     }
 
     protected void saveEntities(Context ctx, ProblemReporter problemReporter) throws IOException {

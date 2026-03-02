@@ -3,8 +3,9 @@ package io.github.leawind.gitparcel.parcel.formats.parcella;
 import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.utils.numbase.Base32Utils;
-import java.io.BufferedWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.Level;
@@ -41,8 +42,8 @@ public interface ParcellaD32FormatV0 extends ParcellaD16FormatV0 {
     }
 
     @Override
-    protected void writeSubparcelWithMicroparcels(
-        Context ctx, BufferedWriter writer, Subparcel subparcel) throws IOException {
+    protected void writeSubparcelWithMicroparcels(Context ctx, Path file, Subparcel subparcel)
+        throws IOException {
       StringBuilder sb = new StringBuilder(8192);
       char[] chars = Base32Utils.BASE32_DIGITS;
 
@@ -58,16 +59,9 @@ public interface ParcellaD32FormatV0 extends ParcellaD16FormatV0 {
         }
 
         sb.append('=').append(Base32Utils.toBase32(microparcel.value)).append('\n');
-
-        if (sb.length() > 8000) {
-          writer.write(sb.toString());
-          sb.setLength(0);
-        }
       }
 
-      if (!sb.isEmpty()) {
-        writer.write(sb.toString());
-      }
+      Files.writeString(file, sb, StandardCharsets.UTF_8);
     }
   }
 }

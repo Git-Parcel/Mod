@@ -8,7 +8,6 @@ import io.github.leawind.gitparcel.utils.IntIdPalette;
 import io.github.leawind.gitparcel.utils.numbase.HexUtils;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -111,21 +110,21 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
   public void save(Path paletteFile, Path nbtDir, NbtFormat nbtFormat) throws IOException {
     Files.createDirectories(paletteFile.getParent());
     Files.createDirectories(nbtDir);
-    try (BufferedWriter writer = Files.newBufferedWriter(paletteFile, StandardCharsets.UTF_8)) {
-      var sb = new StringBuilder();
-      for (var entry : byId.int2ObjectEntrySet()) {
-        int id = entry.getIntKey();
-        if (isIdInUse(id)) {
-          sb.append(HexUtils.toHexUpperCase(id));
-          Data data = entry.getValue();
-          sb.append(data.hasNbt() ? '>' : '=');
-          sb.append(stringifyBlockState(data.blockState));
-          sb.append('\n');
-        }
-      }
 
-      writer.write(sb.toString());
+    var sb = new StringBuilder();
+    for (var entry : byId.int2ObjectEntrySet()) {
+      int id = entry.getIntKey();
+      if (isIdInUse(id)) {
+        sb.append(HexUtils.toHexUpperCase(id));
+        Data data = entry.getValue();
+        sb.append(data.hasNbt() ? '>' : '=');
+        sb.append(stringifyBlockState(data.blockState));
+        sb.append('\n');
+      }
     }
+
+    Files.writeString(paletteFile, sb, StandardCharsets.UTF_8);
+
     // Save NBTs
     for (int id : blockEntities) {
       Data data = byId.get(id);
