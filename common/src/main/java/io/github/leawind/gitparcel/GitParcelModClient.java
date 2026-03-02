@@ -1,6 +1,10 @@
 package io.github.leawind.gitparcel;
 
+import com.mojang.logging.LogUtils;
+import org.slf4j.Logger;
+
 public class GitParcelModClient {
+  private static final Logger LOGGER = LogUtils.getLogger();
 
   /**
    * Initializes the Git Parcel mod client.
@@ -8,6 +12,6 @@ public class GitParcelModClient {
    * <p>This method is called on the client side.
    */
   public static void init() {
-    GitParcelMod.LOGGER.debug("Initializing Git Parcel mod client");
+    LOGGER.debug("Initializing Git Parcel mod client");
   }
 }

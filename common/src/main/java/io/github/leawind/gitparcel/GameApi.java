@@ -1,6 +1,7 @@
 package io.github.leawind.gitparcel;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.mixin.InvokeArgumentTypeInfos;
 import io.github.leawind.gitparcel.platform.Services;
 import io.github.leawind.gitparcel.server.commands.ParcelCommand;
@@ -15,7 +16,6 @@ import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import net.minecraft.commands.synchronization.SingletonArgumentInfo;
 import net.minecraft.core.Registry;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Some methods to register things to Minecraft.
@@ -23,10 +23,11 @@ import org.slf4j.LoggerFactory;
  * <p>These methods are expected to be called by mixins.
  */
 public final class GameApi {
-  private static final Logger LOGGER = LoggerFactory.getLogger(GitParcelMod.MOD_NAME);
+  private static final Logger LOGGER = LogUtils.getLogger();
 
   public static void registerCommandArgumentTypes(Registry<ArgumentTypeInfo<?, ?>> registry) {
     LOGGER.debug("Registering command argument types");
+
     InvokeArgumentTypeInfos.register(
         registry,
         "gitparcel:file_path",
@@ -57,7 +58,9 @@ public final class GameApi {
       CommandBuildContext context) {
 
     LOGGER.debug("Registering commands");
+
     ParcelCommand.register(dispatcher, context);
+
     if (Services.PLATFORM.isDevelopmentEnvironment()) {
       ParcelDebugCommand.register(dispatcher, context);
     }

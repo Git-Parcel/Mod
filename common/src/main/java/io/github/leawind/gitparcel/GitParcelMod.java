@@ -1,5 +1,6 @@
 package io.github.leawind.gitparcel;
 
+import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.parcel.ParcelFormatManager;
 import io.github.leawind.gitparcel.parcel.formats.mvp.MvpFormatV0;
 import io.github.leawind.gitparcel.parcel.formats.parcella.ParcellaD16FormatV0;
@@ -7,7 +8,6 @@ import io.github.leawind.gitparcel.parcel.formats.parcella.ParcellaD32FormatV0;
 import io.github.leawind.gitparcel.parcel.formats.structuretemplate.StructureTemplateFormatV0;
 import io.github.leawind.gitparcel.platform.Services;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** The main class for the Git Parcel mod. */
 public class GitParcelMod {
@@ -19,7 +19,7 @@ public class GitParcelMod {
   public static final String MOD_NAME = "Git Parcel";
 
   /** The logger instance for Git Parcel. */
-  public static final Logger LOGGER = LoggerFactory.getLogger(MOD_NAME);
+  public static final Logger LOGGER = LogUtils.getLogger();
 
   /** The parcel format manager for handling different parcel formats. */
   public static final ParcelFormatManager PARCEL_FORMATS = new ParcelFormatManager();
