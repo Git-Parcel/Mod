@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import io.github.leawind.gitparcel.Constants;
+import io.github.leawind.gitparcel.GitParcelMod;
 import io.github.leawind.gitparcel.parcel.exceptions.InvalidParcelMetaException;
 import io.github.leawind.gitparcel.utils.json.JsonAccessException;
 import io.github.leawind.gitparcel.utils.json.JsonObjectAccessor;
@@ -57,11 +57,11 @@ public final class ParcelMeta {
   public JsonObject extra = new JsonObject();
 
   public ParcelFormat.@Nullable Save<?> getFormatSaver() {
-    return Constants.PARCEL_FORMATS.getSaver(formatId, formatVersion);
+    return GitParcelMod.PARCEL_FORMATS.getSaver(formatId, formatVersion);
   }
 
   public ParcelFormat.@Nullable Load<?> getFormatLoader() {
-    return Constants.PARCEL_FORMATS.getLoader(formatId, formatVersion);
+    return GitParcelMod.PARCEL_FORMATS.getLoader(formatId, formatVersion);
   }
 
   public boolean includeEntity() {

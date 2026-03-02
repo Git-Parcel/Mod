@@ -15,7 +15,12 @@ import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import net.minecraft.commands.synchronization.SingletonArgumentInfo;
 import net.minecraft.core.Registry;
 
-public final class GameEvents {
+/**
+ * Some methods to register things to Minecraft.
+ *
+ * <p>These methods are expected to be called by mixins.
+ */
+public final class GameApi {
   public static void registerCommandArgumentTypes(Registry<ArgumentTypeInfo<?, ?>> registry) {
     InvokeArgumentTypeInfos.register(
         registry,

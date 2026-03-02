@@ -1,6 +1,6 @@
 package io.github.leawind.gitparcel.platform;
 
-import io.github.leawind.gitparcel.Constants;
+import io.github.leawind.gitparcel.GitParcelMod;
 import io.github.leawind.gitparcel.platform.services.IPlatformHelper;
 import java.util.ServiceLoader;
 
@@ -15,7 +15,7 @@ public class Services {
             .findFirst()
             .orElseThrow(
                 () -> new NullPointerException("Failed to load service for " + clazz.getName()));
-    Constants.LOG.debug("Loaded {} for service {}", loadedService, clazz);
+    GitParcelMod.LOGGER.debug("Loaded {} for service {}", loadedService, clazz);
     return loadedService;
   }
 }
