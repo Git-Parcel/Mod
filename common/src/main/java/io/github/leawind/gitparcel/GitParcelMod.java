@@ -16,9 +16,7 @@ public class GitParcelMod {
     var formatManager = Constants.PARCEL_FORMATS;
 
     formatManager.registerDefault(new ParcellaD32FormatV0.Save());
-    formatManager
-        .register(new StructureTemplateFormatV0.Save())
-        .register(new StructureTemplateFormatV0.Load());
+    formatManager.register(new StructureTemplateFormatV0());
 
     if (Services.PLATFORM.isDevelopmentEnvironment()) {
       formatManager.register(new ParcellaD16FormatV0.Save());

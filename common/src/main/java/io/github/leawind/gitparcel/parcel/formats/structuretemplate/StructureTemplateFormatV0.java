@@ -21,81 +21,76 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlac
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import org.jspecify.annotations.Nullable;
 
-public interface StructureTemplateFormatV0 extends ParcelFormat.Impl<ParcelFormatConfig.None> {
+public class StructureTemplateFormatV0
+    implements ParcelFormat.Save<ParcelFormatConfig.None>,
+        ParcelFormat.Load<ParcelFormatConfig.None> {
   String NBT_FILE_NAME = "structure.nbt";
 
   @Override
-  default String id() {
+  public String id() {
     return "structure_template";
   }
 
   @Override
-  default int version() {
+  public int version() {
     return 0;
   }
 
-  final class Save
-      implements StructureTemplateFormatV0, ParcelFormat.Save<ParcelFormatConfig.None> {
-    @Override
-    public void save(
-        Level level,
-        Parcel parcel,
-        Path dataDir,
-        boolean saveEntities,
-        ParcelFormatConfig.@Nullable None config)
-        throws IOException {
-      Files.createDirectories(dataDir);
+  @Override
+  public void save(
+      Level level,
+      Parcel parcel,
+      Path dataDir,
+      boolean saveEntities,
+      ParcelFormatConfig.@Nullable None config)
+      throws IOException {
+    Files.createDirectories(dataDir);
 
-      StructureTemplate template = new StructureTemplate();
-      template.fillFromWorld(level, parcel.getOrigin(), parcel.getSize(), true, ImmutableList.of());
-      CompoundTag tag = template.save(new CompoundTag());
+    StructureTemplate template = new StructureTemplate();
+    template.fillFromWorld(level, parcel.getOrigin(), parcel.getSize(), true, ImmutableList.of());
+    CompoundTag tag = template.save(new CompoundTag());
 
-      Path structureFile = dataDir.resolve(NBT_FILE_NAME);
-      try (OutputStream outputStream = Files.newOutputStream(structureFile)) {
-        NbtIo.writeCompressed(tag, outputStream);
-      }
+    Path structureFile = dataDir.resolve(NBT_FILE_NAME);
+    try (OutputStream outputStream = Files.newOutputStream(structureFile)) {
+      NbtIo.writeCompressed(tag, outputStream);
     }
   }
 
-  final class Load
-      implements StructureTemplateFormatV0, ParcelFormat.Load<ParcelFormatConfig.None> {
+  /**
+   * @param loadBlocks This parameter is ignored, it always loads blocks
+   */
+  @Override
+  public void load(
+      ServerLevel level,
+      BlockPos parcelOrigin,
+      Path dataDir,
+      boolean loadBlocks,
+      boolean loadEntities)
+      throws IOException, ParcelException {
 
-    /**
-     * @param loadBlocks This parameter is ignored, it always loads blocks
-     */
-    @Override
-    public void load(
-        ServerLevel level,
-        BlockPos parcelOrigin,
-        Path dataDir,
-        boolean loadBlocks,
-        boolean loadEntities)
-        throws IOException, ParcelException {
+    Path structureFile = dataDir.resolve(NBT_FILE_NAME);
 
-      Path structureFile = dataDir.resolve(NBT_FILE_NAME);
-
-      CompoundTag tag;
-      try {
-        // NbtAccounterException will be thrown when the NBT file is too large
-        tag = NbtIo.readCompressed(structureFile, NbtAccounter.unlimitedHeap());
-      } catch (NbtAccounterException e) {
-        throw new ParcelException.InvalidParcel("The NBT file is too large", e);
-      }
-
-      StructureTemplate template = level.getServer().getStructureManager().readStructure(tag);
-
-      boolean isStrict = true;
-
-      StructurePlaceSettings settings =
-          new StructurePlaceSettings().setIgnoreEntities(!loadEntities).setKnownShape(isStrict);
-
-      template.placeInWorld(
-          level,
-          parcelOrigin,
-          parcelOrigin,
-          settings,
-          RandomSource.create(parcelOrigin.asLong()),
-          2 | (isStrict ? 816 : 0));
+    CompoundTag tag;
+    try {
+      // NbtAccounterException will be thrown when the NBT file is too large
+      tag = NbtIo.readCompressed(structureFile, NbtAccounter.unlimitedHeap());
+    } catch (NbtAccounterException e) {
+      throw new ParcelException.InvalidParcel("The NBT file is too large", e);
     }
+
+    StructureTemplate template = level.getServer().getStructureManager().readStructure(tag);
+
+    boolean isStrict = true;
+
+    StructurePlaceSettings settings =
+        new StructurePlaceSettings().setIgnoreEntities(!loadEntities).setKnownShape(isStrict);
+
+    template.placeInWorld(
+        level,
+        parcelOrigin,
+        parcelOrigin,
+        settings,
+        RandomSource.create(parcelOrigin.asLong()),
+        2 | (isStrict ? 816 : 0));
   }
 }
