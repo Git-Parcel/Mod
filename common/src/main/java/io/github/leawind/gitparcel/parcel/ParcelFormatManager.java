@@ -15,10 +15,9 @@ public class ParcelFormatManager {
    * Registers a new format.
    *
    * @param format The format to register.
-   * @return This manager.
    * @param <C> The format config type.
    */
-  public <C extends ParcelFormatConfig<C>> ParcelFormatManager register(ParcelFormat<C> format) {
+  public <C extends ParcelFormatConfig<C>> void register(ParcelFormat<C> format) {
 
     boolean isSaverOrLoader = false;
 
@@ -36,27 +35,19 @@ public class ParcelFormatManager {
       throw new IllegalArgumentException(
           "Expected a saver or loader, got " + format.getClass().getSimpleName());
     }
-
-    return this;
   }
 
-  public <C extends ParcelFormatConfig<C>> ParcelFormatManager registerSaver(
-      ParcelFormat.Save<C> format) {
+  public <C extends ParcelFormatConfig<C>> void registerSaver(ParcelFormat.Save<C> format) {
     savers.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), format);
-    return this;
   }
 
-  public <C extends ParcelFormatConfig<C>> ParcelFormatManager registerLoader(
-      ParcelFormat.Load<C> format) {
+  public <C extends ParcelFormatConfig<C>> void registerLoader(ParcelFormat.Load<C> format) {
     loaders.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), format);
-    return this;
   }
 
-  public <C extends ParcelFormatConfig<C>> ParcelFormatManager registerDefaultSaver(
-      ParcelFormat.Save<C> format) {
+  public <C extends ParcelFormatConfig<C>> void registerDefaultSaver(ParcelFormat.Save<C> format) {
     register(format);
     defaultSaver = format;
-    return this;
   }
 
   /**
