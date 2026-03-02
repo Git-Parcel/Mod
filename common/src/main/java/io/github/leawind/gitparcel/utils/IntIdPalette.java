@@ -19,6 +19,20 @@ import org.jspecify.annotations.Nullable;
  *   <li>It maps to a data object that is not in {@link #byData}.
  * </ul>
  *
+ * <h2>ID allocation</h2>
+ *
+ * <h3>Range
+ *
+ * <p>{@link #idRangeStart} and {@link #idRangeEnd} define the range of valid IDs.
+ *
+ * <p>Changing the range does not affect existing IDs. Only future allocations will be restricted to
+ * the new range.
+ *
+ * <h3>Grid
+ *
+ * <p>When grid size is greater than 1, ID allocation will only consider positions at {@code
+ * gridIndex * idGridSize + idGridOffset} within each grid.
+ *
  * @param <T> the type of data objects
  */
 public class IntIdPalette<T> {
@@ -29,6 +43,12 @@ public class IntIdPalette<T> {
 
   private int idRangeStart;
   private int idRangeEnd;
+
+  /** Split the id range into multiple grids, each grid has a size of idGridSize. */
+  private int idGridSize = 1;
+
+  private int idGridOffset = 0;
+
   private volatile int lastId = VOID_ID;
 
   /**
@@ -63,41 +83,42 @@ public class IntIdPalette<T> {
   /**
    * Creates a new palette with specified id range.
    *
-   * @param minId the minimum id (inclusive)
-   * @param idRangeEnd the maximum id (inclusive)
+   * @param idRangeStart the minimum id (inclusive)
+   * @param idRangeEnd the maximum id (exclusive)
    * @throws IllegalArgumentException if minId >= maxId
    */
-  public IntIdPalette(int minId, int idRangeEnd) throws IllegalArgumentException {
-    this(minId, idRangeEnd, new Int2ObjectRBTreeMap<>(), new Object2IntOpenHashMap<>());
+  public IntIdPalette(int idRangeStart, int idRangeEnd) throws IllegalArgumentException {
+    this(idRangeStart, idRangeEnd, new Int2ObjectRBTreeMap<>(), new Object2IntOpenHashMap<>());
   }
 
   /**
    * Creates a new palette with specified id range and mappings.
    *
-   * @param minId the minimum id (inclusive)
-   * @param idRangeEnd the maximum id (inclusive)
+   * @param idRangeStart the minimum id (inclusive)
+   * @param idRangeEnd the maximum id (exclusive)
    * @param byId the mapping from integer IDs to data objects
    * @param byData the mapping from data objects to integer IDs
    * @throws IllegalArgumentException if {@code minId >= maxId} or {@code minId} is {@value
    *     #VOID_ID}
    */
   public IntIdPalette(
-      int minId, int idRangeEnd, Int2ObjectSortedMap<T> byId, Object2IntMap<T> byData)
+      int idRangeStart, int idRangeEnd, Int2ObjectSortedMap<T> byId, Object2IntMap<T> byData)
       throws IllegalArgumentException {
-    setIdRange(minId, idRangeEnd);
+    setIdRange(idRangeStart, idRangeEnd);
+    setIdGrid(1, 0);
     this.byId = byId;
     this.byData = byData;
     this.byData.defaultReturnValue(VOID_ID);
 
-    lastId = minId;
+    lastId = idRangeStart;
   }
 
-  /** the minimum ID value (inclusive). */
+  /** The inclusive start of ID value range. */
   protected int idRangeStart() {
     return idRangeStart;
   }
 
-  /** the exclusive end ID value */
+  /** The exclusive end of ID value range. */
   protected int idRangeEnd() {
     return idRangeEnd;
   }
@@ -107,8 +128,16 @@ public class IntIdPalette<T> {
     return idRangeEnd - idRangeStart;
   }
 
+  public int idGridSize() {
+    return idGridSize;
+  }
+
+  public int idGridOffset() {
+    return idGridOffset;
+  }
+
   /**
-   * Sets the ID range (inclusive).
+   * Sets the ID range.
    *
    * <p>This only affects future ID allocations. Existing entries are retained even if outside the
    * new range.
@@ -132,6 +161,28 @@ public class IntIdPalette<T> {
     this.idRangeEnd = end;
   }
 
+  /**
+   * Sets the grid parameters for ID allocation.
+   *
+   * <p>When grid size is greater than 1, ID allocation will only consider positions at {@code
+   * gridIndex * idGridSize + idGridOffset} within each grid.
+   *
+   * @param gridSize the size of each grid (must be positive)
+   * @param gridOffset the offset within each grid (must be in range [0, gridSize))
+   * @throws IllegalArgumentException if gridSize is not positive or gridOffset is out of range
+   */
+  public void setIdGrid(int gridSize, int gridOffset) throws IllegalArgumentException {
+    if (gridSize <= 0) {
+      throw new IllegalArgumentException("gridSize must be positive: " + gridSize);
+    }
+    if (gridOffset < 0 || gridOffset >= gridSize) {
+      throw new IllegalArgumentException(
+          String.format("gridOffset must be in range [0, %d), but got %d", gridSize, gridOffset));
+    }
+    this.idGridSize = gridSize;
+    this.idGridOffset = gridOffset;
+  }
+
   /** Creates an exception indicating that all IDs have been exhausted. */
   protected IllegalStateException createIdExhaustedException() {
     return new IllegalStateException(
@@ -146,6 +197,17 @@ public class IntIdPalette<T> {
    * @throws IllegalStateException if no ID is available
    */
   protected int getNextUnusedId() throws IllegalStateException {
+    // If grid size is 1, use the original linear search
+    if (idGridSize == 1) {
+      return getNextUnusedIdLinear();
+    }
+
+    // Use grid-based search for grid sizes > 1
+    return getNextUnusedIdGrid();
+  }
+
+  /** Linear search for next unused ID (original implementation). */
+  private int getNextUnusedIdLinear() throws IllegalStateException {
     int id;
     if (lastId < idRangeStart || lastId >= idRangeEnd) {
       id = idRangeStart;
@@ -163,6 +225,48 @@ public class IntIdPalette<T> {
 
       id++;
       i++;
+    }
+
+    throw createIdExhaustedException();
+  }
+
+  /**
+   * Grid-based search for next unused ID.
+   *
+   * <p>Only searches at offset positions within each grid.
+   */
+  private int getNextUnusedIdGrid() throws IllegalStateException {
+    int startGridIndex = 0;
+    if (lastId > idRangeStart) {
+      startGridIndex = (lastId - idRangeStart - 1) / idGridSize + 1;
+    }
+
+    int gridCount = (idSpan() + idGridSize - 1) / idGridSize;
+
+    for (int gridIndex = startGridIndex; gridIndex < gridCount; gridIndex++) {
+      int candidateId = idRangeStart + gridIndex * idGridSize + idGridOffset;
+
+      if (candidateId >= idRangeEnd) {
+        continue;
+      }
+
+      if (!isIdInUse(candidateId)) {
+        lastId = candidateId + 1;
+        return candidateId;
+      }
+    }
+
+    for (int gridIndex = 0; gridIndex < startGridIndex; gridIndex++) {
+      int candidateId = idRangeStart + gridIndex * idGridSize + idGridOffset;
+
+      if (candidateId >= idRangeEnd) {
+        continue;
+      }
+
+      if (!isIdInUse(candidateId)) {
+        lastId = candidateId + 1;
+        return candidateId;
+      }
     }
 
     throw createIdExhaustedException();

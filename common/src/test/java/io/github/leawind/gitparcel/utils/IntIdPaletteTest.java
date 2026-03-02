@@ -305,4 +305,143 @@ public class IntIdPaletteTest {
     // In single ID range case, the freed ID will be reused
     assertEquals(5, singlePalette.collect("test3"));
   }
+
+  @Test
+  void testSetIdGridWithInvalidValues() {
+    // Invalid grid size
+    assertThrows(IllegalArgumentException.class, () -> palette.setIdGrid(0, 0));
+    assertThrows(IllegalArgumentException.class, () -> palette.setIdGrid(-1, 0));
+
+    // Invalid grid offset
+    assertThrows(IllegalArgumentException.class, () -> palette.setIdGrid(10, -1));
+    assertThrows(IllegalArgumentException.class, () -> palette.setIdGrid(10, 10));
+    assertThrows(IllegalArgumentException.class, () -> palette.setIdGrid(10, 15));
+  }
+
+  @Test
+  void testGridBasedIdAllocation() {
+    // Set grid parameters: grid size 5, offset 2
+    palette.setIdGrid(5, 2);
+
+    // Allocate IDs - should only allocate at positions: 2, 7
+    // ID 12 would be out of range for palette with range [0, 10)
+    assertEquals(2, palette.collect("test1")); // 0*5 + 2 = 2
+    assertEquals(7, palette.collect("test2")); // 1*5 + 2 = 7
+
+    // Verify the allocated IDs
+    assertEquals("test1", palette.get(2));
+    assertEquals("test2", palette.get(7));
+
+    // Next allocation should fail (ID 12 is out of range)
+    assertThrows(IllegalStateException.class, () -> palette.collect("test3"));
+  }
+
+  @Test
+  void testGridBasedIdAllocationWithCustomRange() {
+    IntIdPalette<String> customPalette = new IntIdPalette<>(10, 25);
+    customPalette.setIdGrid(5, 1);
+
+    // Allocate IDs - should only allocate at positions: 11, 16, 21
+    assertEquals(11, customPalette.collect("test1")); // 10 + 0*5 + 1 = 11
+    assertEquals(16, customPalette.collect("test2")); // 10 + 1*5 + 1 = 16
+    assertEquals(21, customPalette.collect("test3")); // 10 + 2*5 + 1 = 21
+
+    // Next allocation should fail (out of range)
+    assertThrows(IllegalStateException.class, () -> customPalette.collect("test4"));
+  }
+
+  @Test
+  void testGridBasedIdAllocationWithWraparound() {
+    palette.setIdGrid(4, 1);
+
+    // Fill the palette with some IDs
+    palette.collect("test1"); // ID 1
+    palette.collect("test2"); // ID 5
+    palette.collect("test3"); // ID 9
+
+    // Remove middle ID
+    palette.removeById(5);
+
+    // Next allocation should reuse the freed ID at grid position
+    assertEquals(5, palette.collect("test4")); // Reuse ID 5 (1*4 + 1)
+
+    // Continue allocation - ID 13 would be out of range for palette with range [0, 10)
+    // So next allocation should fail
+    assertThrows(IllegalStateException.class, () -> palette.collect("test5"));
+  }
+
+  @Test
+  void testGridSizeOneBehavior() {
+    // Grid size 1 should behave like linear search
+    palette.setIdGrid(1, 0);
+
+    // Allocate IDs sequentially
+    assertEquals(0, palette.collect("test1"));
+    assertEquals(1, palette.collect("test2"));
+    assertEquals(2, palette.collect("test3"));
+
+    // Remove middle ID
+    palette.removeById(1);
+
+    // Next allocation should reuse the freed ID
+    assertEquals(3, palette.collect("test4"));
+  }
+
+  @Test
+  void testGridBasedIdAllocationWithMultipleUsers() {
+    // Simulate multiple users with different offsets
+    IntIdPalette<String> userAPalette = new IntIdPalette<>(0, 20);
+    IntIdPalette<String> userBPalette = new IntIdPalette<>(0, 20);
+
+    // Both users use same grid size but different offsets
+    userAPalette.setIdGrid(5, 0); // User A: offsets 0, 5, 10, 15
+    userBPalette.setIdGrid(5, 2); // User B: offsets 2, 7, 12, 17
+
+    // User A allocates IDs
+    assertEquals(0, userAPalette.collect("userA1"));
+    assertEquals(5, userAPalette.collect("userA2"));
+
+    // User B allocates IDs
+    assertEquals(2, userBPalette.collect("userB1"));
+    assertEquals(7, userBPalette.collect("userB2"));
+
+    // Verify no interference
+    assertEquals("userA1", userAPalette.get(0));
+    assertEquals("userA2", userAPalette.get(5));
+    assertEquals("userB1", userBPalette.get(2));
+    assertEquals("userB2", userBPalette.get(7));
+
+    // Verify IDs are not allocated in the other palette
+    assertNull(userAPalette.get(2));
+    assertNull(userAPalette.get(7));
+    assertNull(userBPalette.get(0));
+    assertNull(userBPalette.get(5));
+  }
+
+  @Test
+  void testGridBasedIdExhaustion() {
+    // Set grid parameters with limited range
+    IntIdPalette<String> smallPalette = new IntIdPalette<>(0, 6);
+    smallPalette.setIdGrid(3, 1);
+
+    // Allocate all available grid positions: 1, 4
+    assertEquals(1, smallPalette.collect("test1"));
+    assertEquals(4, smallPalette.collect("test2"));
+
+    // Next allocation should fail (no more grid positions)
+    assertThrows(IllegalStateException.class, () -> smallPalette.collect("test3"));
+  }
+
+  @Test
+  void testGridOffsetAtEdgeOfRange() {
+    // Test when grid offset is at the edge of the range
+    IntIdPalette<String> edgePalette = new IntIdPalette<>(5, 8);
+    edgePalette.setIdGrid(3, 0);
+
+    // Only one valid grid position: 5 (5 + 0*3 + 0 = 5)
+    assertEquals(5, edgePalette.collect("test1"));
+
+    // Next grid position (8) is out of range (exclusive)
+    assertThrows(IllegalStateException.class, () -> edgePalette.collect("test2"));
+  }
 }
