@@ -27,25 +27,26 @@ public interface ParcellaD32FormatV0 extends ParcellaD16FormatV0 {
         config = new Config();
       }
 
+      var ctx = new Context(level, parcel, dataDir, saveEntities, config);
+
       try (ProblemReporter.ScopedCollector problemReporter =
           new ProblemReporter.ScopedCollector(LOGGER)) {
 
-        saveBlocks(32, level, parcel, dataDir, config);
+        saveBlocks(ctx, 32);
 
         if (saveEntities) {
-          saveEntities(problemReporter, level, parcel, dataDir, config);
+          saveEntities(ctx, problemReporter);
         }
       }
     }
 
     @Override
     protected void writeSubparcelWithMicroparcels(
-        BufferedWriter writer, Level level, Subparcel subparcel, BlockPalette palette)
-        throws IOException {
+        Context ctx, BufferedWriter writer, Subparcel subparcel) throws IOException {
       StringBuilder sb = new StringBuilder(8192);
       char[] chars = Base32Utils.BASE32_DIGITS;
 
-      for (var microparcel : Microparcel.subdivide(subparcel, level, palette)) {
+      for (var microparcel : Microparcel.subdivide(subparcel, ctx.level, ctx.blockPalette)) {
         sb.append(chars[microparcel.originX])
             .append(chars[microparcel.originY])
             .append(chars[microparcel.originZ]);

@@ -151,6 +151,29 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
     return null;
   }
 
+  class BaseContext {
+    public final Level level;
+    public final Parcel parcel;
+    public final Path dataDir;
+
+    public BaseContext(Level level, Parcel parcel, Path dataDir) {
+      this.level = level;
+      this.parcel = parcel;
+      this.dataDir = dataDir;
+    }
+  }
+
+  class SaveContext<C extends ParcelFormatConfig<C>> extends BaseContext {
+    public final boolean saveEntities;
+    public final C config;
+
+    public SaveContext(Level level, Parcel parcel, Path dataDir, boolean saveEntities, C config) {
+      super(level, parcel, dataDir);
+      this.saveEntities = saveEntities;
+      this.config = config;
+    }
+  }
+
   non-sealed interface Save<C extends ParcelFormatConfig<C>> extends ParcelFormat<C> {
 
     /**

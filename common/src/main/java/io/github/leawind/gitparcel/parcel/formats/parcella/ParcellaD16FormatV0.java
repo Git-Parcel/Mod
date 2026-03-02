@@ -80,6 +80,24 @@ public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16Format
 
   class Save implements ParcellaD16FormatV0, ParcelFormat.Save<Config> {
 
+    public static final class Context extends SaveContext<Config> {
+      public final Path blocksDir;
+      public final Path blocksPaletteFile;
+      public final Path blocksNbtDir;
+      public final Path entitiesDir;
+
+      public BlockPalette blockPalette;
+
+      public Context(
+          Level level, Parcel parcel, Path dataDir, boolean saveEntities, Config config) {
+        super(level, parcel, dataDir, saveEntities, config);
+        blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
+        blocksPaletteFile = blocksDir.resolve(PALETTE_FILE_NAME);
+        blocksNbtDir = blocksDir.resolve(NBT_DIR_NAME);
+        entitiesDir = dataDir.resolve(ENTITIES_DIR_NAME);
+      }
+    }
+
     @Override
     public void save(
         Level level, Parcel parcel, Path dataDir, boolean saveEntities, @Nullable Config config)
@@ -88,13 +106,15 @@ public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16Format
         config = new Config();
       }
 
+      var ctx = new Context(level, parcel, dataDir, saveEntities, config);
+
       try (ProblemReporter.ScopedCollector problemReporter =
           new ProblemReporter.ScopedCollector(LOGGER)) {
 
-        saveBlocks(16, level, parcel, dataDir, config);
+        saveBlocks(ctx, 16);
 
         if (saveEntities) {
-          saveEntities(problemReporter, level, parcel, dataDir, config);
+          saveEntities(ctx, problemReporter);
         }
       }
     }
@@ -102,28 +122,23 @@ public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16Format
     /**
      * Save blocks in parcella format.
      *
-     * @param dataDir Path to parcel data directory. Will be created if not exist.
+     * @param gridSize Grid size of sub-parcels.
+     * @param ctx Context
      * @throws IOException If an I/O error occurs
      */
-    protected void saveBlocks(int gridSize, Level level, Parcel parcel, Path dataDir, Config config)
-        throws IOException {
+    protected void saveBlocks(Context ctx, int gridSize) throws IOException {
 
-      Path blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
-      Files.createDirectories(blocksDir);
-      Path paletteFile = blocksDir.resolve(PALETTE_FILE_NAME);
-      Path nbtDir = blocksDir.resolve(NBT_DIR_NAME);
+      Files.createDirectories(ctx.blocksDir);
 
       // Load or create block palette
-      BlockPalette palette =
-          loadBlockPaletteIfExistElseCreate(
-              level, paletteFile, nbtDir, config.blockEntityDataFormat.get());
+      ctx.blockPalette = loadBlockPaletteIfExistElseCreate(ctx);
 
       // Process sub-parcels with Z-Order encoding
-      Path subParcelsDir = blocksDir.resolve(SUB_PARCELS_DIR_NAME);
+      Path subParcelsDir = ctx.blocksDir.resolve(SUB_PARCELS_DIR_NAME);
       Files.createDirectories(subParcelsDir);
 
-      BlockPos anchorPos = parcel.getOrigin().offset(config.anchorOffset);
-      Iterable<Subparcel> subparcels = Subparcel.subdivideParcel(gridSize, parcel, anchorPos);
+      BlockPos anchorPos = ctx.parcel.getOrigin().offset(ctx.config.anchorOffset);
+      Iterable<Subparcel> subparcels = Subparcel.subdivideParcel(gridSize, ctx.parcel, anchorPos);
 
       for (var subparcel : subparcels) {
         Vec3i coord = subparcel.getCoord(gridSize, anchorPos);
@@ -136,18 +151,22 @@ public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16Format
         // Write sub-parcel data
         try (BufferedWriter writer =
             Files.newBufferedWriter(subparcelFile, StandardCharsets.UTF_8)) {
-          writeSubparcel(writer, level, subparcel, palette, config.enableMicroparcel.get());
+          writeSubparcel(ctx, writer, subparcel);
         }
       }
 
-      palette.save(paletteFile, nbtDir, config.blockEntityDataFormat.get());
+      ctx.blockPalette.save(
+          ctx.blocksPaletteFile, ctx.blocksNbtDir, ctx.config.blockEntityDataFormat.get());
     }
 
-    protected BlockPalette loadBlockPaletteIfExistElseCreate(
-        Level level, Path paletteFile, Path nbtDir, NbtFormat blockEntityDataFormat) {
-      if (Files.exists(paletteFile)) {
+    protected BlockPalette loadBlockPaletteIfExistElseCreate(Context ctx) {
+      if (Files.exists(ctx.blocksPaletteFile)) {
         try {
-          return BlockPalette.load(level, paletteFile, nbtDir, blockEntityDataFormat);
+          return BlockPalette.load(
+              ctx.level,
+              ctx.blocksPaletteFile,
+              ctx.blocksNbtDir,
+              ctx.config.blockEntityDataFormat.get());
         } catch (Exception e) {
           LOGGER.error("Error loading block palette: {}", e.getMessage(), e);
           return new BlockPalette();
@@ -157,27 +176,21 @@ public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16Format
       }
     }
 
-    protected void writeSubparcel(
-        BufferedWriter writer,
-        Level level,
-        Subparcel subparcel,
-        BlockPalette palette,
-        boolean enableMicroparcel)
+    protected void writeSubparcel(Context ctx, BufferedWriter writer, Subparcel subparcel)
         throws IOException {
-      if (enableMicroparcel) {
-        writeSubparcelWithMicroparcels(writer, level, subparcel, palette);
+      if (ctx.config.enableMicroparcel.get()) {
+        writeSubparcelWithMicroparcels(ctx, writer, subparcel);
       } else {
-        writeSubparcelFlat(writer, level, subparcel, palette);
+        writeSubparcelFlat(ctx, writer, subparcel);
       }
     }
 
     protected void writeSubparcelWithMicroparcels(
-        BufferedWriter writer, Level level, Subparcel subparcel, BlockPalette palette)
-        throws IOException {
+        Context ctx, BufferedWriter writer, Subparcel subparcel) throws IOException {
       StringBuilder sb = new StringBuilder(8192);
       char[] hex = HexUtils.UPPER_HEX_DIGITS;
 
-      for (var microparcel : Microparcel.subdivide(subparcel, level, palette)) {
+      for (var microparcel : Microparcel.subdivide(subparcel, ctx.level, ctx.blockPalette)) {
         sb.append(hex[microparcel.originX])
             .append(hex[microparcel.originY])
             .append(hex[microparcel.originZ]);
@@ -201,17 +214,7 @@ public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16Format
       }
     }
 
-    /**
-     * Writes subparcel data using traditional per-block format.
-     *
-     * @param writer the writer to write data to
-     * @param level the level containing the blocks
-     * @param subparcel the subparcel to write
-     * @param palette the block palette for ID mapping
-     * @throws IOException if an I/O error occurs
-     */
-    protected void writeSubparcelFlat(
-        BufferedWriter writer, Level level, Subparcel subparcel, BlockPalette palette)
+    protected void writeSubparcelFlat(Context ctx, BufferedWriter writer, Subparcel subparcel)
         throws IOException {
       StringBuilder sb = new StringBuilder(8192);
 
@@ -222,11 +225,15 @@ public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16Format
       int sizeY = subparcel.sizeY;
       int sizeZ = subparcel.sizeZ;
 
+      var level = ctx.level;
+      var palette = ctx.blockPalette;
+
       BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
       for (int i = 0, x = originX; i < sizeX; i++, x++) {
         for (int j = 0, y = originY; j < sizeY; j++, y++) {
           for (int k = 0, z = originZ; k < sizeZ; k++, z++) {
+
             int id = palette.collect(level, pos.set(x, y, z));
 
             sb.append(HexUtils.toHexUpperCase(id)).append('\n');
@@ -244,23 +251,22 @@ public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16Format
       }
     }
 
-    protected void saveEntities(
-        ProblemReporter problemReporter, Level level, Parcel parcel, Path dir, Config config)
-        throws IOException {
+    protected void saveEntities(Context ctx, ProblemReporter problemReporter) throws IOException {
 
       // TODO remove redundant entities
 
-      Path entitiesDir = dir.resolve(ENTITIES_DIR_NAME);
+      Path entitiesDir = ctx.dataDir.resolve(ENTITIES_DIR_NAME);
       Files.createDirectories(entitiesDir);
 
       List<Entity> entities =
-          level.getEntities((Entity) null, parcel.getAABB(), entity -> !(entity instanceof Player));
+          ctx.level.getEntities(
+              (Entity) null, ctx.parcel.getAABB(), entity -> !(entity instanceof Player));
 
       int entityId = 0;
       for (Entity entity : entities) {
-        CompoundTag tag = getEntityNbt(problemReporter, parcel.getOrigin(), entity);
-        Path path = entitiesDir.resolve(entityId + config.entityDataFormat.get().suffix);
-        config.entityDataFormat.get().write(path, tag);
+        CompoundTag tag = getEntityNbt(ctx, problemReporter, entity);
+        Path path = entitiesDir.resolve(entityId + ctx.config.entityDataFormat.get().suffix);
+        ctx.config.entityDataFormat.get().write(path, tag);
 
         entityId++;
       }
@@ -270,13 +276,14 @@ public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16Format
      * Get the NBT tag of an entity, with position relative to the parcel origin.
      *
      * @param problemReporter Problem reporter, refer to {@link StructureTemplate#fillFromWorld }
-     * @param from Start position of the parcel, used to calculate relative position
+     * @param ctx Context containing parcel information
      * @param entity Entity to save
      * @return NBT tag of the entity
      */
     protected CompoundTag getEntityNbt(
-        ProblemReporter problemReporter, BlockPos from, Entity entity) {
+        Context ctx, ProblemReporter problemReporter, Entity entity) {
       CompoundTag tag = new CompoundTag();
+      BlockPos from = ctx.parcel.getOrigin();
       Vec3 pos =
           new Vec3(
               entity.getX() - (double) from.getX(),
