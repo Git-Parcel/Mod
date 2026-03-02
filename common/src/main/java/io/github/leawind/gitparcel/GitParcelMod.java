@@ -1,5 +1,6 @@
 package io.github.leawind.gitparcel;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.parcel.ParcelFormatManager;
 import io.github.leawind.gitparcel.parcel.formats.mvp.MvpFormatV0;
@@ -7,6 +8,11 @@ import io.github.leawind.gitparcel.parcel.formats.parcella.ParcellaD16FormatV0;
 import io.github.leawind.gitparcel.parcel.formats.parcella.ParcellaD32FormatV0;
 import io.github.leawind.gitparcel.parcel.formats.structuretemplate.StructureTemplateFormatV0;
 import io.github.leawind.gitparcel.platform.Services;
+import io.github.leawind.gitparcel.server.commands.ParcelCommand;
+import io.github.leawind.gitparcel.server.commands.ParcelDebugCommand;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
 import org.slf4j.Logger;
 
 /** The main class for the Git Parcel mod. */
@@ -34,15 +40,28 @@ public class GitParcelMod {
     registerFormats();
   }
 
-  private static void registerFormats() {
-    var formatManager = PARCEL_FORMATS;
+  public static void registerCommands(
+      CommandDispatcher<CommandSourceStack> dispatcher,
+      Commands.CommandSelection environment,
+      CommandBuildContext context) {
 
-    formatManager.registerDefaultSaver(new ParcellaD32FormatV0.Save());
-    formatManager.register(new StructureTemplateFormatV0());
+    LOGGER.debug("Registering commands");
+
+    ParcelCommand.register(dispatcher, context);
 
     if (Services.PLATFORM.isDevelopmentEnvironment()) {
-      formatManager.register(new ParcellaD16FormatV0.Save());
-      formatManager.register(new MvpFormatV0());
+      ParcelDebugCommand.register(dispatcher, context);
+    }
+  }
+
+  private static void registerFormats() {
+
+    PARCEL_FORMATS.registerDefaultSaver(new ParcellaD32FormatV0.Save());
+    PARCEL_FORMATS.register(new StructureTemplateFormatV0());
+
+    if (Services.PLATFORM.isDevelopmentEnvironment()) {
+      PARCEL_FORMATS.register(new ParcellaD16FormatV0.Save());
+      PARCEL_FORMATS.register(new MvpFormatV0());
     }
   }
 }

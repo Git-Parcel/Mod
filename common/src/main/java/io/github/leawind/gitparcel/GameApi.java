@@ -52,17 +52,4 @@ public final class GameApi {
         SingletonArgumentInfo.contextFree(ParcelFormatArgument::loader));
   }
 
-  public static void registerCommands(
-      CommandDispatcher<CommandSourceStack> dispatcher,
-      Commands.CommandSelection selection,
-      CommandBuildContext context) {
-
-    LOGGER.debug("Registering commands");
-
-    ParcelCommand.register(dispatcher, context);
-
-    if (Services.PLATFORM.isDevelopmentEnvironment()) {
-      ParcelDebugCommand.register(dispatcher, context);
-    }
-  }
 }
