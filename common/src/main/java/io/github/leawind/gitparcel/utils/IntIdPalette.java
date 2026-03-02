@@ -21,14 +21,14 @@ import org.jspecify.annotations.Nullable;
  *
  * <h2>ID allocation</h2>
  *
- * <h3>Range
+ * <h3>Range</h3>
  *
  * <p>{@link #idRangeStart} and {@link #idRangeEnd} define the range of valid IDs.
  *
  * <p>Changing the range does not affect existing IDs. Only future allocations will be restricted to
  * the new range.
  *
- * <h3>Grid
+ * <h3>Grid</h3>
  *
  * <p>When grid size is greater than 1, ID allocation will only consider positions at {@code
  * gridIndex * idGridSize + idGridOffset} within each grid.
