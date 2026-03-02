@@ -152,6 +152,7 @@ public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16Format
 
       ctx.blockPalette.save(
           ctx.blocksPaletteFile, ctx.blocksNbtDir, ctx.config.blockEntityDataFormat.get());
+      ctx.blockPalette = null;
     }
 
     protected BlockPalette loadBlockPaletteIfExistElseCreate(Context ctx) {
