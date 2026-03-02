@@ -26,7 +26,6 @@ public class SubdivideAlgoTest {
     @Override
     public int get(int x, int y, int z) {
       try {
-        // 新的 SubdivideAlgo 接口传递的是相对坐标（0-15），直接使用即可
         return valuesArray[x][y][z];
       } catch (IndexOutOfBoundsException e) {
         throw e;
