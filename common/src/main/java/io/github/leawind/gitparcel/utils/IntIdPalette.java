@@ -49,7 +49,7 @@ public class IntIdPalette<T> {
 
   private int idGridOffset = 0;
 
-  private volatile int lastId = VOID_ID;
+  public volatile int lastId = VOID_ID;
 
   /**
    * Mapping from integer IDs to data objects. Protected by read-write lock.

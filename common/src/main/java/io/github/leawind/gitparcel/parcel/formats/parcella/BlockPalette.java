@@ -114,13 +114,15 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
     var sb = new StringBuilder();
     for (var entry : byId.int2ObjectEntrySet()) {
       int id = entry.getIntKey();
-      if (isIdInUse(id)) {
-        sb.append(HexUtils.toHexUpperCase(id));
-        Data data = entry.getValue();
-        sb.append(data.hasNbt() ? '>' : '=');
-        sb.append(stringifyBlockState(data.blockState));
-        sb.append('\n');
+      if (!(visited.contains(id) && isIdInUse(id))) {
+        continue;
       }
+
+      sb.append(HexUtils.toHexUpperCase(id));
+      Data data = entry.getValue();
+      sb.append(data.hasNbt() ? '>' : '=');
+      sb.append(stringifyBlockState(data.blockState));
+      sb.append('\n');
     }
 
     Files.writeString(paletteFile, sb, StandardCharsets.UTF_8);
@@ -178,6 +180,9 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
 
   /**
    * Loads a block palette from the specified file and NBT directory.
+   *
+   * <p>The palette's lastId will be the last id in the palette file, which is expected to be the
+   * highest one if the palette file was correctly saved.
    *
    * @param paletteFile the path to the palette file. Must exist.
    * @param nbtDir the directory to store NBT files
@@ -247,6 +252,9 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
               };
 
           palette.insert(id, new Data(blockState, tag));
+          // id is expected to be sorted in the palette file, from low to high
+          // so the lastId will be the highest one in the palette file
+          palette.lastId = id;
 
         } catch (NumberFormatException | CommandSyntaxException e) {
           throw new InvalidPaletteException(String.format("Invalid palette line: %s", line), e);
