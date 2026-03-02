@@ -9,6 +9,7 @@ import io.github.leawind.gitparcel.platform.Services;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** The main class for the Git Parcel mod. */
 public class GitParcelMod {
 
   /** The mod ID for Git Parcel. */
@@ -23,7 +24,13 @@ public class GitParcelMod {
   /** The parcel format manager for handling different parcel formats. */
   public static final ParcelFormatManager PARCEL_FORMATS = new ParcelFormatManager();
 
+  /**
+   * Initializes the Git Parcel mod.
+   *
+   * <p>This method is called both on the client and server sides.
+   */
   public static void init() {
+    LOGGER.debug("Initializing");
     registerFormats();
   }
 

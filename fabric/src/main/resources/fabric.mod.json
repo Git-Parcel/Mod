@@ -16,7 +16,13 @@
     "environment": "*",
     "entrypoints": {
         "main": [
-            "io.github.leawind.gitparcel.GitParcelModEntry"
+            "io.github.leawind.gitparcel.GitParcelModFabric"
+        ],
+        "client": [
+            "io.github.leawind.gitparcel.GitParcelModFabricClient"
+        ],
+        "server": [
+            "io.github.leawind.gitparcel.GitParcelModFabricServer"
         ]
     },
     "mixins": [

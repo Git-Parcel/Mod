@@ -14,6 +14,8 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import net.minecraft.commands.synchronization.SingletonArgumentInfo;
 import net.minecraft.core.Registry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Some methods to register things to Minecraft.
@@ -21,7 +23,10 @@ import net.minecraft.core.Registry;
  * <p>These methods are expected to be called by mixins.
  */
 public final class GameApi {
+  private static final Logger LOGGER = LoggerFactory.getLogger(GitParcelMod.MOD_NAME);
+
   public static void registerCommandArgumentTypes(Registry<ArgumentTypeInfo<?, ?>> registry) {
+    LOGGER.debug("Registering command argument types");
     InvokeArgumentTypeInfos.register(
         registry,
         "gitparcel:file_path",
@@ -50,8 +55,9 @@ public final class GameApi {
       CommandDispatcher<CommandSourceStack> dispatcher,
       Commands.CommandSelection selection,
       CommandBuildContext context) {
-    ParcelCommand.register(dispatcher, context);
 
+    LOGGER.debug("Registering commands");
+    ParcelCommand.register(dispatcher, context);
     if (Services.PLATFORM.isDevelopmentEnvironment()) {
       ParcelDebugCommand.register(dispatcher, context);
     }
