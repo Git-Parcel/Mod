@@ -119,8 +119,8 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
           Data data = entry.getValue();
           sb.append(data.hasNbt() ? '>' : '=');
           sb.append(stringifyBlockState(data.blockState));
+          sb.append('\n');
         }
-        sb.append('\n');
       }
 
       writer.write(sb.toString());
