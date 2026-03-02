@@ -116,7 +116,7 @@ public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16Format
       // Load or create block palette
       BlockPalette palette =
           loadBlockPaletteIfExistElseCreate(
-              paletteFile, nbtDir, config.blockEntityDataFormat.get());
+              level, paletteFile, nbtDir, config.blockEntityDataFormat.get());
 
       // Process sub-parcels with Z-Order encoding
       Path subParcelsDir = blocksDir.resolve(SUB_PARCELS_DIR_NAME);
@@ -144,10 +144,10 @@ public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16Format
     }
 
     protected BlockPalette loadBlockPaletteIfExistElseCreate(
-        Path paletteFile, Path nbtDir, NbtFormat blockEntityDataFormat) {
+        Level level, Path paletteFile, Path nbtDir, NbtFormat blockEntityDataFormat) {
       if (Files.exists(paletteFile)) {
         try {
-          return BlockPalette.load(paletteFile, nbtDir, blockEntityDataFormat);
+          return BlockPalette.load(level, paletteFile, nbtDir, blockEntityDataFormat);
         } catch (Exception e) {
           LOGGER.error("Error loading block palette: {}", e.getMessage(), e);
           return new BlockPalette();

@@ -12,13 +12,14 @@ public class ParcelFormatManagerTest {
   @Test
   void test() {
     var mgr = new ParcelFormatManager();
-    mgr.registerDefault(new ParcellaD16FormatV0.Save())
-        .register(new StructureTemplateFormatV0.Save())
-        .register(new MvpFormatV0.Save());
 
-    assertEquals(mgr.defaultSaver(), mgr.getSaver("parcella"));
+    mgr.registerDefault(new ParcellaD16FormatV0.Save());
+    mgr.register(new StructureTemplateFormatV0.Save());
+    mgr.register(new MvpFormatV0.Save());
 
-    assertNotNull(mgr.getSaver("parcella"));
+    assertEquals(mgr.defaultSaver(), mgr.getSaver("parcella_d16"));
+
+    assertNotNull(mgr.getSaver("parcella_d16"));
     assertNotNull(mgr.getSaver("mvp"));
     assertNotNull(mgr.getSaver("structure_template"));
   }

@@ -13,8 +13,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
+import net.minecraft.commands.arguments.blocks.BlockStateParser;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -67,13 +69,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
   }
 
   public int collect(BlockState blockState, @Nullable CompoundTag nbt) {
-    String blockStateString =
-        BuiltInRegistries.BLOCK.wrapAsHolder(blockState.getBlock()).getRegisteredName();
-    return collect(blockStateString, nbt);
-  }
-
-  public int collect(String blockStateString, @Nullable CompoundTag nbt) {
-    return collect(new Data(blockStateString, nbt));
+    return collect(new Data(blockState, nbt));
   }
 
   @Override
@@ -122,7 +118,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
           sb.append(HexUtils.toHexUpperCase(entry.getIntKey()));
           Data data = entry.getValue();
           sb.append(data.hasNbt() ? '>' : '=');
-          sb.append(data.blockStateString);
+          sb.append(stringifyBlockState(data.blockState));
         }
         sb.append('\n');
       }
@@ -142,7 +138,18 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
     }
   }
 
-  public record Data(String blockStateString, @Nullable CompoundTag nbt) {
+  public static String stringifyBlockState(BlockState blockState) {
+    return BuiltInRegistries.BLOCK.wrapAsHolder(blockState.getBlock()).getRegisteredName();
+  }
+
+  public static BlockState parseBlockState(String blockStateString, Level level, boolean allowNbt)
+      throws CommandSyntaxException {
+    return BlockStateParser.parseForBlock(
+            level.holderLookup(Registries.BLOCK), blockStateString, allowNbt)
+        .blockState();
+  }
+
+  public record Data(BlockState blockState, @Nullable CompoundTag nbt) {
     public boolean hasNbt() {
       return nbt != null;
     }
@@ -161,18 +168,16 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
    * @throws InvalidPaletteException if the palette file is malformed
    */
   public static @Nullable BlockPalette loadIfExist(
-      Path paletteFile, Path nbtDir, NbtFormat nbtFormat)
+      Level level, Path paletteFile, Path nbtDir, NbtFormat nbtFormat)
       throws IOException, InvalidPaletteException {
     if (!Files.exists(paletteFile)) {
       return null;
     }
-    return load(paletteFile, nbtDir, nbtFormat);
+    return load(level, paletteFile, nbtDir, nbtFormat);
   }
 
   /**
    * Loads a block palette from the specified file and NBT directory.
-   *
-   * <p>For duplicate IDs, only the first one will be used.
    *
    * @param paletteFile the path to the palette file. Must exist.
    * @param nbtDir the directory to store NBT files
@@ -181,7 +186,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
    * @throws IOException if an I/O error occurs
    * @throws InvalidPaletteException if the palette file is malformed
    */
-  public static BlockPalette load(Path paletteFile, Path nbtDir, NbtFormat nbtFormat)
+  public static BlockPalette load(Level level, Path paletteFile, Path nbtDir, NbtFormat nbtFormat)
       throws IOException, InvalidPaletteException {
     try (var reader = Files.newBufferedReader(paletteFile, StandardCharsets.UTF_8)) {
       BlockPalette palette = new BlockPalette();
@@ -220,12 +225,14 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
             continue;
           }
 
-          switch (type) {
-            case '=' -> palette.insert(id, new Data(buffer.toString(), null));
-            case '>' -> {
-              Path nbtFile = nbtDir.resolve(idString + nbtFormat.suffix);
-              CompoundTag nbt =
-                  switch (nbtFormat) {
+          BlockState blockState = parseBlockState(buffer.toString(), level, false);
+
+          CompoundTag tag =
+              switch (type) {
+                case '=' -> null;
+                case '>' -> {
+                  Path nbtFile = nbtDir.resolve(idString + nbtFormat.suffix);
+                  yield switch (nbtFormat) {
                     case Binary -> NbtFormat.readBinary(nbtFile);
                     case Text -> {
                       try {
@@ -235,10 +242,13 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
                       }
                     }
                   };
-              palette.insert(id, new Data(buffer.toString(), nbt));
-            }
-          }
-        } catch (NumberFormatException e) {
+                }
+                default -> throw new AssertionError("Unreachable code");
+              };
+
+          palette.insert(id, new Data(blockState, tag));
+
+        } catch (NumberFormatException | CommandSyntaxException e) {
           throw new InvalidPaletteException(String.format("Invalid palette line: %s", line), e);
         } catch (InvalidPaletteException e) {
           ParcelFormat.LOGGER.error(
