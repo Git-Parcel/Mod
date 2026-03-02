@@ -36,5 +36,6 @@ runs
 **/logs/*.log
 **/logs/*.log.gz
 
-# JFR Config
+# JFR
 /.profileconfig.json
+*.jfr
