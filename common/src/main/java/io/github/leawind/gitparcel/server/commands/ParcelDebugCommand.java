@@ -111,14 +111,14 @@ public class ParcelDebugCommand {
       ParcelFormat.save(source.getLevel(), parcel, meta, parcelDir, saveEntities);
       source.sendSuccess(
           () -> Component.translatable("command.parcel_debug.save.success"), saveEntities);
-      return 0;
+      return 1;
     } catch (IOException | ParcelException e) {
       LOGGER.error("Error while saving parcel", e);
       source.sendFailure(Component.translatable("command.parcel_debug.save.failure"));
-      return 1;
+      return 0;
     } catch (Exception e) {
       LOGGER.error("Unexpected error while saving parcel", e);
-      return 2;
+      return 0;
     }
   }
 
@@ -136,14 +136,14 @@ public class ParcelDebugCommand {
       ParcelFormat.load(source.getLevel(), pos, path, true, false);
 
       source.sendSuccess(() -> Component.translatable("command.parcel_debug.load.success"), true);
-      return 0;
+      return 1;
     } catch (IOException | ParcelException e) {
       LOGGER.error("Error while loading parcel", e);
       source.sendFailure(Component.translatable("command.parcel_debug.load.failure"));
-      return 1;
+      return 0;
     } catch (Exception e) {
       LOGGER.error("Unexpected error while loading parcel", e);
-      return 2;
+      return 0;
     }
   }
 }
