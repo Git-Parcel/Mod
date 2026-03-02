@@ -6,13 +6,13 @@ import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.parcel.formats.NbtFormat;
 import io.github.leawind.gitparcel.utils.IntIdPalette;
 import io.github.leawind.gitparcel.utils.numbase.HexUtils;
-import it.unimi.dsi.fastutil.ints.IntArraySet;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Set;
 import net.minecraft.commands.arguments.blocks.BlockStateParser;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -43,7 +43,7 @@ import org.jspecify.annotations.Nullable;
  * </pre>
  */
 public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
-  protected final Set<Integer> blockEntities = new IntArraySet();
+  protected final IntSet blockEntities = new IntOpenHashSet();
 
   /**
    * Stores visited block ids.
@@ -52,7 +52,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
    *
    * @see #onAfterInserted(int, Data)
    */
-  protected final Set<Integer> visited = new IntArraySet();
+  protected final IntSet visited = new IntOpenHashSet();
 
   public BlockPalette() {
     super();
@@ -114,8 +114,9 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
     try (BufferedWriter writer = Files.newBufferedWriter(paletteFile, StandardCharsets.UTF_8)) {
       var sb = new StringBuilder();
       for (var entry : byId.int2ObjectEntrySet()) {
-        if (isIdInUse(entry.getIntKey())) {
-          sb.append(HexUtils.toHexUpperCase(entry.getIntKey()));
+        int id = entry.getIntKey();
+        if (isIdInUse(id)) {
+          sb.append(HexUtils.toHexUpperCase(id));
           Data data = entry.getValue();
           sb.append(data.hasNbt() ? '>' : '=');
           sb.append(stringifyBlockState(data.blockState));
