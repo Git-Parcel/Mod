@@ -18,7 +18,7 @@ public class ParcelFormatManagerTest {
   void test() {
     var mgr = new ParcelFormatManager();
 
-    mgr.registerDefault(new TestSaver("alpha", 0)).registerDefault(new TestLoader("alpha", 0));
+    mgr.registerDefaultSaver(new TestSaver("alpha", 0));
     mgr.register(new TestSaver("beta", 0));
     mgr.register(new TestLoader("charlie", 0));
 

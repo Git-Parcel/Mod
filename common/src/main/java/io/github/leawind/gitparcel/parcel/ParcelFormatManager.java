@@ -10,7 +10,6 @@ public class ParcelFormatManager {
   private final Map<String, Map<Integer, ParcelFormat<?>>> savers = new HashMap<>();
   private final Map<String, Map<Integer, ParcelFormat<?>>> loaders = new HashMap<>();
   private ParcelFormat.@Nullable Save<?> defaultSaver;
-  private ParcelFormat.@Nullable Load<?> defaultLoader;
 
   /**
    * Registers a new format.
@@ -21,33 +20,42 @@ public class ParcelFormatManager {
    */
   public <C extends ParcelFormatConfig<C>> ParcelFormatManager register(ParcelFormat<C> format) {
 
-    if (format instanceof ParcelFormat.Impl<C> impl) {
-      throw new IllegalArgumentException(
-          "Expected a saver or loader, got " + format.getClass().getSimpleName());
-    }
+    boolean isSaverOrLoader = false;
 
     if (format instanceof ParcelFormat.Save<C> saver) {
-      savers.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), saver);
+      registerSaver(saver);
+      isSaverOrLoader = true;
     }
+
     if (format instanceof ParcelFormat.Load<C> loader) {
-      loaders.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), loader);
+      registerLoader(loader);
+      isSaverOrLoader = true;
+    }
+
+    if (!isSaverOrLoader) {
+      throw new IllegalArgumentException(
+          "Expected a saver or loader, got " + format.getClass().getSimpleName());
     }
 
     return this;
   }
 
-  public <C extends ParcelFormatConfig<C>> ParcelFormatManager registerDefault(
-      ParcelFormat<C> format) {
+  public <C extends ParcelFormatConfig<C>> ParcelFormatManager registerSaver(
+      ParcelFormat.Save<C> format) {
+    savers.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), format);
+    return this;
+  }
 
+  public <C extends ParcelFormatConfig<C>> ParcelFormatManager registerLoader(
+      ParcelFormat.Load<C> format) {
+    loaders.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), format);
+    return this;
+  }
+
+  public <C extends ParcelFormatConfig<C>> ParcelFormatManager registerDefaultSaver(
+      ParcelFormat.Save<C> format) {
     register(format);
-
-    if (format instanceof ParcelFormat.Save<C> saver) {
-      defaultSaver = saver;
-    }
-    if (format instanceof ParcelFormat.Load<C> loader) {
-      defaultLoader = loader;
-    }
-
+    defaultSaver = format;
     return this;
   }
 
@@ -58,15 +66,6 @@ public class ParcelFormatManager {
    */
   public ParcelFormat.Save<?> defaultSaver() throws NullPointerException {
     return Objects.requireNonNull(defaultSaver);
-  }
-
-  /**
-   * Get the default loader.
-   *
-   * @throws NullPointerException if no default loader is set
-   */
-  public ParcelFormat.Load<?> defaultLoader() throws NullPointerException {
-    return Objects.requireNonNull(defaultLoader);
   }
 
   /**
