@@ -12,27 +12,42 @@ public class ParcelFormatManager {
   private ParcelFormat.@Nullable Save<?> defaultSaver;
   private ParcelFormat.@Nullable Load<?> defaultLoader;
 
+  /**
+   * Registers a new format.
+   *
+   * @param format The format to register.
+   * @return This manager.
+   * @param <C> The format config type.
+   */
   public <C extends ParcelFormatConfig<C>> ParcelFormatManager register(ParcelFormat<C> format) {
-    switch (format) {
-      case ParcelFormat.Save<C> saver ->
-          savers.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), saver);
-      case ParcelFormat.Load<C> loader ->
-          loaders.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), loader);
-      case ParcelFormat.Impl<C> ignored ->
-          throw new IllegalArgumentException(
-              "Expected a saver or loader, got " + format.getClass().getSimpleName());
+
+    if (format instanceof ParcelFormat.Impl<C> impl) {
+      throw new IllegalArgumentException(
+          "Expected a saver or loader, got " + format.getClass().getSimpleName());
     }
+
+    if (format instanceof ParcelFormat.Save<C> saver) {
+      savers.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), saver);
+    }
+    if (format instanceof ParcelFormat.Load<C> loader) {
+      loaders.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), loader);
+    }
+
     return this;
   }
 
   public <C extends ParcelFormatConfig<C>> ParcelFormatManager registerDefault(
       ParcelFormat<C> format) {
+
     register(format);
-    switch (format) {
-      case ParcelFormat.Save<C> saver -> defaultSaver = saver;
-      case ParcelFormat.Load<C> loader -> defaultLoader = loader;
-      case ParcelFormat.Impl<C> ignored -> {}
+
+    if (format instanceof ParcelFormat.Save<C> saver) {
+      defaultSaver = saver;
     }
+    if (format instanceof ParcelFormat.Load<C> loader) {
+      defaultLoader = loader;
+    }
+
     return this;
   }
 
