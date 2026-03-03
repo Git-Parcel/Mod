@@ -2,7 +2,7 @@ package io.github.leawind.gitparcel;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
-import io.github.leawind.gitparcel.parcel.ParcelFormatManager;
+import io.github.leawind.gitparcel.api.GitParcelApi;
 import io.github.leawind.gitparcel.parcel.formats.mvp.MvpFormatV0;
 import io.github.leawind.gitparcel.parcel.formats.parcella.ParcellaD16FormatV0;
 import io.github.leawind.gitparcel.parcel.formats.parcella.ParcellaD32FormatV0;
@@ -26,9 +26,6 @@ public class GitParcelMod {
 
   /** The logger instance for Git Parcel. */
   public static final Logger LOGGER = LogUtils.getLogger();
-
-  /** The parcel format manager for handling different parcel formats. */
-  public static final ParcelFormatManager PARCEL_FORMATS = new ParcelFormatManager();
 
   /**
    * Initializes the Git Parcel mod.
@@ -56,12 +53,12 @@ public class GitParcelMod {
 
   private static void registerFormats() {
 
-    PARCEL_FORMATS.registerDefaultSaver(new ParcellaD32FormatV0.Save());
-    PARCEL_FORMATS.register(new StructureTemplateFormatV0());
+    GitParcelApi.PARCEL_FORMATS.registerDefaultSaver(new ParcellaD32FormatV0.Save());
+    GitParcelApi.PARCEL_FORMATS.register(new StructureTemplateFormatV0());
 
     if (Services.PLATFORM.isDevelopmentEnvironment()) {
-      PARCEL_FORMATS.register(new ParcellaD16FormatV0.Save());
-      PARCEL_FORMATS.register(new MvpFormatV0());
+      GitParcelApi.PARCEL_FORMATS.register(new ParcellaD16FormatV0.Save());
+      GitParcelApi.PARCEL_FORMATS.register(new MvpFormatV0());
     }
   }
 }

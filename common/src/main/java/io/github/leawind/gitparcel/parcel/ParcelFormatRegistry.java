@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
-public class ParcelFormatManager {
+public class ParcelFormatRegistry {
   private final Map<String, Map<Integer, ParcelFormat<?>>> savers = new HashMap<>();
   private final Map<String, Map<Integer, ParcelFormat<?>>> loaders = new HashMap<>();
   private ParcelFormat.@Nullable Save<?> defaultSaver;

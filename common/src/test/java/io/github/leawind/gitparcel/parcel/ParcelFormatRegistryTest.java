@@ -13,10 +13,10 @@ import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
-public class ParcelFormatManagerTest {
+public class ParcelFormatRegistryTest {
   @Test
   void test() {
-    var mgr = new ParcelFormatManager();
+    var mgr = new ParcelFormatRegistry();
 
     mgr.registerDefaultSaver(new TestSaver("alpha", 0));
     mgr.register(new TestSaver("beta", 0));
