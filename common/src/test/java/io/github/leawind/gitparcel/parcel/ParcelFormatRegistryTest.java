@@ -4,10 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import io.github.leawind.gitparcel.parcel.exceptions.ParcelException;
 import java.io.IOException;
 import java.nio.file.Path;
-import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
@@ -65,7 +63,7 @@ public class ParcelFormatRegistryTest {
         Level level,
         Parcel parcel,
         Path dataDir,
-        boolean saveEntities,
+        boolean ignoreEntities,
         ParcelFormatConfig.@Nullable None config)
         throws IOException {
       throw new IOException("Unimplemented");
@@ -80,11 +78,12 @@ public class ParcelFormatRegistryTest {
     @Override
     public void load(
         ServerLevel level,
-        BlockPos parcelOrigin,
+        Parcel parcel,
         Path dataDir,
-        boolean loadBlocks,
-        boolean loadEntities)
-        throws IOException, ParcelException {
+        boolean ignoreBlocks,
+        boolean ignoreEntities,
+        ParcelFormatConfig.@Nullable None config)
+        throws IOException {
       throw new IOException("Unimplemented");
     }
   }
