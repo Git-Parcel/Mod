@@ -25,20 +25,20 @@ public interface ParcellaD32Format extends ParcellaD16Format {
       implements ParcellaD32Format, ParcelFormat.Save<Config> {
     @Override
     public void save(
-        Level level, Parcel parcel, Path dataDir, boolean saveEntities, @Nullable Config config)
+        Level level, Parcel parcel, Path dataDir, boolean ignoreEntities, @Nullable Config config)
         throws IOException {
       if (config == null) {
         config = new Config();
       }
 
-      var ctx = new Context(level, parcel, dataDir, saveEntities, config);
+      var ctx = new Context(level, parcel, dataDir, ignoreEntities, config);
 
       try (ProblemReporter.ScopedCollector problemReporter =
           new ProblemReporter.ScopedCollector(LOGGER)) {
 
         saveBlocks(ctx, 32);
 
-        if (saveEntities) {
+        if (!ignoreEntities) {
           saveEntities(ctx, problemReporter);
         }
       }

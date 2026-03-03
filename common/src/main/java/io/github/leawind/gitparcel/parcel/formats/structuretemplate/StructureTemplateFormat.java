@@ -41,7 +41,7 @@ public class StructureTemplateFormat
       Level level,
       Parcel parcel,
       Path dataDir,
-      boolean saveEntities,
+      boolean ignoreEntities,
       ParcelFormatConfig.@Nullable None config)
       throws IOException {
     Files.createDirectories(dataDir);
@@ -57,15 +57,15 @@ public class StructureTemplateFormat
   }
 
   /**
-   * @param loadBlocks This parameter is ignored, it always loads blocks
+   * @param ignoreBlocks This parameter is ignored, it always loads blocks
    */
   @Override
   public void load(
       ServerLevel level,
       Parcel parcel,
       Path dataDir,
-      boolean loadBlocks,
-      boolean loadEntities,
+      boolean ignoreBlocks,
+      boolean ignoreEntities,
       ParcelFormatConfig.@Nullable None config)
       throws IOException, ParcelException {
 
@@ -84,7 +84,7 @@ public class StructureTemplateFormat
     boolean isStrict = true;
 
     StructurePlaceSettings settings =
-        new StructurePlaceSettings().setIgnoreEntities(!loadEntities).setKnownShape(isStrict);
+        new StructurePlaceSettings().setIgnoreEntities(!ignoreEntities).setKnownShape(isStrict);
 
     BlockPos parcelOrigin = parcel.getOrigin();
 

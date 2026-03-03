@@ -40,14 +40,12 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
    * @param meta The metadata of the parcel. Will be updated to the size of the parcel.
    * @param parcelDir The parcel directory, which contains the {@value #META_FILE_NAME} file and
    *     {@value #DATA_DIR_NAME} directory. Will be created if not exists.
-   * @param saveEntities Whether to save the entities in the parcel. Only works when {@code
-   *     meta.includeEntity} is true
    * @throws IOException If an I/O error occurs while saving the parcel
    * @throws ParcelException If other error occurs while saving the parcel
    */
   @SuppressWarnings("unchecked")
   static <C extends ParcelFormatConfig<C>> void save(
-      Level level, Parcel parcel, ParcelMeta meta, Path parcelDir, boolean saveEntities)
+      Level level, Parcel parcel, ParcelMeta meta, Path parcelDir, boolean ignoreEntities)
       throws IOException, ParcelException {
     meta.size = parcel.getSize();
     meta.save(getMetaFile(parcelDir));
@@ -73,7 +71,8 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
       }
     }
 
-    format.save(level, parcel, getDataDir(parcelDir), meta.includeEntity() && saveEntities, config);
+    format.save(
+        level, parcel, getDataDir(parcelDir), ignoreEntities && meta.excludeEntities(), config);
   }
 
   /**
@@ -83,9 +82,6 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
    * @param parcelOrigin Position of parcel origin in level
    * @param parcelDir The parcel directory, which contains the {@value #META_FILE_NAME} file and
    *     {@value #DATA_DIR_NAME} directory
-   * @param loadBlocks Whether to load the blocks in the parcel. Only works when {@code
-   *     meta.includeEntity} is true
-   * @param loadEntities Whether to load the entities in the parcel
    * @throws IOException If an I/O error occurs while loading the parcel
    * @throws ParcelException.InvalidParcel If the parcel is invalid
    * @throws ParcelException If other error occurs while loading the parcel
@@ -95,8 +91,8 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
       ServerLevel level,
       BlockPos parcelOrigin,
       Path parcelDir,
-      boolean loadBlocks,
-      boolean loadEntities)
+      boolean ignoreBlocks,
+      boolean ignoreEntities)
       throws IOException, ParcelException {
     var meta = ParcelMeta.load(parcelDir.resolve(META_FILE_NAME));
     Load<C> loader = (Load<C>) meta.getFormatLoader();
@@ -116,7 +112,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
 
     Parcel parcel = new Parcel(parcelOrigin, meta.size);
     Path dataDir = parcelDir.resolve(DATA_DIR_NAME);
-    loader.load(level, parcel, dataDir, loadBlocks, loadEntities, config);
+    loader.load(level, parcel, dataDir, ignoreBlocks, ignoreEntities, config);
   }
 
   /** Unique id of the format. */
@@ -169,31 +165,31 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
   }
 
   class SaveContext<C extends ParcelFormatConfig<C>> extends BaseContext {
-    public final boolean saveEntities;
+    public final boolean ignoreEntities;
     public final C config;
 
-    public SaveContext(Level level, Parcel parcel, Path dataDir, boolean saveEntities, C config) {
+    public SaveContext(Level level, Parcel parcel, Path dataDir, boolean ignoreEntities, C config) {
       super(level, parcel, dataDir);
-      this.saveEntities = saveEntities;
+      this.ignoreEntities = ignoreEntities;
       this.config = config;
     }
   }
 
   class LoadContext<C extends ParcelFormatConfig<C>> extends BaseContext {
-    public final boolean loadBlocks;
-    public final boolean loadEntities;
+    public final boolean ignoreBlocks;
+    public final boolean ignoreEntities;
     public final C config;
 
     public LoadContext(
         ServerLevel level,
         Parcel parcel,
         Path dataDir,
-        boolean loadBlocks,
-        boolean loadEntities,
+        boolean ignoreBlocks,
+        boolean ignoreEntities,
         C config) {
       super(level, parcel, dataDir);
-      this.loadBlocks = loadBlocks;
-      this.loadEntities = loadEntities;
+      this.ignoreBlocks = ignoreBlocks;
+      this.ignoreEntities = ignoreEntities;
       this.config = config;
     }
   }
@@ -209,10 +205,10 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
      * @param level Level
      * @param parcel Parcel to save.
      * @param dataDir Path to parcel data directory. Will be created if not exist.
-     * @param saveEntities Whether to save entities in the parcel
+     * @param ignoreEntities Whether to ignore entities in the parcel
      * @param config format config, can be null
      */
-    void save(Level level, Parcel parcel, Path dataDir, boolean saveEntities, @Nullable C config)
+    void save(Level level, Parcel parcel, Path dataDir, boolean ignoreEntities, @Nullable C config)
         throws IOException;
   }
 
@@ -224,15 +220,15 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
      * @param level Level
      * @param parcel Parcel to load.
      * @param dataDir Path to parcel data directory
-     * @param loadBlocks Whether to load blocks
-     * @param loadEntities Whether to load entities
+     * @param ignoreBlocks Whether to ignore blocks
+     * @param ignoreEntities Whether to ignore entities
      */
     void load(
         ServerLevel level,
         Parcel parcel,
         Path dataDir,
-        boolean loadBlocks,
-        boolean loadEntities,
+        boolean ignoreBlocks,
+        boolean ignoreEntities,
         @Nullable C config)
         throws IOException, ParcelException;
   }

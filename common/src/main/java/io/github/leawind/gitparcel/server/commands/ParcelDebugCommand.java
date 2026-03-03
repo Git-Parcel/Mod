@@ -42,7 +42,7 @@ public class ParcelDebugCommand {
                                             .executes(ParcelDebugCommand::save2)
                                             .then(
                                                 Commands.argument(
-                                                        "save_entities", BoolArgumentType.bool())
+                                                        "ignore_entities", BoolArgumentType.bool())
                                                     .executes(ParcelDebugCommand::save3))))));
 
     var commandLoad =
@@ -68,7 +68,7 @@ public class ParcelDebugCommand {
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         DirPathArgument.getPath(ctx, "path"),
         GitParcelApi.PARCEL_FORMATS.defaultSaver(),
-        false);
+        true);
   }
 
   private static int save2(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -78,7 +78,7 @@ public class ParcelDebugCommand {
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         DirPathArgument.getPath(ctx, "path"),
         ParcelFormatArgument.getSaver(ctx, "format"),
-        false);
+        true);
   }
 
   private static int save3(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -88,7 +88,7 @@ public class ParcelDebugCommand {
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         DirPathArgument.getPath(ctx, "path"),
         ParcelFormatArgument.getSaver(ctx, "format"),
-        BoolArgumentType.getBool(ctx, "save_entities"));
+        BoolArgumentType.getBool(ctx, "ignore_entities"));
   }
 
   public static int save(
@@ -97,7 +97,7 @@ public class ParcelDebugCommand {
       BlockPos corner2,
       Path parcelDir,
       ParcelFormat.Save<?> format,
-      boolean saveEntities) {
+      boolean ignoreEntities) {
     try {
       var parcel = Parcel.fromCorners(corner1, corner2);
       LOGGER.info(
@@ -108,9 +108,9 @@ public class ParcelDebugCommand {
           parcelDir);
 
       var meta = ParcelMeta.create(format.id(), format.version(), parcel.getSize());
-      ParcelFormat.save(source.getLevel(), parcel, meta, parcelDir, saveEntities);
+      ParcelFormat.save(source.getLevel(), parcel, meta, parcelDir, ignoreEntities);
       source.sendSuccess(
-          () -> Component.translatable("command.parcel_debug.save.success"), saveEntities);
+          () -> Component.translatable("command.parcel_debug.save.success"), ignoreEntities);
       return 1;
     } catch (IOException | ParcelException e) {
       LOGGER.error("Error while saving parcel", e);

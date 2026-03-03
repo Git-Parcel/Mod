@@ -37,7 +37,7 @@ public class MvpFormat implements ParcelFormat.Save<ParcelFormatConfig.None> {
       Level level,
       Parcel parcel,
       Path dataDir,
-      boolean saveEntities,
+      boolean ignoreEntities,
       ParcelFormatConfig.@Nullable None config)
       throws IOException {
     Files.createDirectories(dataDir);

@@ -51,7 +51,7 @@ public final class ParcelMeta {
   public @Nullable Map<String, ModDependency> mods = null;
 
   /** Default is {@code true}. */
-  public @Nullable Boolean includeEntity = null;
+  public @Nullable Boolean excludeEntities = null;
 
   /** Extra fields. */
   public JsonObject extra = new JsonObject();
@@ -64,8 +64,8 @@ public final class ParcelMeta {
     return GitParcelApi.PARCEL_FORMATS.getLoader(formatId, formatVersion);
   }
 
-  public boolean includeEntity() {
-    return includeEntity == null || includeEntity;
+  public boolean excludeEntities() {
+    return excludeEntities == null || excludeEntities;
   }
 
   private ParcelMeta(String formatId, int formatVersion, int dataVersion, Vec3i parcelSize) {
@@ -126,7 +126,7 @@ public final class ParcelMeta {
       }
       json.add("mods", modsJson);
     }
-    json.addProperty("includeEntity", includeEntity);
+    json.addProperty("excludeEntities", excludeEntities);
 
     // extra fields
     for (var entry : extra.entrySet()) {
@@ -232,8 +232,8 @@ public final class ParcelMeta {
     }
 
     {
-      meta.includeEntity = ja.optionalBool("includeEntity");
-      json.remove("includeEntity");
+      meta.excludeEntities = ja.optionalBool("excludeEntities");
+      json.remove("excludeEntities");
     }
     meta.extra = json;
     return meta;

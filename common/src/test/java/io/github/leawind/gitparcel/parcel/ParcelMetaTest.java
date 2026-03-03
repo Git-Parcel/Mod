@@ -56,7 +56,7 @@ class ParcelMetaTest {
   "mod_3": { "min": "1.0.0" },
   "mod_4": { "max": "1.0.0" }
 },
-"includeEntity": true,
+"excludeEntities": true,
 "name": "Steve's House",
 "description": "This is steve's house",
 "tags": [
@@ -80,7 +80,7 @@ class ParcelMetaTest {
     assertEquals("Steve's House", meta.name);
     assertEquals("This is steve's house", meta.description);
     assertEquals(java.util.List.of("building", "house"), meta.tags);
-    assertEquals(Boolean.TRUE, meta.includeEntity);
+    assertEquals(Boolean.TRUE, meta.excludeEntities);
 
     assertNotNull(meta.mods);
     assertEquals(4, meta.mods.size());
@@ -112,7 +112,7 @@ class ParcelMetaTest {
     assertTrue(serialized.has("description"));
     assertTrue(serialized.has("tags"));
     assertTrue(serialized.has("mods"));
-    assertTrue(serialized.has("includeEntity"));
+    assertTrue(serialized.has("excludeEntities"));
     assertTrue(serialized.has("custom_fields"));
   }
 
@@ -146,7 +146,7 @@ class ParcelMetaTest {
     assertNull(meta.description);
     assertNull(meta.tags);
     assertNull(meta.mods);
-    assertNull(meta.includeEntity);
+    assertNull(meta.excludeEntities);
 
     // Test serialization
     JsonObject serialized = meta.toJsonObject();

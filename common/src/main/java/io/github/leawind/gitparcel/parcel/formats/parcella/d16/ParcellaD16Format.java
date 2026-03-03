@@ -98,8 +98,8 @@ public interface ParcellaD16Format extends ParcelFormat.Impl<ParcellaD16Format.C
       public BlockPalette blockPalette;
 
       public Context(
-          Level level, Parcel parcel, Path dataDir, boolean saveEntities, Config config) {
-        super(level, parcel, dataDir, saveEntities, config);
+          Level level, Parcel parcel, Path dataDir, boolean ignoreEntities, Config config) {
+        super(level, parcel, dataDir, ignoreEntities, config);
         blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
         blocksPaletteFile = blocksDir.resolve(PALETTE_FILE_NAME);
         blocksNbtDir = blocksDir.resolve(NBT_DIR_NAME);
@@ -109,20 +109,20 @@ public interface ParcellaD16Format extends ParcelFormat.Impl<ParcellaD16Format.C
 
     @Override
     public void save(
-        Level level, Parcel parcel, Path dataDir, boolean saveEntities, @Nullable Config config)
+        Level level, Parcel parcel, Path dataDir, boolean ignoreEntities, @Nullable Config config)
         throws IOException {
       if (config == null) {
         config = new Config();
       }
 
-      var ctx = new Context(level, parcel, dataDir, saveEntities, config);
+      var ctx = new Context(level, parcel, dataDir, ignoreEntities, config);
 
       try (ProblemReporter.ScopedCollector problemReporter =
           new ProblemReporter.ScopedCollector(LOGGER)) {
 
         saveBlocks(ctx, 16);
 
-        if (saveEntities) {
+        if (!ignoreEntities) {
           saveEntities(ctx, problemReporter);
         }
       }
@@ -328,10 +328,10 @@ public interface ParcellaD16Format extends ParcelFormat.Impl<ParcellaD16Format.C
           ServerLevel level,
           Parcel parcel,
           Path dataDir,
-          boolean loadBlocks,
-          boolean loadEntities,
+          boolean ignoreBlocks,
+          boolean ignoreEntities,
           @Nullable Config config) {
-        super(level, parcel, dataDir, loadBlocks, loadEntities, config);
+        super(level, parcel, dataDir, ignoreBlocks, ignoreEntities, config);
         blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
         blocksPaletteFile = blocksDir.resolve(PALETTE_FILE_NAME);
         blocksNbtDir = blocksDir.resolve(NBT_DIR_NAME);
@@ -352,25 +352,25 @@ public interface ParcellaD16Format extends ParcelFormat.Impl<ParcellaD16Format.C
         ServerLevel level,
         Parcel parcel,
         Path dataDir,
-        boolean loadBlocks,
-        boolean loadEntities,
+        boolean ignoreBlocks,
+        boolean ignoreEntities,
         @Nullable Config config)
         throws IOException, ParcelException {
       LOGGER.debug("Loading from: {}", dataDir);
       LOGGER.debug("    Parcel: {}", parcel);
-      LOGGER.debug("    Load blocks: {}", loadBlocks);
-      LOGGER.debug("    Load entities: {}", loadEntities);
+      LOGGER.debug("    Ignore blocks: {}", ignoreBlocks);
+      LOGGER.debug("    Ignore entities: {}", ignoreEntities);
       LOGGER.debug("    Config: {}", config);
 
-      Context ctx = new Context(level, parcel, dataDir, loadBlocks, loadEntities, config);
+      Context ctx = new Context(level, parcel, dataDir, ignoreBlocks, ignoreEntities, config);
 
       try (ProblemReporter.ScopedCollector problemReporter =
           new ProblemReporter.ScopedCollector(LOGGER)) {
-        if (loadBlocks) {
+        if (!ignoreBlocks) {
           loadBlocks(ctx, problemReporter);
         }
 
-        if (loadEntities) {
+        if (!ignoreEntities) {
           // loadEntities(ctx, problemReporter);
         }
       }
