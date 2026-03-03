@@ -145,14 +145,14 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
     throw new ClassCastException("Expected null, got {}" + config);
   }
 
-  default Class<C> configClass() {
+  default @Nullable Class<C> configClass() {
     return null;
   }
 
   /**
    * @return might be null
    */
-  default C getDefaultConfig() {
+  default @Nullable C getDefaultConfig() {
     return null;
   }
 
