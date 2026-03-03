@@ -42,7 +42,7 @@ public class GitParcelMod {
 
   public static void registerCommands(
       CommandDispatcher<CommandSourceStack> dispatcher,
-      Commands.CommandSelection environment,
+      Commands.CommandSelection commandSelection,
       CommandBuildContext context) {
 
     LOGGER.debug("Registering commands");
