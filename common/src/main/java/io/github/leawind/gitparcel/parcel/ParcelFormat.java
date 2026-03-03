@@ -19,24 +19,17 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
   String CONFIG_FILE_NAME = "config.json";
   String DATA_DIR_NAME = "data";
 
-  /**
-   * Returns the path of the metadata file in the specified parcel directory.
-   *
-   * @param parcelDir The parcel directory
-   */
+  /** Path to {@value #META_FILE_NAME} in {@code parcelDir} */
   static Path getMetaFile(Path parcelDir) {
     return parcelDir.resolve(META_FILE_NAME);
   }
 
+  /** Path to {@value #CONFIG_FILE_NAME} in {@code parcelDir} */
   static Path getConfigFile(Path parcelDir) {
     return parcelDir.resolve(CONFIG_FILE_NAME);
   }
 
-  /**
-   * Returns the path of the data directory in the specified parcel directory.
-   *
-   * @param parcelDir The parcel directory
-   */
+  /** Path to {@value #DATA_DIR_NAME} in {@code parcelDir} */
   static Path getDataDir(Path parcelDir) {
     return parcelDir.resolve(DATA_DIR_NAME);
   }
@@ -97,7 +90,8 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
    * @throws ParcelException.InvalidParcel If the parcel is invalid
    * @throws ParcelException If other error occurs while loading the parcel
    */
-  static void load(
+  @SuppressWarnings("unchecked")
+  static <C extends ParcelFormatConfig<C>> void load(
       ServerLevel level,
       BlockPos parcelOrigin,
       Path parcelDir,
@@ -105,15 +99,24 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
       boolean loadEntities)
       throws IOException, ParcelException {
     var meta = ParcelMeta.load(parcelDir.resolve(META_FILE_NAME));
-    var loader = meta.getFormatLoader();
+    Load<C> loader = (Load<C>) meta.getFormatLoader();
     if (loader == null) {
       throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
     }
 
-    Parcel parcel = new Parcel(parcelOrigin, meta.size);
+    Path configFile = getConfigFile(parcelDir);
+    C config = loader.getDefaultConfig();
+    if (config != null && Files.exists(configFile)) {
+      try {
+        config.load(configFile);
+      } catch (Exception e) {
+        LOGGER.error("Failed to load format config: {}", e.getMessage(), e);
+      }
+    }
 
-    var dataDir = parcelDir.resolve(DATA_DIR_NAME);
-    loader.load(level, parcel, dataDir, loadBlocks, loadEntities);
+    Parcel parcel = new Parcel(parcelOrigin, meta.size);
+    Path dataDir = parcelDir.resolve(DATA_DIR_NAME);
+    loader.load(level, parcel, dataDir, loadBlocks, loadEntities, config);
   }
 
   /** Unique id of the format. */
@@ -176,6 +179,25 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
     }
   }
 
+  class LoadContext<C extends ParcelFormatConfig<C>> extends BaseContext {
+    public final boolean loadBlocks;
+    public final boolean loadEntities;
+    public final C config;
+
+    public LoadContext(
+        ServerLevel level,
+        Parcel parcel,
+        Path dataDir,
+        boolean loadBlocks,
+        boolean loadEntities,
+        C config) {
+      super(level, parcel, dataDir);
+      this.loadBlocks = loadBlocks;
+      this.loadEntities = loadEntities;
+      this.config = config;
+    }
+  }
+
   non-sealed interface Save<C extends ParcelFormatConfig<C>> extends ParcelFormat<C> {
 
     /**
@@ -206,7 +228,12 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
      * @param loadEntities Whether to load entities
      */
     void load(
-        ServerLevel level, Parcel parcel, Path dataDir, boolean loadBlocks, boolean loadEntities)
+        ServerLevel level,
+        Parcel parcel,
+        Path dataDir,
+        boolean loadBlocks,
+        boolean loadEntities,
+        @Nullable C config)
         throws IOException, ParcelException;
   }
 

@@ -61,7 +61,12 @@ public class StructureTemplateFormatV0
    */
   @Override
   public void load(
-      ServerLevel level, Parcel parcel, Path dataDir, boolean loadBlocks, boolean loadEntities)
+      ServerLevel level,
+      Parcel parcel,
+      Path dataDir,
+      boolean loadBlocks,
+      boolean loadEntities,
+      ParcelFormatConfig.@Nullable None config)
       throws IOException, ParcelException {
 
     Path structureFile = dataDir.resolve(NBT_FILE_NAME);
