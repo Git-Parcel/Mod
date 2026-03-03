@@ -36,7 +36,7 @@ public final class IndexPathCodec {
    * @return a {@link Path} representing the encoded index
    * @throws IndexOutOfBoundsException if the index is negative
    */
-  static Path indexToPath(long index, String suffix) throws IndexOutOfBoundsException {
+  public static Path indexToPath(long index, String suffix) throws IndexOutOfBoundsException {
     var parts = indexToPathParts(index);
     return Path.of(String.join(File.separator, parts) + suffix);
   }
@@ -51,7 +51,7 @@ public final class IndexPathCodec {
    * @return an ordered list of hexadecimal path segments (least significant byte first)
    * @throws IndexOutOfBoundsException if the index is negative
    */
-  static List<String> indexToPathParts(long index) throws IndexOutOfBoundsException {
+  public static List<String> indexToPathParts(long index) throws IndexOutOfBoundsException {
     if (index < CACHE_SIZE) {
       return Arrays.asList(CACHE[(int) index]);
     }
@@ -71,7 +71,7 @@ public final class IndexPathCodec {
    * @param index the numeric index to encode. Must be non-negative.
    * @return a list of hexadecimal path segments (least significant byte first)
    */
-  static List<String> indexToPathPartsImpl(long index) {
+  public static List<String> indexToPathPartsImpl(long index) {
     if (index == 0) {
       return List.of("00");
     }
