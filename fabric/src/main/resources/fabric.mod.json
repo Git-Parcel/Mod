@@ -22,7 +22,7 @@
             "io.github.leawind.gitparcel.GitParcelModFabricClient"
         ],
         "server": [
-            "io.github.leawind.gitparcel.GitParcelModFabricServer"
+            "io.github.leawind.gitparcel.GitParcelModFabricDedicatedServer"
         ]
     },
     "mixins": [
