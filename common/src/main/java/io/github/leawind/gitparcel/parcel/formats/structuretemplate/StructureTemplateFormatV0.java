@@ -61,11 +61,7 @@ public class StructureTemplateFormatV0
    */
   @Override
   public void load(
-      ServerLevel level,
-      BlockPos parcelOrigin,
-      Path dataDir,
-      boolean loadBlocks,
-      boolean loadEntities)
+      ServerLevel level, Parcel parcel, Path dataDir, boolean loadBlocks, boolean loadEntities)
       throws IOException, ParcelException {
 
     Path structureFile = dataDir.resolve(NBT_FILE_NAME);
@@ -84,6 +80,8 @@ public class StructureTemplateFormatV0
 
     StructurePlaceSettings settings =
         new StructurePlaceSettings().setIgnoreEntities(!loadEntities).setKnownShape(isStrict);
+
+    BlockPos parcelOrigin = parcel.getOrigin();
 
     template.placeInWorld(
         level,

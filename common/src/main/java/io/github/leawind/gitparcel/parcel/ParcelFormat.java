@@ -110,8 +110,10 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
       throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
     }
 
+    Parcel parcel = new Parcel(parcelOrigin, meta.size);
+
     var dataDir = parcelDir.resolve(DATA_DIR_NAME);
-    loader.load(level, parcelOrigin, dataDir, loadBlocks, loadEntities);
+    loader.load(level, parcel, dataDir, loadBlocks, loadEntities);
   }
 
   /** Unique id of the format. */
@@ -198,17 +200,13 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
      * Load parcel content from directory
      *
      * @param level Level
-     * @param parcelOrigin Position of parcel origin in level
+     * @param parcel Parcel to load.
      * @param dataDir Path to parcel data directory
      * @param loadBlocks Whether to load blocks
      * @param loadEntities Whether to load entities
      */
     void load(
-        ServerLevel level,
-        BlockPos parcelOrigin,
-        Path dataDir,
-        boolean loadBlocks,
-        boolean loadEntities)
+        ServerLevel level, Parcel parcel, Path dataDir, boolean loadBlocks, boolean loadEntities)
         throws IOException, ParcelException;
   }
 
