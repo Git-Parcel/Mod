@@ -11,15 +11,15 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 
-public interface ParcellaD32FormatV0 extends ParcellaD16FormatV0 {
+public interface ParcellaD32Format extends ParcellaD16Format {
 
   @Override
   default String id() {
     return "parcella_d32";
   }
 
-  class Save extends ParcellaD16FormatV0.Save
-      implements ParcellaD32FormatV0, ParcelFormat.Save<Config> {
+  class Save extends ParcellaD16Format.Save
+      implements ParcellaD32Format, ParcelFormat.Save<Config> {
     @Override
     public void save(
         Level level, Parcel parcel, Path dataDir, boolean saveEntities, @Nullable Config config)

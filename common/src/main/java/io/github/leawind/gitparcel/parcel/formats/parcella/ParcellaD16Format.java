@@ -32,7 +32,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
-public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16FormatV0.Config> {
+public interface ParcellaD16Format extends ParcelFormat.Impl<ParcellaD16Format.Config> {
   String BLOCKS_DIR_NAME = "blocks";
   String ENTITIES_DIR_NAME = "entities";
   String NBT_DIR_NAME = "nbt";
@@ -82,7 +82,7 @@ public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16Format
     }
   }
 
-  class Save implements ParcellaD16FormatV0, ParcelFormat.Save<Config> {
+  class Save implements ParcellaD16Format, ParcelFormat.Save<Config> {
 
     public static final class Context extends SaveContext<Config> {
       public final Path blocksDir;
@@ -307,7 +307,7 @@ public interface ParcellaD16FormatV0 extends ParcelFormat.Impl<ParcellaD16Format
     }
   }
 
-  class Load implements ParcellaD16FormatV0, ParcelFormat.Load<Config> {
+  class Load implements ParcellaD16Format, ParcelFormat.Load<Config> {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public static final class Context extends LoadContext<Config> {
