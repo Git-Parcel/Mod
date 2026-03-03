@@ -1,7 +1,10 @@
-package io.github.leawind.gitparcel.parcel.formats.parcella;
+package io.github.leawind.gitparcel.parcel.formats.parcella.d32;
 
 import io.github.leawind.gitparcel.parcel.Parcel;
 import io.github.leawind.gitparcel.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.parcel.formats.parcella.Microparcel;
+import io.github.leawind.gitparcel.parcel.formats.parcella.Subparcel;
+import io.github.leawind.gitparcel.parcel.formats.parcella.d16.ParcellaD16Format;
 import io.github.leawind.gitparcel.utils.numbase.Base32Utils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

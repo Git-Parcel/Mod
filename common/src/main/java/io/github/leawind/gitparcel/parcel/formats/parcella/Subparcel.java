@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Objects;
 import net.minecraft.core.Vec3i;
 
-public final class Subparcel extends Parcel {
+public class Subparcel extends Parcel {
 
   public Subparcel(int originX, int originY, int originZ, int sizeX, int sizeY, int sizeZ) {
     super(originX, originY, originZ, sizeX, sizeY, sizeZ);
@@ -97,7 +97,7 @@ public final class Subparcel extends Parcel {
     return subparcels;
   }
 
-  static List<Integer> subdivideParcel1D(int gridSize, int origin, int size, int anchor) {
+  public static List<Integer> subdivideParcel1D(int gridSize, int origin, int size, int anchor) {
     List<Integer> divisions = new ArrayList<>(1);
 
     int current = origin;
@@ -115,11 +115,11 @@ public final class Subparcel extends Parcel {
     return divisions;
   }
 
-  static int floorToGrid(int gridSize, int gridOffset, int value) {
+  public static int floorToGrid(int gridSize, int gridOffset, int value) {
     return value - Math.floorMod(value - gridOffset, gridSize);
   }
 
-  static int ceilToGrid(int gridSize, int gridOffset, int value) {
+  public static int ceilToGrid(int gridSize, int gridOffset, int value) {
     return value - Math.floorMod(value - gridOffset, gridSize) + gridSize;
   }
 }

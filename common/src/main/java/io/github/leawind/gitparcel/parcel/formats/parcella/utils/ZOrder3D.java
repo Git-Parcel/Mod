@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.parcel.formats.parcella;
+package io.github.leawind.gitparcel.parcel.formats.parcella.utils;
 
 import java.util.HashMap;
 import java.util.Map;

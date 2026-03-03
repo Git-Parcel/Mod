@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.BiConsumer;
+
+import io.github.leawind.gitparcel.parcel.formats.parcella.utils.IndexPathCodec;
 import org.junit.jupiter.api.Test;
 
 public class IndexPathCodecTest {

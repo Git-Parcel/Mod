@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.parcel.formats.parcella;
+package io.github.leawind.gitparcel.parcel.formats.parcella.utils;
 
 import io.github.leawind.gitparcel.utils.numbase.HexUtils;
 import java.io.File;
@@ -22,7 +22,8 @@ import java.util.List;
  *
  * <p>This class is not intended to be instantiated.
  */
-public final class IndexPathCodec {
+@SuppressWarnings("unused")
+public class IndexPathCodec {
 
   /**
    * Encodes the given {@code index} into a hierarchical {@link Path}, appending the provided {@code

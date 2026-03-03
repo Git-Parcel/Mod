@@ -8,7 +8,7 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.Level;
 
 public class Microparcel extends Parcel implements Parcel.WithValue {
-  int value;
+  public int value;
 
   @Override
   public int getValue() {
