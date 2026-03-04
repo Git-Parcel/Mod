@@ -28,11 +28,6 @@ import org.jspecify.annotations.Nullable;
  * <p>Changing the range does not affect existing IDs. Only future allocations will be restricted to
  * the new range.
  *
- * <h3>Grid</h3>
- *
- * <p>When grid size is greater than 1, ID allocation will only consider positions at {@code
- * gridIndex * idGridSize + idGridOffset} within each grid.
- *
  * @param <T> the type of data objects
  */
 public class IntIdPalette<T> {
@@ -44,10 +39,9 @@ public class IntIdPalette<T> {
   private int idRangeStart;
   private int idRangeEnd;
 
-  /** Split the id range into multiple grids, each grid has a size of idGridSize. */
-  private int idGridSize = 1;
+  private int idStride = 1;
 
-  private int idGridOffset = 0;
+  private int idShift = 0;
 
   public volatile int lastId = VOID_ID;
 
@@ -105,7 +99,7 @@ public class IntIdPalette<T> {
       int idRangeStart, int idRangeEnd, Int2ObjectSortedMap<T> byId, Object2IntMap<T> byData)
       throws IllegalArgumentException {
     setIdRange(idRangeStart, idRangeEnd);
-    setIdGrid(1, 0);
+    setIdStep(1, 0);
     this.byId = byId;
     this.byData = byData;
     this.byData.defaultReturnValue(VOID_ID);
@@ -128,12 +122,12 @@ public class IntIdPalette<T> {
     return idRangeEnd - idRangeStart;
   }
 
-  public int idGridSize() {
-    return idGridSize;
+  public int idStride() {
+    return idStride;
   }
 
-  public int idGridOffset() {
-    return idGridOffset;
+  public int idShift() {
+    return idShift;
   }
 
   /**
@@ -162,25 +156,18 @@ public class IntIdPalette<T> {
   }
 
   /**
-   * Sets the grid parameters for ID allocation.
-   *
-   * <p>When grid size is greater than 1, ID allocation will only consider positions at {@code
-   * gridIndex * idGridSize + idGridOffset} within each grid.
-   *
-   * @param gridSize the size of each grid (must be positive)
-   * @param gridOffset the offset within each grid (must be in range [0, gridSize))
-   * @throws IllegalArgumentException if gridSize is not positive or gridOffset is out of range
+   * @throws IllegalArgumentException if stride is not positive or shift is out of range
    */
-  public void setIdGrid(int gridSize, int gridOffset) throws IllegalArgumentException {
-    if (gridSize <= 0) {
-      throw new IllegalArgumentException("gridSize must be positive: " + gridSize);
+  public void setIdStep(int stride, int shift) throws IllegalArgumentException {
+    if (stride <= 0) {
+      throw new IllegalArgumentException("stride must be positive: " + stride);
     }
-    if (gridOffset < 0 || gridOffset >= gridSize) {
+    if (shift < 0 || shift >= stride) {
       throw new IllegalArgumentException(
-          String.format("gridOffset must be in range [0, %d), but got %d", gridSize, gridOffset));
+          String.format("shift must be in range [0, %d), but got %d", stride, shift));
     }
-    this.idGridSize = gridSize;
-    this.idGridOffset = gridOffset;
+    this.idStride = stride;
+    this.idShift = shift;
   }
 
   /** Creates an exception indicating that all IDs have been exhausted. */
@@ -197,13 +184,11 @@ public class IntIdPalette<T> {
    * @throws IllegalStateException if no ID is available
    */
   protected int getNextUnusedId() throws IllegalStateException {
-    // If grid size is 1, use the original linear search
-    if (idGridSize == 1) {
+    if (idStride == 1) {
       return getNextUnusedIdLinear();
     }
 
-    // Use grid-based search for grid sizes > 1
-    return getNextUnusedIdGrid();
+    return getNextUnusedIdUsingStride();
   }
 
   /** Linear search for next unused ID (original implementation). */
@@ -230,21 +215,16 @@ public class IntIdPalette<T> {
     throw createIdExhaustedException();
   }
 
-  /**
-   * Grid-based search for next unused ID.
-   *
-   * <p>Only searches at offset positions within each grid.
-   */
-  private int getNextUnusedIdGrid() throws IllegalStateException {
-    int startGridIndex = 0;
+  private int getNextUnusedIdUsingStride() throws IllegalStateException {
+    int start = 0;
     if (lastId > idRangeStart) {
-      startGridIndex = (lastId - idRangeStart - 1) / idGridSize + 1;
+      start = (lastId - idRangeStart - 1) / idStride + 1;
     }
 
-    int gridCount = (idSpan() + idGridSize - 1) / idGridSize;
+    int maxSteps = (idSpan() + idStride - 1) / idStride;
 
-    for (int gridIndex = startGridIndex; gridIndex < gridCount; gridIndex++) {
-      int candidateId = idRangeStart + gridIndex * idGridSize + idGridOffset;
+    for (int steps = start; steps < maxSteps; steps++) {
+      int candidateId = idRangeStart + steps * idStride + idShift;
 
       if (candidateId >= idRangeEnd) {
         continue;
@@ -256,8 +236,8 @@ public class IntIdPalette<T> {
       }
     }
 
-    for (int gridIndex = 0; gridIndex < startGridIndex; gridIndex++) {
-      int candidateId = idRangeStart + gridIndex * idGridSize + idGridOffset;
+    for (int steps = 0; steps < start; steps++) {
+      int candidateId = idRangeStart + steps * idStride + idShift;
 
       if (candidateId >= idRangeEnd) {
         continue;
