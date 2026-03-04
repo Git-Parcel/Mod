@@ -20,6 +20,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.Block;
 import org.slf4j.Logger;
 
 public class ParcelDebugCommand {
@@ -130,10 +131,16 @@ public class ParcelDebugCommand {
   }
 
   public static int load(CommandSourceStack source, BlockPos pos, Path path) {
+    final int loadFlags =
+        Block.UPDATE_CLIENTS
+            | Block.UPDATE_IMMEDIATE
+            | Block.UPDATE_KNOWN_SHAPE
+            | Block.UPDATE_SKIP_ALL_SIDEEFFECTS;
+
     try {
       LOGGER.info("Loading parcel at {} from {}", pos, path);
       // TODO load entities
-      ParcelFormat.load(source.getLevel(), pos, path, true, false);
+      ParcelFormat.load(source.getLevel(), pos, path, true, false, loadFlags);
 
       source.sendSuccess(() -> Component.translatable("command.parcel_debug.load.success"), true);
       return 1;

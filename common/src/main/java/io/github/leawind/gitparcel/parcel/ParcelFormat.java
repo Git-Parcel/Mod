@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -40,6 +41,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
    * @param meta The metadata of the parcel. Will be updated to the size of the parcel.
    * @param parcelDir The parcel directory, which contains the {@value #META_FILE_NAME} file and
    *     {@value #DATA_DIR_NAME} directory. Will be created if not exists.
+   * @param ignoreEntities Whether to ignore entities when saving the parcel
    * @throws IOException If an I/O error occurs while saving the parcel
    * @throws ParcelException If other error occurs while saving the parcel
    */
@@ -82,6 +84,9 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
    * @param parcelOrigin Position of parcel origin in level
    * @param parcelDir The parcel directory, which contains the {@value #META_FILE_NAME} file and
    *     {@value #DATA_DIR_NAME} directory
+   * @param ignoreBlocks Whether to ignore blocks when loading the parcel
+   * @param ignoreEntities Whether to ignore entities when loading the parcel
+   * @param flags Flags to pass to {@link Level#setBlock} when loading blocks
    * @throws IOException If an I/O error occurs while loading the parcel
    * @throws ParcelException.InvalidParcel If the parcel is invalid
    * @throws ParcelException If other error occurs while loading the parcel
@@ -92,7 +97,8 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
       BlockPos parcelOrigin,
       Path parcelDir,
       boolean ignoreBlocks,
-      boolean ignoreEntities)
+      boolean ignoreEntities,
+      @Block.UpdateFlags int flags)
       throws IOException, ParcelException {
     var meta = ParcelMeta.load(parcelDir.resolve(META_FILE_NAME));
     Load<C> loader = (Load<C>) meta.getFormatLoader();
@@ -112,7 +118,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
 
     Parcel parcel = new Parcel(parcelOrigin, meta.size);
     Path dataDir = parcelDir.resolve(DATA_DIR_NAME);
-    loader.load(level, parcel, dataDir, ignoreBlocks, ignoreEntities, config);
+    loader.load(level, parcel, dataDir, ignoreBlocks, ignoreEntities, flags, config);
   }
 
   /** Unique id of the format. */
@@ -222,6 +228,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
      * @param dataDir Path to parcel data directory
      * @param ignoreBlocks Whether to ignore blocks
      * @param ignoreEntities Whether to ignore entities
+     * @param flags Block update flags
      */
     void load(
         ServerLevel level,
@@ -229,6 +236,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
         Path dataDir,
         boolean ignoreBlocks,
         boolean ignoreEntities,
+        @Block.UpdateFlags int flags,
         @Nullable C config)
         throws IOException, ParcelException;
   }

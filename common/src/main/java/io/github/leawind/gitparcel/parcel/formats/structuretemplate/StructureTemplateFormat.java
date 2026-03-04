@@ -17,6 +17,7 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import org.jspecify.annotations.Nullable;
@@ -66,6 +67,7 @@ public class StructureTemplateFormat
       Path dataDir,
       boolean ignoreBlocks,
       boolean ignoreEntities,
+      @Block.UpdateFlags int flags,
       ParcelFormatConfig.@Nullable None config)
       throws IOException, ParcelException {
 
@@ -94,6 +96,6 @@ public class StructureTemplateFormat
         parcelOrigin,
         settings,
         RandomSource.create(parcelOrigin.asLong()),
-        2 | (isStrict ? 816 : 0));
+        flags);
   }
 }

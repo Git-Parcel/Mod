@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
@@ -82,6 +83,7 @@ public class ParcelFormatRegistryTest {
         Path dataDir,
         boolean ignoreBlocks,
         boolean ignoreEntities,
+        @Block.UpdateFlags int flags,
         ParcelFormatConfig.@Nullable None config)
         throws IOException {
       throw new IOException("Unimplemented");

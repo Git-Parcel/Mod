@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -60,6 +61,7 @@ public class ParcellaD16Loader
       Path dataDir,
       boolean ignoreBlocks,
       boolean ignoreEntities,
+      @Block.UpdateFlags int flags,
       @Nullable Config config)
       throws IOException, ParcelException {
     LOGGER.debug("Loading from: {}", dataDir);
