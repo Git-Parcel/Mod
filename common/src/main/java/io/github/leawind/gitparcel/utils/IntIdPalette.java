@@ -216,11 +216,6 @@ public class IntIdPalette<T> {
     this.idShift = shift;
   }
 
-  protected IllegalStateException createIdExhaustedException() {
-    return new IllegalStateException(
-        String.format("ID exhausted in [%d, %d)", idRangeStart, idRangeEnd));
-  }
-
   /**
    * Finds and returns the next unused ID in the configured range. Searches forward from the last
    * allocated ID, then wraps around to the beginning if necessary.
@@ -254,7 +249,8 @@ public class IntIdPalette<T> {
       return lastId;
     }
 
-    throw createIdExhaustedException();
+    throw new IllegalStateException(
+        String.format("ID exhausted in [%d, %d)", idRangeStart, idRangeEnd));
   }
 
   /**
