@@ -1,6 +1,6 @@
 package io.github.leawind.gitparcel.algorithms;
 
-import io.github.leawind.gitparcel.parcel.Parcel;
+import io.github.leawind.gitparcel.api.parcel.Parcel;
 import io.github.leawind.gitparcel.testutils.RandomForMC;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;

@@ -1,8 +1,8 @@
 package io.github.leawind.gitparcel.algorithms;
 
-import io.github.leawind.gitparcel.parcel.Parcel;
-import io.github.leawind.gitparcel.parcel.formats.parcella.SubparcelTest;
-import io.github.leawind.gitparcel.parcel.formats.parcella.utils.ZOrder3D;
+import io.github.leawind.gitparcel.api.parcel.Parcel;
+import io.github.leawind.gitparcel.parcelformats.parcella.SubparcelTest;
+import io.github.leawind.gitparcel.parcelformats.parcella.utils.ZOrder3D;
 import io.github.leawind.gitparcel.testutils.RandomForMC;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;

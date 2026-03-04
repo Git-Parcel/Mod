@@ -8,7 +8,7 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import io.github.leawind.gitparcel.api.GitParcelApi;
-import io.github.leawind.gitparcel.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -43,7 +43,7 @@ public final class ParcelFormatArgument {
 
     @Override
     public ParcelFormat.Save<?> parse(StringReader reader) throws CommandSyntaxException {
-      var format = GitParcelApi.PARCEL_FORMATS.getSaver(reader.readString());
+      var format = GitParcelApi.FORMAT_REGISTRY.getSaver(reader.readString());
       if (format == null) {
         throw ERROR_INVALID.createWithContext(reader);
       }
@@ -54,7 +54,7 @@ public final class ParcelFormatArgument {
     public <S> CompletableFuture<Suggestions> listSuggestions(
         final CommandContext<S> context, final SuggestionsBuilder builder) {
       return context.getSource() instanceof SharedSuggestionProvider
-          ? SharedSuggestionProvider.suggest(GitParcelApi.PARCEL_FORMATS.getSaverNames(), builder)
+          ? SharedSuggestionProvider.suggest(GitParcelApi.FORMAT_REGISTRY.getSaverNames(), builder)
           : Suggestions.empty();
     }
 
@@ -68,7 +68,7 @@ public final class ParcelFormatArgument {
 
     @Override
     public ParcelFormat.Load<?> parse(StringReader reader) throws CommandSyntaxException {
-      var format = GitParcelApi.PARCEL_FORMATS.getLoader(reader.readString());
+      var format = GitParcelApi.FORMAT_REGISTRY.getLoader(reader.readString());
       if (format == null) {
         throw ERROR_INVALID.createWithContext(reader);
       }
@@ -79,7 +79,7 @@ public final class ParcelFormatArgument {
     public <S> CompletableFuture<Suggestions> listSuggestions(
         final CommandContext<S> context, final SuggestionsBuilder builder) {
       return context.getSource() instanceof SharedSuggestionProvider
-          ? SharedSuggestionProvider.suggest(GitParcelApi.PARCEL_FORMATS.getLoaderNames(), builder)
+          ? SharedSuggestionProvider.suggest(GitParcelApi.FORMAT_REGISTRY.getLoaderNames(), builder)
           : Suggestions.empty();
     }
 
