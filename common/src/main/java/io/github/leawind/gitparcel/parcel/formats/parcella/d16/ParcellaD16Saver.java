@@ -1,0 +1,255 @@
+package io.github.leawind.gitparcel.parcel.formats.parcella.d16;
+
+import io.github.leawind.gitparcel.parcel.Parcel;
+import io.github.leawind.gitparcel.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.parcel.formats.parcella.BlockPalette;
+import io.github.leawind.gitparcel.parcel.formats.parcella.Microparcel;
+import io.github.leawind.gitparcel.parcel.formats.parcella.Subparcel;
+import io.github.leawind.gitparcel.parcel.formats.parcella.utils.IndexPathCodec;
+import io.github.leawind.gitparcel.parcel.formats.parcella.utils.ZOrder3D;
+import io.github.leawind.gitparcel.utils.numbase.HexUtils;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.DoubleTag;
+import net.minecraft.nbt.IntTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.decoration.painting.Painting;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
+
+public class ParcellaD16Saver
+    implements ParcellaD16Format, ParcelFormat.Save<ParcellaD16Format.Config> {
+
+  public static final class Context extends SaveContext<Config> {
+    public final Path blocksDir;
+    public final Path blocksPaletteFile;
+    public final Path blocksNbtDir;
+    public final Path entitiesDir;
+
+    public BlockPalette blockPalette;
+
+    public Context(
+        Level level, Parcel parcel, Path dataDir, boolean ignoreEntities, Config config) {
+      super(level, parcel, dataDir, ignoreEntities, config);
+      blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
+      blocksPaletteFile = blocksDir.resolve(PALETTE_FILE_NAME);
+      blocksNbtDir = blocksDir.resolve(NBT_DIR_NAME);
+      entitiesDir = dataDir.resolve(ENTITIES_DIR_NAME);
+    }
+  }
+
+  @Override
+  public void save(
+      Level level, Parcel parcel, Path dataDir, boolean ignoreEntities, @Nullable Config config)
+      throws IOException {
+    if (config == null) {
+      config = new Config();
+    }
+
+    var ctx = new Context(level, parcel, dataDir, ignoreEntities, config);
+
+    try (ProblemReporter.ScopedCollector problemReporter =
+        new ProblemReporter.ScopedCollector(LOGGER)) {
+
+      saveBlocks(ctx, 16);
+
+      if (!ignoreEntities) {
+        saveEntities(ctx, problemReporter);
+      }
+    }
+  }
+
+  /**
+   * Save blocks in parcella format.
+   *
+   * @param gridSize Grid size of sub-parcels.
+   * @param ctx Context
+   * @throws IOException If an I/O error occurs
+   */
+  protected void saveBlocks(Context ctx, int gridSize) throws IOException {
+
+    Files.createDirectories(ctx.blocksDir);
+
+    // Load or create block palette
+    ctx.blockPalette = loadBlockPaletteIfExistElseCreate(ctx);
+
+    // Process sub-parcels with Z-Order encoding
+    Path subParcelsDir = ctx.blocksDir.resolve(SUBPARCELS_DIR_NAME);
+    Files.createDirectories(subParcelsDir);
+
+    BlockPos anchorPos = ctx.parcel.getOrigin().offset(ctx.config.anchorOffset);
+    Iterable<Subparcel> subparcels = Subparcel.subdivideParcel(gridSize, ctx.parcel, anchorPos);
+
+    for (var subparcel : subparcels) {
+      Vec3i coord = subparcel.getCoord(gridSize, anchorPos);
+      long index = ZOrder3D.coordToIndexSigned(coord);
+
+      Path subparcelRelativePath = IndexPathCodec.indexToPath(index, SUBPARCEL_SUFFIX);
+      Path subparcelFile = subParcelsDir.resolve(subparcelRelativePath);
+
+      Files.createDirectories(subparcelFile.getParent());
+      writeSubparcel(ctx, subparcelFile, subparcel);
+    }
+
+    ctx.blockPalette.save(
+        ctx.blocksPaletteFile, ctx.blocksNbtDir, ctx.config.blockEntityDataFormat.get());
+    ctx.blockPalette = null;
+  }
+
+  protected BlockPalette loadBlockPaletteIfExistElseCreate(Context ctx) {
+    if (Files.exists(ctx.blocksPaletteFile)) {
+      try {
+        return BlockPalette.load(
+            ctx.level,
+            ctx.blocksPaletteFile,
+            ctx.blocksNbtDir,
+            ctx.config.blockEntityDataFormat.get());
+      } catch (Exception e) {
+        LOGGER.error("Error loading block palette: {}", e.getMessage(), e);
+        return new BlockPalette();
+      }
+    } else {
+      return new BlockPalette();
+    }
+  }
+
+  protected void writeSubparcel(Context ctx, Path file, Subparcel subparcel) throws IOException {
+    if (ctx.config.enableMicroparcel.get()) {
+      writeSubparcelWithMicroparcels(ctx, file, subparcel);
+    } else {
+      writeSubparcelFlat(ctx, file, subparcel);
+    }
+  }
+
+  protected void writeSubparcelWithMicroparcels(Context ctx, Path file, Subparcel subparcel)
+      throws IOException {
+    var sb = new StringBuilder(8192);
+    char[] hex = HexUtils.UPPER_HEX_DIGITS;
+
+    for (var microparcel : Microparcel.subdivide(subparcel, ctx.level, ctx.blockPalette)) {
+      sb.append(hex[microparcel.originX])
+          .append(hex[microparcel.originY])
+          .append(hex[microparcel.originZ]);
+
+      if (microparcel.sizeX != 1 || microparcel.sizeY != 1 || microparcel.sizeZ != 1) {
+        sb.append(hex[microparcel.sizeX - 1])
+            .append(hex[microparcel.sizeY - 1])
+            .append(hex[microparcel.sizeZ - 1]);
+      }
+
+      sb.append('=').append(HexUtils.toHexUpperCase(microparcel.value)).append('\n');
+    }
+    Files.writeString(file, sb, StandardCharsets.UTF_8);
+  }
+
+  protected void writeSubparcelFlat(Context ctx, Path path, Subparcel subparcel)
+      throws IOException {
+    StringBuilder sb = new StringBuilder(8192);
+
+    int originX = subparcel.originX;
+    int originY = subparcel.originY;
+    int originZ = subparcel.originZ;
+    int sizeX = subparcel.sizeX;
+    int sizeY = subparcel.sizeY;
+    int sizeZ = subparcel.sizeZ;
+
+    var level = ctx.level;
+    var palette = ctx.blockPalette;
+
+    BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+
+    for (int i = 0, x = originX; i < sizeX; i++, x++) {
+      for (int j = 0, y = originY; j < sizeY; j++, y++) {
+        for (int k = 0, z = originZ; k < sizeZ; k++, z++) {
+
+          int id = palette.collect(level, pos.set(x, y, z));
+
+          sb.append(HexUtils.toHexUpperCase(id)).append('\n');
+        }
+      }
+    }
+
+    Files.writeString(path, sb, StandardCharsets.UTF_8);
+  }
+
+  protected void saveEntities(Context ctx, ProblemReporter problemReporter) throws IOException {
+
+    // TODO remove redundant entities
+
+    Path entitiesDir = ctx.dataDir.resolve(ENTITIES_DIR_NAME);
+    Files.createDirectories(entitiesDir);
+
+    List<Entity> entities =
+        ctx.level.getEntities(
+            (Entity) null, ctx.parcel.getAABB(), entity -> !(entity instanceof Player));
+
+    int entityId = 0;
+    for (Entity entity : entities) {
+      CompoundTag tag = getEntityNbt(ctx, problemReporter, entity);
+      Path path = entitiesDir.resolve(entityId + ctx.config.entityDataFormat.get().suffix);
+      ctx.config.entityDataFormat.get().write(path, tag);
+
+      entityId++;
+    }
+  }
+
+  /**
+   * Get the NBT tag of an entity, with position relative to the parcel origin.
+   *
+   * @param problemReporter Problem reporter, refer to {@link StructureTemplate#fillFromWorld }
+   * @param ctx Context containing parcel information
+   * @param entity Entity to save
+   * @return NBT tag of the entity
+   */
+  protected CompoundTag getEntityNbt(Context ctx, ProblemReporter problemReporter, Entity entity) {
+    CompoundTag tag = new CompoundTag();
+    BlockPos from = ctx.parcel.getOrigin();
+    Vec3 pos =
+        new Vec3(
+            entity.getX() - (double) from.getX(),
+            entity.getY() - (double) from.getY(),
+            entity.getZ() - (double) from.getZ());
+
+    BlockPos blockPos;
+    if (entity instanceof Painting painting) {
+      blockPos = painting.getPos().subtract(from);
+    } else {
+      blockPos = BlockPos.containing(pos);
+    }
+
+    TagValueOutput output =
+        TagValueOutput.createWithContext(problemReporter, entity.registryAccess());
+    entity.save(output);
+
+    {
+      ListTag list = new ListTag();
+      list.add(DoubleTag.valueOf(pos.x));
+      list.add(DoubleTag.valueOf(pos.y));
+      list.add(DoubleTag.valueOf(pos.z));
+      tag.put("pos", list);
+    }
+    {
+      ListTag list = new ListTag();
+      list.add(IntTag.valueOf(blockPos.getX()));
+      list.add(IntTag.valueOf(blockPos.getY()));
+      list.add(IntTag.valueOf(blockPos.getZ()));
+      tag.put("blockPos", list);
+    }
+    {
+      tag.put("nbt", output.buildResult().copy());
+    }
+    return tag;
+  }
+}
