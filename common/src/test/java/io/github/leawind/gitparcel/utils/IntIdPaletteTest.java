@@ -275,15 +275,15 @@ public class IntIdPaletteTest {
 
   @Test
   void testEdgeCaseWithSingleIdRange() {
-    IntIdPalette<String> singlePalette = new IntIdPalette<>(5, 6);
+    IntIdPalette<String> palette = new IntIdPalette<>(5, 6);
 
-    int id = singlePalette.collect("test1");
+    int id = palette.collect("test1");
     assertEquals(5, id);
 
-    assertThrows(IllegalStateException.class, () -> singlePalette.collect("test2"));
+    assertThrows(IllegalStateException.class, () -> palette.collect("test2"));
 
-    singlePalette.removeById(5);
-    assertEquals(5, singlePalette.collect("test3"));
+    palette.removeById(5);
+    assertEquals(5, palette.collect("test3"));
   }
 
   @Test
@@ -352,47 +352,61 @@ public class IntIdPaletteTest {
 
   @Test
   void testIdAllocationWithMultipleUsers() {
-    IntIdPalette<String> userAPalette = new IntIdPalette<>(0, 20);
-    IntIdPalette<String> userBPalette = new IntIdPalette<>(0, 20);
+    IntIdPalette<String> paletteA = new IntIdPalette<>(0, 20);
+    IntIdPalette<String> paletteB = new IntIdPalette<>(0, 20);
 
-    userAPalette.setIdStep(5, 0); // User A: offsets 0, 5, 10, 15
-    userBPalette.setIdStep(5, 2); // User B: offsets 2, 7, 12, 17
+    paletteA.setIdStep(5, 0); // User A: offsets 0, 5, 10, 15
+    paletteB.setIdStep(5, 2); // User B: offsets 2, 7, 12, 17
 
-    assertEquals(0, userAPalette.collect("userA1"));
-    assertEquals(5, userAPalette.collect("userA2"));
+    assertEquals(0, paletteA.collect("userA1"));
+    assertEquals(5, paletteA.collect("userA2"));
 
-    assertEquals(2, userBPalette.collect("userB1"));
-    assertEquals(7, userBPalette.collect("userB2"));
+    assertEquals(2, paletteB.collect("userB1"));
+    assertEquals(7, paletteB.collect("userB2"));
 
-    assertEquals("userA1", userAPalette.get(0));
-    assertEquals("userA2", userAPalette.get(5));
-    assertEquals("userB1", userBPalette.get(2));
-    assertEquals("userB2", userBPalette.get(7));
+    assertEquals("userA1", paletteA.get(0));
+    assertEquals("userA2", paletteA.get(5));
+    assertEquals("userB1", paletteB.get(2));
+    assertEquals("userB2", paletteB.get(7));
 
-    assertNull(userAPalette.get(2));
-    assertNull(userAPalette.get(7));
-    assertNull(userBPalette.get(0));
-    assertNull(userBPalette.get(5));
+    assertNull(paletteA.get(2));
+    assertNull(paletteA.get(7));
+    assertNull(paletteB.get(0));
+    assertNull(paletteB.get(5));
   }
 
   @Test
   void testIdExhaustion() {
-    IntIdPalette<String> smallPalette = new IntIdPalette<>(0, 6);
-    smallPalette.setIdStep(3, 1);
+    IntIdPalette<String> palette = new IntIdPalette<>(0, 6);
+    palette.setIdStep(3, 1);
 
-    assertEquals(1, smallPalette.collect("test1"));
-    assertEquals(4, smallPalette.collect("test2"));
+    assertEquals(1, palette.collect("test1"));
+    assertEquals(4, palette.collect("test2"));
 
-    assertThrows(IllegalStateException.class, () -> smallPalette.collect("test3"));
+    assertThrows(IllegalStateException.class, () -> palette.collect("test3"));
   }
 
   @Test
   void testShiftAtEdgeOfRange() {
-    IntIdPalette<String> edgePalette = new IntIdPalette<>(5, 8);
-    edgePalette.setIdStep(3, 0);
+    IntIdPalette<String> palette = new IntIdPalette<>(5, 8);
+    palette.setIdStep(3, 0);
 
-    assertEquals(5, edgePalette.collect("test1"));
+    assertEquals(6, palette.collect("test1"));
 
-    assertThrows(IllegalStateException.class, () -> edgePalette.collect("test2"));
+    assertThrows(IllegalStateException.class, () -> palette.collect("test2"));
+  }
+
+  @Test
+  void testWithNonZeroStart() {
+    IntIdPalette<String> palette = new IntIdPalette<>(7, 100);
+
+    assertEquals(7, palette.collect("test1"));
+    assertEquals(8, palette.collect("test2"));
+
+    palette.setIdStep(3, 1);
+
+    assertEquals(10, palette.collect("test3"));
+    assertEquals(10, palette.collect("test3"));
+    assertEquals(13, palette.collect("test4"));
   }
 }
