@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.parcelformats.mvp;
 import io.github.leawind.gitparcel.api.parcel.Parcel;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatConfig;
+import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -36,6 +37,7 @@ public class MvpFormat implements ParcelFormat.Save<ParcelFormatConfig.None> {
   public void save(
       Level level,
       Parcel parcel,
+      ParcelTransform transform,
       Path dataDir,
       boolean ignoreEntities,
       ParcelFormatConfig.@Nullable None config)

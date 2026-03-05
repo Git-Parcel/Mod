@@ -9,6 +9,7 @@ import io.github.leawind.gitparcel.api.GitParcelApi;
 import io.github.leawind.gitparcel.api.parcel.Parcel;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelMeta;
+import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.server.commands.arguments.DirPathArgument;
 import io.github.leawind.gitparcel.server.commands.arguments.ParcelFormatArgument;
@@ -109,7 +110,8 @@ public class ParcelDebugCommand {
           parcelDir);
 
       var meta = ParcelMeta.create(format.id(), format.version(), parcel.getSize());
-      ParcelFormat.save(source.getLevel(), parcel, meta, parcelDir, ignoreEntities);
+      ParcelFormat.save(
+          source.getLevel(), parcel, ParcelTransform.none(), meta, parcelDir, ignoreEntities);
       source.sendSuccess(
           () -> Component.translatable("command.parcel_debug.save.success"), ignoreEntities);
       return 1;

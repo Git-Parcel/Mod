@@ -38,6 +38,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
   /**
    * Saves a parcel at the specified position in the specified level.
    *
+   * @param transform
    * @param meta The metadata of the parcel. Will be updated to the size of the parcel.
    * @param parcelDir The parcel directory, which contains the {@value #META_FILE_NAME} file and
    *     {@value #DATA_DIR_NAME} directory. Will be created if not exists.
@@ -47,7 +48,12 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
    */
   @SuppressWarnings("unchecked")
   static <C extends ParcelFormatConfig<C>> void save(
-      Level level, Parcel parcel, ParcelMeta meta, Path parcelDir, boolean ignoreEntities)
+      Level level,
+      Parcel parcel,
+      ParcelTransform transform,
+      ParcelMeta meta,
+      Path parcelDir,
+      boolean ignoreEntities)
       throws IOException, ParcelException {
     meta.size = parcel.getSize();
     meta.save(getMetaFile(parcelDir));
@@ -74,7 +80,12 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
     }
 
     format.save(
-        level, parcel, getDataDir(parcelDir), ignoreEntities && meta.excludeEntities(), config);
+        level,
+        parcel,
+        transform,
+        getDataDir(parcelDir),
+        ignoreEntities && meta.excludeEntities(),
+        config);
   }
 
   /**
@@ -210,11 +221,18 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
      *
      * @param level Level
      * @param parcel Parcel to save.
+     * @param transform Treat the parcel as transformed.
      * @param dataDir Path to parcel data directory. Will be created if not exist.
      * @param ignoreEntities Whether to ignore entities in the parcel
      * @param config format config, can be null
      */
-    void save(Level level, Parcel parcel, Path dataDir, boolean ignoreEntities, @Nullable C config)
+    void save(
+        Level level,
+        Parcel parcel,
+        ParcelTransform transform,
+        Path dataDir,
+        boolean ignoreEntities,
+        @Nullable C config)
         throws IOException;
   }
 

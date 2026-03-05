@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import io.github.leawind.gitparcel.api.parcel.Parcel;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatConfig;
+import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -41,6 +42,7 @@ public class StructureTemplateFormat
   public void save(
       Level level,
       Parcel parcel,
+      ParcelTransform transform,
       Path dataDir,
       boolean ignoreEntities,
       ParcelFormatConfig.@Nullable None config)

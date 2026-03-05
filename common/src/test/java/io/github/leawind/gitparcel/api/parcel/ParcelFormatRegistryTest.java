@@ -63,6 +63,7 @@ public class ParcelFormatRegistryTest {
     public void save(
         Level level,
         Parcel parcel,
+        ParcelTransform transform,
         Path dataDir,
         boolean ignoreEntities,
         ParcelFormatConfig.@Nullable None config)

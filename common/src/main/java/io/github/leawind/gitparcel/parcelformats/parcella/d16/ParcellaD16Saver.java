@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.parcelformats.parcella.d16;
 
 import io.github.leawind.gitparcel.api.parcel.Parcel;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.parcelformats.parcella.BlockPalette;
 import io.github.leawind.gitparcel.parcelformats.parcella.Microparcel;
 import io.github.leawind.gitparcel.parcelformats.parcella.Subparcel;
@@ -52,7 +53,12 @@ public class ParcellaD16Saver
 
   @Override
   public void save(
-      Level level, Parcel parcel, Path dataDir, boolean ignoreEntities, @Nullable Config config)
+      Level level,
+      Parcel parcel,
+      ParcelTransform transform,
+      Path dataDir,
+      boolean ignoreEntities,
+      @Nullable Config config)
       throws IOException {
     if (config == null) {
       config = new Config();
