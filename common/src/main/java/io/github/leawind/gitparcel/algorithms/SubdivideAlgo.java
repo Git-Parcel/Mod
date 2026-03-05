@@ -23,11 +23,8 @@ public interface SubdivideAlgo {
     /**
      * Get the value at the given position.
      *
-     * <p>Note: The position is relative to the origin of the parcel.
+     * <p>The (x, y, z) position is relative to the origin of the untransformed subparcel.
      *
-     * @param x The X position. Range [0, sizeX)
-     * @param y The Y position. Range [0, sizeY)
-     * @param z The Z position. Range [0, sizeZ)
      * @return The value at the given position.
      */
     int get(int x, int y, int z);

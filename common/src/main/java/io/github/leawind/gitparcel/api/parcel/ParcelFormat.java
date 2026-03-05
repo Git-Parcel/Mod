@@ -5,9 +5,11 @@ import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Block;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -38,8 +40,8 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
   /**
    * Saves a parcel at the specified position in the specified level.
    *
-   * @param transform
-   * @param meta The metadata of the parcel. Will be updated to the size of the parcel.
+   * @param transform Parcel transformation
+   * @param meta The metadata of the parcel.
    * @param parcelDir The parcel directory, which contains the {@value #META_FILE_NAME} file and
    *     {@value #DATA_DIR_NAME} directory. Will be created if not exists.
    * @param ignoreEntities Whether to ignore entities when saving the parcel
@@ -49,13 +51,11 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
   @SuppressWarnings("unchecked")
   static <C extends ParcelFormatConfig<C>> void save(
       Level level,
-      Parcel parcel,
       ParcelTransform transform,
       ParcelMeta meta,
       Path parcelDir,
       boolean ignoreEntities)
       throws IOException, ParcelException {
-    meta.size = parcel.getSize();
     meta.save(getMetaFile(parcelDir));
 
     var format = (Save<C>) meta.getFormatSaver();
@@ -81,7 +81,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
 
     format.save(
         level,
-        parcel,
+        meta.size,
         transform,
         getDataDir(parcelDir),
         ignoreEntities && meta.excludeEntities(),
@@ -92,7 +92,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
    * Loads a parcel at the specified position in the specified level.
    *
    * @param level The level to load the parcel into
-   * @param parcelOrigin Position of parcel origin in level
+   * @param transform Parcel transformation, indicating the position and orientation of the parcel
    * @param parcelDir The parcel directory, which contains the {@value #META_FILE_NAME} file and
    *     {@value #DATA_DIR_NAME} directory
    * @param ignoreBlocks Whether to ignore blocks when loading the parcel
@@ -105,7 +105,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
   @SuppressWarnings("unchecked")
   static <C extends ParcelFormatConfig<C>> void load(
       ServerLevel level,
-      BlockPos parcelOrigin,
+      ParcelTransform transform,
       Path parcelDir,
       boolean ignoreBlocks,
       boolean ignoreEntities,
@@ -127,9 +127,8 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
       }
     }
 
-    Parcel parcel = new Parcel(parcelOrigin, meta.size);
     Path dataDir = parcelDir.resolve(DATA_DIR_NAME);
-    loader.load(level, parcel, dataDir, ignoreBlocks, ignoreEntities, flags, config);
+    loader.load(level, meta.size, transform, dataDir, ignoreBlocks, ignoreEntities, flags, config);
   }
 
   /** Unique id of the format. */
@@ -170,41 +169,52 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
   }
 
   class BaseContext {
-    public final Level level;
-    public final Parcel parcel;
+    public final Vec3i originalSize;
+    public final ParcelTransform transform;
     public final Path dataDir;
 
-    public BaseContext(Level level, Parcel parcel, Path dataDir) {
-      this.level = level;
-      this.parcel = parcel;
+    public BaseContext(Vec3i originalSize, ParcelTransform transform, Path dataDir) {
+      this.originalSize = originalSize;
+      this.transform = transform;
       this.dataDir = dataDir;
     }
   }
 
   class SaveContext<C extends ParcelFormatConfig<C>> extends BaseContext {
+    public final LevelAccessor level;
     public final boolean ignoreEntities;
     public final C config;
 
-    public SaveContext(Level level, Parcel parcel, Path dataDir, boolean ignoreEntities, C config) {
-      super(level, parcel, dataDir);
+    public SaveContext(
+        Level level,
+        Vec3i originalSize,
+        ParcelTransform transform,
+        Path dataDir,
+        boolean ignoreEntities,
+        C config) {
+      super(originalSize, transform, dataDir);
+      this.level = level;
       this.ignoreEntities = ignoreEntities;
       this.config = config;
     }
   }
 
   class LoadContext<C extends ParcelFormatConfig<C>> extends BaseContext {
+    public final ServerLevelAccessor level;
     public final boolean ignoreBlocks;
     public final boolean ignoreEntities;
     public final C config;
 
     public LoadContext(
-        ServerLevel level,
-        Parcel parcel,
+        ServerLevelAccessor level,
+        Vec3i originalSize,
+        ParcelTransform transform,
         Path dataDir,
         boolean ignoreBlocks,
         boolean ignoreEntities,
         C config) {
-      super(level, parcel, dataDir);
+      super(originalSize, transform, dataDir);
+      this.level = level;
       this.ignoreBlocks = ignoreBlocks;
       this.ignoreEntities = ignoreEntities;
       this.config = config;
@@ -220,7 +230,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
      * and nowhere else.
      *
      * @param level Level
-     * @param parcel Parcel to save.
+     * @param originalSize Real size of the parcel (Before transform)
      * @param transform Treat the parcel as transformed.
      * @param dataDir Path to parcel data directory. Will be created if not exist.
      * @param ignoreEntities Whether to ignore entities in the parcel
@@ -228,7 +238,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
      */
     void save(
         Level level,
-        Parcel parcel,
+        Vec3i originalSize,
         ParcelTransform transform,
         Path dataDir,
         boolean ignoreEntities,
@@ -242,15 +252,17 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
      * Load parcel content from directory
      *
      * @param level Level
-     * @param parcel Parcel to load.
+     * @param size Real size of the parcel (Before transform)
+     * @param transform Transform the parcel when loading.
      * @param dataDir Path to parcel data directory
      * @param ignoreBlocks Whether to ignore blocks
      * @param ignoreEntities Whether to ignore entities
      * @param flags Block update flags
      */
     void load(
-        ServerLevel level,
-        Parcel parcel,
+        ServerLevelAccessor level,
+        Vec3i size,
+        ParcelTransform transform,
         Path dataDir,
         boolean ignoreBlocks,
         boolean ignoreEntities,

@@ -6,7 +6,6 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.api.GitParcelApi;
-import io.github.leawind.gitparcel.api.parcel.Parcel;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
@@ -20,8 +19,10 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import org.slf4j.Logger;
 
 public class ParcelDebugCommand {
@@ -93,7 +94,7 @@ public class ParcelDebugCommand {
         BoolArgumentType.getBool(ctx, "ignore_entities"));
   }
 
-  public static int save(
+  private static int save(
       CommandSourceStack source,
       BlockPos corner1,
       BlockPos corner2,
@@ -101,17 +102,11 @@ public class ParcelDebugCommand {
       ParcelFormat.Save<?> format,
       boolean ignoreEntities) {
     try {
-      var parcel = Parcel.fromCorners(corner1, corner2);
-      LOGGER.info(
-          "Saving parcel (pos={}, size={}) with format {} to {}",
-          parcel.getOrigin(),
-          parcel.getSize(),
-          format.id(),
-          parcelDir);
-
-      var meta = ParcelMeta.create(format.id(), format.version(), parcel.getSize());
-      ParcelFormat.save(
-          source.getLevel(), parcel, ParcelTransform.none(), meta, parcelDir, ignoreEntities);
+      BoundingBox bounds = BoundingBox.fromCorners(corner1, corner2);
+      Vec3i size = new Vec3i(bounds.getXSpan(), bounds.getYSpan(), bounds.getZSpan());
+      // Here transform is none, so the real size is exactly the transformed size
+      ParcelMeta meta = ParcelMeta.create(format.id(), format.version(), size);
+      ParcelFormat.save(source.getLevel(), ParcelTransform.none(), meta, parcelDir, ignoreEntities);
       source.sendSuccess(
           () -> Component.translatable("command.parcel_debug.save.success"), ignoreEntities);
       return 1;
@@ -132,7 +127,11 @@ public class ParcelDebugCommand {
         DirPathArgument.getPath(ctx, "path"));
   }
 
-  public static int load(CommandSourceStack source, BlockPos pos, Path path) {
+  private static int load(CommandSourceStack source, BlockPos pos, Path path) {
+    return load(source, new ParcelTransform(pos), path);
+  }
+
+  private static int load(CommandSourceStack source, ParcelTransform transform, Path path) {
     final int loadFlags =
         Block.UPDATE_CLIENTS
             | Block.UPDATE_IMMEDIATE
@@ -140,9 +139,8 @@ public class ParcelDebugCommand {
             | Block.UPDATE_SKIP_ALL_SIDEEFFECTS;
 
     try {
-      LOGGER.info("Loading parcel at {} from {}", pos, path);
       // TODO load entities
-      ParcelFormat.load(source.getLevel(), pos, path, true, false, loadFlags);
+      ParcelFormat.load(source.getLevel(), transform, path, true, false, loadFlags);
 
       source.sendSuccess(() -> Component.translatable("command.parcel_debug.load.success"), true);
       return 1;

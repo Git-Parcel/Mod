@@ -6,8 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Block;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -62,7 +63,7 @@ public class ParcelFormatRegistryTest {
     @Override
     public void save(
         Level level,
-        Parcel parcel,
+        Vec3i originalSize,
         ParcelTransform transform,
         Path dataDir,
         boolean ignoreEntities,
@@ -79,8 +80,9 @@ public class ParcelFormatRegistryTest {
 
     @Override
     public void load(
-        ServerLevel level,
-        Parcel parcel,
+        ServerLevelAccessor level,
+        Vec3i size,
+        ParcelTransform transform,
         Path dataDir,
         boolean ignoreBlocks,
         boolean ignoreEntities,

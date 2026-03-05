@@ -1,17 +1,28 @@
 package io.github.leawind.gitparcel.parcelformats.parcella;
 
 import io.github.leawind.gitparcel.api.parcel.Parcel;
+import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 
 public class Subparcel extends Parcel {
+
+  public Subparcel(BlockPos pos, Vec3i size) {
+    this(pos.getX(), pos.getY(), pos.getZ(), size.getX(), size.getY(), size.getZ());
+  }
 
   public Subparcel(int originX, int originY, int originZ, int sizeX, int sizeY, int sizeZ) {
     super(originX, originY, originZ, sizeX, sizeY, sizeZ);
   }
 
+  /**
+   * todo
+   *
+   * @return Coordinate of this subparcel
+   */
   public Vec3i getCoord(int gridSize, Vec3i anchorPos) {
     return getCoord(gridSize, anchorPos.getX(), anchorPos.getY(), anchorPos.getZ());
   }
@@ -31,12 +42,23 @@ public class Subparcel extends Parcel {
         Math.floorDiv(originZ - anchorZ, gridSize));
   }
 
+  public Subparcel getTransformed(ParcelTransform transform) {
+    return new Subparcel(transform.apply(getOrigin()), transform.applyToSize(getSize()));
+  }
+
+  public Subparcel transformInverted(ParcelTransform transform) {
+    return new Subparcel(
+        transform.applyInverted(getOrigin()), transform.applyToSizeInverted(getSize()));
+  }
+
+  @Override
   public String toString() {
     return String.format(
         "Subparcel[origin=(%d, %d, %d), size=(%d, %d, %d)]",
         originX, originY, originZ, sizeX, sizeY, sizeZ);
   }
 
+  @Override
   public boolean equals(Object other) {
     if (this == other) {
       return true;
@@ -52,6 +74,7 @@ public class Subparcel extends Parcel {
     return false;
   }
 
+  @Override
   public int hashCode() {
     return Objects.hash(originX, originY, originZ, sizeX, sizeY, sizeZ);
   }
@@ -59,33 +82,35 @@ public class Subparcel extends Parcel {
   /**
    * Divide a parcel into subparcels, each subparcel has a size of 16x16x16 blocks.
    *
-   * @param parcel Parcel to be subdivided
+   * @param gridSize todo
+   * @param size todo
    * @param anchorPos Absolute position of origin point
    * @return Bounding boxes of subparcels, use absolute coordinates
    */
-  public static ArrayList<Subparcel> subdivideParcel(int gridSize, Parcel parcel, Vec3i anchorPos) {
+  public static ArrayList<Subparcel> subdivideParcel(int gridSize, Vec3i size, Vec3i anchorPos) {
     ArrayList<Subparcel> subparcels = new ArrayList<>(1);
 
-    List<Integer> xDivisions =
-        subdivideParcel1D(gridSize, parcel.originX, parcel.sizeX, anchorPos.getX());
-    List<Integer> yDivisions =
-        subdivideParcel1D(gridSize, parcel.originY, parcel.sizeY, anchorPos.getY());
-    List<Integer> zDivisions =
-        subdivideParcel1D(gridSize, parcel.originZ, parcel.sizeZ, anchorPos.getZ());
+    int sizeX = size.getX();
+    int sizeY = size.getY();
+    int sizeZ = size.getZ();
+
+    List<Integer> xDivisions = subdivideParcel1D(gridSize, sizeX, anchorPos.getX());
+    List<Integer> yDivisions = subdivideParcel1D(gridSize, sizeY, anchorPos.getY());
+    List<Integer> zDivisions = subdivideParcel1D(gridSize, sizeZ, anchorPos.getZ());
 
     for (int i = 0; i < xDivisions.size() - 1; i++) {
-      int startX = Math.max(xDivisions.get(i), parcel.originX);
-      int endX = Math.min(xDivisions.get(i + 1), parcel.getEndX());
+      int startX = Math.max(xDivisions.get(i), 0);
+      int endX = Math.min(xDivisions.get(i + 1), sizeX);
       if (startX >= endX) continue;
 
       for (int j = 0; j < yDivisions.size() - 1; j++) {
-        int startY = Math.max(yDivisions.get(j), parcel.originY);
-        int endY = Math.min(yDivisions.get(j + 1), parcel.getEndY());
+        int startY = Math.max(yDivisions.get(j), 0);
+        int endY = Math.min(yDivisions.get(j + 1), sizeY);
         if (startY >= endY) continue;
 
         for (int k = 0; k < zDivisions.size() - 1; k++) {
-          int startZ = Math.max(zDivisions.get(k), parcel.originZ);
-          int endZ = Math.min(zDivisions.get(k + 1), parcel.getEndZ());
+          int startZ = Math.max(zDivisions.get(k), 0);
+          int endZ = Math.min(zDivisions.get(k + 1), sizeZ);
           if (startZ >= endZ) continue;
 
           subparcels.add(
@@ -97,14 +122,14 @@ public class Subparcel extends Parcel {
     return subparcels;
   }
 
-  public static List<Integer> subdivideParcel1D(int gridSize, int origin, int size, int anchor) {
+  public static List<Integer> subdivideParcel1D(int gridSize, int end, int anchor) {
     List<Integer> divisions = new ArrayList<>(1);
 
-    int current = origin;
+    int current = 0;
+
     divisions.add(current);
     current = ceilToGrid(gridSize, anchor, current);
 
-    int end = origin + size;
     while (current < end) {
       divisions.add(current);
       current += gridSize;

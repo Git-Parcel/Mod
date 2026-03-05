@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.algorithms;
 import io.github.leawind.gitparcel.api.parcel.Parcel;
 import io.github.leawind.gitparcel.testutils.RandomForMC;
 import java.util.concurrent.TimeUnit;
+import net.minecraft.core.Vec3i;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -28,10 +29,10 @@ public class SubdivideAlgoBenchmark {
   @Setup
   public void setup() {
     var random = new RandomForMC(12138);
+    var size = new Vec3i(this.size, this.size, this.size);
 
-    parcel = new Parcel(0, 0, 0, size, size, size);
+    values = new SubdivideAlgoTest.TestedValues(size, variance, random);
     factory = SubdivideAlgoTest.ParcelWithValue::new;
-    values = new SubdivideAlgoTest.TestedValues(parcel, variance, random);
   }
 
   @Benchmark

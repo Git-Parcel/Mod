@@ -1,7 +1,6 @@
 package io.github.leawind.gitparcel.parcelformats.structuretemplate;
 
 import com.google.common.collect.ImmutableList;
-import io.github.leawind.gitparcel.api.parcel.Parcel;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
@@ -11,13 +10,14 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtAccounterException;
 import net.minecraft.nbt.NbtIo;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -41,18 +41,23 @@ public class StructureTemplateFormat
   @Override
   public void save(
       Level level,
-      Parcel parcel,
+      Vec3i originalSize,
       ParcelTransform transform,
       Path dataDir,
       boolean ignoreEntities,
       ParcelFormatConfig.@Nullable None config)
       throws IOException {
-    Files.createDirectories(dataDir);
+    if (transform.isMirroredOrRotated()) {
+      throw new UnsupportedOperationException(
+          "Mirror or rotation transform is not supported by this format");
+    }
 
     StructureTemplate template = new StructureTemplate();
-    template.fillFromWorld(level, parcel.getOrigin(), parcel.getSize(), true, ImmutableList.of());
+    template.fillFromWorld(
+        level, transform.translateWorldOrigin(), originalSize, true, ImmutableList.of());
     CompoundTag tag = template.save(new CompoundTag());
 
+    Files.createDirectories(dataDir);
     Path structureFile = dataDir.resolve(NBT_FILE_NAME);
     try (OutputStream outputStream = Files.newOutputStream(structureFile)) {
       NbtIo.writeCompressed(tag, outputStream);
@@ -64,14 +69,19 @@ public class StructureTemplateFormat
    */
   @Override
   public void load(
-      ServerLevel level,
-      Parcel parcel,
+      ServerLevelAccessor level,
+      Vec3i size,
+      ParcelTransform transform,
       Path dataDir,
       boolean ignoreBlocks,
       boolean ignoreEntities,
       @Block.UpdateFlags int flags,
       ParcelFormatConfig.@Nullable None config)
       throws IOException, ParcelException {
+
+    LOGGER.info("Loading structure template with size {} and transform {}", size, transform);
+    Vec3i transformedSize = transform.applyToSize(size);
+    LOGGER.info("Transformed size: {}", transformedSize);
 
     Path structureFile = dataDir.resolve(NBT_FILE_NAME);
 
@@ -86,18 +96,17 @@ public class StructureTemplateFormat
     StructureTemplate template = level.getServer().getStructureManager().readStructure(tag);
 
     boolean isStrict = true;
+    BlockPos pivotPos = transform.translateWorldOrigin();
 
     StructurePlaceSettings settings =
-        new StructurePlaceSettings().setIgnoreEntities(!ignoreEntities).setKnownShape(isStrict);
-
-    BlockPos parcelOrigin = parcel.getOrigin();
+        new StructurePlaceSettings()
+            .setIgnoreEntities(!ignoreEntities)
+            .setKnownShape(isStrict)
+            .setMirror(transform.mirror())
+            .setRotation(transform.rotation())
+            .setRotationPivot(pivotPos);
 
     template.placeInWorld(
-        level,
-        parcelOrigin,
-        parcelOrigin,
-        settings,
-        RandomSource.create(parcelOrigin.asLong()),
-        flags);
+        level, pivotPos, pivotPos, settings, RandomSource.create(pivotPos.asLong()), flags);
   }
 }

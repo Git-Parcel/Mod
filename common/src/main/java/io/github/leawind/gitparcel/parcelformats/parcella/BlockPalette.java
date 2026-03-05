@@ -17,7 +17,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
@@ -57,7 +58,14 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
     super();
   }
 
-  public int collect(Level level, BlockPos pos) {
+  /**
+   * Collects the block state and NBT data at the specified position in the level.
+   *
+   * @param level the level to read from
+   * @param pos the position to collect
+   * @return the id of the collected block
+   */
+  public int collect(LevelReader level, BlockPos pos) {
     BlockState blockState = level.getBlockState(pos);
     BlockEntity blockEntity = level.getBlockEntity(pos);
     CompoundTag tag = null;
@@ -144,8 +152,8 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
     return BuiltInRegistries.BLOCK.wrapAsHolder(blockState.getBlock()).getRegisteredName();
   }
 
-  public static BlockState parseBlockState(String blockStateString, Level level, boolean allowNbt)
-      throws CommandSyntaxException {
+  public static BlockState parseBlockState(
+      String blockStateString, LevelReader level, boolean allowNbt) throws CommandSyntaxException {
     return BlockStateParser.parseForBlock(
             level.holderLookup(Registries.BLOCK), blockStateString, allowNbt)
         .blockState();
@@ -170,7 +178,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
    * @throws InvalidPaletteException if the palette file is malformed
    */
   public static @Nullable BlockPalette loadIfExist(
-      Level level, Path paletteFile, Path nbtDir, NbtFormat nbtFormat)
+      LevelAccessor level, Path paletteFile, Path nbtDir, NbtFormat nbtFormat)
       throws IOException, InvalidPaletteException {
     if (!Files.exists(paletteFile)) {
       return null;
@@ -191,7 +199,8 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
    * @throws IOException if an I/O error occurs
    * @throws InvalidPaletteException if the palette file is malformed
    */
-  public static BlockPalette load(Level level, Path paletteFile, Path nbtDir, NbtFormat nbtFormat)
+  public static BlockPalette load(
+      LevelAccessor level, Path paletteFile, Path nbtDir, NbtFormat nbtFormat)
       throws IOException, InvalidPaletteException {
     try (var reader = Files.newBufferedReader(paletteFile, StandardCharsets.UTF_8)) {
       BlockPalette palette = new BlockPalette();

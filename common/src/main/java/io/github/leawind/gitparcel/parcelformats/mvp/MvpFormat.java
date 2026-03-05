@@ -1,6 +1,5 @@
 package io.github.leawind.gitparcel.parcelformats.mvp;
 
-import io.github.leawind.gitparcel.api.parcel.Parcel;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
@@ -14,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
@@ -36,12 +36,23 @@ public class MvpFormat implements ParcelFormat.Save<ParcelFormatConfig.None> {
   @Override
   public void save(
       Level level,
-      Parcel parcel,
+      Vec3i originalSize,
       ParcelTransform transform,
       Path dataDir,
       boolean ignoreEntities,
       ParcelFormatConfig.@Nullable None config)
       throws IOException {
+
+    if (transform.isMirroredOrRotated()) {
+      throw new UnsupportedOperationException(
+          "Mirror or rotation transform is not supported by this format");
+    }
+
+    int sizeX = originalSize.getX();
+    int sizeY = originalSize.getY();
+    int sizeZ = originalSize.getZ();
+    BlockPos origin = transform.translateWorldOrigin();
+
     Files.createDirectories(dataDir);
 
     // Create blocks directory structure
@@ -56,10 +67,10 @@ public class MvpFormat implements ParcelFormat.Save<ParcelFormatConfig.None> {
     int nextPaletteId = 0;
 
     // First pass: collect all unique block states and build palette
-    for (int x = 0; x < parcel.sizeX; x++) {
-      for (int y = 0; y < parcel.sizeY; y++) {
-        for (int z = 0; z < parcel.sizeZ; z++) {
-          BlockPos pos = parcel.getOrigin().offset(x, y, z);
+    for (int x = 0; x < sizeX; x++) {
+      for (int y = 0; y < sizeY; y++) {
+        for (int z = 0; z < sizeZ; z++) {
+          BlockPos pos = origin.offset(x, y, z);
           BlockState blockState = level.getBlockState(pos);
 
           if (!palette.containsKey(blockState)) {
@@ -87,9 +98,9 @@ public class MvpFormat implements ParcelFormat.Save<ParcelFormatConfig.None> {
     int subSize = 16; // Maximum size for sub-parcels
 
     // Calculate total number of sub-parcels in each dimension
-    int subParcelCountX = (parcel.sizeX + subSize - 1) / subSize;
-    int subParcelCountY = (parcel.sizeY + subSize - 1) / subSize;
-    int subParcelCountZ = (parcel.sizeZ + subSize - 1) / subSize;
+    int subParcelCountX = (sizeX + subSize - 1) / subSize;
+    int subParcelCountY = (sizeY + subSize - 1) / subSize;
+    int subParcelCountZ = (sizeZ + subSize - 1) / subSize;
     int totalSubParcels = subParcelCountX * subParcelCountY * subParcelCountZ;
 
     // Calculate the number of digits needed for indexing
@@ -108,9 +119,9 @@ public class MvpFormat implements ParcelFormat.Save<ParcelFormatConfig.None> {
           int startX = sx * subSize;
           int startY = sy * subSize;
           int startZ = sz * subSize;
-          int endX = Math.min(startX + subSize, parcel.sizeX);
-          int endY = Math.min(startY + subSize, parcel.sizeY);
-          int endZ = Math.min(startZ + subSize, parcel.sizeZ);
+          int endX = Math.min(startX + subSize, sizeX);
+          int endY = Math.min(startY + subSize, sizeY);
+          int endZ = Math.min(startZ + subSize, sizeZ);
 
           // Calculate one-dimensional index
           int currentIndex = sx * subParcelCountY * subParcelCountZ + sy * subParcelCountZ + sz;
@@ -137,7 +148,7 @@ public class MvpFormat implements ParcelFormat.Save<ParcelFormatConfig.None> {
             for (int x = startX; x < endX; x++) {
               for (int y = startY; y < endY; y++) {
                 for (int z = startZ; z < endZ; z++) {
-                  BlockPos pos = parcel.getOrigin().offset(x, y, z);
+                  BlockPos pos = origin.offset(x, y, z);
                   BlockState blockState = level.getBlockState(pos);
                   int paletteId = palette.get(blockState);
                   writer.write(Integer.toHexString(paletteId));
@@ -152,10 +163,10 @@ public class MvpFormat implements ParcelFormat.Save<ParcelFormatConfig.None> {
 
     Files.createDirectories(nbtDir);
     // Handle block entities - save them as individual SNBT files in nbt directory
-    for (int x = 0; x < parcel.sizeX; x++) {
-      for (int y = 0; y < parcel.sizeY; y++) {
-        for (int z = 0; z < parcel.sizeZ; z++) {
-          BlockPos pos = parcel.getOrigin().offset(x, y, z);
+    for (int x = 0; x < sizeX; x++) {
+      for (int y = 0; y < sizeY; y++) {
+        for (int z = 0; z < sizeZ; z++) {
+          BlockPos pos = origin.offset(x, y, z);
           BlockEntity blockEntity = level.getBlockEntity(pos);
           if (blockEntity != null) {
             // Find the corresponding block state to get its palette ID

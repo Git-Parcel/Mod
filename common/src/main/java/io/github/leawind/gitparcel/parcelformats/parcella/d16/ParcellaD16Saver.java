@@ -1,8 +1,9 @@
 package io.github.leawind.gitparcel.parcelformats.parcella.d16;
 
-import io.github.leawind.gitparcel.api.parcel.Parcel;
+import io.github.leawind.gitparcel.algorithms.SubdivideAlgo;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
+import io.github.leawind.gitparcel.parcelformats.NbtFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.BlockPalette;
 import io.github.leawind.gitparcel.parcelformats.parcella.Microparcel;
 import io.github.leawind.gitparcel.parcelformats.parcella.Subparcel;
@@ -27,6 +28,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
@@ -42,8 +44,13 @@ public class ParcellaD16Saver
     public BlockPalette blockPalette;
 
     public Context(
-        Level level, Parcel parcel, Path dataDir, boolean ignoreEntities, Config config) {
-      super(level, parcel, dataDir, ignoreEntities, config);
+        Level level,
+        Vec3i originalSize,
+        ParcelTransform transform,
+        Path dataDir,
+        boolean ignoreEntities,
+        Config config) {
+      super(level, originalSize, transform, dataDir, ignoreEntities, config);
       blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
       blocksPaletteFile = blocksDir.resolve(PALETTE_FILE_NAME);
       blocksNbtDir = blocksDir.resolve(NBT_DIR_NAME);
@@ -54,21 +61,23 @@ public class ParcellaD16Saver
   @Override
   public void save(
       Level level,
-      Parcel parcel,
+      Vec3i originalSize,
       ParcelTransform transform,
       Path dataDir,
       boolean ignoreEntities,
       @Nullable Config config)
       throws IOException {
+    Vec3i transformedSize = transform.applyToSize(originalSize);
+    LOGGER.info("Parcel transform: {}", transform);
+    LOGGER.info("size: {} -> {} (raw to transformed)", originalSize, transformedSize);
+
     if (config == null) {
       config = new Config();
     }
 
-    var ctx = new Context(level, parcel, dataDir, ignoreEntities, config);
+    var ctx = new Context(level, originalSize, transform, dataDir, ignoreEntities, config);
 
-    try (ProblemReporter.ScopedCollector problemReporter =
-        new ProblemReporter.ScopedCollector(LOGGER)) {
-
+    try (var problemReporter = new ProblemReporter.ScopedCollector(LOGGER)) {
       saveBlocks(ctx, 16);
 
       if (!ignoreEntities) {
@@ -91,22 +100,20 @@ public class ParcellaD16Saver
     // Load or create block palette
     ctx.blockPalette = loadBlockPaletteIfExistElseCreate(ctx);
 
-    // Process sub-parcels with Z-Order encoding
     Path subParcelsDir = ctx.blocksDir.resolve(SUBPARCELS_DIR_NAME);
     Files.createDirectories(subParcelsDir);
 
-    BlockPos anchorPos = ctx.parcel.getOrigin().offset(ctx.config.anchorOffset);
-    Iterable<Subparcel> subparcels = Subparcel.subdivideParcel(gridSize, ctx.parcel, anchorPos);
+    // Split the parcel into subparcels
+    BlockPos anchorPos = new BlockPos(ctx.config.anchorOffset);
+    for (var originalSubparcel : Subparcel.subdivideParcel(gridSize, ctx.originalSize, anchorPos)) {
+      Vec3i coord = originalSubparcel.getCoord(gridSize, anchorPos);
 
-    for (var subparcel : subparcels) {
-      Vec3i coord = subparcel.getCoord(gridSize, anchorPos);
       long index = ZOrder3D.coordToIndexSigned(coord);
 
-      Path subparcelRelativePath = IndexPathCodec.indexToPath(index, SUBPARCEL_SUFFIX);
-      Path subparcelFile = subParcelsDir.resolve(subparcelRelativePath);
-
+      Path subparcelFile =
+          subParcelsDir.resolve(IndexPathCodec.indexToPath(index, SUBPARCEL_SUFFIX));
       Files.createDirectories(subparcelFile.getParent());
-      writeSubparcel(ctx, subparcelFile, subparcel);
+      writeSubparcel(ctx, subparcelFile, originalSubparcel);
     }
 
     ctx.blockPalette.save(
@@ -131,11 +138,12 @@ public class ParcellaD16Saver
     }
   }
 
-  protected void writeSubparcel(Context ctx, Path file, Subparcel subparcel) throws IOException {
+  protected void writeSubparcel(Context ctx, Path file, Subparcel originalSubparcel)
+      throws IOException {
     if (ctx.config.enableMicroparcel.get()) {
-      writeSubparcelWithMicroparcels(ctx, file, subparcel);
+      writeSubparcelWithMicroparcels(ctx, file, originalSubparcel);
     } else {
-      writeSubparcelFlat(ctx, file, subparcel);
+      writeSubparcelFlat(ctx, file, originalSubparcel);
     }
   }
 
@@ -144,7 +152,20 @@ public class ParcellaD16Saver
     var sb = new StringBuilder(8192);
     char[] hex = HexUtils.UPPER_HEX_DIGITS;
 
-    for (var microparcel : Microparcel.subdivide(subparcel, ctx.level, ctx.blockPalette)) {
+    List<Microparcel> microparcels =
+        SubdivideAlgo.INSTANCE.subdivide(
+            ctx.originalSize.getX(),
+            ctx.originalSize.getY(),
+            ctx.originalSize.getZ(),
+            (x, y, z) -> {
+              BlockPos pos =
+                  new BlockPos(x + subparcel.originX, y + subparcel.originY, z + subparcel.originZ);
+              pos = ctx.transform.apply(pos);
+              return ctx.blockPalette.collect(ctx.level, pos);
+            },
+            Microparcel::new);
+
+    for (var microparcel : microparcels) {
       sb.append(hex[microparcel.originX])
           .append(hex[microparcel.originY])
           .append(hex[microparcel.originZ]);
@@ -157,6 +178,7 @@ public class ParcellaD16Saver
 
       sb.append('=').append(HexUtils.toHexUpperCase(microparcel.value)).append('\n');
     }
+
     Files.writeString(file, sb, StandardCharsets.UTF_8);
   }
 
@@ -174,13 +196,12 @@ public class ParcellaD16Saver
     var level = ctx.level;
     var palette = ctx.blockPalette;
 
-    BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-
-    for (int i = 0, x = originX; i < sizeX; i++, x++) {
-      for (int j = 0, y = originY; j < sizeY; j++, y++) {
-        for (int k = 0, z = originZ; k < sizeZ; k++, z++) {
-
-          int id = palette.collect(level, pos.set(x, y, z));
+    for (int i = 0, x = 0; i < sizeX; i++, x++) {
+      for (int j = 0, y = 0; j < sizeY; j++, y++) {
+        for (int k = 0, z = 0; k < sizeZ; k++, z++) {
+          BlockPos pos = new BlockPos(x + originX, y + originY, z + originZ);
+          pos = ctx.transform.apply(pos);
+          int id = palette.collect(level, pos);
 
           sb.append(HexUtils.toHexUpperCase(id)).append('\n');
         }
@@ -191,24 +212,33 @@ public class ParcellaD16Saver
   }
 
   protected void saveEntities(Context ctx, ProblemReporter problemReporter) throws IOException {
+    Files.createDirectories(ctx.entitiesDir);
+    var origin = ctx.transform.translateWorldOrigin();
+    var transformedSize = ctx.transform.applyToSize(ctx.originalSize);
 
-    // TODO remove redundant entities
-
-    Path entitiesDir = ctx.dataDir.resolve(ENTITIES_DIR_NAME);
-    Files.createDirectories(entitiesDir);
+    AABB aabb =
+        new AABB(
+            origin.getX(),
+            origin.getY(),
+            origin.getZ(),
+            transformedSize.getX(),
+            transformedSize.getY(),
+            transformedSize.getZ());
 
     List<Entity> entities =
-        ctx.level.getEntities(
-            (Entity) null, ctx.parcel.getAABB(), entity -> !(entity instanceof Player));
+        ctx.level.getEntities((Entity) null, aabb, entity -> !(entity instanceof Player));
+
+    NbtFormat nbtFormat = ctx.config.entityDataFormat.get();
 
     int entityId = 0;
     for (Entity entity : entities) {
       CompoundTag tag = getEntityNbt(ctx, problemReporter, entity);
-      Path path = entitiesDir.resolve(entityId + ctx.config.entityDataFormat.get().suffix);
-      ctx.config.entityDataFormat.get().write(path, tag);
+      Path path = ctx.entitiesDir.resolve(entityId + nbtFormat.suffix);
+      nbtFormat.write(path, tag);
 
       entityId++;
     }
+    // TODO remove redundant entities
   }
 
   /**
@@ -221,41 +251,41 @@ public class ParcellaD16Saver
    */
   protected CompoundTag getEntityNbt(Context ctx, ProblemReporter problemReporter, Entity entity) {
     CompoundTag tag = new CompoundTag();
-    BlockPos from = ctx.parcel.getOrigin();
-    Vec3 pos =
-        new Vec3(
-            entity.getX() - (double) from.getX(),
-            entity.getY() - (double) from.getY(),
-            entity.getZ() - (double) from.getZ());
 
-    BlockPos blockPos;
-    if (entity instanceof Painting painting) {
-      blockPos = painting.getPos().subtract(from);
-    } else {
-      blockPos = BlockPos.containing(pos);
-    }
+    Vec3 transformedPos = entity.position();
 
-    TagValueOutput output =
-        TagValueOutput.createWithContext(problemReporter, entity.registryAccess());
+    var output = TagValueOutput.createWithContext(problemReporter, entity.registryAccess());
     entity.save(output);
 
     {
+      Vec3 pos = ctx.transform.applyInverted(transformedPos);
       ListTag list = new ListTag();
       list.add(DoubleTag.valueOf(pos.x));
       list.add(DoubleTag.valueOf(pos.y));
       list.add(DoubleTag.valueOf(pos.z));
       tag.put("pos", list);
     }
+
     {
+      BlockPos blockPos;
+
+      if (entity instanceof Painting painting) {
+        blockPos = painting.getPos();
+      } else {
+        blockPos = BlockPos.containing(transformedPos);
+      }
+
+      blockPos = ctx.transform.applyInverted(blockPos);
+
       ListTag list = new ListTag();
       list.add(IntTag.valueOf(blockPos.getX()));
       list.add(IntTag.valueOf(blockPos.getY()));
       list.add(IntTag.valueOf(blockPos.getZ()));
+
       tag.put("blockPos", list);
     }
-    {
-      tag.put("nbt", output.buildResult().copy());
-    }
+
+    tag.put("nbt", output.buildResult().copy());
     return tag;
   }
 }

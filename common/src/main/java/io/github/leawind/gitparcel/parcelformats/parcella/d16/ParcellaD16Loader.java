@@ -1,18 +1,16 @@
 package io.github.leawind.gitparcel.parcelformats.parcella.d16;
 
 import com.mojang.logging.LogUtils;
-import io.github.leawind.gitparcel.api.parcel.Parcel;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.parcelformats.parcella.BlockPalette;
-import io.github.leawind.gitparcel.parcelformats.parcella.Subparcel;
-import io.github.leawind.gitparcel.parcelformats.parcella.utils.ZOrder3D;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.Vec3i;
 import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import org.jspecify.annotations.Nullable;
@@ -32,22 +30,20 @@ public class ParcellaD16Loader
     public BlockPalette blockPalette;
 
     public Context(
-        ServerLevel level,
-        Parcel parcel,
+        ServerLevelAccessor level,
+        Vec3i originalSize,
+        ParcelTransform transform,
         Path dataDir,
         boolean ignoreBlocks,
         boolean ignoreEntities,
+        @Block.UpdateFlags int flags,
         @Nullable Config config) {
-      super(level, parcel, dataDir, ignoreBlocks, ignoreEntities, config);
+      super(level, originalSize, transform, dataDir, ignoreBlocks, ignoreEntities, config);
       blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
       blocksPaletteFile = blocksDir.resolve(PALETTE_FILE_NAME);
       blocksNbtDir = blocksDir.resolve(NBT_DIR_NAME);
       subparcelsDir = blocksDir.resolve(SUBPARCELS_DIR_NAME);
       entitiesDir = dataDir.resolve(ENTITIES_DIR_NAME);
-    }
-
-    public ServerLevel serverLevel() {
-      return (ServerLevel) level;
     }
   }
 
@@ -56,8 +52,9 @@ public class ParcellaD16Loader
    */
   @Override
   public void load(
-      ServerLevel level,
-      Parcel parcel,
+      ServerLevelAccessor level,
+      Vec3i size,
+      ParcelTransform transform,
       Path dataDir,
       boolean ignoreBlocks,
       boolean ignoreEntities,
@@ -65,15 +62,17 @@ public class ParcellaD16Loader
       @Nullable Config config)
       throws IOException, ParcelException {
     LOGGER.debug("Loading from: {}", dataDir);
-    LOGGER.debug("    Parcel: {}", parcel);
+    LOGGER.debug("    Size: {}", size);
+    LOGGER.debug("    Transform: {}", transform);
     LOGGER.debug("    Ignore blocks: {}", ignoreBlocks);
     LOGGER.debug("    Ignore entities: {}", ignoreEntities);
+    LOGGER.debug("    Update flags: {}", flags);
     LOGGER.debug("    Config: {}", config);
 
-    Context ctx = new Context(level, parcel, dataDir, ignoreBlocks, ignoreEntities, config);
+    Context ctx =
+        new Context(level, size, transform, dataDir, ignoreBlocks, ignoreEntities, flags, config);
 
-    try (ProblemReporter.ScopedCollector problemReporter =
-        new ProblemReporter.ScopedCollector(LOGGER)) {
+    try (var problemReporter = new ProblemReporter.ScopedCollector(LOGGER)) {
       if (!ignoreBlocks) {
         loadBlocks(ctx, problemReporter);
       }
@@ -106,7 +105,6 @@ public class ParcellaD16Loader
   }
 
   protected void loadSubparcels(Context ctx, ProblemReporter problemReporter) throws IOException {
-    BlockPos anchorPos = ctx.parcel.getOrigin().offset(ctx.config.anchorOffset);
 
     try (var walk = Files.walk(ctx.subparcelsDir)) {
       walk.filter(Files::isRegularFile)
@@ -114,7 +112,7 @@ public class ParcellaD16Loader
           .forEach(
               subparcelPath -> {
                 try {
-                  loadSubparcel(ctx, anchorPos, subparcelPath, problemReporter);
+                  loadSubparcel(ctx, subparcelPath, problemReporter);
                 } catch (IOException e) {
                   LOGGER.error("Error loading subparcel: {}", subparcelPath, e);
                 }
@@ -122,27 +120,31 @@ public class ParcellaD16Loader
     }
   }
 
-  protected void loadSubparcel(
-      Context ctx, BlockPos anchorPos, Path subparcelFile, ProblemReporter problemReporter)
+  protected void loadSubparcel(Context ctx, Path subparcelFile, ProblemReporter problemReporter)
       throws IOException {
-    String relativePath = ctx.subparcelsDir.relativize(subparcelFile).toString();
-    String fileName = relativePath.substring(0, relativePath.length() - 4);
-    String[] pathParts = fileName.split("/|");
-
-    long index = 0;
-    for (int i = pathParts.length - 1; i >= 0; i--) {
-      index = (index << 8) | Integer.parseInt(pathParts[i], 16);
-    }
-
-    var coord = ZOrder3D.indexToCoordSigned(index);
-    int gridSize = 16;
-    int originX = anchorPos.getX() + coord.x * gridSize;
-    int originY = anchorPos.getY() + coord.y * gridSize;
-    int originZ = anchorPos.getZ() + coord.z * gridSize;
-
-    Subparcel subparcel = new Subparcel(originX, originY, originZ, gridSize, gridSize, gridSize);
 
     // TODO
     throw new UnsupportedOperationException("Unimplemented yet");
+    //
+    //    BlockPos anchorPos = ctx.transform.apply(new BlockPos(ctx.config.anchorOffset));
+    //
+    //    String relativePath = ctx.subparcelsDir.relativize(subparcelFile).toString();
+    //    String fileName = relativePath.substring(0, relativePath.length() - 4);
+    //    String[] pathParts = fileName.split("/|");
+    //
+    //    long index = 0;
+    //    for (int i = pathParts.length - 1; i >= 0; i--) {
+    //      index = (index << 8) | Integer.parseInt(pathParts[i], 16);
+    //    }
+    //
+    //    var coord = ZOrder3D.indexToCoordSigned(index);
+    //    int gridSize = 16;
+    //    int originX = anchorPos.getX() + coord.x * gridSize;
+    //    int originY = anchorPos.getY() + coord.y * gridSize;
+    //    int originZ = anchorPos.getZ() + coord.z * gridSize;
+    //
+    //    Subparcel subparcel = new Subparcel(originX, originY, originZ, gridSize, gridSize,
+    // gridSize);
+
   }
 }

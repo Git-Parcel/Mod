@@ -5,7 +5,7 @@ import io.github.leawind.gitparcel.api.parcel.Parcel;
 import java.util.ArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 
 public class Microparcel extends Parcel implements Parcel.WithValue {
   public int value;
@@ -26,7 +26,17 @@ public class Microparcel extends Parcel implements Parcel.WithValue {
     this.value = value;
   }
 
-  public static ArrayList<Microparcel> subdivide(Parcel parcel, Level level, BlockPalette palette) {
+  /**
+   * Subdivides the given parcel into microparcels.
+   *
+   * @param parcel the parcel to subdivide
+   * @param level the level to read from
+   * @param palette the block palette to use
+   * @return the list of microparcels
+   */
+  @Deprecated
+  public static ArrayList<Microparcel> subdivide(
+      Parcel parcel, LevelReader level, BlockPalette palette) {
     return SubdivideAlgo.INSTANCE.subdivide(
         parcel.sizeX,
         parcel.sizeY,

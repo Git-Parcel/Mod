@@ -11,13 +11,13 @@ import org.junit.jupiter.api.Test;
 public class SubdivideAlgoTest {
 
   public static final class TestedValues implements SubdivideAlgo.Values {
-    private final Parcel parcel;
+    public final Vec3i size;
     private final int[][][] valuesArray;
 
-    public TestedValues(Parcel parcel, int valueVariance, RandomForMC random) {
-      this.parcel = parcel;
-      valuesArray = new int[parcel.sizeX][parcel.sizeY][parcel.sizeZ];
-      for (var pos : BlockPos.betweenClosed(1, 1, 1, parcel.sizeX, parcel.sizeY, parcel.sizeZ)) {
+    public TestedValues(Vec3i size, int valueVariance, RandomForMC random) {
+      this.size = size;
+      valuesArray = new int[size.getX()][size.getY()][size.getZ()];
+      for (var pos : BlockPos.betweenClosed(1, 1, 1, size.getX(), size.getY(), size.getZ())) {
         valuesArray[pos.getX() - 1][pos.getY() - 1][pos.getZ() - 1] =
             random.nextInt(0, valueVariance);
       }
@@ -56,23 +56,22 @@ public class SubdivideAlgoTest {
     for (int variance = 1; variance <= maxVariances; variance *= 2) {
       double ratioSum = 0;
       double weightSum = 0;
+
       for (int i = 0; i < 32768; i += 17) {
         var size = ZOrder3D.indexToCoord(i).add(1, 1, 1);
-        Parcel parcel =
-            new Parcel(random.nextBlockPos(-100, 100), new Vec3i(size.x, size.y, size.z));
 
-        var testCase = new TestedValues(parcel, variance, random);
+        var testCase = new TestedValues(new Vec3i(size.x, size.y, size.z), variance, random);
 
         var groups =
             algo.subdivide(
-                testCase.parcel.sizeX,
-                testCase.parcel.sizeY,
-                testCase.parcel.sizeZ,
+                testCase.size.getX(),
+                testCase.size.getY(),
+                testCase.size.getZ(),
                 testCase,
                 ParcelWithValue::new);
-        SubparcelTest.assertParcelEqual(testCase.parcel, groups);
+        SubparcelTest.assertParcelEqual(testCase.size, groups);
 
-        int volume = parcel.getVolume();
+        int volume = testCase.size.getX() * testCase.size.getY() * testCase.size.getZ();
         var countRatio = (double) groups.size() / volume;
         ratioSum += countRatio * volume;
         weightSum += volume;

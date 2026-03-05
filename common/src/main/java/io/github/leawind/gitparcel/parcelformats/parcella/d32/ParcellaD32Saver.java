@@ -1,6 +1,6 @@
 package io.github.leawind.gitparcel.parcelformats.parcella.d32;
 
-import io.github.leawind.gitparcel.api.parcel.Parcel;
+import io.github.leawind.gitparcel.algorithms.SubdivideAlgo;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.parcelformats.parcella.Microparcel;
@@ -12,6 +12,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
@@ -21,7 +24,7 @@ public class ParcellaD32Saver extends ParcellaD16Saver
   @Override
   public void save(
       Level level,
-      Parcel parcel,
+      Vec3i originalSize,
       ParcelTransform transform,
       Path dataDir,
       boolean ignoreEntities,
@@ -31,10 +34,9 @@ public class ParcellaD32Saver extends ParcellaD16Saver
       config = new Config();
     }
 
-    var ctx = new Context(level, parcel, dataDir, ignoreEntities, config);
+    var ctx = new Context(level, originalSize, transform, dataDir, ignoreEntities, config);
 
-    try (ProblemReporter.ScopedCollector problemReporter =
-        new ProblemReporter.ScopedCollector(LOGGER)) {
+    try (var problemReporter = new ProblemReporter.ScopedCollector(LOGGER)) {
 
       saveBlocks(ctx, 32);
 
@@ -47,10 +49,23 @@ public class ParcellaD32Saver extends ParcellaD16Saver
   @Override
   protected void writeSubparcelWithMicroparcels(Context ctx, Path file, Subparcel subparcel)
       throws IOException {
-    StringBuilder sb = new StringBuilder(8192);
+    var sb = new StringBuilder(8192);
     char[] chars = Base32Utils.BASE32_DIGITS;
 
-    for (var microparcel : Microparcel.subdivide(subparcel, ctx.level, ctx.blockPalette)) {
+    List<Microparcel> microparcels =
+        SubdivideAlgo.INSTANCE.subdivide(
+            ctx.originalSize.getX(),
+            ctx.originalSize.getY(),
+            ctx.originalSize.getZ(),
+            (x, y, z) -> {
+              BlockPos pos =
+                  new BlockPos(x + subparcel.originX, y + subparcel.originY, z + subparcel.originZ);
+              pos = ctx.transform.apply(pos);
+              return ctx.blockPalette.collect(ctx.level, pos);
+            },
+            Microparcel::new);
+
+    for (var microparcel : microparcels) {
       sb.append(chars[microparcel.originX])
           .append(chars[microparcel.originY])
           .append(chars[microparcel.originZ]);

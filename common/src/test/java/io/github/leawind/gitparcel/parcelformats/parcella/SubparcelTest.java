@@ -16,11 +16,13 @@ import net.minecraft.core.Vec3i;
 import org.junit.jupiter.api.Test;
 
 public class SubparcelTest {
+  private static final Vec3i SIZE_16X = new Vec3i(16, 16, 16);
+
   /**
-   * @param parcel Total bounding box, including corners
+   * @param size todo
    * @param subparcels Bounding boxes of each subparcel, including their corners
    */
-  public static <T extends Parcel> void assertParcelEqual(Parcel parcel, Iterable<T> subparcels) {
+  public static <T extends Parcel> void assertParcelEqual(Vec3i size, Iterable<T> subparcels) {
     Set<BlockPos> blocks = new HashSet<>();
 
     for (var subparcel : subparcels) {
@@ -36,17 +38,17 @@ public class SubparcelTest {
         }
       }
     }
-
-    assertEquals(parcel.getVolume(), blocks.size());
+    var volume = size.getX() * size.getY() * size.getZ();
+    assertEquals(volume, blocks.size());
   }
 
   @Test
   void testCheck() {
     assertParcelEqual(
-        new Parcel(0, 0, 0, 16, 16, 16), //
+        SIZE_16X, //
         List.of(new Subparcel(0, 0, 0, 16, 16, 16)));
     assertParcelEqual(
-        new Parcel(0, 0, 0, 16, 16, 16), //
+        SIZE_16X, //
         List.of(
             new Subparcel(0, 0, 0, 16, 8, 16), //
             new Subparcel(0, 8, 0, 16, 8, 16)));
@@ -62,20 +64,18 @@ public class SubparcelTest {
   @Test
   void testSubdivideSubparcel() {
     {
-      Parcel parcel = new Parcel(0, 0, 0, 16, 16, 16);
-      var result = Subparcel.subdivideParcel(16, parcel, BlockPos.ZERO);
+      var result = Subparcel.subdivideParcel(16, SIZE_16X, BlockPos.ZERO);
       assertEquals(List.of(new Subparcel(0, 0, 0, 16, 16, 16)), result);
     }
     {
-      Parcel parcel = new Parcel(0, 0, 0, 16, 16, 16);
-      var result = Subparcel.subdivideParcel(16, parcel, new BlockPos(4, 5, 6));
+      var result = Subparcel.subdivideParcel(16, SIZE_16X, new BlockPos(4, 5, 6));
       assertEquals(8, result.size());
     }
 
     var random = new RandomForMC(12138);
     for (int i = 0; i < 1000; i++) {
-      Parcel parcel = new Parcel(random.nextBlockPos(-1000, 1000), random.nextVec3i(1, 50));
-      assertParcelEqual(parcel, Subparcel.subdivideParcel(16, parcel, random.nextVec3i(-100, 100)));
+      var size = random.nextVec3i(1, 50);
+      assertParcelEqual(size, Subparcel.subdivideParcel(16, size, random.nextVec3i(-100, 100)));
     }
   }
 
@@ -83,27 +83,24 @@ public class SubparcelTest {
   void testSubdivideParcel1D() {
     BiConsumer<List<Integer>, List<Integer>> test =
         (args, expected) -> {
-          var result = Subparcel.subdivideParcel1D(16, args.get(0), args.get(1), args.get(2));
+          var result = Subparcel.subdivideParcel1D(16, args.get(0), args.get(1));
           assertEquals(expected, result);
         };
 
-    test.accept(List.of(0, 1, 0), List.of(0, 1));
-    test.accept(List.of(0, 1, -5), List.of(0, 1));
-    test.accept(List.of(5, 1, 0), List.of(5, 6));
-    test.accept(List.of(0, 37, 0), List.of(0, 16, 32, 37));
-    test.accept(List.of(0, 16, 0), List.of(0, 16));
-    test.accept(List.of(0, 16, 16), List.of(0, 16));
-    test.accept(List.of(0, 17, 16), List.of(0, 16, 17));
-    test.accept(List.of(0, 17, 17), List.of(0, 1, 17));
-    test.accept(List.of(-2, 17, 17), List.of(-2, 1, 15));
+    test.accept(List.of(1, 0), List.of(0, 1));
+    test.accept(List.of(1, -5), List.of(0, 1));
+    test.accept(List.of(37, 0), List.of(0, 16, 32, 37));
+    test.accept(List.of(16, 0), List.of(0, 16));
+    test.accept(List.of(16, 16), List.of(0, 16));
+    test.accept(List.of(17, 16), List.of(0, 16, 17));
+    test.accept(List.of(17, 17), List.of(0, 1, 17));
 
     var random = new Random(12138);
     for (int i = 0; i < 10000; i++) {
-      int from = random.nextInt(-1000, 1000);
       int size = random.nextInt(1, 1000);
       int anchor = random.nextInt(-100, 100);
 
-      var result = Subparcel.subdivideParcel1D(16, from, size, anchor);
+      var result = Subparcel.subdivideParcel1D(16, size, anchor);
       // assert ascending order
       for (int j = 0; j < result.size() - 1; j++) {
         assertTrue(result.get(j) <= result.get(j + 1));
