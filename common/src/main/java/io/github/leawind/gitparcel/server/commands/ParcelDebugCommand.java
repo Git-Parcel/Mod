@@ -31,37 +31,40 @@ public class ParcelDebugCommand {
   public static void register(
       CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext context) {
 
-    var commandSave =
-        Commands.literal("save")
-            .then(
-                Commands.argument("from", BlockPosArgument.blockPos())
-                    .then(
-                        Commands.argument("to", BlockPosArgument.blockPos())
-                            .then(
-                                Commands.argument("path", DirPathArgument.path())
-                                    .executes(ParcelDebugCommand::save1)
-                                    .then(
-                                        Commands.argument("format", ParcelFormatArgument.saver())
-                                            .executes(ParcelDebugCommand::save2)
-                                            .then(
-                                                Commands.argument(
-                                                        "ignore_entities", BoolArgumentType.bool())
-                                                    .executes(ParcelDebugCommand::save3))))));
+    var save_ignore_entities =
+        Commands.argument("ignore_entities", BoolArgumentType.bool())
+            .executes(ParcelDebugCommand::save3);
 
-    var commandLoad =
-        Commands.literal("load")
-            .then(
-                Commands.argument("from", BlockPosArgument.blockPos())
-                    .then(
-                        Commands.argument("path", DirPathArgument.path())
-                            .executes(ParcelDebugCommand::load)));
-    var command =
+    var save_format =
+        Commands.argument("format", ParcelFormatArgument.saver())
+            .executes(ParcelDebugCommand::save2)
+            .then(save_ignore_entities);
+
+    var save_path =
+        Commands.argument("path", DirPathArgument.path())
+            .executes(ParcelDebugCommand::save1)
+            .then(save_format);
+
+    var save_to = Commands.argument("to", BlockPosArgument.blockPos()).then(save_path);
+
+    var save_from = Commands.argument("from", BlockPosArgument.blockPos()).then(save_to);
+
+    var parcel_debug_save = Commands.literal("save").then(save_from);
+
+    var load_path =
+        Commands.argument("path", DirPathArgument.path()).executes(ParcelDebugCommand::load);
+
+    var load_from = Commands.argument("from", BlockPosArgument.blockPos()).then(load_path);
+
+    var parcel_debug_load = Commands.literal("load").then(load_from);
+
+    var parcel_debug =
         Commands.literal("parcel_debug")
             .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
-            .then(commandSave)
-            .then(commandLoad);
+            .then(parcel_debug_save)
+            .then(parcel_debug_load);
 
-    dispatcher.register(command);
+    dispatcher.register(parcel_debug);
   }
 
   private static int save1(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
