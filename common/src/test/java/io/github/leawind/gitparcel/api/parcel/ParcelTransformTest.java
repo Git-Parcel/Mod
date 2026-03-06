@@ -136,4 +136,84 @@ public class ParcelTransformTest {
     assertTrue(transform2.isMirroredOrRotated());
     assertTrue(transform3.isMirroredOrRotated());
   }
+
+  @Test
+  void testApplyToSizeInverted() {
+    ParcelTransform transform =
+        new ParcelTransform(Mirror.NONE, Rotation.CLOCKWISE_90, BlockPos.ZERO);
+    Vec3i size = new Vec3i(2, 3, 4);
+    assertEquals(new Vec3i(4, 3, 2), transform.applyToSizeInverted(size));
+  }
+
+  @Test
+  void testGetTranslatedOrigin() {
+    ParcelTransform transform = new ParcelTransform(new BlockPos(1, 2, 3));
+    assertEquals(new BlockPos(1, 2, 3), transform.getTranslatedOrigin());
+  }
+
+  @Test
+  void testApplyMirror() {
+    ParcelTransform transform =
+        new ParcelTransform(Mirror.LEFT_RIGHT, Rotation.NONE, BlockPos.ZERO);
+    BlockPos pos = new BlockPos(1, 2, 3);
+    Vec3i vec = new Vec3i(1, 2, 3);
+
+    assertEquals(new BlockPos(-1, 2, 3), transform.applyMirror(pos));
+    assertEquals(new Vec3i(-1, 2, 3), transform.applyMirror(vec));
+  }
+
+  @Test
+  void testApplyRotation() {
+    ParcelTransform transform =
+        new ParcelTransform(Mirror.NONE, Rotation.CLOCKWISE_90, BlockPos.ZERO);
+    BlockPos pos = new BlockPos(1, 2, 3);
+    Vec3i vec = new Vec3i(1, 2, 3);
+    Vec3 vec3 = new Vec3(1, 2, 3);
+
+    assertEquals(new BlockPos(-3, 2, 1), transform.applyRotation(pos));
+    assertEquals(new Vec3i(-3, 2, 1), transform.applyRotation(vec));
+    assertEquals(new Vec3(-3, 2, 1), transform.applyRotation(vec3));
+  }
+
+  @Test
+  void testApplyRotationInverted() {
+    ParcelTransform transform =
+        new ParcelTransform(Mirror.NONE, Rotation.CLOCKWISE_90, BlockPos.ZERO);
+    BlockPos pos = new BlockPos(1, 2, 3);
+    Vec3i vec = new Vec3i(1, 2, 3);
+
+    assertEquals(new BlockPos(3, 2, -1), transform.applyRotationInverted(pos));
+    assertEquals(new Vec3i(3, 2, -1), transform.applyRotationInverted(vec));
+  }
+
+  @Test
+  void testApplyTranslation() {
+    ParcelTransform transform = new ParcelTransform(new BlockPos(1, 2, 3));
+    BlockPos pos = new BlockPos(0, 0, 0);
+    Vec3i vec = new Vec3i(0, 0, 0);
+
+    assertEquals(new BlockPos(1, 2, 3), transform.applyTranslation(pos));
+    assertEquals(new Vec3i(1, 2, 3), transform.applyTranslation(vec));
+  }
+
+  @Test
+  void testApplyTranslationInverted() {
+    ParcelTransform transform = new ParcelTransform(new BlockPos(1, 2, 3));
+    BlockPos pos = new BlockPos(1, 2, 3);
+    Vec3i vec = new Vec3i(1, 2, 3);
+
+    assertEquals(new BlockPos(0, 0, 0), transform.applyTranslationInverted(pos));
+    assertEquals(new Vec3i(0, 0, 0), transform.applyTranslationInverted(vec));
+  }
+
+  @Test
+  void testApplyInvertedVec3i() {
+    ParcelTransform transform =
+        new ParcelTransform(Mirror.LEFT_RIGHT, Rotation.CLOCKWISE_90, new BlockPos(1, 2, 3));
+    Vec3i original = new Vec3i(1, 0, 0);
+    Vec3i transformed = transform.apply(original);
+    Vec3i inverted = transform.applyInverted(transformed);
+
+    assertEquals(original, inverted);
+  }
 }

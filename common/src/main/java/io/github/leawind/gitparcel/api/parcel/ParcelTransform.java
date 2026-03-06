@@ -7,7 +7,6 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.phys.Vec3;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Represents a transformation that can be applied to parcels, including mirroring, rotation, and
@@ -359,12 +358,6 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    */
   public BlockState applyInverted(BlockState blockState) {
     return blockState.rotate(invert(rotation)).mirror(mirror);
-  }
-
-  @Override
-  public @NonNull String toString() {
-    return String.format(
-        "ParcelTransform{mirror=%s, rotation=%s, translation=%s}", mirror, rotation, translation);
   }
 
   /**
