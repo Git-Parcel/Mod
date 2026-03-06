@@ -17,9 +17,9 @@ public interface SubdivideAlgo {
    * @param <T> The type of the subdivided parcels.
    */
   <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
-      int sizeX, int sizeY, int sizeZ, Values values, ResultFactory<T> factory);
+      int sizeX, int sizeY, int sizeZ, ValueGetter values, ResultFactory<T> factory);
 
-  interface Values {
+  interface ValueGetter {
     /**
      * Get the value at the given position.
      *
@@ -39,7 +39,7 @@ public interface SubdivideAlgo {
 
         @Override
         public <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
-            int sizeX, int sizeY, int sizeZ, Values values, ResultFactory<T> factory) {
+            int sizeX, int sizeY, int sizeZ, ValueGetter values, ResultFactory<T> factory) {
 
           final int sizeXZ = sizeX * sizeZ;
           final int totalSize = sizeY * sizeXZ;

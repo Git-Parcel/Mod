@@ -23,7 +23,7 @@ public class SubdivideAlgoBenchmark {
   private int size;
 
   private Parcel parcel;
-  private SubdivideAlgo.Values values;
+  private SubdivideAlgo.ValueGetter values;
   private SubdivideAlgo.ResultFactory<SubdivideAlgoTest.ParcelWithValue> factory;
 
   @Setup

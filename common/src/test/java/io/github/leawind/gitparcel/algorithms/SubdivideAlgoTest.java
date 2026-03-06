@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 public class SubdivideAlgoTest {
 
-  public static final class TestedValues implements SubdivideAlgo.Values {
+  public static final class TestedValues implements SubdivideAlgo.ValueGetter {
     public final Vec3i size;
     private final int[][][] valuesArray;
 
