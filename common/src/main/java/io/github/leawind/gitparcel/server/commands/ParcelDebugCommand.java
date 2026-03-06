@@ -35,9 +35,19 @@ public class ParcelDebugCommand {
   public static void register(
       CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext context) {
 
+    var save_rotation =
+        Commands.argument("rotation", TemplateRotationArgument.templateRotation())
+            .executes(ParcelDebugCommand::save5);
+
+    var save_mirror =
+        Commands.argument("mirror", TemplateMirrorArgument.templateMirror())
+            .executes(ParcelDebugCommand::save4)
+            .then(save_rotation);
+
     var save_ignore_entities =
         Commands.argument("ignore_entities", BoolArgumentType.bool())
-            .executes(ParcelDebugCommand::save3);
+            .executes(ParcelDebugCommand::save3)
+            .then(save_mirror);
 
     var save_format =
         Commands.argument("format", ParcelFormatArgument.saver())
@@ -89,7 +99,9 @@ public class ParcelDebugCommand {
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         DirPathArgument.getPath(ctx, "path"),
         GitParcelApi.FORMAT_REGISTRY.defaultSaver(),
-        true);
+        true,
+        Mirror.NONE,
+        Rotation.NONE);
   }
 
   private static int save2(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -99,7 +111,9 @@ public class ParcelDebugCommand {
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         DirPathArgument.getPath(ctx, "path"),
         ParcelFormatArgument.getSaver(ctx, "format"),
-        true);
+        true,
+        Mirror.NONE,
+        Rotation.NONE);
   }
 
   private static int save3(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -109,7 +123,33 @@ public class ParcelDebugCommand {
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         DirPathArgument.getPath(ctx, "path"),
         ParcelFormatArgument.getSaver(ctx, "format"),
-        BoolArgumentType.getBool(ctx, "ignore_entities"));
+        BoolArgumentType.getBool(ctx, "ignore_entities"),
+        Mirror.NONE,
+        Rotation.NONE);
+  }
+
+  private static int save4(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+    return save(
+        ctx.getSource(),
+        BlockPosArgument.getLoadedBlockPos(ctx, "from"),
+        BlockPosArgument.getLoadedBlockPos(ctx, "to"),
+        DirPathArgument.getPath(ctx, "path"),
+        ParcelFormatArgument.getSaver(ctx, "format"),
+        BoolArgumentType.getBool(ctx, "ignore_entities"),
+        TemplateMirrorArgument.getMirror(ctx, "mirror"),
+        Rotation.NONE);
+  }
+
+  private static int save5(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+    return save(
+        ctx.getSource(),
+        BlockPosArgument.getLoadedBlockPos(ctx, "from"),
+        BlockPosArgument.getLoadedBlockPos(ctx, "to"),
+        DirPathArgument.getPath(ctx, "path"),
+        ParcelFormatArgument.getSaver(ctx, "format"),
+        BoolArgumentType.getBool(ctx, "ignore_entities"),
+        TemplateMirrorArgument.getMirror(ctx, "mirror"),
+        TemplateRotationArgument.getRotation(ctx, "rotation"));
   }
 
   private static int save(
@@ -118,7 +158,9 @@ public class ParcelDebugCommand {
       BlockPos corner2,
       Path parcelDir,
       ParcelFormat.Save<?> format,
-      boolean ignoreEntities) {
+      boolean ignoreEntities,
+      Mirror mirror,
+      Rotation rotation) {
     try {
       BoundingBox bounds = BoundingBox.fromCorners(corner1, corner2);
       Vec3i size = new Vec3i(bounds.getXSpan(), bounds.getYSpan(), bounds.getZSpan());
@@ -126,7 +168,8 @@ public class ParcelDebugCommand {
       ParcelMeta meta = ParcelMeta.create(format.id(), format.version(), size);
 
       var transform =
-          new ParcelTransform(new BlockPos(bounds.minX(), bounds.minY(), bounds.minZ()));
+          new ParcelTransform(
+              mirror, rotation, new BlockPos(bounds.minX(), bounds.minY(), bounds.minZ()));
 
       ParcelFormat.save(source.getLevel(), transform, meta, parcelDir, ignoreEntities);
       source.sendSuccess(
