@@ -18,10 +18,14 @@ import java.nio.file.Path;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.TemplateMirrorArgument;
+import net.minecraft.commands.arguments.TemplateRotationArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import org.slf4j.Logger;
 
@@ -51,8 +55,19 @@ public class ParcelDebugCommand {
 
     var parcel_debug_save = Commands.literal("save").then(save_from);
 
+    var load_rotation =
+        Commands.argument("rotation", TemplateRotationArgument.templateRotation())
+            .executes(ParcelDebugCommand::load3);
+
+    var load_mirror =
+        Commands.argument("mirror", TemplateMirrorArgument.templateMirror())
+            .executes(ParcelDebugCommand::load2)
+            .then(load_rotation);
+
     var load_path =
-        Commands.argument("path", DirPathArgument.path()).executes(ParcelDebugCommand::load);
+        Commands.argument("path", DirPathArgument.path())
+            .executes(ParcelDebugCommand::load1)
+            .then(load_mirror);
 
     var load_from = Commands.argument("from", BlockPosArgument.blockPos()).then(load_path);
 
@@ -123,18 +138,44 @@ public class ParcelDebugCommand {
     }
   }
 
-  private static int load(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+  private static int load1(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
     return load(
         ctx.getSource(),
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
-        DirPathArgument.getPath(ctx, "path"));
+        DirPathArgument.getPath(ctx, "path"),
+        Mirror.NONE,
+        Rotation.NONE);
   }
 
-  private static int load(CommandSourceStack source, BlockPos pos, Path path) {
-    return load(source, new ParcelTransform(pos), path);
+  private static int load2(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+    return load(
+        ctx.getSource(),
+        BlockPosArgument.getLoadedBlockPos(ctx, "from"),
+        DirPathArgument.getPath(ctx, "path"),
+        TemplateMirrorArgument.getMirror(ctx, "mirror"),
+        Rotation.NONE);
   }
 
-  private static int load(CommandSourceStack source, ParcelTransform transform, Path path) {
+  private static int load3(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+    return load(
+        ctx.getSource(),
+        BlockPosArgument.getLoadedBlockPos(ctx, "from"),
+        DirPathArgument.getPath(ctx, "path"),
+        TemplateMirrorArgument.getMirror(ctx, "mirror"),
+        TemplateRotationArgument.getRotation(ctx, "rotation"));
+  }
+
+  private static int load(
+      CommandSourceStack source, BlockPos pos, Path path, Mirror mirror, Rotation rotation) {
+    return load(source, new ParcelTransform(pos), path, mirror, rotation);
+  }
+
+  private static int load(
+      CommandSourceStack source,
+      ParcelTransform transform,
+      Path path,
+      Mirror mirror,
+      Rotation rotation) {
     final int loadFlags =
         Block.UPDATE_CLIENTS
             | Block.UPDATE_IMMEDIATE
