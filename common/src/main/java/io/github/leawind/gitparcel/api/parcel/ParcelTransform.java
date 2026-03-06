@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents a transformation that can be applied to parcels, including mirroring, rotation, and
@@ -24,14 +25,14 @@ import net.minecraft.world.phys.Vec3;
  * {@link BlockPos}, {@link BlockState}, and {@link Vec3}. It also supports inverted transformations
  * to reverse the effects.
  *
+ * <p>The pivot point for mirroring and rotation is (0, 0, 0).
+ *
  * @see StructurePlaceSettings
- * @param mirror Pivot is (0, 0, 0)
- * @param rotation Pivot is (0, 0, 0)
  */
 public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translation) {
   /** Creates a new ParcelTransform with no transformations (identity transform). */
   public static ParcelTransform none() {
-    return new ParcelTransform(BlockPos.ZERO);
+    return new ParcelTransform(Vec3i.ZERO);
   }
 
   /**
@@ -44,54 +45,6 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
   }
 
   /**
-   * Creates a new ParcelTransform with mirroring, rotation, and translation.
-   *
-   * @param mirror The mirroring transformation
-   * @param rotation The rotation transformation
-   * @param translation The translation offset
-   */
-  public ParcelTransform {}
-
-  /**
-   * Creates a copy of this ParcelTransform.
-   *
-   * @return A new ParcelTransform with the same mirroring, rotation, and translation
-   */
-  public ParcelTransform copy() {
-    return new ParcelTransform(mirror, rotation, translation);
-  }
-
-  /**
-   * Gets the mirroring transformation.
-   *
-   * @return The current mirroring transformation
-   */
-  @Override
-  public Mirror mirror() {
-    return mirror;
-  }
-
-  /**
-   * Gets the rotation transformation.
-   *
-   * @return The current rotation transformation
-   */
-  @Override
-  public Rotation rotation() {
-    return rotation;
-  }
-
-  /**
-   * Gets the translation offset.
-   *
-   * @return The current translation offset
-   */
-  @Override
-  public Vec3i translation() {
-    return translation;
-  }
-
-  /**
    * Applies the transformation to a size vector, returning the resulting size.
    *
    * <p>This method only considers rotation, as mirroring and translation do not affect size.
@@ -101,7 +54,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    */
   public Vec3i applyToSize(Vec3i size) {
     var rotated = applyRotation(size);
-    return new Vec3i(Math.abs(rotated.getX()), Math.abs(rotated.getY()), Math.abs(rotated.getZ()));
+    return new Vec3i(Math.abs(rotated.getX()), rotated.getY(), Math.abs(rotated.getZ()));
   }
 
   /**
@@ -294,7 +247,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @return The inversely translated Vec3i
    */
   public Vec3i applyTranslationInverted(Vec3i vec) {
-    return vec.offset(-translation.getX(), -translation.getY(), -translation.getZ());
+    return vec.subtract(translation);
   }
 
   /**
@@ -314,7 +267,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @return The inversely translated BlockPos
    */
   public BlockPos applyTranslationInverted(BlockPos pos) {
-    return pos.offset(-translation.getX(), -translation.getY(), -translation.getZ());
+    return pos.subtract(translation);
   }
 
   /**
@@ -403,11 +356,11 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @return The inversely transformed BlockState
    */
   public BlockState applyInverted(BlockState blockState) {
-    return blockState.mirror(mirror).rotate(invert(rotation));
+    return blockState.rotate(invert(rotation)).mirror(mirror);
   }
 
   @Override
-  public String toString() {
+  public @NonNull String toString() {
     return String.format(
         "ParcelTransform{mirror=%s, rotation=%s, translation=%s}", mirror, rotation, translation);
   }
@@ -419,7 +372,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @param vec The original Vec3i
    * @return The rotated Vec3i
    */
-  public static Vec3i rotate(Rotation rotation, Vec3i vec) {
+  private static Vec3i rotate(Rotation rotation, Vec3i vec) {
     return switch (rotation) {
       case NONE -> vec;
       case CLOCKWISE_90 -> new Vec3i(-vec.getZ(), vec.getY(), vec.getX());
@@ -435,7 +388,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @param vec The original Vec3
    * @return The rotated Vec3
    */
-  public static Vec3 rotate(Rotation rotation, Vec3 vec) {
+  private static Vec3 rotate(Rotation rotation, Vec3 vec) {
     return switch (rotation) {
       case NONE -> vec;
       case CLOCKWISE_90 -> new Vec3(-vec.z, vec.y, vec.x);
@@ -450,7 +403,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @param rotation The rotation to invert
    * @return The inverted rotation
    */
-  public static Rotation invert(Rotation rotation) {
+  private static Rotation invert(Rotation rotation) {
     return switch (rotation) {
       case NONE, CLOCKWISE_180 -> rotation;
       case CLOCKWISE_90 -> Rotation.COUNTERCLOCKWISE_90;

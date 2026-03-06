@@ -136,15 +136,4 @@ public class ParcelTransformTest {
     assertTrue(transform2.isMirroredOrRotated());
     assertTrue(transform3.isMirroredOrRotated());
   }
-
-  @Test
-  void testCopy() {
-    ParcelTransform original =
-        new ParcelTransform(Mirror.LEFT_RIGHT, Rotation.CLOCKWISE_90, new BlockPos(1, 2, 3));
-    ParcelTransform copy = original.copy();
-
-    assertEquals(original.mirror(), copy.mirror());
-    assertEquals(original.rotation(), copy.rotation());
-    assertEquals(original.translation(), copy.translation());
-  }
 }
