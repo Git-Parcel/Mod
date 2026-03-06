@@ -1,5 +1,7 @@
 package io.github.leawind.gitparcel.api.parcel;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectAVLTreeMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectSortedMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -7,8 +9,8 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 public class ParcelFormatRegistry {
-  private final Map<String, Map<Integer, ParcelFormat<?>>> savers = new HashMap<>();
-  private final Map<String, Map<Integer, ParcelFormat<?>>> loaders = new HashMap<>();
+  private final Map<String, Int2ObjectSortedMap<ParcelFormat<?>>> savers = new HashMap<>();
+  private final Map<String, Int2ObjectSortedMap<ParcelFormat<?>>> loaders = new HashMap<>();
   private ParcelFormat.@Nullable Save<?> defaultSaver;
 
   /**
@@ -38,11 +40,15 @@ public class ParcelFormatRegistry {
   }
 
   public <C extends ParcelFormatConfig<C>> void registerSaver(ParcelFormat.Save<C> format) {
-    savers.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), format);
+    savers
+        .computeIfAbsent(format.id(), k -> new Int2ObjectAVLTreeMap<>())
+        .put(format.version(), format);
   }
 
   public <C extends ParcelFormatConfig<C>> void registerLoader(ParcelFormat.Load<C> format) {
-    loaders.computeIfAbsent(format.id(), k -> new HashMap<>()).put(format.version(), format);
+    loaders
+        .computeIfAbsent(format.id(), k -> new Int2ObjectAVLTreeMap<>())
+        .put(format.version(), format);
   }
 
   public <C extends ParcelFormatConfig<C>> void registerDefaultSaver(ParcelFormat.Save<C> format) {
@@ -70,7 +76,8 @@ public class ParcelFormatRegistry {
   }
 
   public ParcelFormat.@Nullable Save<?> getSaver(String id, int version) {
-    return (ParcelFormat.Save<?>) savers.getOrDefault(id, Map.of()).get(version);
+    return (ParcelFormat.Save<?>)
+        savers.getOrDefault(id, new Int2ObjectAVLTreeMap<>()).get(version);
   }
 
   /**
@@ -84,7 +91,8 @@ public class ParcelFormatRegistry {
   }
 
   public ParcelFormat.@Nullable Load<?> getLoader(String id, int version) {
-    return (ParcelFormat.Load<?>) loaders.getOrDefault(id, Map.of()).get(version);
+    return (ParcelFormat.Load<?>)
+        loaders.getOrDefault(id, new Int2ObjectAVLTreeMap<>()).get(version);
   }
 
   public Set<String> getSaverNames() {
@@ -96,17 +104,14 @@ public class ParcelFormatRegistry {
   }
 
   private static @Nullable ParcelFormat<?> getLatest(
-      Map<String, Map<Integer, ParcelFormat<?>>> formats, String id) {
+      Map<String, Int2ObjectSortedMap<ParcelFormat<?>>> formats, String id) {
+
     var versions = formats.get(id);
+
     if (versions == null) {
       return null;
     }
-    var sorted =
-        versions //
-            .values()
-            .stream()
-            .sorted((a, b) -> b.version() - a.version())
-            .toList();
-    return sorted.getFirst();
+
+    return versions.sequencedValues().getLast();
   }
 }
