@@ -4,11 +4,11 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import io.github.leawind.gitparcel.GitParcelTranslations;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.network.chat.Component;
 
 /** Command argument for directory paths. */
 public class DirPathArgument extends FilePathArgument {
@@ -22,7 +22,7 @@ public class DirPathArgument extends FilePathArgument {
           "'quoted'");
 
   public static final SimpleCommandExceptionType ERROR_NOT_DIR =
-      new SimpleCommandExceptionType(Component.translatable("argument.filepath.not_dir"));
+      new SimpleCommandExceptionType(GitParcelTranslations.of("argument.filepath.not_dir"));
 
   public static DirPathArgument path() {
     return new DirPathArgument();

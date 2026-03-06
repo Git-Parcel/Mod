@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
+import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.api.GitParcelApi;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelMeta;
@@ -20,7 +21,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import org.slf4j.Logger;
@@ -108,11 +108,11 @@ public class ParcelDebugCommand {
       ParcelMeta meta = ParcelMeta.create(format.id(), format.version(), size);
       ParcelFormat.save(source.getLevel(), ParcelTransform.none(), meta, parcelDir, ignoreEntities);
       source.sendSuccess(
-          () -> Component.translatable("command.parcel_debug.save.success"), ignoreEntities);
+          () -> GitParcelTranslations.of("command.parcel_debug.save.success"), ignoreEntities);
       return 1;
     } catch (IOException | ParcelException e) {
       LOGGER.error("Error while saving parcel", e);
-      source.sendFailure(Component.translatable("command.parcel_debug.save.failure"));
+      source.sendFailure(GitParcelTranslations.of("command.parcel_debug.save.failure"));
       return 0;
     } catch (Exception e) {
       LOGGER.error("Unexpected error while saving parcel", e);
@@ -142,11 +142,11 @@ public class ParcelDebugCommand {
       // TODO load entities
       ParcelFormat.load(source.getLevel(), transform, path, true, false, loadFlags);
 
-      source.sendSuccess(() -> Component.translatable("command.parcel_debug.load.success"), true);
+      source.sendSuccess(() -> GitParcelTranslations.of("command.parcel_debug.load.success"), true);
       return 1;
     } catch (IOException | ParcelException e) {
       LOGGER.error("Error while loading parcel", e);
-      source.sendFailure(Component.translatable("command.parcel_debug.load.failure"));
+      source.sendFailure(GitParcelTranslations.of("command.parcel_debug.load.failure"));
       return 0;
     } catch (Exception e) {
       LOGGER.error("Unexpected error while loading parcel", e);

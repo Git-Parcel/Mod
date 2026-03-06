@@ -7,6 +7,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.api.GitParcelApi;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import java.util.Arrays;
@@ -14,12 +15,11 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
-import net.minecraft.network.chat.Component;
 
 public final class ParcelFormatArgument {
   private static final Collection<String> EXAMPLES = Arrays.asList("mvp", "structure_template");
   public static final SimpleCommandExceptionType ERROR_INVALID =
-      new SimpleCommandExceptionType(Component.translatable("argument.parcel_format.invalid"));
+      new SimpleCommandExceptionType(GitParcelTranslations.of("argument.parcel_format.invalid"));
 
   public static Saver saver() {
     return new Saver();

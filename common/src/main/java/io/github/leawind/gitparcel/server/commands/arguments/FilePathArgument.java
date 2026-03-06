@@ -7,6 +7,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import io.github.leawind.gitparcel.GitParcelTranslations;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -14,7 +15,6 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
-import net.minecraft.network.chat.Component;
 
 public class FilePathArgument implements ArgumentType<Path> {
   private static final Collection<String> EXAMPLES =
@@ -27,9 +27,9 @@ public class FilePathArgument implements ArgumentType<Path> {
           "\"including space\"",
           "'quoted'");
   public static final SimpleCommandExceptionType ERROR_INVALID_PATH =
-      new SimpleCommandExceptionType(Component.translatable("argument.filepath.invalid_path"));
+      new SimpleCommandExceptionType(GitParcelTranslations.of("argument.filepath.invalid_path"));
   public static final SimpleCommandExceptionType ERROR_INVALID_CHAR =
-      new SimpleCommandExceptionType(Component.translatable("argument.filepath.invalid_char"));
+      new SimpleCommandExceptionType(GitParcelTranslations.of("argument.filepath.invalid_char"));
 
   public static FilePathArgument path() {
     return new FilePathArgument();
