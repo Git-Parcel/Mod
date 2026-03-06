@@ -1,7 +1,16 @@
 {
   "tasks": {
     "format": "deno fmt",
-    "format-check": "deno fmt --check"
+    "format-check": "deno fmt --check",
+    "i18n": "deno run -A scripts/i18n.ts --"
+  },
+  "lint": {
+    "rules": {
+      "exclude": [
+        "no-import-prefix",
+        "require-await"
+      ]
+    }
   },
   "fmt": {
     "bracePosition": "sameLine",
@@ -24,7 +33,7 @@
     "include": [
       "deno.json",
       "**/src/main/resources/**/*.json",
-      "scripts/**/*.ts"
+      "scripts/**"
     ],
     "exclude": []
   }
