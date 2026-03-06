@@ -54,7 +54,7 @@ public class StructureTemplateFormat
 
     StructureTemplate template = new StructureTemplate();
     template.fillFromWorld(
-        level, transform.translateWorldOrigin(), originalSize, true, ImmutableList.of());
+        level, transform.getTranslatedOrigin(), originalSize, true, ImmutableList.of());
     CompoundTag tag = template.save(new CompoundTag());
 
     Files.createDirectories(dataDir);
@@ -96,7 +96,7 @@ public class StructureTemplateFormat
     StructureTemplate template = level.getServer().getStructureManager().readStructure(tag);
 
     boolean isStrict = true;
-    BlockPos pivotPos = transform.translateWorldOrigin();
+    BlockPos pivotPos = transform.getTranslatedOrigin();
 
     StructurePlaceSettings settings =
         new StructurePlaceSettings()

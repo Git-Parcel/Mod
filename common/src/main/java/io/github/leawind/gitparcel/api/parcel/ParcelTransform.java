@@ -75,7 +75,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    *
    * @return The translated world origin as a BlockPos
    */
-  public BlockPos translateWorldOrigin() {
+  public BlockPos getTranslatedOrigin() {
     return new BlockPos(translation);
   }
 

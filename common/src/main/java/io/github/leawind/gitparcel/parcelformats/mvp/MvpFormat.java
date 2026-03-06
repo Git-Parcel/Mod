@@ -51,7 +51,7 @@ public class MvpFormat implements ParcelFormat.Save<ParcelFormatConfig.None> {
     int sizeX = originalSize.getX();
     int sizeY = originalSize.getY();
     int sizeZ = originalSize.getZ();
-    BlockPos origin = transform.translateWorldOrigin();
+    BlockPos origin = transform.getTranslatedOrigin();
 
     Files.createDirectories(dataDir);
 

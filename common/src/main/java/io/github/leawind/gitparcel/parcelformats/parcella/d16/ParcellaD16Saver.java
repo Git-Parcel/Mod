@@ -213,7 +213,7 @@ public class ParcellaD16Saver
 
   protected void saveEntities(Context ctx, ProblemReporter problemReporter) throws IOException {
     Files.createDirectories(ctx.entitiesDir);
-    var origin = ctx.transform.translateWorldOrigin();
+    var origin = ctx.transform.getTranslatedOrigin();
     var transformedSize = ctx.transform.applyToSize(ctx.originalSize);
 
     AABB aabb =
