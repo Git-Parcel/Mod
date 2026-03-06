@@ -4,8 +4,7 @@
   "package": "io.github.leawind.gitparcel.mixin",
   "compatibilityLevel": "JAVA_18",
   "mixins": [],
-  "client": [
-  ],
+  "client": [],
   "server": [],
   "injectors": {
     "defaultRequire": 1
