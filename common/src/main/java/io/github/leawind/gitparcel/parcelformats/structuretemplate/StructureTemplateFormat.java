@@ -103,8 +103,7 @@ public class StructureTemplateFormat
             .setIgnoreEntities(!ignoreEntities)
             .setKnownShape(isStrict)
             .setMirror(transform.mirror())
-            .setRotation(transform.rotation())
-            .setRotationPivot(pivotPos);
+            .setRotation(transform.rotation());
 
     template.placeInWorld(
         level, pivotPos, pivotPos, settings, RandomSource.create(pivotPos.asLong()), flags);
