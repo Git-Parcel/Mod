@@ -122,9 +122,13 @@ public class ParcelDebugCommand {
     try {
       BoundingBox bounds = BoundingBox.fromCorners(corner1, corner2);
       Vec3i size = new Vec3i(bounds.getXSpan(), bounds.getYSpan(), bounds.getZSpan());
-      // Here transform is none, so the real size is exactly the transformed size
+      // Here transform rotation is none, so the real size is exactly the transformed size
       ParcelMeta meta = ParcelMeta.create(format.id(), format.version(), size);
-      ParcelFormat.save(source.getLevel(), ParcelTransform.none(), meta, parcelDir, ignoreEntities);
+
+      var transform =
+          new ParcelTransform(new BlockPos(bounds.minX(), bounds.minY(), bounds.minZ()));
+
+      ParcelFormat.save(source.getLevel(), transform, meta, parcelDir, ignoreEntities);
       source.sendSuccess(
           () -> GitParcelTranslations.of("command.parcel_debug.save.success"), ignoreEntities);
       return 1;
@@ -167,7 +171,7 @@ public class ParcelDebugCommand {
 
   private static int load(
       CommandSourceStack source, BlockPos pos, Path path, Mirror mirror, Rotation rotation) {
-    return load(source, new ParcelTransform(pos), path, mirror, rotation);
+    return load(source, new ParcelTransform(mirror, rotation, pos), path, mirror, rotation);
   }
 
   private static int load(
