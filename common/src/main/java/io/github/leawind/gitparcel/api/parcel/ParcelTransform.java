@@ -47,10 +47,11 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
   /**
    * Applies the transformation to a size vector, returning the resulting size.
    *
-   * <p>This method only considers rotation, as mirroring and translation do not affect size.
+   * <p>Mirroring and translation do not affect size. Rotation is applied assuming Minecraft's
+   * standard Y-axis-only rotation; thus, only X and Z components are normalized to absolute values.
    *
    * @param size The original size vector
-   * @return The transformed size vector
+   * @return The transformed size vector with non-negative X and Z components
    */
   public Vec3i applyToSize(Vec3i size) {
     var rotated = applyRotation(size);
@@ -60,14 +61,15 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
   /**
    * Applies the inverted transformation to a size vector, returning the resulting size.
    *
-   * <p>This method only considers inverted rotation, as mirroring and translation do not affect
-   * size.
+   * <p>Only inverted rotation is considered (Y-axis only). Mirroring and translation do not affect
+   * size. X and Z components are normalized to absolute values to ensure positive dimensions.
    *
    * @param size The original size vector
-   * @return The transformed size vector
+   * @return The transformed size vector with non-negative X and Z components
    */
   public Vec3i applyToSizeInverted(Vec3i size) {
-    return applyRotationInverted(size);
+    var rotated = applyRotationInverted(size);
+    return new Vec3i(Math.abs(rotated.getX()), rotated.getY(), Math.abs(rotated.getZ()));
   }
 
   /**
