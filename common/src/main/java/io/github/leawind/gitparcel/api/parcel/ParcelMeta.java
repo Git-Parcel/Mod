@@ -136,14 +136,6 @@ public final class ParcelMeta {
     return json;
   }
 
-  public static @Nullable ParcelMeta loadIfExist(Path metaFile)
-      throws IOException, InvalidParcelMetaException {
-    if (!Files.exists(metaFile)) {
-      return null;
-    }
-    return load(metaFile);
-  }
-
   /**
    * @param metaFile File path to the file
    * @return The parsed {@link ParcelMeta} object
