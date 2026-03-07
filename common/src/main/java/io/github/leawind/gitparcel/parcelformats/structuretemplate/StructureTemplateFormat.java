@@ -41,7 +41,7 @@ public class StructureTemplateFormat
   @Override
   public void save(
       Level level,
-      Vec3i originalSize,
+      Vec3i parcelSize,
       ParcelTransform transform,
       Path dataDir,
       boolean ignoreEntities,
@@ -54,7 +54,7 @@ public class StructureTemplateFormat
 
     StructureTemplate template = new StructureTemplate();
     template.fillFromWorld(
-        level, transform.getTranslatedOrigin(), originalSize, true, ImmutableList.of());
+        level, transform.getTranslatedOrigin(), parcelSize, true, ImmutableList.of());
     CompoundTag tag = template.save(new CompoundTag());
 
     Files.createDirectories(dataDir);

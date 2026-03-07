@@ -39,14 +39,14 @@ public class ParcellaD16Loader
 
     public Context(
         ServerLevelAccessor level,
-        Vec3i originalSize,
+        Vec3i parcelSize,
         ParcelTransform transform,
         Path dataDir,
         boolean ignoreBlocks,
         boolean ignoreEntities,
         @Block.UpdateFlags int flags,
         @Nullable Config config) {
-      super(level, originalSize, transform, dataDir, ignoreBlocks, ignoreEntities, flags, config);
+      super(level, parcelSize, transform, dataDir, ignoreBlocks, ignoreEntities, flags, config);
       blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
       blocksPaletteFile = blocksDir.resolve(PALETTE_FILE_NAME);
       blocksNbtDir = blocksDir.resolve(NBT_DIR_NAME);
@@ -120,7 +120,7 @@ public class ParcellaD16Loader
 
     // Split the parcel into subparcels
     BlockPos anchorPos = new BlockPos(ctx.config.anchorOffset);
-    for (var localSubparcel : Subparcel.subdivideParcel(gridSize, ctx.originalSize, anchorPos)) {
+    for (var localSubparcel : Subparcel.subdivideParcel(gridSize, ctx.parcelSize, anchorPos)) {
       Vec3i coord = localSubparcel.getCoord(gridSize, anchorPos);
       long index = ZOrder3D.coordToIndexSigned(coord);
       Path subparcelFile =

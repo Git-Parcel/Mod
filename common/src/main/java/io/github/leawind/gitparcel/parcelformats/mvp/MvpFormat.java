@@ -36,7 +36,7 @@ public class MvpFormat implements ParcelFormat.Save<ParcelFormatConfig.None> {
   @Override
   public void save(
       Level level,
-      Vec3i originalSize,
+      Vec3i parcelSize,
       ParcelTransform transform,
       Path dataDir,
       boolean ignoreEntities,
@@ -48,9 +48,9 @@ public class MvpFormat implements ParcelFormat.Save<ParcelFormatConfig.None> {
           "Mirror or rotation transform is not supported by this format");
     }
 
-    int sizeX = originalSize.getX();
-    int sizeY = originalSize.getY();
-    int sizeZ = originalSize.getZ();
+    int sizeX = parcelSize.getX();
+    int sizeY = parcelSize.getY();
+    int sizeZ = parcelSize.getZ();
     BlockPos origin = transform.getTranslatedOrigin();
 
     Files.createDirectories(dataDir);

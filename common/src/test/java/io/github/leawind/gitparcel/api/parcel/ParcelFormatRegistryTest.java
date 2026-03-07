@@ -63,7 +63,7 @@ public class ParcelFormatRegistryTest {
     @Override
     public void save(
         Level level,
-        Vec3i originalSize,
+        Vec3i parcelSize,
         ParcelTransform transform,
         Path dataDir,
         boolean ignoreEntities,

@@ -45,12 +45,12 @@ public class ParcellaD16Saver
 
     public Context(
         Level level,
-        Vec3i originalSize,
+        Vec3i parcelSize,
         ParcelTransform transform,
         Path dataDir,
         boolean ignoreEntities,
         Config config) {
-      super(level, originalSize, transform, dataDir, ignoreEntities, config);
+      super(level, parcelSize, transform, dataDir, ignoreEntities, config);
       blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
       blocksPaletteFile = blocksDir.resolve(PALETTE_FILE_NAME);
       blocksNbtDir = blocksDir.resolve(NBT_DIR_NAME);
@@ -61,21 +61,21 @@ public class ParcellaD16Saver
   @Override
   public void save(
       Level level,
-      Vec3i originalSize,
+      Vec3i parcelSize,
       ParcelTransform transform,
       Path dataDir,
       boolean ignoreEntities,
       @Nullable Config config)
       throws IOException {
-    Vec3i transformedSize = transform.applyToSize(originalSize);
+    Vec3i transformedSize = transform.applyToSize(parcelSize);
     LOGGER.info("Parcel transform: {}", transform);
-    LOGGER.info("size: {} -> {} (raw to transformed)", originalSize, transformedSize);
+    LOGGER.info("size: {} -> {} (raw to transformed)", parcelSize, transformedSize);
 
     if (config == null) {
       config = new Config();
     }
 
-    var ctx = new Context(level, originalSize, transform, dataDir, ignoreEntities, config);
+    var ctx = new Context(level, parcelSize, transform, dataDir, ignoreEntities, config);
 
     try (var problemReporter = new ProblemReporter.ScopedCollector(LOGGER)) {
       saveBlocks(ctx, 16);
@@ -105,7 +105,7 @@ public class ParcellaD16Saver
 
     // Split the parcel into subparcels
     BlockPos anchorPos = new BlockPos(ctx.config.anchorOffset);
-    for (var originalSubparcel : Subparcel.subdivideParcel(gridSize, ctx.originalSize, anchorPos)) {
+    for (var originalSubparcel : Subparcel.subdivideParcel(gridSize, ctx.parcelSize, anchorPos)) {
       Vec3i coord = originalSubparcel.getCoord(gridSize, anchorPos);
 
       long index = ZOrder3D.coordToIndexSigned(coord);
@@ -154,9 +154,9 @@ public class ParcellaD16Saver
 
     List<Microparcel> microparcels =
         SubdivideAlgo.INSTANCE.subdivide(
-            ctx.originalSize.getX(),
-            ctx.originalSize.getY(),
-            ctx.originalSize.getZ(),
+            ctx.parcelSize.getX(),
+            ctx.parcelSize.getY(),
+            ctx.parcelSize.getZ(),
             (x, y, z) -> {
               BlockPos pos =
                   new BlockPos(x + subparcel.originX, y + subparcel.originY, z + subparcel.originZ);
@@ -214,7 +214,7 @@ public class ParcellaD16Saver
   protected void saveEntities(Context ctx, ProblemReporter problemReporter) throws IOException {
     Files.createDirectories(ctx.entitiesDir);
     var origin = ctx.transform.getTranslatedOrigin();
-    var transformedSize = ctx.transform.applyToSize(ctx.originalSize);
+    var transformedSize = ctx.transform.applyToSize(ctx.parcelSize);
 
     AABB aabb =
         new AABB(

@@ -24,7 +24,7 @@ public class ParcellaD32Saver extends ParcellaD16Saver
   @Override
   public void save(
       Level level,
-      Vec3i originalSize,
+      Vec3i parcelSize,
       ParcelTransform transform,
       Path dataDir,
       boolean ignoreEntities,
@@ -34,7 +34,7 @@ public class ParcellaD32Saver extends ParcellaD16Saver
       config = new Config();
     }
 
-    var ctx = new Context(level, originalSize, transform, dataDir, ignoreEntities, config);
+    var ctx = new Context(level, parcelSize, transform, dataDir, ignoreEntities, config);
 
     try (var problemReporter = new ProblemReporter.ScopedCollector(LOGGER)) {
 
@@ -54,9 +54,9 @@ public class ParcellaD32Saver extends ParcellaD16Saver
 
     List<Microparcel> microparcels =
         SubdivideAlgo.INSTANCE.subdivide(
-            ctx.originalSize.getX(),
-            ctx.originalSize.getY(),
-            ctx.originalSize.getZ(),
+            ctx.parcelSize.getX(),
+            ctx.parcelSize.getY(),
+            ctx.parcelSize.getZ(),
             (x, y, z) -> {
               BlockPos pos =
                   new BlockPos(x + subparcel.originX, y + subparcel.originY, z + subparcel.originZ);
