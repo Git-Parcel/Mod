@@ -105,15 +105,15 @@ public class ParcellaD16Saver
 
     // Split the parcel into subparcels
     BlockPos anchorPos = new BlockPos(ctx.config.anchorOffset);
-    for (var originalSubparcel : Subparcel.subdivideParcel(gridSize, ctx.parcelSize, anchorPos)) {
-      Vec3i coord = originalSubparcel.getCoord(gridSize, anchorPos);
+    for (var localSubparcel : Subparcel.subdivideParcel(gridSize, ctx.parcelSize, anchorPos)) {
+      Vec3i coord = localSubparcel.getCoord(gridSize, anchorPos);
 
       long index = ZOrder3D.coordToIndexSigned(coord);
 
       Path subparcelFile =
           subParcelsDir.resolve(IndexPathCodec.indexToPath(index, SUBPARCEL_SUFFIX));
       Files.createDirectories(subparcelFile.getParent());
-      writeSubparcel(ctx, subparcelFile, originalSubparcel);
+      writeSubparcel(ctx, subparcelFile, localSubparcel);
     }
 
     ctx.blockPalette.save(
@@ -138,12 +138,12 @@ public class ParcellaD16Saver
     }
   }
 
-  protected void writeSubparcel(Context ctx, Path file, Subparcel originalSubparcel)
+  protected void writeSubparcel(Context ctx, Path file, Subparcel localSubparcel)
       throws IOException {
     if (ctx.config.enableMicroparcel.get()) {
-      writeSubparcelRLE3D(ctx, file, originalSubparcel);
+      writeSubparcelRLE3D(ctx, file, localSubparcel);
     } else {
-      writeSubparcelFLAT(ctx, file, originalSubparcel);
+      writeSubparcelFLAT(ctx, file, localSubparcel);
     }
   }
 
