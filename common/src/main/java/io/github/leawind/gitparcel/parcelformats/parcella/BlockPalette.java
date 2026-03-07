@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.parcelformats.parcella;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
+import io.github.leawind.gitparcel.mixin.AccessStateHolder;
 import io.github.leawind.gitparcel.parcelformats.NbtFormat;
 import io.github.leawind.gitparcel.utils.IntIdPalette;
 import io.github.leawind.gitparcel.utils.numbase.HexUtils;
@@ -12,6 +13,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Collectors;
 import net.minecraft.commands.arguments.blocks.BlockStateParser;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -21,6 +23,7 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateHolder;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -148,8 +151,22 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
     }
   }
 
+  /**
+   * @see StateHolder#toString
+   * @see BlockStateParser#parseForBlock
+   */
   public static String stringifyBlockState(BlockState blockState) {
-    return BuiltInRegistries.BLOCK.wrapAsHolder(blockState.getBlock()).getRegisteredName();
+    var sb = new StringBuilder();
+    sb.append(BuiltInRegistries.BLOCK.wrapAsHolder(blockState.getBlock()).getRegisteredName());
+    if (!blockState.getValues().isEmpty()) {
+      sb.append('[');
+      sb.append(
+          blockState.getValues().entrySet().stream()
+              .map(AccessStateHolder.getPropertyEntryToStringFunction())
+              .collect(Collectors.joining(",")));
+      sb.append(']');
+    }
+    return sb.toString();
   }
 
   public static BlockState parseBlockState(
@@ -211,15 +228,23 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
           char type = '\0';
           String idString = null;
           StringBuilder buffer = new StringBuilder(32);
-
+          // Char `=` can be used to split id and block state, but `=` could also appear in the
+          // block state string.
+          // So we use a flag to indicate whether we are in the id part or the block state part.
+          boolean isInBlockStateString = false;
           for (char ch : line.toCharArray()) {
-            switch (ch) {
-              case '=', '>' -> {
-                type = ch;
-                idString = buffer.toString();
-                buffer.setLength(0);
+            if (isInBlockStateString) {
+              buffer.append(ch);
+            } else {
+              switch (ch) {
+                case '=', '>' -> {
+                  type = ch;
+                  idString = buffer.toString();
+                  buffer.setLength(0);
+                  isInBlockStateString = true;
+                }
+                default -> buffer.append(ch);
               }
-              default -> buffer.append(ch);
             }
           }
 
