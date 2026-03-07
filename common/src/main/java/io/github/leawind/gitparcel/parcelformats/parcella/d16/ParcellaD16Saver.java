@@ -141,13 +141,13 @@ public class ParcellaD16Saver
   protected void writeSubparcel(Context ctx, Path file, Subparcel originalSubparcel)
       throws IOException {
     if (ctx.config.enableMicroparcel.get()) {
-      writeSubparcelWithMicroparcels(ctx, file, originalSubparcel);
+      writeSubparcelRLE3D(ctx, file, originalSubparcel);
     } else {
-      writeSubparcelFlat(ctx, file, originalSubparcel);
+      writeSubparcelFLAT(ctx, file, originalSubparcel);
     }
   }
 
-  protected void writeSubparcelWithMicroparcels(Context ctx, Path file, Subparcel subparcel)
+  protected void writeSubparcelRLE3D(Context ctx, Path file, Subparcel subparcel)
       throws IOException {
     var sb = new StringBuilder(8192);
     char[] hex = HexUtils.UPPER_HEX_DIGITS;
@@ -182,7 +182,7 @@ public class ParcellaD16Saver
     Files.writeString(file, sb, StandardCharsets.UTF_8);
   }
 
-  protected void writeSubparcelFlat(Context ctx, Path path, Subparcel subparcel)
+  protected void writeSubparcelFLAT(Context ctx, Path path, Subparcel subparcel)
       throws IOException {
     StringBuilder sb = new StringBuilder(8192);
 

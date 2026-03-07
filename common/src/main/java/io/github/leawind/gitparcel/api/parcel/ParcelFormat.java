@@ -203,6 +203,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
     public final ServerLevelAccessor level;
     public final boolean ignoreBlocks;
     public final boolean ignoreEntities;
+    public final @Block.UpdateFlags int flags;
     public final C config;
 
     public LoadContext(
@@ -212,11 +213,13 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
         Path dataDir,
         boolean ignoreBlocks,
         boolean ignoreEntities,
+        @Block.UpdateFlags int flags,
         C config) {
       super(originalSize, transform, dataDir);
       this.level = level;
       this.ignoreBlocks = ignoreBlocks;
       this.ignoreEntities = ignoreEntities;
+      this.flags = flags;
       this.config = config;
     }
   }

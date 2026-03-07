@@ -231,7 +231,7 @@ public class ParcelDebugCommand {
 
     try {
       // TODO load entities
-      ParcelFormat.load(source.getLevel(), transform, path, true, false, loadFlags);
+      ParcelFormat.load(source.getLevel(), transform, path, false, true, loadFlags);
 
       source.sendSuccess(() -> GitParcelTranslations.of("command.parcel_debug.load.success"), true);
       return 1;

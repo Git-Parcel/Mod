@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.api.GitParcelApi;
 import io.github.leawind.gitparcel.parcelformats.mvp.MvpFormat;
+import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Loader;
 import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Saver;
 import io.github.leawind.gitparcel.parcelformats.parcella.d32.ParcellaD32Saver;
 import io.github.leawind.gitparcel.parcelformats.structuretemplate.StructureTemplateFormat;
@@ -58,6 +59,7 @@ public class GitParcelMod {
 
     if (Services.PLATFORM.isDevelopmentEnvironment()) {
       GitParcelApi.FORMAT_REGISTRY.register(new ParcellaD16Saver());
+      GitParcelApi.FORMAT_REGISTRY.register(new ParcellaD16Loader());
       GitParcelApi.FORMAT_REGISTRY.register(new MvpFormat());
     }
   }

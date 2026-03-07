@@ -47,7 +47,7 @@ public class ParcellaD32Saver extends ParcellaD16Saver
   }
 
   @Override
-  protected void writeSubparcelWithMicroparcels(Context ctx, Path file, Subparcel subparcel)
+  protected void writeSubparcelRLE3D(Context ctx, Path file, Subparcel subparcel)
       throws IOException {
     var sb = new StringBuilder(8192);
     char[] chars = Base32Utils.BASE32_DIGITS;

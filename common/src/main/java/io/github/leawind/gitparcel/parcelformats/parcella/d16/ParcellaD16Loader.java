@@ -5,14 +5,22 @@ import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.parcelformats.parcella.BlockPalette;
+import io.github.leawind.gitparcel.parcelformats.parcella.Subparcel;
+import io.github.leawind.gitparcel.parcelformats.parcella.SubparcelFormat;
+import io.github.leawind.gitparcel.parcelformats.parcella.utils.IndexPathCodec;
+import io.github.leawind.gitparcel.parcelformats.parcella.utils.ZOrder3D;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraft.world.level.storage.TagValueInput;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -38,7 +46,7 @@ public class ParcellaD16Loader
         boolean ignoreEntities,
         @Block.UpdateFlags int flags,
         @Nullable Config config) {
-      super(level, originalSize, transform, dataDir, ignoreBlocks, ignoreEntities, config);
+      super(level, originalSize, transform, dataDir, ignoreBlocks, ignoreEntities, flags, config);
       blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
       blocksPaletteFile = blocksDir.resolve(PALETTE_FILE_NAME);
       blocksNbtDir = blocksDir.resolve(NBT_DIR_NAME);
@@ -78,6 +86,7 @@ public class ParcellaD16Loader
       }
 
       if (!ignoreEntities) {
+        // TODO load entities
         // loadEntities(ctx, problemReporter);
       }
     }
@@ -87,8 +96,19 @@ public class ParcellaD16Loader
       throws IOException, ParcelException {
 
     if (!Files.exists(ctx.blocksDir)) {
-      LOGGER.warn("Blocks directory not found: {}", ctx.blocksDir);
-      return;
+      // TODO error handling
+      throw new ParcelException("Blocks directory not found: " + ctx.blocksDir);
+    }
+
+    loadSubparcels(ctx, 16, problemReporter);
+  }
+
+  protected void loadSubparcels(Context ctx, int gridSize, ProblemReporter problemReporter)
+      throws IOException, ParcelException {
+
+    if (!Files.exists(ctx.subparcelsDir)) {
+      // TODO error handling
+      throw new ParcelException("Subparcels directory not found: " + ctx.subparcelsDir);
     }
 
     ctx.blockPalette =
@@ -98,53 +118,174 @@ public class ParcellaD16Loader
             ctx.blocksNbtDir,
             ctx.config.blockEntityDataFormat.get());
 
-    Path subParcelsDir = ctx.blocksDir.resolve(SUBPARCELS_DIR_NAME);
-    if (Files.exists(subParcelsDir)) {
-      loadSubparcels(ctx, problemReporter);
+    // Split the parcel into subparcels
+    BlockPos anchorPos = new BlockPos(ctx.config.anchorOffset);
+    for (var localSubparcel : Subparcel.subdivideParcel(gridSize, ctx.originalSize, anchorPos)) {
+      Vec3i coord = localSubparcel.getCoord(gridSize, anchorPos);
+      long index = ZOrder3D.coordToIndexSigned(coord);
+      Path subparcelFile =
+          ctx.subparcelsDir.resolve(IndexPathCodec.indexToPath(index, SUBPARCEL_SUFFIX));
+
+      if (Files.exists(subparcelFile)) {
+        loadSubparcel(ctx, subparcelFile, localSubparcel, problemReporter);
+      }
     }
   }
 
-  protected void loadSubparcels(Context ctx, ProblemReporter problemReporter) throws IOException {
+  protected void loadSubparcel(
+      Context ctx, Path file, Subparcel localSubparcel, ProblemReporter problemReporter) {
+    try {
+      byte[] bytes = Files.readAllBytes(file);
+      SubparcelFormat isMicroparcelFormat = detectSubparcelFormat(bytes);
+      int[][][] blockStates =
+          switch (isMicroparcelFormat) {
+            case RLE3D -> loadSubparcelRLE3D(localSubparcel, bytes, problemReporter);
+            case FLAT -> loadSubparcelFLAT(localSubparcel, bytes, problemReporter);
+          };
+      var localPos = new BlockPos.MutableBlockPos();
 
-    try (var walk = Files.walk(ctx.subparcelsDir)) {
-      walk.filter(Files::isRegularFile)
-          .filter(path -> path.toString().endsWith(SUBPARCEL_SUFFIX))
-          .forEach(
-              subparcelPath -> {
-                try {
-                  loadSubparcel(ctx, subparcelPath, problemReporter);
-                } catch (IOException e) {
-                  LOGGER.error("Error loading subparcel: {}", subparcelPath, e);
+      for (int x = 0; x < localSubparcel.sizeX; x++) {
+        for (int y = 0; y < localSubparcel.sizeY; y++) {
+          for (int z = 0; z < localSubparcel.sizeZ; z++) {
+            int paletteId = blockStates[x][y][z];
+            BlockPalette.Data data = ctx.blockPalette.get(paletteId);
+            if (data == null) {
+              problemReporter.report(() -> String.format("Unknown block palette id %d", paletteId));
+              continue;
+            }
+            BlockState blockState = data.blockState();
+            BlockState worldBlockState = ctx.transform.apply(blockState);
+
+            localPos.set(
+                localSubparcel.originX + x, localSubparcel.originY + y, localSubparcel.originZ + z);
+            BlockPos worldPos = ctx.transform.apply(localPos);
+
+            // NOW
+            //            LOGGER.info("Set block {} to {}", worldPos, worldBlockState);
+            ctx.level.setBlock(worldPos, worldBlockState, ctx.flags);
+            var nbt = data.nbt();
+            if (nbt != null) {
+              BlockEntity blockEntity = ctx.level.getBlockEntity(worldPos);
+              if (blockEntity != null) {
+                blockEntity.loadWithComponents(
+                    TagValueInput.create(problemReporter, ctx.level.registryAccess(), nbt));
+              }
+            }
+          }
+        }
+      }
+
+    } catch (IOException e) {
+      problemReporter.report(() -> "Error reading subparcel file: " + file);
+    }
+  }
+
+  protected int[][][] loadSubparcelRLE3D(
+      Subparcel localSubparcel, byte[] bytes, ProblemReporter problemReporter) {
+    int[][][] states = new int[localSubparcel.sizeX][localSubparcel.sizeY][localSubparcel.sizeZ];
+
+    int x0 = 0, y0 = 0, z0 = 0;
+    int x1 = 0, y1 = 0, z1 = 0;
+
+    StringBuilder idSb = new StringBuilder(15);
+    for (byte b : bytes) {
+      char ch = (char) b;
+      switch (ch) {
+        case '=' -> {
+          x0 = Integer.parseInt(String.valueOf(idSb.charAt(0)), 16);
+          y0 = Integer.parseInt(String.valueOf(idSb.charAt(1)), 16);
+          z0 = Integer.parseInt(String.valueOf(idSb.charAt(2)), 16);
+          if (idSb.length() == 3) {
+            x1 = x0;
+            y1 = y0;
+            z1 = z0;
+          } else {
+            if (idSb.length() < 6) {
+              //              problemReporter.report(() -> String.format("Invalid line: '%s'", idSb));
+              LOGGER.info("Invalid line: '{}'", idSb);
+            }
+            x1 = x0 + Integer.parseInt(String.valueOf(idSb.charAt(3)), 16);
+            y1 = y0 + Integer.parseInt(String.valueOf(idSb.charAt(4)), 16);
+            z1 = z0 + Integer.parseInt(String.valueOf(idSb.charAt(5)), 16);
+          }
+          idSb.setLength(0);
+        }
+        case '\n' -> {
+          try {
+
+            int paletteId = Integer.parseInt(idSb.toString(), 16);
+            idSb.setLength(0);
+
+            for (int x = x0; x <= x1; x++) {
+              for (int y = y0; y <= y1; y++) {
+                for (int z = z0; z <= z1; z++) {
+                  states[x][y][z] = paletteId;
                 }
-              });
+              }
+            }
+
+          } catch (NumberFormatException e) {
+            problemReporter.report(() -> String.format("Error parsing palette id '%s'", idSb));
+          }
+        }
+        case '\r', ' ', '\t', '\0' -> {}
+        default -> idSb.append(ch);
+      }
     }
+    return states;
   }
 
-  protected void loadSubparcel(Context ctx, Path subparcelFile, ProblemReporter problemReporter)
-      throws IOException {
+  protected int[][][] loadSubparcelFLAT(
+      Subparcel localSubparcel, byte[] bytes, ProblemReporter problemReporter) {
+    int[][][] states = new int[localSubparcel.sizeX][localSubparcel.sizeY][localSubparcel.sizeZ];
+    StringBuilder sb = new StringBuilder(8);
 
-    // TODO
-    throw new UnsupportedOperationException("Unimplemented yet");
-    //
-    //    BlockPos anchorPos = ctx.transform.apply(new BlockPos(ctx.config.anchorOffset));
-    //
-    //    String relativePath = ctx.subparcelsDir.relativize(subparcelFile).toString();
-    //    String fileName = relativePath.substring(0, relativePath.length() - 4);
-    //    String[] pathParts = fileName.split("/|");
-    //
-    //    long index = 0;
-    //    for (int i = pathParts.length - 1; i >= 0; i--) {
-    //      index = (index << 8) | Integer.parseInt(pathParts[i], 16);
-    //    }
-    //
-    //    var coord = ZOrder3D.indexToCoordSigned(index);
-    //    int gridSize = 16;
-    //    int originX = anchorPos.getX() + coord.x * gridSize;
-    //    int originY = anchorPos.getY() + coord.y * gridSize;
-    //    int originZ = anchorPos.getZ() + coord.z * gridSize;
-    //
-    //    Subparcel subparcel = new Subparcel(originX, originY, originZ, gridSize, gridSize,
-    // gridSize);
+    int blockIndex = 0;
+    for (byte b : bytes) {
+      char ch = (char) b;
+      switch (ch) {
+        case '\n' -> {
+          int x = blockIndex % localSubparcel.sizeX;
+          int y = (blockIndex / localSubparcel.sizeX) % localSubparcel.sizeY;
+          int z = blockIndex / (localSubparcel.sizeX * localSubparcel.sizeY);
 
+          try {
+            states[x][y][z] = Integer.parseInt(sb.toString(), 16);
+          } catch (NumberFormatException e) {
+            problemReporter.report(
+                () -> String.format("Error parsing palette id '%s' at (%d, %d, %d)", sb, x, y, z));
+          }
+
+          sb.setLength(0);
+          blockIndex++;
+        }
+        case '\r', ' ', '\t', '\0' -> {}
+        default -> sb.append(ch);
+      }
+    }
+    return states;
+  }
+
+  /**
+   * Detect the subparcel format from the first 7 bytes of the file
+   *
+   * <p>Note: If the file is invalid, the returned value is undefined.
+   *
+   * <p>This method never throws exception.
+   *
+   * @param bytes The content of the subparcel file
+   * @return The detected subparcel format
+   */
+  protected static SubparcelFormat detectSubparcelFormat(byte[] bytes) {
+    do {
+      if (bytes.length < 8) {
+        break;
+      }
+      if (bytes[3] == '=' || bytes[6] == '=') {
+        return SubparcelFormat.RLE3D;
+      }
+    } while (false);
+
+    return SubparcelFormat.FLAT;
   }
 }

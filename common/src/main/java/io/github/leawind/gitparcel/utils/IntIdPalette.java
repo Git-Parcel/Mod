@@ -226,9 +226,10 @@ public class IntIdPalette<T> {
   protected int getNextUnusedId() throws IllegalStateException {
     int id;
 
+    // from lastId (exclusive) to idRangeEnd
     id = Math.floorDiv(lastId, idStride) * idStride + idShift;
     if (id <= lastId) id += idStride;
-    while (id < idRangeEnd) {
+    while (id > idRangeStart && id < idRangeEnd) {
       if (!isIdInUse(id)) {
         return lastId = id;
       }
