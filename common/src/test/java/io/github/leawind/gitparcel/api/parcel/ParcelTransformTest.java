@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.github.leawind.gitparcel.testutils.RandomForMC;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
@@ -53,8 +54,8 @@ public class ParcelTransformTest {
     BlockPos pos = new BlockPos(1, 2, 3);
     Vec3i vec = new Vec3i(1, 2, 3);
 
-    assertEquals(new BlockPos(3, 2, -1), transform.apply(pos));
-    assertEquals(new Vec3i(3, 2, -1), transform.apply(vec));
+    assertEquals(new BlockPos(1, 2, -3), transform.apply(pos));
+    assertEquals(new Vec3i(1, 2, -3), transform.apply(vec));
   }
 
   @Test
@@ -215,5 +216,59 @@ public class ParcelTransformTest {
     Vec3i inverted = transform.applyInverted(transformed);
 
     assertEquals(original, inverted);
+  }
+
+  @Test
+  void testUnnamed() {
+    var random = new RandomForMC(12138);
+    for (int i = 0; i < 100; i++) {
+      var mirror = random.nextEnum(Mirror.class);
+      var rotation = random.nextEnum(Rotation.class);
+      var translate = random.nextVec3i(-100, 100);
+      var transform = new ParcelTransform(mirror, rotation, translate);
+
+      for (int j = 0; j < 100; j++) {
+        var v = random.nextVec3i(-100, 100);
+        assertEquals(v, randomApply(random, transform, v, 10));
+
+        var s = random.nextVec3i(1, 100);
+        assertEquals(s, randomApplyToSize(random, transform, s, 10));
+      }
+    }
+  }
+
+  static Vec3i randomApply(RandomForMC random, ParcelTransform transform, Vec3i v, int rounds) {
+    Boolean[] ops = new Boolean[rounds * 2];
+    for (int i = 0; i < rounds; i++) {
+      ops[i * 2] = true;
+      ops[i * 2 + 1] = false;
+    }
+    random.shuffle(ops);
+    for (Boolean op : ops) {
+      if (op) {
+        v = transform.apply(v);
+      } else {
+        v = transform.applyInverted(v);
+      }
+    }
+    return v;
+  }
+
+  static Vec3i randomApplyToSize(
+      RandomForMC random, ParcelTransform transform, Vec3i size, int rounds) {
+    Boolean[] ops = new Boolean[rounds * 2];
+    for (int i = 0; i < rounds; i++) {
+      ops[i * 2] = true;
+      ops[i * 2 + 1] = false;
+    }
+    random.shuffle(ops);
+    for (Boolean op : ops) {
+      if (op) {
+        size = transform.applyToSize(size);
+      } else {
+        size = transform.applyToSizeInverted(size);
+      }
+    }
+    return size;
   }
 }

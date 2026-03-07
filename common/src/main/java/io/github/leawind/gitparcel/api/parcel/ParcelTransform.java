@@ -96,7 +96,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
     return switch (mirror) {
       case NONE -> vec;
       case LEFT_RIGHT -> new Vec3i(-vec.getX(), vec.getY(), vec.getZ());
-      case FRONT_BACK -> new Vec3i(vec.getZ(), vec.getY(), -vec.getX());
+      case FRONT_BACK -> new Vec3i(vec.getX(), vec.getY(), -vec.getZ());
     };
   }
 
@@ -110,7 +110,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
     return switch (mirror) {
       case NONE -> vec;
       case LEFT_RIGHT -> new Vec3(-vec.x, vec.y, vec.z);
-      case FRONT_BACK -> new Vec3(vec.z, vec.y, -vec.x);
+      case FRONT_BACK -> new Vec3(vec.x, vec.y, -vec.z);
     };
   }
 
@@ -124,7 +124,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
     return switch (mirror) {
       case NONE -> pos;
       case LEFT_RIGHT -> new BlockPos(-pos.getX(), pos.getY(), pos.getZ());
-      case FRONT_BACK -> new BlockPos(pos.getZ(), pos.getY(), -pos.getX());
+      case FRONT_BACK -> new BlockPos(pos.getX(), pos.getY(), -pos.getZ());
     };
   }
 

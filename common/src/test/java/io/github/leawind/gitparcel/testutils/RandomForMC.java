@@ -46,4 +46,17 @@ public class RandomForMC extends Random {
         nextInt(origin.getY(), bound.getY()),
         nextInt(origin.getZ(), bound.getZ()));
   }
+
+  public <E extends Enum<E>> E nextEnum(Class<E> enumClass) {
+    return enumClass.getEnumConstants()[nextInt(enumClass.getEnumConstants().length)];
+  }
+
+  public <T> void shuffle(T[] array) {
+    for (int i = array.length - 1; i > 0; i--) {
+      int index = nextInt(i + 1);
+      T temp = array[index];
+      array[index] = array[i];
+      array[i] = temp;
+    }
+  }
 }
