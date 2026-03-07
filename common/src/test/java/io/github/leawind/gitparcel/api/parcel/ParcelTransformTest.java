@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 public class ParcelTransformTest {
   @Test
   void testNoneTransform() {
-    ParcelTransform transform = ParcelTransform.none();
+    ParcelTransform transform = ParcelTransform.IDENTITY;
 
     BlockPos pos = new BlockPos(1, 2, 3);
     Vec3i vec = new Vec3i(1, 2, 3);
@@ -125,16 +125,16 @@ public class ParcelTransformTest {
   }
 
   @Test
-  void testIsMirroredOrRotated() {
-    ParcelTransform transform1 = ParcelTransform.none();
+  void testHasOrientation() {
+    ParcelTransform transform1 = ParcelTransform.IDENTITY;
     ParcelTransform transform2 =
         new ParcelTransform(Mirror.LEFT_RIGHT, Rotation.NONE, BlockPos.ZERO);
     ParcelTransform transform3 =
         new ParcelTransform(Mirror.NONE, Rotation.CLOCKWISE_90, BlockPos.ZERO);
 
-    assertFalse(transform1.isMirroredOrRotated());
-    assertTrue(transform2.isMirroredOrRotated());
-    assertTrue(transform3.isMirroredOrRotated());
+    assertFalse(transform1.hasOrientation());
+    assertTrue(transform2.hasOrientation());
+    assertTrue(transform3.hasOrientation());
   }
 
   @Test

@@ -43,7 +43,7 @@ public class MvpFormat implements ParcelFormat.Save<ParcelFormatConfig.None> {
       ParcelFormatConfig.@Nullable None config)
       throws IOException {
 
-    if (transform.isMirroredOrRotated()) {
+    if (transform.hasOrientation()) {
       throw new UnsupportedOperationException(
           "Mirror or rotation transform is not supported by this format");
     }

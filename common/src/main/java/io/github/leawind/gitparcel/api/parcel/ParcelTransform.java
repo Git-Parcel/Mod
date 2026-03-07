@@ -28,10 +28,8 @@ import net.minecraft.world.phys.Vec3;
  * @see StructurePlaceSettings
  */
 public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translation) {
-  /** Returns an identity transform. */
-  public static ParcelTransform none() {
-    return new ParcelTransform(Vec3i.ZERO);
-  }
+  /** Identity transform. */
+  public static final ParcelTransform IDENTITY = new ParcelTransform(Vec3i.ZERO);
 
   /**
    * Creates a transform with only translation.
@@ -84,7 +82,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    *
    * @return True if mirrored or rotated
    */
-  public boolean isMirroredOrRotated() {
+  public boolean hasOrientation() {
     return mirror != Mirror.NONE || rotation != Rotation.NONE;
   }
 
