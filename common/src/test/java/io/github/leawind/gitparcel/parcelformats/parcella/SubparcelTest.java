@@ -19,7 +19,7 @@ public class SubparcelTest {
   private static final Vec3i SIZE_16X = new Vec3i(16, 16, 16);
 
   /**
-   * @param size todo
+   * @param size Size of the entire parcel
    * @param subparcels Bounding boxes of each subparcel, including their corners
    */
   public static <T extends Parcel> void assertParcelEqual(Vec3i size, Iterable<T> subparcels) {

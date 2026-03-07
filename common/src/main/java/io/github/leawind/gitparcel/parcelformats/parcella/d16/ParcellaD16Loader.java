@@ -160,8 +160,6 @@ public class ParcellaD16Loader
                 localSubparcel.originX + x, localSubparcel.originY + y, localSubparcel.originZ + z);
             BlockPos worldPos = ctx.transform.apply(localPos);
 
-            // NOW
-            //            LOGGER.info("Set block {} to {}", worldPos, worldBlockState);
             ctx.level.setBlock(worldPos, worldBlockState, ctx.flags);
             var nbt = data.nbt();
             if (nbt != null) {

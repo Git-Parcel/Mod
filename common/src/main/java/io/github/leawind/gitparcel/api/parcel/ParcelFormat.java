@@ -257,7 +257,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
      * Load parcel content from directory
      *
      * @param level Level
-     * @param size Real size of the parcel (Before transform)
+     * @param size Real size of the parcel (the one saved in the disk, without transform)
      * @param transform Transform the parcel when loading.
      * @param dataDir Path to parcel data directory
      * @param ignoreBlocks Whether to ignore blocks

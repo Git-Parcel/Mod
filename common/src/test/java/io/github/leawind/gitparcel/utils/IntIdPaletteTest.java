@@ -408,13 +408,14 @@ public class IntIdPaletteTest {
     assertEquals(10, palette.collect("test3"));
     assertEquals(10, palette.collect("test3"));
     assertEquals(13, palette.collect("test4"));
+  }
 
-    {
-      // NOW Temp
-      palette = new IntIdPalette<>(0, Integer.MAX_VALUE);
-      assertEquals(0, palette.collect("test0"));
-      assertEquals(0, palette.collect("test0"));
-      assertEquals(1, palette.collect("test1"));
-    }
+  @Test
+  void testIntMax() {
+
+    palette = new IntIdPalette<>(0, Integer.MAX_VALUE);
+    assertEquals(0, palette.collect("test0"));
+    assertEquals(0, palette.collect("test0"));
+    assertEquals(1, palette.collect("test1"));
   }
 }
