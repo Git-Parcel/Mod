@@ -163,13 +163,13 @@ public class ParcelDebugCommand {
       Rotation rotation) {
     try {
       BoundingBox bounds = BoundingBox.fromCorners(corner1, corner2);
-      Vec3i size = new Vec3i(bounds.getXSpan(), bounds.getYSpan(), bounds.getZSpan());
-      // Here transform rotation is none, so the real size is exactly the transformed size
-      ParcelMeta meta = ParcelMeta.create(format.id(), format.version(), size);
-
       var transform =
           new ParcelTransform(
               mirror, rotation, new BlockPos(bounds.minX(), bounds.minY(), bounds.minZ()));
+
+      Vec3i size = new Vec3i(bounds.getXSpan(), bounds.getYSpan(), bounds.getZSpan());
+      Vec3i parcelSize = transform.applyToSizeInverted(size);
+      ParcelMeta meta = ParcelMeta.create(format.id(), format.version(), parcelSize);
 
       ParcelFormat.save(source.getLevel(), transform, meta, parcelDir, ignoreEntities);
       source.sendSuccess(
