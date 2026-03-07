@@ -67,10 +67,6 @@ public class ParcellaD16Saver
       boolean ignoreEntities,
       @Nullable Config config)
       throws IOException {
-    Vec3i transformedSize = transform.applyToSize(parcelSize);
-    LOGGER.info("Parcel transform: {}", transform);
-    LOGGER.info("size: {} -> {} (raw to transformed)", parcelSize, transformedSize);
-
     if (config == null) {
       config = new Config();
     }
@@ -214,16 +210,16 @@ public class ParcellaD16Saver
   protected void saveEntities(Context ctx, ProblemReporter problemReporter) throws IOException {
     Files.createDirectories(ctx.entitiesDir);
     var origin = ctx.transform.getTranslatedOrigin();
-    var transformedSize = ctx.transform.applyToSize(ctx.parcelSize);
+    var worldSize = ctx.transform.applyToSize(ctx.parcelSize);
 
     AABB aabb =
         new AABB(
             origin.getX(),
             origin.getY(),
             origin.getZ(),
-            transformedSize.getX(),
-            transformedSize.getY(),
-            transformedSize.getZ());
+            worldSize.getX(),
+            worldSize.getY(),
+            worldSize.getZ());
 
     List<Entity> entities =
         ctx.level.getEntities((Entity) null, aabb, entity -> !(entity instanceof Player));
@@ -252,13 +248,13 @@ public class ParcellaD16Saver
   protected CompoundTag getEntityNbt(Context ctx, ProblemReporter problemReporter, Entity entity) {
     CompoundTag tag = new CompoundTag();
 
-    Vec3 transformedPos = entity.position();
+    Vec3 worldPos = entity.position();
 
     var output = TagValueOutput.createWithContext(problemReporter, entity.registryAccess());
     entity.save(output);
 
     {
-      Vec3 pos = ctx.transform.applyInverted(transformedPos);
+      Vec3 pos = ctx.transform.applyInverted(worldPos);
       ListTag list = new ListTag();
       list.add(DoubleTag.valueOf(pos.x));
       list.add(DoubleTag.valueOf(pos.y));
@@ -272,7 +268,7 @@ public class ParcellaD16Saver
       if (entity instanceof Painting painting) {
         blockPos = painting.getPos();
       } else {
-        blockPos = BlockPos.containing(transformedPos);
+        blockPos = BlockPos.containing(worldPos);
       }
 
       blockPos = ctx.transform.applyInverted(blockPos);

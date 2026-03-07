@@ -42,15 +42,6 @@ public class Subparcel extends Parcel {
         Math.floorDiv(originZ - anchorZ, gridSize));
   }
 
-  public Subparcel getTransformed(ParcelTransform transform) {
-    return new Subparcel(transform.apply(getOrigin()), transform.applyToSize(getSize()));
-  }
-
-  public Subparcel transformInverted(ParcelTransform transform) {
-    return new Subparcel(
-        transform.applyInverted(getOrigin()), transform.applyToSizeInverted(getSize()));
-  }
-
   @Override
   public String toString() {
     return String.format(

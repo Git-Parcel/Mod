@@ -78,10 +78,7 @@ public class StructureTemplateFormat
       @Block.UpdateFlags int flags,
       ParcelFormatConfig.@Nullable None config)
       throws IOException, ParcelException {
-
     LOGGER.info("Loading structure template with size {} and transform {}", size, transform);
-    Vec3i transformedSize = transform.applyToSize(size);
-    LOGGER.info("Transformed size: {}", transformedSize);
 
     Path structureFile = dataDir.resolve(NBT_FILE_NAME);
 
