@@ -5,14 +5,19 @@ import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.mixin.AccessStateHolder;
 import io.github.leawind.gitparcel.parcelformats.NbtFormat;
+import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Format;
 import io.github.leawind.gitparcel.utils.IntIdPalette;
 import io.github.leawind.gitparcel.utils.numbase.HexUtils;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import net.minecraft.commands.arguments.blocks.BlockStateParser;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -184,6 +189,10 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
     return load(level, paletteFile, nbtDir, nbtFormat);
   }
 
+  public static final Pattern ROW_PATTERN = Pattern.compile("^([0-9a-fA-F]+)([>=])(.*)");
+  public static final char NO_NBT_MARKER = '=';
+  public static final char NBT_MARKER = '>';
+
   /**
    * Loads a block palette from the specified file and NBT directory.
    *
@@ -200,87 +209,75 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
   public static BlockPalette load(
       LevelAccessor level, Path paletteFile, Path nbtDir, NbtFormat nbtFormat)
       throws IOException, InvalidPaletteException {
-    try (var reader = Files.newBufferedReader(paletteFile, StandardCharsets.UTF_8)) {
-      BlockPalette palette = new BlockPalette();
 
-      String line;
-      while ((line = reader.readLine()) != null) {
-        try {
-          char type = '\0';
-          String idString = null;
-          StringBuilder buffer = new StringBuilder(128);
-          // Char `=` can be used to split id and block state, but `=` could also appear in the
-          // block state string.
-          // So we use a flag to indicate whether we are in the id part or the block state part.
-          boolean isInBlockStateString = false;
-          for (char ch : line.toCharArray()) {
-            if (isInBlockStateString) {
-              buffer.append(ch);
-            } else {
-              switch (ch) {
-                case '=', '>' -> {
-                  type = ch;
-                  idString = buffer.toString();
-                  buffer.setLength(0);
-                  isInBlockStateString = true;
-                }
-                default -> buffer.append(ch);
-              }
-            }
-          }
+    record ManifestEntry(int num, int id, String blockStateString, boolean hasNbt) {
+      static List<ManifestEntry> parse(BufferedReader reader)
+          throws IOException, InvalidPaletteException {
+        List<ManifestEntry> entries = new ArrayList<>();
 
-          if (type == '\0') {
-            throw new InvalidPaletteException(
-                String.format("Invalid palette entry. No type char ( '=', '>' ) found: %s", line));
-          }
+        String line;
+        int row = 0;
+        while ((line = reader.readLine()) != null) {
+          row++;
 
-          // NumberFormatException
-          int id = Integer.parseInt(idString, 16);
-
-          if (palette.byId.containsKey(id)) {
-            ParcelFormat.LOGGER.warn(
-                "Duplicate id {} in palette file {}. Did someone tweak the file by hand? ",
-                id,
-                paletteFile);
+          if (line.isEmpty()) {
             continue;
           }
 
-          BlockState blockState = parseBlockState(buffer.toString(), level, false);
+          var matcher = ROW_PATTERN.matcher(line);
+          if (matcher.matches()) {
+            int id = Integer.parseInt(matcher.group(1), 16);
+            boolean hasNbt = matcher.group(2).charAt(0) == NBT_MARKER;
+            String blockStateString = matcher.group(3);
 
-          CompoundTag tag =
-              switch (type) {
-                case '=' -> null;
-                case '>' -> {
-                  Path nbtFile = nbtDir.resolve(idString + nbtFormat.suffix);
-                  yield switch (nbtFormat) {
-                    case Binary -> NbtFormat.readBinary(nbtFile);
-                    case Text -> {
-                      try {
-                        yield NbtFormat.readText(nbtFile);
-                      } catch (CommandSyntaxException e) {
-                        throw InvalidPaletteException.invalidNbtData(nbtFile, e);
-                      }
-                    }
-                  };
-                }
-                default -> throw new AssertionError("Unreachable code");
-              };
+            entries.add(new ManifestEntry(row, id, blockStateString, hasNbt));
+          } else {
+            throw new InvalidPaletteException(
+                String.format("Invalid line format at row %d: %s", row, line));
+          }
+        }
 
-          palette.insert(id, new Data(blockState, tag));
-          // id is expected to be sorted in the palette file, from low to high
-          // so the lastId will be the highest one in the palette file
-          palette.lastId = id;
+        return entries;
+      }
+    }
 
-        } catch (NumberFormatException | CommandSyntaxException e) {
-          throw new InvalidPaletteException(String.format("Invalid palette line: %s", line), e);
-        } catch (InvalidPaletteException e) {
-          ParcelFormat.LOGGER.error(
-              "Error occurred while loading palette file {}.", paletteFile, e);
+    var palette = new BlockPalette();
+
+    List<ManifestEntry> entries;
+    try (var reader = Files.newBufferedReader(paletteFile, StandardCharsets.UTF_8)) {
+      entries = ManifestEntry.parse(reader);
+    }
+
+    for (var entry : entries) {
+      BlockState blockState;
+      try {
+        blockState = parseBlockState(entry.blockStateString, level, false);
+      } catch (CommandSyntaxException e) {
+        ParcellaD16Format.LOGGER.error(
+            "Skip because failed to parse block state '{}': {}",
+            entry.blockStateString,
+            e.getMessage());
+        continue;
+      }
+
+      CompoundTag nbt = null;
+      if (entry.hasNbt) {
+        Path nbtFile = nbtDir.resolve(HexUtils.toHexUpperCase(entry.id) + nbtFormat.suffix);
+        try {
+          nbt = nbtFormat.read(nbtFile);
+        } catch (IOException e) {
+          ParcellaD16Format.LOGGER.error("Failed to read NBT file {}: {}", nbtFile, e.getMessage());
+        } catch (CommandSyntaxException e) {
+          ParcellaD16Format.LOGGER.error(
+              "Syntax error in NBT file {}: {}", nbtFile, e.getMessage());
         }
       }
 
-      return palette;
+      palette.insert(entry.id, new Data(blockState, nbt));
+      palette.lastId = entry.id;
     }
+
+    return palette;
   }
 
   public static class InvalidPaletteException extends ParcelException.InvalidParcel {
@@ -290,11 +287,6 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
 
     public InvalidPaletteException(String message, Exception e) {
       super(message, e);
-    }
-
-    public static InvalidPaletteException invalidNbtData(Path path, CommandSyntaxException e) {
-      return new InvalidPaletteException(
-          String.format("Invalid NBT data in file %s.", path.toString()), e);
     }
   }
 }
