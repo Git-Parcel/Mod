@@ -284,9 +284,5 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
     public InvalidPaletteException(String message) {
       super(message);
     }
-
-    public InvalidPaletteException(String message, Exception e) {
-      super(message, e);
-    }
   }
 }
