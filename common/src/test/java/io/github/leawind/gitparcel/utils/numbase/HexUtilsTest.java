@@ -35,4 +35,15 @@ public class HexUtilsTest {
       assertEquals(String.format("%X", i), HexUtils.toHexUpperCase(i));
     }
   }
+
+  @Test
+  void testParsePositive() {
+    for (int i = 0; i < 256; i++) {
+      String hex = String.format("%02X", i);
+      byte[] bytes = hex.getBytes();
+      assertEquals(i, HexUtils.parsePositive(bytes, 0, bytes.length));
+    }
+
+    assertEquals(-1, HexUtils.parsePositive(new byte[] {'G', 1, 2, 4, 'Z', 'z'}, 0, 6));
+  }
 }
