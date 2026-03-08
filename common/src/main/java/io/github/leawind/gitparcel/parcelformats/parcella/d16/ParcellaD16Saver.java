@@ -142,7 +142,7 @@ public class ParcellaD16Saver
   protected void writeSubparcelRLE3D(Context ctx, Path file, Subparcel subparcel)
       throws IOException {
     var sb = new StringBuilder(8192);
-    char[] hex = HexUtils.UPPER_HEX_DIGITS;
+    char[] hexChars = HexUtils.UPPERS;
 
     var level = ctx.level;
     var palette = ctx.blockPalette;
@@ -173,13 +173,13 @@ public class ParcellaD16Saver
             });
 
     for (var run : runs) {
-      sb.append(hex[run.minX()]).append(hex[run.minY()]).append(hex[run.minZ()]);
+      sb.append(hexChars[run.minX()]).append(hexChars[run.minY()]).append(hexChars[run.minZ()]);
       int maxX = run.maxX();
       int maxY = run.maxY();
       int maxZ = run.maxZ();
 
       if (run.minX() != maxX || run.minY() != maxY || run.minZ() != maxZ) {
-        sb.append(hex[maxX]).append(hex[maxY]).append(hex[maxZ]);
+        sb.append(hexChars[maxX]).append(hexChars[maxY]).append(hexChars[maxZ]);
       }
 
       sb.append('=').append(HexUtils.toHexUpperCase(run.value())).append('\n');
