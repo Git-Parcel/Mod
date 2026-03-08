@@ -39,21 +39,6 @@ public class VolumetricRLETest {
     }
   }
 
-  public static class ParcelWithValue extends Parcel implements Parcel.WithValue {
-    private final int value;
-
-    public ParcelWithValue(
-        int value, int originX, int originY, int originZ, int sizeX, int sizeY, int sizeZ) {
-      super(originX, originY, originZ, sizeX, sizeY, sizeZ);
-      this.value = value;
-    }
-
-    @Override
-    public int getValue() {
-      return value;
-    }
-  }
-
   static void testAlgo(String name, VolumetricRLE algo, int maxVariances) {
     var random = new RandomForMC(12138);
 
