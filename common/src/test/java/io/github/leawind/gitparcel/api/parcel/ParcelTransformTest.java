@@ -213,9 +213,8 @@ public class ParcelTransformTest {
     assertEquals(original, inverted);
   }
 
-  /// TODO rename
   @Test
-  void testUnnamed() {
+  void testTransformInversion() {
     for (int i : iter(100)) {
       var mirror = random.nextEnum(Mirror.class);
       var rotation = random.nextEnum(Rotation.class);
@@ -233,7 +232,7 @@ public class ParcelTransformTest {
   }
 
   @Test
-  void testUnnamed2() {
+  void testPivotInversion() {
     for (int i : iter(1000)) {
       var mirror = random.nextEnum(Mirror.class);
       var rotation = random.nextEnum(Rotation.class);
@@ -247,7 +246,7 @@ public class ParcelTransformTest {
   }
 
   @Test
-  void testUnnamed3() {
+  void testTransformBounds() {
     for (int i : iter(100)) {
       var worldCorner1 = random.nextBlockPos(-50, 50);
       var worldCorner2 = random.nextBlockPos(-50, 50);
