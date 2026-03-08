@@ -256,7 +256,26 @@ public class ParcellaD32Saver
 
       entityId++;
     }
-    // TODO remove redundant entities
+    removeRedundantEntityFiles(ctx.entitiesDir, nbtFormat, entityId);
+  }
+
+  protected void removeRedundantEntityFiles(Path entitiesDir, NbtFormat nbtFormat, int idThreshold)
+      throws IOException {
+    var files = entitiesDir.toFile().listFiles((dir, name) -> name.endsWith(nbtFormat.suffix));
+
+    if (files == null) {
+      return;
+    }
+
+    for (var file : files) {
+      if (file.isFile()) {
+        var path = file.toPath();
+        if (EntityNbtFilePath.fromPath(path, nbtFormat) >= idThreshold) {
+          LOGGER.info("Removing redundant entity file: {}", path);
+          Files.delete(path);
+        }
+      }
+    }
   }
 
   /**

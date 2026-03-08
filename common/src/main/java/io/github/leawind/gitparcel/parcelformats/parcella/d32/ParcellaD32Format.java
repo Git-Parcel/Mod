@@ -64,5 +64,24 @@ public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.C
     static Path resolve(Path nbtDir, NbtFormat nbtFormat, int entityId) {
       return nbtDir.resolve(entityId + nbtFormat.suffix);
     }
+
+    /**
+     * Parse entity ID from NBT file path.
+     *
+     * @return Entity ID parsed from file name, or -1 if not valid
+     */
+    static int fromPath(Path nbtFile, NbtFormat nbtFormat) {
+      String fileName = nbtFile.getFileName().toString();
+      String suffix = nbtFormat.suffix;
+      if (!fileName.endsWith(suffix)) {
+        return -1;
+      }
+      String idPart = fileName.substring(0, fileName.length() - suffix.length());
+      try {
+        return Integer.parseInt(idPart);
+      } catch (NumberFormatException e) {
+        return -1;
+      }
+    }
   }
 }
