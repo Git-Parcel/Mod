@@ -1,18 +1,13 @@
 package io.github.leawind.gitparcel.parcelformats.parcella;
 
 import io.github.leawind.gitparcel.api.parcel.Parcel;
-import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import net.minecraft.core.BlockPos;
+
 import net.minecraft.core.Vec3i;
 
 public class Subparcel extends Parcel {
-
-  public Subparcel(BlockPos pos, Vec3i size) {
-    this(pos.getX(), pos.getY(), pos.getZ(), size.getX(), size.getY(), size.getZ());
-  }
 
   public Subparcel(int originX, int originY, int originZ, int sizeX, int sizeY, int sizeZ) {
     super(originX, originY, originZ, sizeX, sizeY, sizeZ);

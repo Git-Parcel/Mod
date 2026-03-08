@@ -61,24 +61,6 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
     super();
   }
 
-  /**
-   * Collects the block state and NBT data at the specified position in the level.
-   *
-   * @param level the level to read from
-   * @param pos the position to collect
-   * @return the id of the collected block
-   */
-  @Deprecated
-  public int collect(LevelReader level, BlockPos pos) {
-    BlockState blockState = level.getBlockState(pos);
-    BlockEntity blockEntity = level.getBlockEntity(pos);
-    CompoundTag tag = null;
-    if (blockEntity != null) {
-      tag = blockEntity.saveWithFullMetadata(level.registryAccess());
-    }
-    return collect(blockState, tag);
-  }
-
   public int collect(BlockState blockState, @Nullable CompoundTag nbt) {
     return collect(new Data(blockState, nbt));
   }
