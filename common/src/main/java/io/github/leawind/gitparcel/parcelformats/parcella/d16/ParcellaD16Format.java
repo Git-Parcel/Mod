@@ -2,9 +2,9 @@ package io.github.leawind.gitparcel.parcelformats.parcella.d16;
 
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatConfig;
-import io.github.leawind.gitparcel.api.parcel.config.BooleanConfigItem;
 import io.github.leawind.gitparcel.api.parcel.config.EnumConfigItem;
 import io.github.leawind.gitparcel.parcelformats.NbtFormat;
+import io.github.leawind.gitparcel.parcelformats.parcella.SubparcelFormat;
 import net.minecraft.core.Vec3i;
 
 public interface ParcellaD16Format extends ParcelFormat.Impl<ParcellaD16Format.Config> {
@@ -49,11 +49,13 @@ public interface ParcellaD16Format extends ParcelFormat.Impl<ParcellaD16Format.C
         new EnumConfigItem<>(NbtFormat.class, "entityDataFormat")
             .defaultValue(NbtFormat.Text)
             .storeRightHere();
-    public BooleanConfigItem enableMicroparcel =
-        new BooleanConfigItem("enableMicroparcel").defaultValue(true).storeRightHere();
+    public EnumConfigItem<SubparcelFormat> subparcelFormat =
+        new EnumConfigItem<>(SubparcelFormat.class, "subparcelFormat")
+            .defaultValue(SubparcelFormat.RLE3D)
+            .storeRightHere();
 
     public Config() {
-      register(blockEntityDataFormat).register(entityDataFormat).register(enableMicroparcel);
+      register(blockEntityDataFormat).register(entityDataFormat).register(subparcelFormat);
     }
   }
 }

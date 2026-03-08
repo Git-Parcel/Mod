@@ -59,7 +59,7 @@ public class ParcellaD32Saver extends ParcellaD16Saver
     var palette = ctx.blockPalette;
     var transform = ctx.transform;
 
-    List<Microparcel> microparcels =
+    List<Microparcel> runs =
         RunLengthEncoding3DAlgo.INSTANCE.subdivide(
             ctx.parcelSize.getX(),
             ctx.parcelSize.getY(),
@@ -84,18 +84,14 @@ public class ParcellaD32Saver extends ParcellaD16Saver
             },
             Microparcel::new);
 
-    for (var microparcel : microparcels) {
-      sb.append(chars[microparcel.originX])
-          .append(chars[microparcel.originY])
-          .append(chars[microparcel.originZ]);
+    for (var run : runs) {
+      sb.append(chars[run.originX]).append(chars[run.originY]).append(chars[run.originZ]);
 
-      if (microparcel.sizeX != 1 || microparcel.sizeY != 1 || microparcel.sizeZ != 1) {
-        sb.append(chars[microparcel.sizeX - 1])
-            .append(chars[microparcel.sizeY - 1])
-            .append(chars[microparcel.sizeZ - 1]);
+      if (run.sizeX != 1 || run.sizeY != 1 || run.sizeZ != 1) {
+        sb.append(chars[run.sizeX - 1]).append(chars[run.sizeY - 1]).append(chars[run.sizeZ - 1]);
       }
 
-      sb.append('=').append(Base32Utils.toBase32(microparcel.value)).append('\n');
+      sb.append('=').append(Base32Utils.toBase32(run.value)).append('\n');
     }
 
     Files.writeString(file, sb, StandardCharsets.UTF_8);

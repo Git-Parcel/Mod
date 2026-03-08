@@ -136,9 +136,9 @@ public class ParcellaD16Loader
       Context ctx, Path file, Subparcel localSubparcel, ProblemReporter problemReporter) {
     try {
       byte[] bytes = Files.readAllBytes(file);
-      SubparcelFormat isMicroparcelFormat = detectSubparcelFormat(bytes);
+      SubparcelFormat subparcelFormat = detectSubparcelFormat(bytes);
       int[][][] blockStates =
-          switch (isMicroparcelFormat) {
+          switch (subparcelFormat) {
             case RLE3D -> loadSubparcelRLE3D(localSubparcel, bytes, problemReporter);
             case FLAT -> loadSubparcelFLAT(localSubparcel, bytes, problemReporter);
           };

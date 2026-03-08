@@ -111,10 +111,10 @@ public class ParcellaD16Saver
       Path subparcelFile =
           subParcelsDir.resolve(IndexPathCodec.indexToPath(index, SUBPARCEL_SUFFIX));
       Files.createDirectories(subparcelFile.getParent());
-      if (ctx.config.enableMicroparcel.get()) {
-        writeSubparcelRLE3D(ctx, subparcelFile, localSubparcel);
-      } else {
-        writeSubparcelFLAT(ctx, subparcelFile, localSubparcel);
+
+      switch (ctx.config.subparcelFormat.get()) {
+        case FLAT -> writeSubparcelFLAT(ctx, subparcelFile, localSubparcel);
+        case RLE3D -> writeSubparcelRLE3D(ctx, subparcelFile, localSubparcel);
       }
     }
 
@@ -149,7 +149,7 @@ public class ParcellaD16Saver
     var palette = ctx.blockPalette;
     var transform = ctx.transform;
 
-    List<Microparcel> microparcels =
+    List<Microparcel> runs =
         RunLengthEncoding3DAlgo.INSTANCE.subdivide(
             ctx.parcelSize.getX(),
             ctx.parcelSize.getY(),
@@ -174,18 +174,14 @@ public class ParcellaD16Saver
             },
             Microparcel::new);
 
-    for (var microparcel : microparcels) {
-      sb.append(hex[microparcel.originX])
-          .append(hex[microparcel.originY])
-          .append(hex[microparcel.originZ]);
+    for (var run : runs) {
+      sb.append(hex[run.originX]).append(hex[run.originY]).append(hex[run.originZ]);
 
-      if (microparcel.sizeX != 1 || microparcel.sizeY != 1 || microparcel.sizeZ != 1) {
-        sb.append(hex[microparcel.sizeX - 1])
-            .append(hex[microparcel.sizeY - 1])
-            .append(hex[microparcel.sizeZ - 1]);
+      if (run.sizeX != 1 || run.sizeY != 1 || run.sizeZ != 1) {
+        sb.append(hex[run.sizeX - 1]).append(hex[run.sizeY - 1]).append(hex[run.sizeZ - 1]);
       }
 
-      sb.append('=').append(HexUtils.toHexUpperCase(microparcel.value)).append('\n');
+      sb.append('=').append(HexUtils.toHexUpperCase(run.value)).append('\n');
     }
 
     Files.writeString(file, sb, StandardCharsets.UTF_8);
