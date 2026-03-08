@@ -111,7 +111,11 @@ public class ParcellaD16Saver
       Path subparcelFile =
           subParcelsDir.resolve(IndexPathCodec.indexToPath(index, SUBPARCEL_SUFFIX));
       Files.createDirectories(subparcelFile.getParent());
-      writeSubparcel(ctx, subparcelFile, localSubparcel);
+      if (ctx.config.enableMicroparcel.get()) {
+        writeSubparcelRLE3D(ctx, subparcelFile, localSubparcel);
+      } else {
+        writeSubparcelFLAT(ctx, subparcelFile, localSubparcel);
+      }
     }
 
     ctx.blockPalette.save(
@@ -133,15 +137,6 @@ public class ParcellaD16Saver
       }
     } else {
       return new BlockPalette();
-    }
-  }
-
-  protected void writeSubparcel(Context ctx, Path file, Subparcel localSubparcel)
-      throws IOException {
-    if (ctx.config.enableMicroparcel.get()) {
-      writeSubparcelRLE3D(ctx, file, localSubparcel);
-    } else {
-      writeSubparcelFLAT(ctx, file, localSubparcel);
     }
   }
 
