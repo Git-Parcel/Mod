@@ -213,15 +213,10 @@ public class ParcelDebugCommand {
 
   private static int load(
       CommandSourceStack source, BlockPos pos, Path path, Mirror mirror, Rotation rotation) {
-    return load(source, new ParcelTransform(mirror, rotation, pos), path, mirror, rotation);
+    return load(source, new ParcelTransform(mirror, rotation, pos), path);
   }
 
-  private static int load(
-      CommandSourceStack source,
-      ParcelTransform transform,
-      Path path,
-      Mirror mirror,
-      Rotation rotation) {
+  private static int load(CommandSourceStack source, ParcelTransform transform, Path path) {
     final int loadFlags =
         Block.UPDATE_CLIENTS
             | Block.UPDATE_IMMEDIATE
