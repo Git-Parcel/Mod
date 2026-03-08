@@ -251,8 +251,8 @@ public class ParcellaD32Saver
     int entityId = 0;
     for (Entity entity : entities) {
       CompoundTag tag = getEntityNbt(ctx, problemReporter, entity);
-      Path path = ctx.entitiesDir.resolve(entityId + nbtFormat.suffix);
-      nbtFormat.write(path, tag);
+      Path filePath = EntityNbtFilePath.resolve(ctx.entitiesDir, nbtFormat, entityId);
+      nbtFormat.write(filePath, tag);
 
       entityId++;
     }

@@ -128,12 +128,18 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
     for (int id : blockEntities) {
       Data data = byId.get(id);
       if (data.hasNbt()) {
-        var nbtFile = nbtDir.resolve(HexUtils.toHexUpperCase(id) + nbtFormat.suffix);
+        var nbtFile = NbtFilePath.resolve(nbtDir, nbtFormat, id);
         nbtFormat.write(nbtFile, data.nbt, false);
       } else {
         ParcelFormat.LOGGER.error(
             "Block {} was marked as block entity, but it has no NBT data", id);
       }
+    }
+  }
+
+  public interface NbtFilePath {
+    static Path resolve(Path nbtDir, NbtFormat nbtFormat, int paletteId) {
+      return nbtDir.resolve(HexUtils.toHexUpperCase(paletteId) + nbtFormat.suffix);
     }
   }
 

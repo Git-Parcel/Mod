@@ -5,6 +5,7 @@ import io.github.leawind.gitparcel.api.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.api.parcel.config.EnumConfigItem;
 import io.github.leawind.gitparcel.parcelformats.NbtFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.SubparcelFormat;
+import java.nio.file.Path;
 import net.minecraft.core.Vec3i;
 
 public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.Config> {
@@ -56,6 +57,12 @@ public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.C
 
     public Config() {
       register(blockEntityDataFormat).register(entityDataFormat).register(subparcelFormat);
+    }
+  }
+
+  interface EntityNbtFilePath {
+    static Path resolve(Path nbtDir, NbtFormat nbtFormat, int entityId) {
+      return nbtDir.resolve(entityId + nbtFormat.suffix);
     }
   }
 }
