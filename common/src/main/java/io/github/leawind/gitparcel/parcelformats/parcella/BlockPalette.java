@@ -129,7 +129,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
       Data data = byId.get(id);
       if (data.hasNbt()) {
         var nbtFile = nbtDir.resolve(HexUtils.toHexUpperCase(id) + nbtFormat.suffix);
-        nbtFormat.write(nbtFile, data.nbt, true);
+        nbtFormat.write(nbtFile, data.nbt, false);
       } else {
         ParcelFormat.LOGGER.error(
             "Block {} was marked as block entity, but it has no NBT data", id);
