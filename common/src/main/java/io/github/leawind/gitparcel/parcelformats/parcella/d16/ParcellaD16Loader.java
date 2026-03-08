@@ -261,29 +261,34 @@ public class ParcellaD16Loader
   protected int[][][] loadSubparcelFLAT(
       Subparcel localSubparcel, byte[] bytes, ProblemReporter problemReporter) {
     int[][][] states = new int[localSubparcel.sizeX][localSubparcel.sizeY][localSubparcel.sizeZ];
-    StringBuilder sb = new StringBuilder(8);
+
+    byte[] buff = new byte[8];
+    byte len = 0;
 
     int blockIndex = 0;
     for (byte b : bytes) {
-      char ch = (char) b;
-      switch (ch) {
+      switch (b) {
         case '\n' -> {
           int x = blockIndex % localSubparcel.sizeX;
           int y = (blockIndex / localSubparcel.sizeX) % localSubparcel.sizeY;
           int z = blockIndex / (localSubparcel.sizeX * localSubparcel.sizeY);
 
           try {
-            states[x][y][z] = Integer.parseInt(sb.toString(), 16);
+            states[x][y][z] = HexUtils.parsePositive(buff, 0, len);
           } catch (NumberFormatException e) {
+            byte finalLen = len;
             problemReporter.report(
-                () -> String.format("Error parsing palette id '%s' at (%d, %d, %d)", sb, x, y, z));
+                () ->
+                    String.format(
+                        "Error parsing palette id '%s' at (%d, %d, %d)",
+                        new String(buff, 0, finalLen), x, y, z));
           }
 
-          sb.setLength(0);
+          len = 0;
           blockIndex++;
         }
         case '\r', ' ', '\t', '\0' -> {}
-        default -> sb.append(ch);
+        default -> buff[len++] = b;
       }
     }
     return states;
