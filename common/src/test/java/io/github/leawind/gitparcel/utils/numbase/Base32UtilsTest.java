@@ -138,4 +138,13 @@ public class Base32UtilsTest {
       assertEquals(i, result, "Round-trip failed for value: " + i);
     }
   }
+
+  @Test
+  void testParsePositiveRoundTrip() {
+    for (int i = 0; i < 10000; i++) {
+      String base32 = Base32Utils.toBase32(i);
+      int result = Base32Utils.parsePositive(base32.getBytes(), 0, base32.length());
+      assertEquals(i, result, "Round-trip failed for value: " + i);
+    }
+  }
 }

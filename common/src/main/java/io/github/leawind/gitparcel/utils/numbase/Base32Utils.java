@@ -11,6 +11,26 @@ public final class Base32Utils {
   public static final char[] BASE32_DIGITS = "0123456789ABCDEFGHIJKLMNOPQRSTUV".toCharArray();
 
   /**
+   * Maps base32 characters to their corresponding numeric values (0-31). Invalid characters map to
+   * -1.
+   */
+  public static final byte[] BASE32_CHAR_TO_NUM = new byte[256];
+
+  static {
+    for (int i = 0; i < 256; i++) {
+      BASE32_CHAR_TO_NUM[i] = -1;
+    }
+    byte i;
+    byte b;
+    for (i = 0, b = '0'; b <= '9'; i++, b++) {
+      BASE32_CHAR_TO_NUM[b] = i;
+    }
+    for (i = 10, b = 'A'; b <= 'V'; i++, b++) {
+      BASE32_CHAR_TO_NUM[b] = i;
+    }
+  }
+
+  /**
    * Converts an integer to its base32 string representation. The result does not include leading
    * zeros.
    *
@@ -134,5 +154,45 @@ public final class Base32Utils {
     } else {
       throw new IllegalArgumentException("Invalid base32 character: " + c);
     }
+  }
+
+  public static byte parseChar(byte ch) {
+    return BASE32_CHAR_TO_NUM[ch];
+  }
+
+  /**
+   * Parses a positive base32 number from a byte array directly, without creating intermediate
+   * Strings.
+   *
+   * <p>Returns -1 if an invalid character is encountered or if integer overflow occurs.
+   *
+   * <p><strong>Note:</strong> No bounds checking is performed on {@code offset} or {@code length}.
+   *
+   * @param bytes the byte array containing base32 digits
+   * @param offset the starting index
+   * @param length the number of bytes to parse
+   * @return the parsed integer, or -1 on failure
+   * @throws IndexOutOfBoundsException if indices are out of range
+   */
+  public static int parsePositive(byte[] bytes, int offset, int length) {
+    int result = 0;
+    final int limit = offset + length;
+
+    for (int i = offset; i < limit; i++) {
+      int digit = BASE32_CHAR_TO_NUM[bytes[i] & 0xFF];
+
+      if (digit == -1) {
+        return -1;
+      }
+
+      // Overflow check: ensure result * 32 + digit <= Integer.MAX_VALUE
+      if (result > (Integer.MAX_VALUE - digit) / 32) {
+        return -1;
+      }
+
+      result = (result * 32) + digit;
+    }
+
+    return result;
   }
 }
