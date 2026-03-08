@@ -151,9 +151,9 @@ public class ParcellaD32Saver
 
     var runs =
         VolumetricRLE.IMPL.encode(
-            ctx.parcelSize.getX(),
-            ctx.parcelSize.getY(),
-            ctx.parcelSize.getZ(),
+            subparcel.sizeX,
+            subparcel.sizeY,
+            subparcel.sizeZ,
             (x, y, z) -> {
               BlockPos pos =
                   new BlockPos(x + subparcel.originX, y + subparcel.originY, z + subparcel.originZ);
