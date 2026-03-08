@@ -5,6 +5,7 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.phys.Vec3;
 
@@ -400,6 +401,32 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
       case NONE, CLOCKWISE_180 -> rotation;
       case CLOCKWISE_90 -> Rotation.COUNTERCLOCKWISE_90;
       case COUNTERCLOCKWISE_90 -> Rotation.CLOCKWISE_90;
+    };
+  }
+
+  public static BlockPos getPivotPos(Mirror mirror, Rotation rotation, BoundingBox bounds) {
+    return switch (mirror) {
+      case NONE ->
+          switch (rotation) {
+            case NONE -> new BlockPos(bounds.minX(), bounds.minY(), bounds.minZ());
+            case CLOCKWISE_90 -> new BlockPos(bounds.maxX(), bounds.minY(), bounds.minZ());
+            case CLOCKWISE_180 -> new BlockPos(bounds.maxX(), bounds.minY(), bounds.maxZ());
+            case COUNTERCLOCKWISE_90 -> new BlockPos(bounds.minX(), bounds.minY(), bounds.maxZ());
+          };
+      case LEFT_RIGHT ->
+          switch (rotation) {
+            case NONE -> new BlockPos(bounds.maxX(), bounds.minY(), bounds.minZ());
+            case CLOCKWISE_90 -> new BlockPos(-bounds.maxX(), bounds.minY(), bounds.minZ());
+            case CLOCKWISE_180 -> new BlockPos(-bounds.maxX(), bounds.minY(), bounds.maxZ());
+            case COUNTERCLOCKWISE_90 -> new BlockPos(-bounds.minX(), bounds.minY(), bounds.maxZ());
+          };
+      case FRONT_BACK ->
+          switch (rotation) {
+            case NONE -> new BlockPos(bounds.minX(), bounds.minY(), bounds.maxZ());
+            case CLOCKWISE_90 -> new BlockPos(bounds.maxX(), bounds.minY(), -bounds.minZ());
+            case CLOCKWISE_180 -> new BlockPos(bounds.maxX(), bounds.minY(), -bounds.maxZ());
+            case COUNTERCLOCKWISE_90 -> new BlockPos(bounds.minX(), bounds.minY(), -bounds.maxZ());
+          };
     };
   }
 }
