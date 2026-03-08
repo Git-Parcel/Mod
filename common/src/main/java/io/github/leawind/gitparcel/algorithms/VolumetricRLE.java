@@ -18,15 +18,15 @@ public interface VolumetricRLE {
    * </ul>
    */
   record Run(int value, int minX, int minY, int minZ, int endX, int endY, int endZ) {
-    int maxX() {
+    public int maxX() {
       return endX - 1;
     }
 
-    int maxY() {
+    public int maxY() {
       return endY - 1;
     }
 
-    int maxZ() {
+    public int maxZ() {
       return endZ - 1;
     }
   }

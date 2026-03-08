@@ -84,9 +84,9 @@ public class ParcellaD32Saver extends ParcellaD16Saver
     for (var run : runs) {
       sb.append(chars[run.minX()]).append(chars[run.minY()]).append(chars[run.minZ()]);
 
-      int maxX = run.endX() - 1;
-      int maxY = run.endY() - 1;
-      int maxZ = run.endZ() - 1;
+      int maxX = run.maxX();
+      int maxY = run.maxY();
+      int maxZ = run.maxZ();
 
       if (run.minX() != maxX || run.minY() != maxY || run.minZ() != maxZ) {
         sb.append(chars[maxX]).append(chars[maxY]).append(chars[maxZ]);

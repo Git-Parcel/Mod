@@ -174,9 +174,9 @@ public class ParcellaD16Saver
 
     for (var run : runs) {
       sb.append(hex[run.minX()]).append(hex[run.minY()]).append(hex[run.minZ()]);
-      int maxX = run.endX() - 1;
-      int maxY = run.endY() - 1;
-      int maxZ = run.endZ() - 1;
+      int maxX = run.maxX();
+      int maxY = run.maxY();
+      int maxZ = run.maxZ();
 
       if (run.minX() != maxX || run.minY() != maxY || run.minZ() != maxZ) {
         sb.append(hex[maxX]).append(hex[maxY]).append(hex[maxZ]);
