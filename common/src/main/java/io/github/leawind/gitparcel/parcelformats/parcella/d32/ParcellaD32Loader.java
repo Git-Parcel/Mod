@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.parcelformats.parcella.d16;
+package io.github.leawind.gitparcel.parcelformats.parcella.d32;
 
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
@@ -9,6 +9,7 @@ import io.github.leawind.gitparcel.parcelformats.parcella.Subparcel;
 import io.github.leawind.gitparcel.parcelformats.parcella.SubparcelFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.utils.IndexPathCodec;
 import io.github.leawind.gitparcel.parcelformats.parcella.utils.ZOrder3D;
+import io.github.leawind.gitparcel.utils.numbase.Base32Utils;
 import io.github.leawind.gitparcel.utils.numbase.HexUtils;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,8 +26,8 @@ import net.minecraft.world.level.storage.TagValueInput;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
-public class ParcellaD16Loader
-    implements ParcellaD16Format, ParcelFormat.Load<ParcellaD16Format.Config> {
+public class ParcellaD32Loader
+    implements ParcellaD32Format, ParcelFormat.Load<ParcellaD32Format.Config> {
   private static final Logger LOGGER = LogUtils.getLogger();
 
   public static final class Context extends LoadContext<Config> {
@@ -101,7 +102,7 @@ public class ParcellaD16Loader
       throw new ParcelException("Blocks directory not found: " + ctx.blocksDir);
     }
 
-    loadSubparcels(ctx, 16, problemReporter);
+    loadSubparcels(ctx, 32, problemReporter);
   }
 
   protected void loadSubparcels(Context ctx, int gridSize, ProblemReporter problemReporter)
@@ -208,9 +209,9 @@ public class ParcellaD16Loader
       do {
         switch (b) {
           case '=' -> {
-            x0 = HexUtils.parseChar(buff[0]);
-            y0 = HexUtils.parseChar(buff[1]);
-            z0 = HexUtils.parseChar(buff[2]);
+            x0 = Base32Utils.parseChar(buff[0]);
+            y0 = Base32Utils.parseChar(buff[1]);
+            z0 = Base32Utils.parseChar(buff[2]);
             if (x0 == -1 || y0 == -1 || z0 == -1) {
               break to_report_invalid_line;
             }
@@ -222,9 +223,9 @@ public class ParcellaD16Loader
               if (len != 6) {
                 break to_report_invalid_line;
               }
-              x1 = HexUtils.parseChar(buff[3]);
-              y1 = HexUtils.parseChar(buff[4]);
-              z1 = HexUtils.parseChar(buff[5]);
+              x1 = Base32Utils.parseChar(buff[3]);
+              y1 = Base32Utils.parseChar(buff[4]);
+              z1 = Base32Utils.parseChar(buff[5]);
               if (x1 == -1 || y1 == -1 || z1 == -1) {
                 break to_report_invalid_line;
               }

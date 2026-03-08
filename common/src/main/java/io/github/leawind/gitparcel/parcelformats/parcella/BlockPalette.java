@@ -5,7 +5,7 @@ import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.mixin.AccessStateHolder;
 import io.github.leawind.gitparcel.parcelformats.NbtFormat;
-import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Format;
+import io.github.leawind.gitparcel.parcelformats.parcella.d32.ParcellaD32Format;
 import io.github.leawind.gitparcel.utils.IntIdPalette;
 import io.github.leawind.gitparcel.utils.numbase.HexUtils;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -253,7 +253,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
       try {
         blockState = parseBlockState(entry.blockStateString, level, false);
       } catch (CommandSyntaxException e) {
-        ParcellaD16Format.LOGGER.error(
+        ParcellaD32Format.LOGGER.error(
             "Skip because failed to parse block state '{}': {}",
             entry.blockStateString,
             e.getMessage());
@@ -266,9 +266,9 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
         try {
           nbt = nbtFormat.read(nbtFile);
         } catch (IOException e) {
-          ParcellaD16Format.LOGGER.error("Failed to read NBT file {}: {}", nbtFile, e.getMessage());
+          ParcellaD32Format.LOGGER.error("Failed to read NBT file {}: {}", nbtFile, e.getMessage());
         } catch (CommandSyntaxException e) {
-          ParcellaD16Format.LOGGER.error(
+          ParcellaD32Format.LOGGER.error(
               "Syntax error in NBT file {}: {}", nbtFile, e.getMessage());
         }
       }

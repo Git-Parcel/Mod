@@ -4,8 +4,8 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.api.GitParcelApi;
 import io.github.leawind.gitparcel.parcelformats.mvp.MvpFormat;
-import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Loader;
-import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Saver;
+import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD32SaverDep;
+import io.github.leawind.gitparcel.parcelformats.parcella.d32.ParcellaD32Loader;
 import io.github.leawind.gitparcel.parcelformats.parcella.d32.ParcellaD32Saver;
 import io.github.leawind.gitparcel.parcelformats.structuretemplate.StructureTemplateFormat;
 import io.github.leawind.gitparcel.platform.Services;
@@ -54,12 +54,12 @@ public class GitParcelMod {
 
   private static void registerFormats() {
 
-    GitParcelApi.FORMAT_REGISTRY.registerDefaultSaver(new ParcellaD32Saver());
+    GitParcelApi.FORMAT_REGISTRY.registerDefaultSaver(new ParcellaD32SaverDep());
     GitParcelApi.FORMAT_REGISTRY.register(new StructureTemplateFormat());
 
     if (Services.PLATFORM.isDevelopmentEnvironment()) {
-      GitParcelApi.FORMAT_REGISTRY.register(new ParcellaD16Saver());
-      GitParcelApi.FORMAT_REGISTRY.register(new ParcellaD16Loader());
+      GitParcelApi.FORMAT_REGISTRY.register(new ParcellaD32Saver());
+      GitParcelApi.FORMAT_REGISTRY.register(new ParcellaD32Loader());
       GitParcelApi.FORMAT_REGISTRY.register(new MvpFormat());
     }
   }
