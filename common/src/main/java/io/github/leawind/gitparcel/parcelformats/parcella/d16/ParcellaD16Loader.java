@@ -9,6 +9,7 @@ import io.github.leawind.gitparcel.parcelformats.parcella.Subparcel;
 import io.github.leawind.gitparcel.parcelformats.parcella.SubparcelFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.utils.IndexPathCodec;
 import io.github.leawind.gitparcel.parcelformats.parcella.utils.ZOrder3D;
+import io.github.leawind.gitparcel.utils.numbase.HexUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -180,56 +181,81 @@ public class ParcellaD16Loader
 
   protected int[][][] loadSubparcelRLE3D(
       Subparcel localSubparcel, byte[] bytes, ProblemReporter problemReporter) {
-    int[][][] states = new int[localSubparcel.sizeX][localSubparcel.sizeY][localSubparcel.sizeZ];
 
-    int x0 = 0, y0 = 0, z0 = 0;
-    int x1 = 0, y1 = 0, z1 = 0;
+    int sizeX = localSubparcel.sizeX;
+    int sizeY = localSubparcel.sizeY;
+    int sizeZ = localSubparcel.sizeZ;
 
-    StringBuilder idSb = new StringBuilder(15);
+    int[][][] blockStates = new int[sizeX][sizeY][sizeZ];
+
+    byte x0 = 0, y0 = 0, z0 = 0;
+    byte x1 = 0, y1 = 0, z1 = 0;
+
+    // Buffer to store the current line
+    byte[] buff = new byte[16];
+    byte len = 0;
+
+    boolean skipThisLine = false;
+
     for (byte b : bytes) {
-      char ch = (char) b;
-      switch (ch) {
+      if (skipThisLine && b == '\n') {
+        skipThisLine = false;
+        continue;
+      }
+      switch (b) {
         case '=' -> {
-          x0 = Integer.parseInt(String.valueOf(idSb.charAt(0)), 16);
-          y0 = Integer.parseInt(String.valueOf(idSb.charAt(1)), 16);
-          z0 = Integer.parseInt(String.valueOf(idSb.charAt(2)), 16);
-          if (idSb.length() == 3) {
+          x0 = HexUtils.parseChar(buff[0]);
+          y0 = HexUtils.parseChar(buff[1]);
+          z0 = HexUtils.parseChar(buff[2]);
+          if (x0 == -1 || y0 == -1 || z0 == -1) {
+            problemReporter.report(() -> String.format("Invalid line: %s", new String(buff)));
+            skipThisLine = true;
+            continue;
+          }
+          if (len == 3) {
             x1 = x0;
             y1 = y0;
             z1 = z0;
           } else {
-            if (idSb.length() < 6) {
-              problemReporter.report(() -> String.format("Invalid line: '%s'", idSb));
+            if (len != 6) {
+              problemReporter.report(() -> String.format("Invalid line: %s", new String(buff)));
+              skipThisLine = true;
+              continue;
             }
-            x1 = Integer.parseInt(String.valueOf(idSb.charAt(3)), 16);
-            y1 = Integer.parseInt(String.valueOf(idSb.charAt(4)), 16);
-            z1 = Integer.parseInt(String.valueOf(idSb.charAt(5)), 16);
+            x1 = HexUtils.parseChar(buff[3]);
+            y1 = HexUtils.parseChar(buff[4]);
+            z1 = HexUtils.parseChar(buff[5]);
+            if (x1 == -1 || y1 == -1 || z1 == -1) {
+              problemReporter.report(() -> String.format("Invalid line: '%s'", new String(buff)));
+              skipThisLine = true;
+              continue;
+            }
           }
-          idSb.setLength(0);
+
+          len = 0;
         }
         case '\n' -> {
-          try {
+          int paletteId = HexUtils.parsePositive(buff, 0, len);
+          if (paletteId == -1) {
+            problemReporter.report(() -> String.format("Invalid line: %s", new String(buff)));
+            continue;
+          }
+          len = 0;
 
-            int paletteId = Integer.parseInt(idSb.toString(), 16);
-            idSb.setLength(0);
-
-            for (int x = x0; x <= x1; x++) {
-              for (int y = y0; y <= y1; y++) {
-                for (int z = z0; z <= z1; z++) {
-                  states[x][y][z] = paletteId;
-                }
+          for (int x = x0; x <= x1; x++) {
+            for (int y = y0; y <= y1; y++) {
+              for (int z = z0; z <= z1; z++) {
+                blockStates[x][y][z] = paletteId;
               }
             }
-
-          } catch (NumberFormatException e) {
-            problemReporter.report(() -> String.format("Error parsing palette id '%s'", idSb));
           }
         }
         case '\r', ' ', '\t', '\0' -> {}
-        default -> idSb.append(ch);
+        default -> buff[len++] = b;
       }
     }
-    return states;
+
+    return blockStates;
   }
 
   protected int[][][] loadSubparcelFLAT(
