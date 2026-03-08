@@ -3,10 +3,11 @@ package io.github.leawind.gitparcel.algorithms;
 import java.util.ArrayList;
 import java.util.List;
 
-@FunctionalInterface
 public interface VolumetricRLE {
-
-  List<Run> encode(int sizeX, int sizeY, int sizeZ, ValueGetter values);
+  @FunctionalInterface
+  interface Encoder {
+    List<Run> encode(int sizeX, int sizeY, int sizeZ, ValueGetter values);
+  }
 
   /**
    * Represents a run of blocks with the same value.
@@ -45,8 +46,8 @@ public interface VolumetricRLE {
     T create(int value, int originX, int originY, int originZ, int sizeX, int sizeY, int sizeZ);
   }
 
-  VolumetricRLE IMPL =
-      new VolumetricRLE() {
+  VolumetricRLE.Encoder IMPL =
+      new VolumetricRLE.Encoder() {
 
         @Override
         public List<Run> encode(int sizeX, int sizeY, int sizeZ, ValueGetter values) {

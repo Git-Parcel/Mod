@@ -39,7 +39,7 @@ public class VolumetricRLETest {
     }
   }
 
-  static void testAlgo(String name, VolumetricRLE algo, int maxVariances) {
+  static void testAlgo(String name, VolumetricRLE.Encoder algo, int maxVariances) {
     var random = new RandomForMC(12138);
 
     System.out.println("Testing " + name);
@@ -73,7 +73,7 @@ public class VolumetricRLETest {
         String name = field.getName();
         if (name.startsWith("_")) continue;
         try {
-          testAlgo(name, (VolumetricRLE) field.get(null), 8);
+          testAlgo(name, (VolumetricRLE.Encoder) field.get(null), 8);
         } catch (IllegalAccessException e) {
           throw new RuntimeException(e);
         }
