@@ -14,7 +14,7 @@ import org.openjdk.jmh.infra.Blackhole;
 @Fork(value = 2)
 @Warmup(iterations = 2, time = 1)
 @Measurement(iterations = 3, time = 3)
-public class SubdivideAlgoBenchmark {
+public class RunLengthEncoding3DAlgoBenchmark {
 
   @Param({"2", "4", "8"})
   private int variance;
@@ -23,22 +23,24 @@ public class SubdivideAlgoBenchmark {
   private int size;
 
   private Parcel parcel;
-  private SubdivideAlgo.ValueGetter values;
-  private SubdivideAlgo.ResultFactory<SubdivideAlgoTest.ParcelWithValue> factory;
+  private RunLengthEncoding3DAlgo.ValueGetter values;
+  private RunLengthEncoding3DAlgo.ResultFactory<RunLengthEncoding3DAlgoTest.ParcelWithValue>
+      factory;
 
   @Setup
   public void setup() {
     var random = new RandomForMC(12138);
     var size = new Vec3i(this.size, this.size, this.size);
 
-    values = new SubdivideAlgoTest.TestedValues(size, variance, random);
-    factory = SubdivideAlgoTest.ParcelWithValue::new;
+    values = new RunLengthEncoding3DAlgoTest.TestedValues(size, variance, random);
+    factory = RunLengthEncoding3DAlgoTest.ParcelWithValue::new;
   }
 
   @Benchmark
   public void benchmarkV2(Blackhole bh) {
     var result =
-        SubdivideAlgo.V2.subdivide(parcel.sizeX, parcel.sizeY, parcel.sizeZ, values, factory);
+        RunLengthEncoding3DAlgo.V2.subdivide(
+            parcel.sizeX, parcel.sizeY, parcel.sizeZ, values, factory);
     bh.consume(result);
   }
 }

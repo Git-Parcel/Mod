@@ -4,7 +4,7 @@ import io.github.leawind.gitparcel.api.parcel.Parcel;
 import java.util.ArrayList;
 
 @FunctionalInterface
-public interface SubdivideAlgo {
+public interface RunLengthEncoding3DAlgo {
   /**
    * Subdivide the given parcel into smaller parcels.
    *
@@ -34,8 +34,8 @@ public interface SubdivideAlgo {
     T create(int value, int originX, int originY, int originZ, int sizeX, int sizeY, int sizeZ);
   }
 
-  SubdivideAlgo V2 =
-      new SubdivideAlgo() {
+  RunLengthEncoding3DAlgo V2 =
+      new RunLengthEncoding3DAlgo() {
 
         @Override
         public <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
@@ -132,5 +132,5 @@ public interface SubdivideAlgo {
         }
       };
 
-  SubdivideAlgo INSTANCE = V2;
+  RunLengthEncoding3DAlgo INSTANCE = V2;
 }

@@ -1,6 +1,6 @@
 package io.github.leawind.gitparcel.parcelformats.parcella.d32;
 
-import io.github.leawind.gitparcel.algorithms.SubdivideAlgo;
+import io.github.leawind.gitparcel.algorithms.RunLengthEncoding3DAlgo;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.parcelformats.parcella.Microparcel;
@@ -60,7 +60,7 @@ public class ParcellaD32Saver extends ParcellaD16Saver
     var transform = ctx.transform;
 
     List<Microparcel> microparcels =
-        SubdivideAlgo.INSTANCE.subdivide(
+        RunLengthEncoding3DAlgo.INSTANCE.subdivide(
             ctx.parcelSize.getX(),
             ctx.parcelSize.getY(),
             ctx.parcelSize.getZ(),

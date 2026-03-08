@@ -4,7 +4,6 @@ import io.github.leawind.gitparcel.api.parcel.Parcel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
 import net.minecraft.core.Vec3i;
 
 public class Subparcel extends Parcel {

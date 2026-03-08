@@ -8,9 +8,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import org.junit.jupiter.api.Test;
 
-public class SubdivideAlgoTest {
+public class RunLengthEncoding3DAlgoTest {
 
-  public static final class TestedValues implements SubdivideAlgo.ValueGetter {
+  public static final class TestedValues implements RunLengthEncoding3DAlgo.ValueGetter {
     public final Vec3i size;
     private final int[][][] valuesArray;
 
@@ -48,7 +48,7 @@ public class SubdivideAlgoTest {
     }
   }
 
-  static void testAlgo(String name, SubdivideAlgo algo, int maxVariances) {
+  static void testAlgo(String name, RunLengthEncoding3DAlgo algo, int maxVariances) {
     var random = new RandomForMC(12138);
 
     System.out.println("Testing " + name);
@@ -83,12 +83,12 @@ public class SubdivideAlgoTest {
 
   @Test
   void testSubdivide() {
-    for (var field : SubdivideAlgo.class.getDeclaredFields()) {
-      if (field.getType() == SubdivideAlgo.class && field.canAccess(null)) {
+    for (var field : RunLengthEncoding3DAlgo.class.getDeclaredFields()) {
+      if (field.getType() == RunLengthEncoding3DAlgo.class && field.canAccess(null)) {
         String name = field.getName();
         if (name.startsWith("_")) continue;
         try {
-          testAlgo(name, (SubdivideAlgo) field.get(null), 8);
+          testAlgo(name, (RunLengthEncoding3DAlgo) field.get(null), 8);
         } catch (IllegalAccessException e) {
           throw new RuntimeException(e);
         }
