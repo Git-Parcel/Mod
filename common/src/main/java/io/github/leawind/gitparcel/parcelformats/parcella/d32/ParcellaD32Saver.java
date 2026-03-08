@@ -15,8 +15,11 @@ import java.nio.file.Path;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
 public class ParcellaD32Saver extends ParcellaD16Saver
@@ -52,6 +55,10 @@ public class ParcellaD32Saver extends ParcellaD16Saver
     var sb = new StringBuilder(8192);
     char[] chars = Base32Utils.BASE32_DIGITS;
 
+    var level = ctx.level;
+    var palette = ctx.blockPalette;
+    var transform = ctx.transform;
+
     List<Microparcel> microparcels =
         SubdivideAlgo.INSTANCE.subdivide(
             ctx.parcelSize.getX(),
@@ -61,7 +68,19 @@ public class ParcellaD32Saver extends ParcellaD16Saver
               BlockPos pos =
                   new BlockPos(x + subparcel.originX, y + subparcel.originY, z + subparcel.originZ);
               pos = ctx.transform.apply(pos);
-              return ctx.blockPalette.collect(ctx.level, pos);
+              // pos: world space
+
+              BlockState blockState = level.getBlockState(pos);
+              // blockState: world space
+              blockState = transform.applyInverted(blockState);
+              // blockState: local space
+              BlockEntity blockEntity = level.getBlockEntity(pos);
+              CompoundTag nbt = null;
+              if (blockEntity != null) {
+                nbt = blockEntity.saveWithFullMetadata(level.registryAccess());
+              }
+
+              return palette.collect(blockState, nbt);
             },
             Microparcel::new);
 
