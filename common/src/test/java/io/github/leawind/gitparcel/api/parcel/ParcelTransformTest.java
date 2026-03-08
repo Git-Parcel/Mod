@@ -71,9 +71,9 @@ public class ParcelTransformTest {
   }
 
   @Test
-  void testMirrorLeftRight() {
+  void testMirrorFrontBack() {
     ParcelTransform transform =
-        new ParcelTransform(Mirror.LEFT_RIGHT, Rotation.NONE, BlockPos.ZERO);
+        new ParcelTransform(Mirror.FRONT_BACK, Rotation.NONE, BlockPos.ZERO);
     BlockPos pos = new BlockPos(1, 2, 3);
     Vec3i vec = new Vec3i(1, 2, 3);
 
@@ -82,9 +82,9 @@ public class ParcelTransformTest {
   }
 
   @Test
-  void testMirrorFrontBack() {
+  void testMirrorLeftRight() {
     ParcelTransform transform =
-        new ParcelTransform(Mirror.FRONT_BACK, Rotation.NONE, BlockPos.ZERO);
+        new ParcelTransform(Mirror.LEFT_RIGHT, Rotation.NONE, BlockPos.ZERO);
     BlockPos pos = new BlockPos(1, 2, 3);
     Vec3i vec = new Vec3i(1, 2, 3);
 
@@ -128,7 +128,7 @@ public class ParcelTransformTest {
   @Test
   void testCombinedTransform() {
     ParcelTransform transform =
-        new ParcelTransform(Mirror.LEFT_RIGHT, Rotation.CLOCKWISE_90, new BlockPos(2, 3, 4));
+        new ParcelTransform(Mirror.FRONT_BACK, Rotation.CLOCKWISE_90, new BlockPos(2, 3, 4));
 
     BlockPos pos = new BlockPos(3, 4, 5);
 
@@ -153,7 +153,7 @@ public class ParcelTransformTest {
   void testHasOrientation() {
     ParcelTransform transform1 = ParcelTransform.IDENTITY;
     ParcelTransform transform2 =
-        new ParcelTransform(Mirror.LEFT_RIGHT, Rotation.NONE, BlockPos.ZERO);
+        new ParcelTransform(Mirror.FRONT_BACK, Rotation.NONE, BlockPos.ZERO);
     ParcelTransform transform3 =
         new ParcelTransform(Mirror.NONE, Rotation.CLOCKWISE_90, BlockPos.ZERO);
 
@@ -171,7 +171,7 @@ public class ParcelTransformTest {
   @Test
   void testApplyMirror() {
     ParcelTransform transform =
-        new ParcelTransform(Mirror.LEFT_RIGHT, Rotation.NONE, BlockPos.ZERO);
+        new ParcelTransform(Mirror.FRONT_BACK, Rotation.NONE, BlockPos.ZERO);
     BlockPos pos = new BlockPos(1, 2, 3);
     Vec3i vec = new Vec3i(1, 2, 3);
 
@@ -205,7 +205,7 @@ public class ParcelTransformTest {
   @Test
   void testApplyInvertedVec3i() {
     ParcelTransform transform =
-        new ParcelTransform(Mirror.LEFT_RIGHT, Rotation.CLOCKWISE_90, new BlockPos(1, 2, 3));
+        new ParcelTransform(Mirror.FRONT_BACK, Rotation.CLOCKWISE_90, new BlockPos(1, 2, 3));
     Vec3i original = new Vec3i(1, 0, 0);
     Vec3i transformed = transform.apply(original);
     Vec3i inverted = transform.applyInverted(transformed);

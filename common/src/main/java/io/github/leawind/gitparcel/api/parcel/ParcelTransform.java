@@ -96,8 +96,8 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
   public Vec3i applyMirror(Vec3i vec) {
     return switch (mirror) {
       case NONE -> vec;
-      case LEFT_RIGHT -> new Vec3i(-vec.getX(), vec.getY(), vec.getZ());
-      case FRONT_BACK -> new Vec3i(vec.getX(), vec.getY(), -vec.getZ());
+      case LEFT_RIGHT -> new Vec3i(vec.getX(), vec.getY(), -vec.getZ());
+      case FRONT_BACK -> new Vec3i(-vec.getX(), vec.getY(), vec.getZ());
     };
   }
 
@@ -110,8 +110,8 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
   private Vec3 applyMirror(Vec3 vec) {
     return switch (mirror) {
       case NONE -> vec;
-      case LEFT_RIGHT -> new Vec3(-vec.x, vec.y, vec.z);
-      case FRONT_BACK -> new Vec3(vec.x, vec.y, -vec.z);
+      case LEFT_RIGHT -> new Vec3(vec.x, vec.y, -vec.z);
+      case FRONT_BACK -> new Vec3(-vec.x, vec.y, vec.z);
     };
   }
 
@@ -124,8 +124,8 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
   public BlockPos applyMirror(BlockPos pos) {
     return switch (mirror) {
       case NONE -> pos;
-      case LEFT_RIGHT -> new BlockPos(-pos.getX(), pos.getY(), pos.getZ());
-      case FRONT_BACK -> new BlockPos(pos.getX(), pos.getY(), -pos.getZ());
+      case FRONT_BACK -> new BlockPos(-pos.getX(), pos.getY(), pos.getZ());
+      case LEFT_RIGHT -> new BlockPos(pos.getX(), pos.getY(), -pos.getZ());
     };
   }
 
@@ -415,17 +415,17 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
           };
       case LEFT_RIGHT ->
           switch (rotation) {
-            case NONE -> new BlockPos(bounds.maxX(), bounds.minY(), bounds.minZ());
-            case CLOCKWISE_90 -> new BlockPos(-bounds.maxX(), bounds.minY(), bounds.minZ());
-            case CLOCKWISE_180 -> new BlockPos(-bounds.maxX(), bounds.minY(), bounds.maxZ());
-            case COUNTERCLOCKWISE_90 -> new BlockPos(-bounds.minX(), bounds.minY(), bounds.maxZ());
-          };
-      case FRONT_BACK ->
-          switch (rotation) {
             case NONE -> new BlockPos(bounds.minX(), bounds.minY(), bounds.maxZ());
             case CLOCKWISE_90 -> new BlockPos(bounds.maxX(), bounds.minY(), -bounds.minZ());
             case CLOCKWISE_180 -> new BlockPos(bounds.maxX(), bounds.minY(), -bounds.maxZ());
             case COUNTERCLOCKWISE_90 -> new BlockPos(bounds.minX(), bounds.minY(), -bounds.maxZ());
+          };
+      case FRONT_BACK ->
+          switch (rotation) {
+            case NONE -> new BlockPos(bounds.maxX(), bounds.minY(), bounds.minZ());
+            case CLOCKWISE_90 -> new BlockPos(-bounds.maxX(), bounds.minY(), bounds.minZ());
+            case CLOCKWISE_180 -> new BlockPos(-bounds.maxX(), bounds.minY(), bounds.maxZ());
+            case COUNTERCLOCKWISE_90 -> new BlockPos(-bounds.minX(), bounds.minY(), bounds.maxZ());
           };
     };
   }
