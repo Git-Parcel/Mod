@@ -20,8 +20,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
-public class ParcellaD32SaverDep extends ParcellaD32Saver
-    implements ParcellaD32FormatDep, ParcelFormat.Save<ParcellaD32Format.Config> {
+public class ParcellaD16Saver extends ParcellaD32Saver
+    implements ParcellaD16Format, ParcelFormat.Save<ParcellaD32Format.Config> {
   @Override
   public void save(
       Level level,
