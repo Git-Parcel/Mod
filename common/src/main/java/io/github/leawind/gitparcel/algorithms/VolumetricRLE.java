@@ -17,17 +17,17 @@ public interface VolumetricRLE {
    *   <li>(endX, endY, endZ) is the exclusive maximum position of the run.
    * </ul>
    */
-  record Run(int value, int minX, int minY, int minZ, int endX, int endY, int endZ) {
-    public int maxX() {
-      return endX - 1;
+  record Run(int value, int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
+    public int endX() {
+      return maxX + 1;
     }
 
-    public int maxY() {
-      return endY - 1;
+    public int endY() {
+      return maxY + 1;
     }
 
-    public int maxZ() {
-      return endZ - 1;
+    public int endZ() {
+      return maxZ + 1;
     }
   }
 
@@ -126,7 +126,7 @@ public interface VolumetricRLE {
               for (int i = 0; i < groupIndicesSize; i++) {
                 visited[groupIndices[i]] = true;
               }
-              result.add(new Run(value, x, y, z, boundX, boundY, boundZ));
+              result.add(new Run(value, x, y, z, boundX - 1, boundY - 1, boundZ - 1));
             }
           }
         }
