@@ -47,6 +47,13 @@ public enum NbtFormat {
     }
   }
 
+  public CompoundTag read(Path path) throws IOException, CommandSyntaxException {
+    return switch (this) {
+      case Binary -> readBinary(path);
+      case Text -> readText(path);
+    };
+  }
+
   NbtFormat(String suffix) {
     this.suffix = suffix;
   }
