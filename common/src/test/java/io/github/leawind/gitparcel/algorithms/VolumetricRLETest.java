@@ -8,9 +8,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import org.junit.jupiter.api.Test;
 
-public class RunLengthEncoding3DAlgoTest {
+public class VolumetricRLETest {
 
-  public static final class TestedValues implements RunLengthEncoding3DAlgo.ValueGetter {
+  public static final class TestedValues implements VolumetricRLE.ValueGetter {
     public final Vec3i size;
     private final int[][][] valuesArray;
 
@@ -48,7 +48,7 @@ public class RunLengthEncoding3DAlgoTest {
     }
   }
 
-  static void testAlgo(String name, RunLengthEncoding3DAlgo algo, int maxVariances) {
+  static void testAlgo(String name, VolumetricRLE algo, int maxVariances) {
     var random = new RandomForMC(12138);
 
     System.out.println("Testing " + name);
@@ -63,7 +63,7 @@ public class RunLengthEncoding3DAlgoTest {
         var testCase = new TestedValues(new Vec3i(size.x, size.y, size.z), variance, random);
 
         var groups =
-            algo.subdivide(
+            algo.encode(
                 testCase.size.getX(),
                 testCase.size.getY(),
                 testCase.size.getZ(),
@@ -82,13 +82,13 @@ public class RunLengthEncoding3DAlgoTest {
   }
 
   @Test
-  void testSubdivide() {
-    for (var field : RunLengthEncoding3DAlgo.class.getDeclaredFields()) {
-      if (field.getType() == RunLengthEncoding3DAlgo.class && field.canAccess(null)) {
+  void testEncode() {
+    for (var field : VolumetricRLE.class.getDeclaredFields()) {
+      if (field.getType() == VolumetricRLE.class && field.canAccess(null)) {
         String name = field.getName();
         if (name.startsWith("_")) continue;
         try {
-          testAlgo(name, (RunLengthEncoding3DAlgo) field.get(null), 8);
+          testAlgo(name, (VolumetricRLE) field.get(null), 8);
         } catch (IllegalAccessException e) {
           throw new RuntimeException(e);
         }

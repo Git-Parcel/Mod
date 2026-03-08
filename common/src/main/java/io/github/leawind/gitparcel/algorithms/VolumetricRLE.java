@@ -4,19 +4,9 @@ import io.github.leawind.gitparcel.api.parcel.Parcel;
 import java.util.ArrayList;
 
 @FunctionalInterface
-public interface RunLengthEncoding3DAlgo {
-  /**
-   * Subdivide the given parcel into smaller parcels.
-   *
-   * @param sizeX The size of the X axis. Must be positive.
-   * @param sizeY The size of the Y axis. Must be positive.
-   * @param sizeZ The size of the Z axis. Must be positive.
-   * @param values The values to use for the subdivided parcels.
-   * @param factory The factory to use for creating the subdivided parcels.
-   * @return The subdivided parcels.
-   * @param <T> The type of the subdivided parcels.
-   */
-  <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
+public interface VolumetricRLE {
+
+  <T extends Parcel & Parcel.WithValue> ArrayList<T> encode(
       int sizeX, int sizeY, int sizeZ, ValueGetter values, ResultFactory<T> factory);
 
   interface ValueGetter {
@@ -34,11 +24,11 @@ public interface RunLengthEncoding3DAlgo {
     T create(int value, int originX, int originY, int originZ, int sizeX, int sizeY, int sizeZ);
   }
 
-  RunLengthEncoding3DAlgo V2 =
-      new RunLengthEncoding3DAlgo() {
+  VolumetricRLE IMPL =
+      new VolumetricRLE() {
 
         @Override
-        public <T extends Parcel & Parcel.WithValue> ArrayList<T> subdivide(
+        public <T extends Parcel & Parcel.WithValue> ArrayList<T> encode(
             int sizeX, int sizeY, int sizeZ, ValueGetter values, ResultFactory<T> factory) {
 
           final int sizeXZ = sizeX * sizeZ;
@@ -131,6 +121,4 @@ public interface RunLengthEncoding3DAlgo {
           return result;
         }
       };
-
-  RunLengthEncoding3DAlgo INSTANCE = V2;
 }

@@ -14,7 +14,7 @@ import org.openjdk.jmh.infra.Blackhole;
 @Fork(value = 2)
 @Warmup(iterations = 2, time = 1)
 @Measurement(iterations = 3, time = 3)
-public class RunLengthEncoding3DAlgoBenchmark {
+public class VolumetricRLEBenchmark {
 
   @Param({"2", "4", "8"})
   private int variance;
@@ -23,24 +23,22 @@ public class RunLengthEncoding3DAlgoBenchmark {
   private int size;
 
   private Parcel parcel;
-  private RunLengthEncoding3DAlgo.ValueGetter values;
-  private RunLengthEncoding3DAlgo.ResultFactory<RunLengthEncoding3DAlgoTest.ParcelWithValue>
-      factory;
+  private VolumetricRLE.ValueGetter values;
+  private VolumetricRLE.ResultFactory<VolumetricRLETest.ParcelWithValue> factory;
 
   @Setup
   public void setup() {
     var random = new RandomForMC(12138);
     var size = new Vec3i(this.size, this.size, this.size);
 
-    values = new RunLengthEncoding3DAlgoTest.TestedValues(size, variance, random);
-    factory = RunLengthEncoding3DAlgoTest.ParcelWithValue::new;
+    values = new VolumetricRLETest.TestedValues(size, variance, random);
+    factory = VolumetricRLETest.ParcelWithValue::new;
   }
 
   @Benchmark
   public void benchmarkV2(Blackhole bh) {
     var result =
-        RunLengthEncoding3DAlgo.V2.subdivide(
-            parcel.sizeX, parcel.sizeY, parcel.sizeZ, values, factory);
+        VolumetricRLE.IMPL.encode(parcel.sizeX, parcel.sizeY, parcel.sizeZ, values, factory);
     bh.consume(result);
   }
 }
