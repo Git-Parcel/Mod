@@ -1,6 +1,5 @@
 package io.github.leawind.gitparcel.api.parcel;
 
-import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,11 +12,12 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Block;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** A format for saving or loading parcels. */
 public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
     permits ParcelFormat.Save, ParcelFormat.Load, ParcelFormat.Impl {
-  Logger LOGGER = LogUtils.getLogger();
+  Logger LOGGER = LoggerFactory.getLogger("ParcellaFormat");
   String META_FILE_NAME = "parcel.json";
   String CONFIG_FILE_NAME = "config.json";
   String DATA_DIR_NAME = "data";
