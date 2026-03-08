@@ -26,6 +26,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.painting.Painting;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.AABB;
@@ -148,6 +150,10 @@ public class ParcellaD16Saver
     var sb = new StringBuilder(8192);
     char[] hex = HexUtils.UPPER_HEX_DIGITS;
 
+    var level = ctx.level;
+    var palette = ctx.blockPalette;
+    var transform = ctx.transform;
+
     List<Microparcel> microparcels =
         SubdivideAlgo.INSTANCE.subdivide(
             ctx.parcelSize.getX(),
@@ -156,8 +162,20 @@ public class ParcellaD16Saver
             (x, y, z) -> {
               BlockPos pos =
                   new BlockPos(x + subparcel.originX, y + subparcel.originY, z + subparcel.originZ);
-              pos = ctx.transform.apply(pos);
-              return ctx.blockPalette.collect(ctx.level, pos);
+              pos = transform.apply(pos);
+              // pos: world space
+
+              BlockState blockState = level.getBlockState(pos);
+              // blockState: world space
+              blockState = transform.applyInverted(blockState);
+              // blockState: local space
+              BlockEntity blockEntity = level.getBlockEntity(pos);
+              CompoundTag nbt = null;
+              if (blockEntity != null) {
+                nbt = blockEntity.saveWithFullMetadata(level.registryAccess());
+              }
+
+              return palette.collect(blockState, nbt);
             },
             Microparcel::new);
 
@@ -197,7 +215,18 @@ public class ParcellaD16Saver
         for (int k = 0, z = 0; k < sizeZ; k++, z++) {
           BlockPos pos = new BlockPos(x + originX, y + originY, z + originZ);
           pos = ctx.transform.apply(pos);
-          int id = palette.collect(level, pos);
+
+          BlockState blockState = level.getBlockState(pos);
+          // blockState: world space
+          blockState = ctx.transform.applyInverted(blockState);
+          // blockState: local space
+          BlockEntity blockEntity = level.getBlockEntity(pos);
+          CompoundTag nbt = null;
+          if (blockEntity != null) {
+            nbt = blockEntity.saveWithFullMetadata(level.registryAccess());
+          }
+
+          int id = palette.collect(blockState, nbt);
 
           sb.append(HexUtils.toHexUpperCase(id)).append('\n');
         }

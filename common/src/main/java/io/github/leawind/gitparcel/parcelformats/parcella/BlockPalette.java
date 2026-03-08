@@ -68,6 +68,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
    * @param pos the position to collect
    * @return the id of the collected block
    */
+  @Deprecated
   public int collect(LevelReader level, BlockPos pos) {
     BlockState blockState = level.getBlockState(pos);
     BlockEntity blockEntity = level.getBlockEntity(pos);
