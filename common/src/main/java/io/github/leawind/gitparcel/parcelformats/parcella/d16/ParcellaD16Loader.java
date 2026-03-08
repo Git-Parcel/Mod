@@ -201,9 +201,9 @@ public class ParcellaD16Loader
             if (idSb.length() < 6) {
               problemReporter.report(() -> String.format("Invalid line: '%s'", idSb));
             }
-            x1 = x0 + Integer.parseInt(String.valueOf(idSb.charAt(3)), 16);
-            y1 = y0 + Integer.parseInt(String.valueOf(idSb.charAt(4)), 16);
-            z1 = z0 + Integer.parseInt(String.valueOf(idSb.charAt(5)), 16);
+            x1 = Integer.parseInt(String.valueOf(idSb.charAt(3)), 16);
+            y1 = Integer.parseInt(String.valueOf(idSb.charAt(4)), 16);
+            z1 = Integer.parseInt(String.valueOf(idSb.charAt(5)), 16);
           }
           idSb.setLength(0);
         }
