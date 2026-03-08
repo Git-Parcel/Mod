@@ -197,62 +197,72 @@ public class ParcellaD16Loader
 
     boolean skipThisLine = false;
 
+    for_each_byte:
     for (byte b : bytes) {
       if (skipThisLine && b == '\n') {
         skipThisLine = false;
         continue;
       }
-      switch (b) {
-        case '=' -> {
-          x0 = HexUtils.parseChar(buff[0]);
-          y0 = HexUtils.parseChar(buff[1]);
-          z0 = HexUtils.parseChar(buff[2]);
-          if (x0 == -1 || y0 == -1 || z0 == -1) {
-            problemReporter.report(() -> String.format("Invalid line: %s", new String(buff)));
-            skipThisLine = true;
-            continue;
-          }
-          if (len == 3) {
-            x1 = x0;
-            y1 = y0;
-            z1 = z0;
-          } else {
-            if (len != 6) {
-              problemReporter.report(() -> String.format("Invalid line: %s", new String(buff)));
-              skipThisLine = true;
-              continue;
-            }
-            x1 = HexUtils.parseChar(buff[3]);
-            y1 = HexUtils.parseChar(buff[4]);
-            z1 = HexUtils.parseChar(buff[5]);
-            if (x1 == -1 || y1 == -1 || z1 == -1) {
-              problemReporter.report(() -> String.format("Invalid line: '%s'", new String(buff)));
-              skipThisLine = true;
-              continue;
-            }
-          }
 
-          len = 0;
-        }
-        case '\n' -> {
-          int paletteId = HexUtils.parsePositive(buff, 0, len);
-          if (paletteId == -1) {
-            problemReporter.report(() -> String.format("Invalid line: %s", new String(buff)));
-            continue;
-          }
-          len = 0;
+      to_report_invalid_line:
+      do {
+        switch (b) {
+          case '=' -> {
+            x0 = HexUtils.parseChar(buff[0]);
+            y0 = HexUtils.parseChar(buff[1]);
+            z0 = HexUtils.parseChar(buff[2]);
+            if (x0 == -1 || y0 == -1 || z0 == -1) {
+              break to_report_invalid_line;
+            }
+            if (len == 3) {
+              x1 = x0;
+              y1 = y0;
+              z1 = z0;
+            } else {
+              if (len != 6) {
+                break to_report_invalid_line;
+              }
+              x1 = HexUtils.parseChar(buff[3]);
+              y1 = HexUtils.parseChar(buff[4]);
+              z1 = HexUtils.parseChar(buff[5]);
+              if (x1 == -1 || y1 == -1 || z1 == -1) {
+                break to_report_invalid_line;
+              }
+            }
 
-          for (int x = x0; x <= x1; x++) {
-            for (int y = y0; y <= y1; y++) {
-              for (int z = z0; z <= z1; z++) {
-                blockStates[x][y][z] = paletteId;
+            len = 0;
+          }
+          case '\n' -> {
+            int paletteId = HexUtils.parsePositive(buff, 0, len);
+            if (paletteId == -1) {
+              break to_report_invalid_line;
+            }
+            len = 0;
+
+            for (int x = x0; x <= x1; x++) {
+              for (int y = y0; y <= y1; y++) {
+                for (int z = z0; z <= z1; z++) {
+                  blockStates[x][y][z] = paletteId;
+                }
               }
             }
           }
+          case '\r', ' ', '\t', '\0' -> {}
+          default -> {
+            if (len >= buff.length) {
+              break to_report_invalid_line;
+            }
+            buff[len++] = b;
+          }
         }
-        case '\r', ' ', '\t', '\0' -> {}
-        default -> buff[len++] = b;
-      }
+        continue for_each_byte;
+      } while (false);
+
+      // Report invalid line and skip the rest of the line
+      skipThisLine = true;
+      byte finalLen = len;
+      problemReporter.report(
+          () -> String.format("Invalid line: %s", new String(buff, 0, finalLen)));
     }
 
     return blockStates;
