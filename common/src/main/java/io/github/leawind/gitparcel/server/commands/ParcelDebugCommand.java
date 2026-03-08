@@ -234,10 +234,13 @@ public class ParcelDebugCommand {
       return 1;
     } catch (IOException | ParcelException e) {
       LOGGER.error("Error while loading parcel", e);
-      source.sendFailure(GitParcelTranslations.of("command.parcel_debug.load.failure"));
+      source.sendFailure(
+          GitParcelTranslations.of("command.parcel_debug.load.failure", e.getMessage()));
       return 0;
     } catch (Exception e) {
       LOGGER.error("Unexpected error while loading parcel", e);
+      source.sendFailure(
+          GitParcelTranslations.of("command.parcel_debug.unexpected_error", e.getMessage()));
       return 0;
     }
   }
