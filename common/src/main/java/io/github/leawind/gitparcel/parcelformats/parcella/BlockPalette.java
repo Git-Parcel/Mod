@@ -208,7 +208,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
         try {
           char type = '\0';
           String idString = null;
-          StringBuilder buffer = new StringBuilder(32);
+          StringBuilder buffer = new StringBuilder(128);
           // Char `=` can be used to split id and block state, but `=` could also appear in the
           // block state string.
           // So we use a flag to indicate whether we are in the id part or the block state part.
