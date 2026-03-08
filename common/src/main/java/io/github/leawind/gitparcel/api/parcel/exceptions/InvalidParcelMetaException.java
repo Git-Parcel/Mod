@@ -1,7 +1,7 @@
 package io.github.leawind.gitparcel.api.parcel.exceptions;
 
 /** Exceptions thrown when parsing or validating parcel metadata. */
-public class InvalidParcelMetaException extends ParcelException.InvalidParcel {
+public class InvalidParcelMetaException extends ParcelException.CorruptedParcelException {
   public InvalidParcelMetaException(String message) {
     super(message);
   }

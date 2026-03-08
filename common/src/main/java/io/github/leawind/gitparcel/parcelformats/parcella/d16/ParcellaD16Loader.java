@@ -14,11 +14,11 @@ public class ParcellaD16Loader extends ParcellaD32Loader
     implements ParcellaD16Format, ParcelFormat.Load<ParcellaD32Format.Config> {
   @Override
   protected void loadBlocks(Context ctx, ProblemReporter problemReporter)
-      throws IOException, ParcelException {
+      throws IOException, ParcelException.CorruptedParcelException {
 
     if (!Files.exists(ctx.blocksDir)) {
-      // TODO error handling
-      throw new ParcelException("Blocks directory not found: " + ctx.blocksDir);
+      throw new ParcelException.CorruptedParcelException(
+          "Blocks directory not found: " + ctx.blocksDir);
     }
 
     loadSubparcels(ctx, 16, problemReporter);

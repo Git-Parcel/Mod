@@ -280,7 +280,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
     return palette;
   }
 
-  public static class InvalidPaletteException extends ParcelException.InvalidParcel {
+  public static class InvalidPaletteException extends ParcelException.CorruptedParcelException {
     public InvalidPaletteException(String message) {
       super(message);
     }

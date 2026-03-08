@@ -77,7 +77,7 @@ public class StructureTemplateFormat
       boolean ignoreEntities,
       @Block.UpdateFlags int flags,
       ParcelFormatConfig.@Nullable None config)
-      throws IOException, ParcelException {
+      throws IOException, ParcelException.CorruptedParcelException {
     LOGGER.info("Loading structure template with size {} and transform {}", size, transform);
 
     Path structureFile = dataDir.resolve(NBT_FILE_NAME);
@@ -87,10 +87,13 @@ public class StructureTemplateFormat
       // NbtAccounterException will be thrown when the NBT file is too large
       tag = NbtIo.readCompressed(structureFile, NbtAccounter.unlimitedHeap());
     } catch (NbtAccounterException e) {
-      throw new ParcelException.InvalidParcel("The NBT file is too large", e);
+      throw new ParcelException.CorruptedParcelException("The NBT file is too large", e);
     }
-
-    StructureTemplate template = level.getServer().getStructureManager().readStructure(tag);
+    var server = level.getServer();
+    if (server == null) {
+      throw new RuntimeException("Failed to get MinecraftServer from level " + level);
+    }
+    StructureTemplate template = server.getStructureManager().readStructure(tag);
 
     boolean isStrict = true;
     BlockPos pivotPos = transform.getTranslatedOrigin();

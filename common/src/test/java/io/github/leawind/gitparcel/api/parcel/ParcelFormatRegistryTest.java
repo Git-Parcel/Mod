@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import java.io.IOException;
 import java.nio.file.Path;
 import net.minecraft.core.Vec3i;
@@ -88,7 +89,7 @@ public class ParcelFormatRegistryTest {
         boolean ignoreEntities,
         @Block.UpdateFlags int flags,
         ParcelFormatConfig.@Nullable None config)
-        throws IOException {
+        throws IOException, ParcelException.CorruptedParcelException {
       throw new IOException("Unimplemented");
     }
   }

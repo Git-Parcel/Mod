@@ -49,6 +49,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
    * @param ignoreEntities Whether to ignore entities when saving the parcel
    * @throws IOException If an I/O error occurs while saving the parcel
    * @throws ParcelException If other error occurs while saving the parcel
+   * @throws ParcelException.UnsupportedFormat If the format is not supported
    */
   @SuppressWarnings("unchecked")
   static <C extends ParcelFormatConfig<C>> void save(
@@ -60,9 +61,9 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
       throws IOException, ParcelException {
     meta.save(getMetaFile(parcelDir));
 
-    var format = (Save<C>) meta.getFormatSaver();
+    ParcelFormat.Save<C> format = (Save<C>) meta.getFormatSaver();
     if (format == null) {
-      throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
+      throw new ParcelException.UnsupportedFormat(meta.formatId, meta.formatVersion);
     }
 
     var config = format.getDefaultConfig();
@@ -72,7 +73,8 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
         try {
           config.load(configFile);
         } catch (Exception e) {
-          LOGGER.error("Failed to load format config: {}", e.getMessage(), e);
+          LOGGER.error(
+              "Failed to load format config, use default and overwrite: {}", e.getMessage(), e);
           config.resetToDefault();
           config.save(configFile);
         }
@@ -101,8 +103,8 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
    * @param ignoreEntities Whether to ignore entities when loading the parcel
    * @param flags Flags to pass to {@link Level#setBlock} when loading blocks
    * @throws IOException If an I/O error occurs while loading the parcel
-   * @throws ParcelException.InvalidParcel If the parcel is invalid
-   * @throws ParcelException If other error occurs while loading the parcel
+   * @throws ParcelException.CorruptedParcelException If the parcel is invalid and cannot be loaded
+   * @throws ParcelException.UnsupportedFormat If the format is not supported
    */
   @SuppressWarnings("unchecked")
   static <C extends ParcelFormatConfig<C>> void load(
@@ -116,7 +118,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
     var meta = ParcelMeta.load(parcelDir.resolve(META_FILE_NAME));
     Load<C> loader = (Load<C>) meta.getFormatLoader();
     if (loader == null) {
-      throw new ParcelException("Unsupported format: " + meta.formatId + ":" + meta.formatVersion);
+      throw new ParcelException.UnsupportedFormat(meta.formatId, meta.formatVersion);
     }
 
     Path configFile = getConfigFile(parcelDir);
@@ -125,7 +127,8 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
       try {
         config.load(configFile);
       } catch (Exception e) {
-        LOGGER.error("Failed to load format config: {}", e.getMessage(), e);
+        LOGGER.error(
+            "Failed to load format config, use default and continue: {}", e.getMessage(), e);
       }
     }
 
@@ -263,6 +266,8 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
      * @param ignoreBlocks Whether to ignore blocks
      * @param ignoreEntities Whether to ignore entities
      * @param flags Block update flags
+     * @throws ParcelException.CorruptedParcelException If the parcel is invalid and cannot be
+     *     loaded
      */
     void load(
         ServerLevelAccessor level,
@@ -273,7 +278,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
         boolean ignoreEntities,
         @Block.UpdateFlags int flags,
         @Nullable C config)
-        throws IOException, ParcelException;
+        throws IOException, ParcelException.CorruptedParcelException;
   }
 
   non-sealed interface Impl<C extends ParcelFormatConfig<C>> extends ParcelFormat<C> {}

@@ -10,13 +10,25 @@ public class ParcelException extends Exception {
     super(message, cause);
   }
 
-  /** Exception thrown when a parcel format is invalid */
-  public static class InvalidParcel extends ParcelException {
-    public InvalidParcel(String message) {
+  /** Exception thrown when a parcel format is not supported */
+  public static class UnsupportedFormat extends ParcelException {
+    public final String formatId;
+    public final int formatVersion;
+
+    public UnsupportedFormat(String formatId, int formatVersion) {
+      super(String.format("Unsupported format: %s:%d", formatId, formatVersion));
+      this.formatId = formatId;
+      this.formatVersion = formatVersion;
+    }
+  }
+
+  /** Exception thrown when a parcel format has fatal errors that cannot be recovered from */
+  public static class CorruptedParcelException extends ParcelException {
+    public CorruptedParcelException(String message) {
       super(message);
     }
 
-    public InvalidParcel(String message, Throwable cause) {
+    public CorruptedParcelException(String message, Throwable cause) {
       super(message, cause);
     }
   }

@@ -70,7 +70,7 @@ public class ParcellaD32Loader
       boolean ignoreEntities,
       @Block.UpdateFlags int flags,
       @Nullable Config config)
-      throws IOException, ParcelException {
+      throws IOException, ParcelException.CorruptedParcelException {
     LOGGER.debug("Loading from: {}", dataDir);
     LOGGER.debug("    Size: {}", size);
     LOGGER.debug("    Transform: {}", transform);
@@ -95,22 +95,22 @@ public class ParcellaD32Loader
   }
 
   protected void loadBlocks(Context ctx, ProblemReporter problemReporter)
-      throws IOException, ParcelException {
+      throws IOException, ParcelException.CorruptedParcelException {
 
     if (!Files.exists(ctx.blocksDir)) {
-      // TODO error handling
-      throw new ParcelException("Blocks directory not found: " + ctx.blocksDir);
+      throw new ParcelException.CorruptedParcelException(
+          "Blocks directory not found: " + ctx.blocksDir);
     }
 
     loadSubparcels(ctx, 32, problemReporter);
   }
 
   protected void loadSubparcels(Context ctx, int gridSize, ProblemReporter problemReporter)
-      throws IOException, ParcelException {
+      throws IOException, ParcelException.CorruptedParcelException {
 
     if (!Files.exists(ctx.subparcelsDir)) {
-      // TODO error handling
-      throw new ParcelException("Subparcels directory not found: " + ctx.subparcelsDir);
+      throw new ParcelException.CorruptedParcelException(
+          "Subparcels directory not found: " + ctx.subparcelsDir);
     }
 
     ctx.blockPalette =
