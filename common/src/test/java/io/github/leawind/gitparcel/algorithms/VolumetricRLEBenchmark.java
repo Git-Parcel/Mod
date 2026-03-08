@@ -24,7 +24,6 @@ public class VolumetricRLEBenchmark {
 
   private Parcel parcel;
   private VolumetricRLE.ValueGetter values;
-  private VolumetricRLE.ResultFactory<VolumetricRLETest.ParcelWithValue> factory;
 
   @Setup
   public void setup() {
@@ -32,13 +31,11 @@ public class VolumetricRLEBenchmark {
     var size = new Vec3i(this.size, this.size, this.size);
 
     values = new VolumetricRLETest.TestedValues(size, variance, random);
-    factory = VolumetricRLETest.ParcelWithValue::new;
   }
 
   @Benchmark
   public void benchmarkV2(Blackhole bh) {
-    var result =
-        VolumetricRLE.IMPL.encode(parcel.sizeX, parcel.sizeY, parcel.sizeZ, values, factory);
+    var result = VolumetricRLE.IMPL.encode(parcel.sizeX, parcel.sizeY, parcel.sizeZ, values);
     bh.consume(result);
   }
 }

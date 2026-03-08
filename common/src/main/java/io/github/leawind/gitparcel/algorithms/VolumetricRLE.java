@@ -1,13 +1,34 @@
 package io.github.leawind.gitparcel.algorithms;
 
-import io.github.leawind.gitparcel.api.parcel.Parcel;
 import java.util.ArrayList;
+import java.util.List;
 
 @FunctionalInterface
 public interface VolumetricRLE {
 
-  <T extends Parcel & Parcel.WithValue> ArrayList<T> encode(
-      int sizeX, int sizeY, int sizeZ, ValueGetter values, ResultFactory<T> factory);
+  List<Run> encode(int sizeX, int sizeY, int sizeZ, ValueGetter values);
+
+  /**
+   * Represents a run of blocks with the same value.
+   *
+   * <ul>
+   *   <li>(minX, minY, minZ) is the inclusive minimum position of the run.
+   *   <li>(endX, endY, endZ) is the exclusive maximum position of the run.
+   * </ul>
+   */
+  record Run(int value, int minX, int minY, int minZ, int endX, int endY, int endZ) {
+    int maxX() {
+      return endX - 1;
+    }
+
+    int maxY() {
+      return endY - 1;
+    }
+
+    int maxZ() {
+      return endZ - 1;
+    }
+  }
 
   interface ValueGetter {
     /**
@@ -28,13 +49,12 @@ public interface VolumetricRLE {
       new VolumetricRLE() {
 
         @Override
-        public <T extends Parcel & Parcel.WithValue> ArrayList<T> encode(
-            int sizeX, int sizeY, int sizeZ, ValueGetter values, ResultFactory<T> factory) {
+        public List<Run> encode(int sizeX, int sizeY, int sizeZ, ValueGetter values) {
 
           final int sizeXZ = sizeX * sizeZ;
           final int totalSize = sizeY * sizeXZ;
 
-          ArrayList<T> result = new ArrayList<>(totalSize / 2 + 1);
+          ArrayList<Run> result = new ArrayList<>(totalSize / 2 + 1);
 
           final int[] valueGrid = new int[totalSize];
           final boolean[] visited = new boolean[totalSize];
@@ -113,7 +133,7 @@ public interface VolumetricRLE {
                 for (int i = 0; i < groupIndicesSize; i++) {
                   visited[groupIndices[i]] = true;
                 }
-                result.add(factory.create(value, x, y, z, boundX - x, boundY - y, boundZ - z));
+                result.add(new Run(value, x, y, z, boundX, boundY, boundZ));
               }
             }
           }

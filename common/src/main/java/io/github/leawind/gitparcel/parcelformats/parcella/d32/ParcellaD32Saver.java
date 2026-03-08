@@ -3,7 +3,6 @@ package io.github.leawind.gitparcel.parcelformats.parcella.d32;
 import io.github.leawind.gitparcel.algorithms.VolumetricRLE;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
-import io.github.leawind.gitparcel.parcelformats.parcella.Microparcel;
 import io.github.leawind.gitparcel.parcelformats.parcella.Subparcel;
 import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Format;
 import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Saver;
@@ -12,7 +11,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
@@ -59,7 +57,7 @@ public class ParcellaD32Saver extends ParcellaD16Saver
     var palette = ctx.blockPalette;
     var transform = ctx.transform;
 
-    List<Microparcel> runs =
+    var runs =
         VolumetricRLE.IMPL.encode(
             ctx.parcelSize.getX(),
             ctx.parcelSize.getY(),
@@ -81,17 +79,20 @@ public class ParcellaD32Saver extends ParcellaD16Saver
               }
 
               return palette.collect(blockState, nbt);
-            },
-            Microparcel::new);
+            });
 
     for (var run : runs) {
-      sb.append(chars[run.originX]).append(chars[run.originY]).append(chars[run.originZ]);
+      sb.append(chars[run.minX()]).append(chars[run.minY()]).append(chars[run.minZ()]);
 
-      if (run.sizeX != 1 || run.sizeY != 1 || run.sizeZ != 1) {
-        sb.append(chars[run.sizeX - 1]).append(chars[run.sizeY - 1]).append(chars[run.sizeZ - 1]);
+      int maxX = run.endX() - 1;
+      int maxY = run.endY() - 1;
+      int maxZ = run.endZ() - 1;
+
+      if (run.minX() != maxX || run.minY() != maxY || run.minZ() != maxZ) {
+        sb.append(chars[maxX]).append(chars[maxY]).append(chars[maxZ]);
       }
 
-      sb.append('=').append(Base32Utils.toBase32(run.value)).append('\n');
+      sb.append('=').append(Base32Utils.toBase32(run.value())).append('\n');
     }
 
     Files.writeString(file, sb, StandardCharsets.UTF_8);

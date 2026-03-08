@@ -5,7 +5,6 @@ import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.parcelformats.NbtFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.BlockPalette;
-import io.github.leawind.gitparcel.parcelformats.parcella.Microparcel;
 import io.github.leawind.gitparcel.parcelformats.parcella.Subparcel;
 import io.github.leawind.gitparcel.parcelformats.parcella.utils.IndexPathCodec;
 import io.github.leawind.gitparcel.parcelformats.parcella.utils.ZOrder3D;
@@ -149,7 +148,7 @@ public class ParcellaD16Saver
     var palette = ctx.blockPalette;
     var transform = ctx.transform;
 
-    List<Microparcel> runs =
+    var runs =
         VolumetricRLE.IMPL.encode(
             ctx.parcelSize.getX(),
             ctx.parcelSize.getY(),
@@ -171,17 +170,19 @@ public class ParcellaD16Saver
               }
 
               return palette.collect(blockState, nbt);
-            },
-            Microparcel::new);
+            });
 
     for (var run : runs) {
-      sb.append(hex[run.originX]).append(hex[run.originY]).append(hex[run.originZ]);
+      sb.append(hex[run.minX()]).append(hex[run.minY()]).append(hex[run.minZ()]);
+      int maxX = run.endX() - 1;
+      int maxY = run.endY() - 1;
+      int maxZ = run.endZ() - 1;
 
-      if (run.sizeX != 1 || run.sizeY != 1 || run.sizeZ != 1) {
-        sb.append(hex[run.sizeX - 1]).append(hex[run.sizeY - 1]).append(hex[run.sizeZ - 1]);
+      if (run.minX() != maxX || run.minY() != maxY || run.minZ() != maxZ) {
+        sb.append(hex[maxX]).append(hex[maxY]).append(hex[maxZ]);
       }
 
-      sb.append('=').append(HexUtils.toHexUpperCase(run.value)).append('\n');
+      sb.append('=').append(HexUtils.toHexUpperCase(run.value())).append('\n');
     }
 
     Files.writeString(file, sb, StandardCharsets.UTF_8);

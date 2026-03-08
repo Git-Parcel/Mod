@@ -1,11 +1,17 @@
 package io.github.leawind.gitparcel.algorithms;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.github.leawind.gitparcel.api.parcel.Parcel;
-import io.github.leawind.gitparcel.parcelformats.parcella.SubparcelTest;
 import io.github.leawind.gitparcel.parcelformats.parcella.utils.ZOrder3D;
 import io.github.leawind.gitparcel.testutils.RandomForMC;
+import java.util.HashSet;
+import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import org.junit.jupiter.api.Test;
 
 public class VolumetricRLETest {
@@ -60,19 +66,13 @@ public class VolumetricRLETest {
       for (int i = 0; i < 32768; i += 17) {
         var size = ZOrder3D.indexToCoord(i).add(1, 1, 1);
 
-        var testCase = new TestedValues(new Vec3i(size.x, size.y, size.z), variance, random);
+        var values = new TestedValues(new Vec3i(size.x, size.y, size.z), variance, random);
 
-        var groups =
-            algo.encode(
-                testCase.size.getX(),
-                testCase.size.getY(),
-                testCase.size.getZ(),
-                testCase,
-                ParcelWithValue::new);
-        SubparcelTest.assertParcelEqual(testCase.size, groups);
+        var runs = algo.encode(values.size.getX(), values.size.getY(), values.size.getZ(), values);
+        assertRunsEqual(values.size, runs);
 
-        int volume = testCase.size.getX() * testCase.size.getY() * testCase.size.getZ();
-        var countRatio = (double) groups.size() / volume;
+        int volume = values.size.getX() * values.size.getY() * values.size.getZ();
+        var countRatio = (double) runs.size() / volume;
         ratioSum += countRatio * volume;
         weightSum += volume;
       }
@@ -94,5 +94,28 @@ public class VolumetricRLETest {
         }
       }
     }
+  }
+
+  public static <T extends Parcel> void assertRunsEqual(
+      Vec3i size, Iterable<VolumetricRLE.Run> runs) {
+    Set<BlockPos> blocks = new HashSet<>();
+
+    for (var run : runs) {
+      var bounds =
+          new BoundingBox(run.minX(), run.minY(), run.minZ(), run.maxX(), run.maxY(), run.maxZ());
+
+      for (int x = run.minX(); x < run.endX(); x++) {
+        for (int y = run.minY(); y < run.endY(); y++) {
+          for (int z = run.minZ(); z < run.endZ(); z++) {
+            BlockPos minPos = new BlockPos(x, y, z);
+            assertTrue(bounds.isInside(minPos));
+            assertFalse(blocks.contains(minPos));
+            blocks.add(minPos);
+          }
+        }
+      }
+    }
+    var volume = size.getX() * size.getY() * size.getZ();
+    assertEquals(volume, blocks.size());
   }
 }
