@@ -163,9 +163,8 @@ public class ParcelDebugCommand {
       Rotation rotation) {
     try {
       BoundingBox bounds = BoundingBox.fromCorners(corner1, corner2);
-      var transform =
-          new ParcelTransform(
-              mirror, rotation, new BlockPos(bounds.minX(), bounds.minY(), bounds.minZ()));
+      BlockPos worldPivotPos = ParcelTransform.getPivotPos(mirror, rotation, bounds);
+      var transform = new ParcelTransform(mirror, rotation, worldPivotPos);
 
       Vec3i size = new Vec3i(bounds.getXSpan(), bounds.getYSpan(), bounds.getZSpan());
       Vec3i parcelSize = transform.applyToSizeInverted(size);
