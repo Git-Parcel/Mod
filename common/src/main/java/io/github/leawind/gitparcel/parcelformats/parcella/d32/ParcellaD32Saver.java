@@ -8,6 +8,7 @@ import io.github.leawind.gitparcel.parcelformats.parcella.BlockPalette;
 import io.github.leawind.gitparcel.parcelformats.parcella.Subparcel;
 import io.github.leawind.gitparcel.parcelformats.parcella.utils.IndexPathCodec;
 import io.github.leawind.gitparcel.parcelformats.parcella.utils.ZOrder3D;
+import io.github.leawind.gitparcel.utils.numbase.Base32Utils;
 import io.github.leawind.gitparcel.utils.numbase.HexUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -142,7 +143,7 @@ public class ParcellaD32Saver
   protected void writeSubparcelRLE3D(Context ctx, Path file, Subparcel subparcel)
       throws IOException {
     var sb = new StringBuilder(8192);
-    char[] hexChars = HexUtils.UPPERS;
+    char[] hexChars = Base32Utils.BASE32_DIGITS;
 
     var level = ctx.level;
     var palette = ctx.blockPalette;
