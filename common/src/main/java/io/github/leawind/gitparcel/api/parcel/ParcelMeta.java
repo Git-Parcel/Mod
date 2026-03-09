@@ -1,20 +1,15 @@
 package io.github.leawind.gitparcel.api.parcel;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.api.GitParcelApi;
 import io.github.leawind.gitparcel.api.parcel.exceptions.InvalidParcelMetaException;
-import io.github.leawind.gitparcel.utils.json.JsonAccessException;
-import io.github.leawind.gitparcel.utils.json.JsonObjectAccessor;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -154,57 +149,15 @@ public final class ParcelMeta {
   /**
    * Save the metadata to the given file path.
    *
-   * @param metaFile Path to the file. The parent directories will be created if not exist. File
-   *     will be overwritten if it already exists.
+   * @param file Path to the file. The parent directories will be created if not exist. File will be
+   *     overwritten if it already exists.
    * @throws IOException If an I/O error occurs while writing the file
+   * @throws IllegalStateException If the metadata is not valid
    */
-  public void save(Path metaFile) throws IOException {
-    Files.createDirectories(metaFile.getParent());
-    Files.writeString(metaFile, GSON.toJson(toJsonObject()));
-  }
-
-  @Deprecated
-  public JsonObject toJsonObject() {
-    JsonObject json = new JsonObject();
-    {
-      JsonObject formatJson = new JsonObject();
-      formatJson.addProperty("id", format.id());
-      formatJson.addProperty("version", format.version());
-      json.add("format", formatJson);
-    }
-    json.addProperty("dataVersion", dataVersion);
-    {
-      JsonArray sizeJson = new JsonArray();
-      sizeJson.add(size.getX());
-      sizeJson.add(size.getY());
-      sizeJson.add(size.getZ());
-      json.add("size", sizeJson);
-    }
-    if (name != null) {
-      json.addProperty("name", name);
-    }
-    if (description != null) {
-      json.addProperty("description", description);
-    }
-    if (tags != null) {
-      JsonArray tagsJson = new JsonArray();
-      tags.forEach(tagsJson::add);
-      json.add("tags", tagsJson);
-    }
-    if (mods != null) {
-      JsonObject modsJson = new JsonObject();
-      for (var entry : mods.entrySet()) {
-        var dep = entry.getValue();
-        JsonObject modJson = new JsonObject();
-        modJson.addProperty("min", dep.min());
-        modJson.addProperty("max", dep.max());
-        modsJson.add(entry.getKey(), modJson);
-      }
-      json.add("mods", modsJson);
-    }
-    json.addProperty("excludeEntities", excludeEntities);
-
-    return json;
+  public void save(Path file) throws IOException, IllegalStateException {
+    Files.createDirectories(file.getParent());
+    var result = CODEC.encodeStart(JsonOps.INSTANCE, this);
+    Files.writeString(file, GSON.toJson((JsonObject) result.getOrThrow()));
   }
 
   public record ModDependency(
@@ -246,96 +199,15 @@ public final class ParcelMeta {
    * @param metaFile File path to the file
    * @return The parsed {@link ParcelMeta} object
    * @throws IOException If an I/O error occurs while reading the file
+   * @throws InvalidParcelMetaException If the file content is not valid
    */
   public static ParcelMeta load(Path metaFile) throws IOException, InvalidParcelMetaException {
     try {
       var json = GSON.fromJson(Files.readString(metaFile), JsonObject.class);
-      return fromJsonObject(json);
-    } catch (JsonAccessException e) {
+      var result = CODEC.parse(JsonOps.INSTANCE, json);
+      return result.getOrThrow();
+    } catch (IllegalStateException e) {
       throw new InvalidParcelMetaException("Invalid parcel metadata at " + metaFile, e);
     }
-  }
-
-  @Deprecated
-  public static ParcelMeta fromJsonObject(JsonObject json) throws JsonAccessException {
-    var ja = new JsonObjectAccessor(json);
-    ParcelMeta meta;
-
-    {
-      String formatId;
-      int formatVersion;
-      {
-        ja.requireJsonObject("format");
-        formatId = ja.requireString("format", "id");
-        formatVersion = ja.requireNumber("format", "version").intValue();
-        json.remove("format");
-      }
-      int dataVersion = ja.requireNumber("dataVersion").intValue();
-      json.remove("dataVersion");
-
-      Vec3i size;
-      {
-        JsonArray sizeJson = ja.requireJsonArray("size");
-        json.remove("size");
-        int sizeX = sizeJson.get(0).getAsInt();
-        int sizeY = sizeJson.get(1).getAsInt();
-        int sizeZ = sizeJson.get(2).getAsInt();
-        size = new Vec3i(sizeX, sizeY, sizeZ);
-      }
-      meta = new ParcelMeta(formatId, formatVersion, dataVersion, size);
-    }
-
-    {
-      meta.name = ja.optionalString("name");
-      json.remove("name");
-    }
-
-    {
-      meta.description = ja.optionalString("description");
-      json.remove("description");
-    }
-    if (json.has("tags")) {
-      var tagsJson = ja.requireJsonArray("tags");
-      List<String> tags = new ArrayList<>(tagsJson.size());
-      for (JsonElement tagElement : tagsJson) {
-        tags.add(tagElement.getAsString());
-      }
-      meta.tags = tags;
-      json.remove("tags");
-    }
-
-    if (json.has("mods")) {
-      var modsJson = ja.requireJsonObject("mods");
-      meta.mods = new HashMap<>();
-
-      for (var entry : modsJson.entrySet()) {
-        // "*" | {min?, max?}
-        JsonElement depJson = entry.getValue();
-        if (depJson.isJsonObject()) {
-          var modJson = depJson.getAsJsonObject();
-          var modJa = new JsonObjectAccessor(modJson);
-          meta.mods.put(
-              entry.getKey(),
-              new ModDependency(
-                  modJa.optionalString("min"), //
-                  modJa.optionalString("max"),
-                  null));
-        } else {
-          var s = JsonObjectAccessor.requireString(depJson);
-          if (!s.equals("*")) {
-            throw new JsonAccessException.IncorrectType("\"*\"", "\"" + s + "\"");
-          }
-          meta.mods.put(entry.getKey(), ModDependency.ANY);
-        }
-      }
-      json.remove("mods");
-    }
-
-    {
-      meta.excludeEntities = ja.optionalBool("excludeEntities");
-      json.remove("excludeEntities");
-    }
-    // meta.extra = json;
-    return meta;
   }
 }
