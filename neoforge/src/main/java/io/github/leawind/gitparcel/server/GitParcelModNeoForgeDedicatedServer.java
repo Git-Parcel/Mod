@@ -9,5 +9,8 @@ import net.neoforged.fml.common.Mod;
 public class GitParcelModNeoForgeDedicatedServer {
   public GitParcelModNeoForgeDedicatedServer(IEventBus modBus) {
     GitParcelModDedicatedServer.init();
+    GitParcelModNeoForgeDedicatedServer.init();
   }
+
+  public static void init() {}
 }

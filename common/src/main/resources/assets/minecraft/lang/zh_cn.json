@@ -7,5 +7,7 @@
   "command.parcel_debug.load.failure": "加载失败: %s",
   "command.parcel_debug.load.success": "加载成功",
   "command.parcel_debug.save.failure": "保存失败: %s",
-  "command.parcel_debug.save.success": "保存成功"
+  "command.parcel_debug.save.success": "保存成功",
+  "key.gitparcel.debug_screen": "Git Parce 调试屏幕",
+  "key.gitparcel.admin_screen": "Git Parce 管理员屏幕"
 }

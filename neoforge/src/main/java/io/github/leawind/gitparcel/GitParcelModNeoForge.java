@@ -11,12 +11,15 @@ public class GitParcelModNeoForge {
 
   public GitParcelModNeoForge(IEventBus eventBus) {
     GitParcelMod.init();
+    GitParcelModNeoForge.init();
   }
+
+  public static void init() {}
 
   @EventBusSubscriber(modid = GitParcelMod.MOD_ID)
   public static class EventHandler {
     @SubscribeEvent
-    public static void onLivingJump(RegisterCommandsEvent event) {
+    public static void onRegisterCommands(RegisterCommandsEvent event) {
       GitParcelMod.registerCommands(
           event.getDispatcher(), event.getCommandSelection(), event.getBuildContext());
     }

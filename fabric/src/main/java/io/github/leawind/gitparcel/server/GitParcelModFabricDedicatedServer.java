@@ -6,5 +6,8 @@ public class GitParcelModFabricDedicatedServer implements DedicatedServerModInit
   @Override
   public void onInitializeServer() {
     GitParcelModDedicatedServer.init();
+    GitParcelModFabricDedicatedServer.init();
   }
+
+  public static void init() {}
 }

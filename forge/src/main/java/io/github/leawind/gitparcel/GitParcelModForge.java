@@ -1,7 +1,9 @@
 package io.github.leawind.gitparcel;
 
 import io.github.leawind.gitparcel.client.GitParcelModClient;
+import io.github.leawind.gitparcel.client.GitParcelModForgeClient;
 import io.github.leawind.gitparcel.server.GitParcelModDedicatedServer;
+import io.github.leawind.gitparcel.server.GitParcelModForgeDedicatedServer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -11,22 +13,27 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
 public class GitParcelModForge {
 
   public GitParcelModForge() {
-
-    registerEvents();
-
     GitParcelMod.init();
+    GitParcelModForge.init();
 
     switch (FMLEnvironment.dist) {
-      case Dist.CLIENT -> GitParcelModClient.init();
-      case Dist.DEDICATED_SERVER -> GitParcelModDedicatedServer.init();
+      case Dist.CLIENT -> {
+        GitParcelModClient.init();
+        GitParcelModForgeClient.init();
+      }
+      case Dist.DEDICATED_SERVER -> {
+        GitParcelModDedicatedServer.init();
+        GitParcelModForgeDedicatedServer.init();
+      }
     }
   }
 
-  private static void registerEvents() {
+  public static void init() {
+    RegisterCommandsEvent.BUS.addListener(GitParcelModForge::registerCommands);
+  }
 
-    RegisterCommandsEvent.BUS.addListener(
-        (x) ->
-            GitParcelMod.registerCommands(
-                x.getDispatcher(), x.getCommandSelection(), x.getBuildContext()));
+  public static void registerCommands(RegisterCommandsEvent event) {
+    GitParcelMod.registerCommands(
+        event.getDispatcher(), event.getCommandSelection(), event.getBuildContext());
   }
 }

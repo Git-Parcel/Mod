@@ -11,9 +11,12 @@ public class GitParcelModFabric implements ModInitializer {
 
   @Override
   public void onInitialize() {
-    registerEvents();
-
     GitParcelMod.init();
+    GitParcelModFabric.init();
+  }
+
+  public static void init() {
+    registerEvents();
   }
 
   private static void registerEvents() {
