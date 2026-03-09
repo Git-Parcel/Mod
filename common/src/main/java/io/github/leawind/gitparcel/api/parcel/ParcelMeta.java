@@ -51,49 +51,6 @@ public final class ParcelMeta {
                           .forGetter(ParcelMeta::getExcludeEntities))
                   .apply(inst, ParcelMeta::new));
 
-  public record ModDependency(
-      @Nullable String min, @Nullable String max, @Nullable List<String> namespaces) {
-    public static final Codec<ModDependency> CODEC =
-        RecordCodecBuilder.create(
-            inst ->
-                inst.group(
-                        Codec.STRING.optionalFieldOf("min").forGetter(ModDependency::getMin),
-                        Codec.STRING.optionalFieldOf("max").forGetter(ModDependency::getMax),
-                        Codec.STRING
-                            .listOf()
-                            .optionalFieldOf("namespaces")
-                            .forGetter(ModDependency::getNamespaces))
-                    .apply(inst, ModDependency::new));
-
-    public static final ModDependency ANY = new ModDependency((String) null, null, null);
-
-    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    public ModDependency(
-        Optional<String> min, Optional<String> max, Optional<List<String>> namespaces) {
-      this(min.orElse(null), max.orElse(null), namespaces.orElse(null));
-    }
-
-    public Optional<String> getMin() {
-      return Optional.ofNullable(min);
-    }
-
-    public Optional<String> getMax() {
-      return Optional.ofNullable(max);
-    }
-
-    public Optional<List<String>> getNamespaces() {
-      return Optional.ofNullable(namespaces);
-    }
-  }
-
-  public static ParcelMeta create(String formatId, int formatVersion, Vec3i parcelSize) {
-    return new ParcelMeta(
-        formatId,
-        formatVersion,
-        SharedConstants.getCurrentVersion().dataVersion().version(),
-        parcelSize);
-  }
-
   public ParcelFormat.Info format;
   public int dataVersion;
   public Vec3i size;
@@ -105,6 +62,15 @@ public final class ParcelMeta {
 
   /** Default is {@code true}. */
   public @Nullable Boolean excludeEntities = null;
+
+  @Deprecated
+  public static ParcelMeta create(String formatId, int formatVersion, Vec3i parcelSize) {
+    return new ParcelMeta(
+        formatId,
+        formatVersion,
+        SharedConstants.getCurrentVersion().dataVersion().version(),
+        parcelSize);
+  }
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   private ParcelMeta(
@@ -124,6 +90,21 @@ public final class ParcelMeta {
     this.tags = tgs.orElse(null);
     this.mods = mods.orElse(null);
     this.excludeEntities = excludeEntities.orElse(true);
+  }
+
+  public ParcelMeta(ParcelFormat.Info format, Vec3i parcelSize) {
+    this(format, SharedConstants.getCurrentVersion().dataVersion().version(), parcelSize);
+  }
+
+  public ParcelMeta(ParcelFormat.Info format, int dataVersion, Vec3i parcelSize) {
+    this.format = format;
+    this.dataVersion = dataVersion;
+    this.size = parcelSize;
+  }
+
+  @Deprecated
+  private ParcelMeta(String formatId, int formatVersion, int dataVersion, Vec3i parcelSize) {
+    this(new ParcelFormat.Info(formatId, formatVersion), dataVersion, parcelSize);
   }
 
   private ParcelFormat.Info format() {
@@ -168,17 +149,6 @@ public final class ParcelMeta {
 
   public boolean excludeEntities() {
     return excludeEntities == null || excludeEntities;
-  }
-
-  private ParcelMeta(ParcelFormat.Info format, int dataVersion, Vec3i parcelSize) {
-    this.format = format;
-    this.dataVersion = dataVersion;
-    this.size = parcelSize;
-  }
-
-  @Deprecated
-  private ParcelMeta(String formatId, int formatVersion, int dataVersion, Vec3i parcelSize) {
-    this(new ParcelFormat.Info(formatId, formatVersion), dataVersion, parcelSize);
   }
 
   /**
@@ -235,6 +205,41 @@ public final class ParcelMeta {
     json.addProperty("excludeEntities", excludeEntities);
 
     return json;
+  }
+
+  public record ModDependency(
+      @Nullable String min, @Nullable String max, @Nullable List<String> namespaces) {
+    public static final Codec<ModDependency> CODEC =
+        RecordCodecBuilder.create(
+            inst ->
+                inst.group(
+                        Codec.STRING.optionalFieldOf("min").forGetter(ModDependency::getMin),
+                        Codec.STRING.optionalFieldOf("max").forGetter(ModDependency::getMax),
+                        Codec.STRING
+                            .listOf()
+                            .optionalFieldOf("namespaces")
+                            .forGetter(ModDependency::getNamespaces))
+                    .apply(inst, ModDependency::new));
+
+    public static final ModDependency ANY = new ModDependency((String) null, null, null);
+
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    public ModDependency(
+        Optional<String> min, Optional<String> max, Optional<List<String>> namespaces) {
+      this(min.orElse(null), max.orElse(null), namespaces.orElse(null));
+    }
+
+    public Optional<String> getMin() {
+      return Optional.ofNullable(min);
+    }
+
+    public Optional<String> getMax() {
+      return Optional.ofNullable(max);
+    }
+
+    public Optional<List<String>> getNamespaces() {
+      return Optional.ofNullable(namespaces);
+    }
   }
 
   /**
