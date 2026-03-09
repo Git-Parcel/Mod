@@ -46,14 +46,14 @@ public final class ParcelMeta {
                           .forGetter(ParcelMeta::getExcludeEntities))
                   .apply(inst, ParcelMeta::new));
 
-  public ParcelFormat format;
-  public int dataVersion;
-  public Vec3i size;
+  private ParcelFormat format;
+  private int dataVersion;
+  private Vec3i size;
 
-  public @Nullable String name = null;
-  public @Nullable String description = null;
-  public @Nullable List<String> tags = null;
-  public @Nullable Map<String, ModDependency> mods = null;
+  private @Nullable String name = null;
+  private @Nullable String description = null;
+  private @Nullable List<String> tags = null;
+  private @Nullable Map<String, ModDependency> mods = null;
 
   /** Default is {@code true}. */
   public @Nullable Boolean excludeEntities = null;
@@ -102,15 +102,15 @@ public final class ParcelMeta {
     this(new ParcelFormat.Info(formatId, formatVersion), dataVersion, parcelSize);
   }
 
-  private ParcelFormat format() {
+  public ParcelFormat format() {
     return format;
   }
 
-  private int dataVersion() {
+  public int dataVersion() {
     return dataVersion;
   }
 
-  private Vec3i size() {
+  public Vec3i size() {
     return size;
   }
 

@@ -78,7 +78,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl, ParcelFormat.Inf
 
     ParcelFormat.Save<C> format = (Save<C>) meta.getFormatSaver();
     if (format == null) {
-      throw new ParcelException.UnsupportedFormat(meta.format);
+      throw new ParcelException.UnsupportedFormat(meta.format());
     }
 
     var config = format.getDefaultConfig();
@@ -100,7 +100,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl, ParcelFormat.Inf
 
     format.save(
         level,
-        meta.size,
+        meta.size(),
         transform,
         getDataDir(parcelDir),
         ignoreEntities && meta.excludeEntities(),
@@ -133,7 +133,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl, ParcelFormat.Inf
     var meta = ParcelMeta.load(parcelDir.resolve(META_FILE_NAME));
     Load<C> loader = (Load<C>) meta.getFormatLoader();
     if (loader == null) {
-      throw new ParcelException.UnsupportedFormat(meta.format);
+      throw new ParcelException.UnsupportedFormat(meta.format());
     }
 
     Path configFile = getConfigFile(parcelDir);
@@ -148,7 +148,8 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl, ParcelFormat.Inf
     }
 
     Path dataDir = parcelDir.resolve(DATA_DIR_NAME);
-    loader.load(level, meta.size, transform, dataDir, ignoreBlocks, ignoreEntities, flags, config);
+    loader.load(
+        level, meta.size(), transform, dataDir, ignoreBlocks, ignoreEntities, flags, config);
   }
 
   class BaseContext {
