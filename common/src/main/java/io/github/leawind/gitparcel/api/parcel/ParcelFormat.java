@@ -17,8 +17,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** A format for saving or loading parcels. */
-public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
-    permits ParcelFormat.Impl, ParcelFormat.Info, ParcelFormat.Load, ParcelFormat.Save {
+public sealed interface ParcelFormat permits ParcelFormat.Impl, ParcelFormat.Info {
+  Codec<ParcelFormat> CODEC =
+      RecordCodecBuilder.create(
+          inst ->
+              inst.group(
+                      Codec.STRING.fieldOf("id").forGetter(ParcelFormat::id),
+                      Codec.INT.fieldOf("version").forGetter(ParcelFormat::version))
+                  .apply(inst, Info::new));
+
+  /** Unique id of the format. */
+  String id();
+
+  /** Version of the format. */
+  int version();
+
   Logger LOGGER = LoggerFactory.getLogger("ParcellaFormat");
   String META_FILE_NAME = "parcel.json";
   String CONFIG_FILE_NAME = "config.json";
@@ -138,43 +151,6 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
     loader.load(level, meta.size, transform, dataDir, ignoreBlocks, ignoreEntities, flags, config);
   }
 
-  /** Unique id of the format. */
-  String id();
-
-  /** Version of the format. */
-  int version();
-
-  /**
-   * Safely casts a config object to the current format's configuration type.
-   *
-   * @param config The config object to cast, may be null
-   * @param <T> The type of the input config object
-   * @return The cast config object, or null if both configClass() returns null and config is null
-   * @throws ClassCastException If configClass() returns null but config is non-null, or if the
-   *     config object cannot be cast to the target type
-   */
-  default <T> C castConfig(T config) throws ClassCastException {
-    var clazz = configClass();
-    if (clazz != null) {
-      return clazz.cast(config);
-    }
-    if (config == null) {
-      return null;
-    }
-    throw new ClassCastException("Expected null, got {}" + config);
-  }
-
-  default @Nullable Class<C> configClass() {
-    return null;
-  }
-
-  /**
-   * @return might be null
-   */
-  default @Nullable C getDefaultConfig() {
-    return null;
-  }
-
   class BaseContext {
     public final Vec3i parcelSize;
     public final ParcelTransform transform;
@@ -231,7 +207,40 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
     }
   }
 
-  non-sealed interface Save<C extends ParcelFormatConfig<C>> extends ParcelFormat<C> {
+  non-sealed interface Impl<C extends ParcelFormatConfig<C>> extends ParcelFormat {
+    /**
+     * Safely casts a config object to the current format's configuration type.
+     *
+     * @param config The config object to cast, may be null
+     * @param <T> The type of the input config object
+     * @return The cast config object, or null if both configClass() returns null and config is null
+     * @throws ClassCastException If configClass() returns null but config is non-null, or if the
+     *     config object cannot be cast to the target type
+     */
+    default <T> C castConfig(T config) throws ClassCastException {
+      var clazz = configClass();
+      if (clazz != null) {
+        return clazz.cast(config);
+      }
+      if (config == null) {
+        return null;
+      }
+      throw new ClassCastException("Expected null, got {}" + config);
+    }
+
+    default @Nullable Class<C> configClass() {
+      return null;
+    }
+
+    /**
+     * @return might be null
+     */
+    default @Nullable C getDefaultConfig() {
+      return null;
+    }
+  }
+
+  interface Save<C extends ParcelFormatConfig<C>> extends Impl<C> {
 
     /**
      * Save parcel content to directory.
@@ -256,7 +265,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
         throws IOException;
   }
 
-  non-sealed interface Load<C extends ParcelFormatConfig<C>> extends ParcelFormat<C> {
+  interface Load<C extends ParcelFormatConfig<C>> extends Impl<C> {
 
     /**
      * Load parcel content from directory
@@ -283,15 +292,5 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
         throws IOException, ParcelException.CorruptedParcelException;
   }
 
-  non-sealed interface Impl<C extends ParcelFormatConfig<C>> extends ParcelFormat<C> {}
-
-  record Info(String id, int version) implements ParcelFormat<ParcelFormatConfig.None> {
-    public static final Codec<Info> CODEC =
-        RecordCodecBuilder.create(
-            inst ->
-                inst.group(
-                        Codec.STRING.fieldOf("id").forGetter(Info::id),
-                        Codec.INT.fieldOf("version").forGetter(Info::version))
-                    .apply(inst, Info::new));
-  }
+  record Info(String id, int version) implements ParcelFormat {}
 }

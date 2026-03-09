@@ -14,9 +14,9 @@ public class ParcelException extends Exception {
 
   /** Exception thrown when a parcel format is not supported */
   public static class UnsupportedFormat extends ParcelException {
-    public final ParcelFormat.Info format;
+    public final ParcelFormat format;
 
-    public UnsupportedFormat(ParcelFormat.Info format) {
+    public UnsupportedFormat(ParcelFormat format) {
       super(String.format("Unsupported format: %s:%d", format.id(), format.version()));
       this.format = format;
     }

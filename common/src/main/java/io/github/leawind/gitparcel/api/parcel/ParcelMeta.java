@@ -35,7 +35,7 @@ public final class ParcelMeta {
       RecordCodecBuilder.create(
           inst ->
               inst.group(
-                      ParcelFormat.Info.CODEC.fieldOf("format").forGetter(ParcelMeta::format),
+                      ParcelFormat.CODEC.fieldOf("format").forGetter(ParcelMeta::format),
                       Codec.INT.fieldOf("dataVersion").forGetter(ParcelMeta::dataVersion),
                       Vec3i.CODEC.fieldOf("size").forGetter(ParcelMeta::size),
                       Codec.STRING.optionalFieldOf("name").forGetter(ParcelMeta::getName),
@@ -51,7 +51,7 @@ public final class ParcelMeta {
                           .forGetter(ParcelMeta::getExcludeEntities))
                   .apply(inst, ParcelMeta::new));
 
-  public ParcelFormat.Info format;
+  public ParcelFormat format;
   public int dataVersion;
   public Vec3i size;
 
@@ -74,7 +74,7 @@ public final class ParcelMeta {
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   private ParcelMeta(
-      ParcelFormat.Info format,
+      ParcelFormat format,
       Integer dataVersion,
       Vec3i size,
       Optional<String> name,
@@ -92,11 +92,11 @@ public final class ParcelMeta {
     this.excludeEntities = excludeEntities.orElse(true);
   }
 
-  public ParcelMeta(ParcelFormat.Info format, Vec3i parcelSize) {
+  public ParcelMeta(ParcelFormat format, Vec3i parcelSize) {
     this(format, SharedConstants.getCurrentVersion().dataVersion().version(), parcelSize);
   }
 
-  public ParcelMeta(ParcelFormat.Info format, int dataVersion, Vec3i parcelSize) {
+  public ParcelMeta(ParcelFormat format, int dataVersion, Vec3i parcelSize) {
     this.format = format;
     this.dataVersion = dataVersion;
     this.size = parcelSize;
@@ -107,7 +107,7 @@ public final class ParcelMeta {
     this(new ParcelFormat.Info(formatId, formatVersion), dataVersion, parcelSize);
   }
 
-  private ParcelFormat.Info format() {
+  private ParcelFormat format() {
     return format;
   }
 

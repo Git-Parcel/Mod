@@ -9,8 +9,8 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 public class ParcelFormatRegistry {
-  private final Map<String, Int2ObjectSortedMap<ParcelFormat<?>>> savers = new HashMap<>();
-  private final Map<String, Int2ObjectSortedMap<ParcelFormat<?>>> loaders = new HashMap<>();
+  private final Map<String, Int2ObjectSortedMap<ParcelFormat.Impl<?>>> savers = new HashMap<>();
+  private final Map<String, Int2ObjectSortedMap<ParcelFormat.Impl<?>>> loaders = new HashMap<>();
   private ParcelFormat.@Nullable Save<?> defaultSaver;
 
   /**
@@ -19,7 +19,7 @@ public class ParcelFormatRegistry {
    * @param format The format to register.
    * @param <C> The format config type.
    */
-  public <C extends ParcelFormatConfig<C>> void register(ParcelFormat<C> format) {
+  public <C extends ParcelFormatConfig<C>> void register(ParcelFormat.Impl<C> format) {
 
     boolean isSaverOrLoader = false;
 
@@ -103,8 +103,8 @@ public class ParcelFormatRegistry {
     return loaders.keySet();
   }
 
-  private static @Nullable ParcelFormat<?> getLatest(
-      Map<String, Int2ObjectSortedMap<ParcelFormat<?>>> formats, String id) {
+  private static ParcelFormat.@Nullable Impl<?> getLatest(
+      Map<String, Int2ObjectSortedMap<ParcelFormat.Impl<?>>> formats, String id) {
 
     var versions = formats.get(id);
 
