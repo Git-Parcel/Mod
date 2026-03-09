@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Range;
  */
 public final class Base32Utils {
   /** Array of base32 digits (0-9, A-V). */
-  public static final char[] BASE32_DIGITS = "0123456789ABCDEFGHIJKLMNOPQRSTUV".toCharArray();
+  public static final char[] CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUV".toCharArray();
 
   /**
    * Maps base32 characters to their corresponding numeric values (0-31). Invalid characters map to
@@ -49,7 +49,7 @@ public final class Base32Utils {
     int pos = 7;
 
     while (i != 0) {
-      buf[--pos] = BASE32_DIGITS[i & 0x1F];
+      buf[--pos] = CHARS[i & 0x1F];
       i >>>= 5;
     }
 
@@ -76,7 +76,7 @@ public final class Base32Utils {
     int pos = 13;
 
     while (i != 0L) {
-      buf[--pos] = BASE32_DIGITS[(int) (i & 0x1F)];
+      buf[--pos] = CHARS[(int) (i & 0x1F)];
       i >>>= 5;
     }
 

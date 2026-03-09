@@ -143,7 +143,7 @@ public class ParcellaD32Saver
   protected void writeSubparcelRLE3D(Context ctx, Path file, Subparcel subparcel)
       throws IOException {
     var sb = new StringBuilder(8192);
-    char[] hexChars = Base32Utils.BASE32_DIGITS;
+    char[] base32Chars = Base32Utils.CHARS;
 
     var level = ctx.level;
     var palette = ctx.blockPalette;
@@ -174,13 +174,15 @@ public class ParcellaD32Saver
             });
 
     for (var run : runs) {
-      sb.append(hexChars[run.minX()]).append(hexChars[run.minY()]).append(hexChars[run.minZ()]);
+      sb.append(base32Chars[run.minX()])
+          .append(base32Chars[run.minY()])
+          .append(base32Chars[run.minZ()]);
       int maxX = run.maxX();
       int maxY = run.maxY();
       int maxZ = run.maxZ();
 
       if (run.minX() != maxX || run.minY() != maxY || run.minZ() != maxZ) {
-        sb.append(hexChars[maxX]).append(hexChars[maxY]).append(hexChars[maxZ]);
+        sb.append(base32Chars[maxX]).append(base32Chars[maxY]).append(base32Chars[maxZ]);
       }
 
       // Palette ID use hex format
