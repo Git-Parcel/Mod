@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel;
+package io.github.leawind.gitparcel.server;
 
 import net.fabricmc.api.DedicatedServerModInitializer;
 

@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel;
+package io.github.leawind.gitparcel.server;
 
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;

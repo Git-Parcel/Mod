@@ -1,5 +1,6 @@
-package io.github.leawind.gitparcel;
+package io.github.leawind.gitparcel.server;
 
+import io.github.leawind.gitparcel.GitParcelMod;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;

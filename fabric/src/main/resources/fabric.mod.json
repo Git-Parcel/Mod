@@ -19,10 +19,10 @@
       "io.github.leawind.gitparcel.GitParcelModFabric"
     ],
     "client": [
-      "io.github.leawind.gitparcel.GitParcelModFabricClient"
+      "io.github.leawind.gitparcel.client.GitParcelModFabricClient"
     ],
     "server": [
-      "io.github.leawind.gitparcel.GitParcelModFabricDedicatedServer"
+      "io.github.leawind.gitparcel.server.GitParcelModFabricDedicatedServer"
     ]
   },
   "mixins": [

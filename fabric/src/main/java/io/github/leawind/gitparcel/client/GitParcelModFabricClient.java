@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel;
+package io.github.leawind.gitparcel.client;
 
 import net.fabricmc.api.ClientModInitializer;
 
