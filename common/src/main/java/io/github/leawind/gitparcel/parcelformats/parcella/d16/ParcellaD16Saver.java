@@ -6,7 +6,7 @@ import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.parcelformats.parcella.Subparcel;
 import io.github.leawind.gitparcel.parcelformats.parcella.d32.ParcellaD32Format;
 import io.github.leawind.gitparcel.parcelformats.parcella.d32.ParcellaD32Saver;
-import io.github.leawind.gitparcel.utils.numbase.Base32Utils;
+import io.github.leawind.gitparcel.utils.numbase.HexUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -51,7 +51,7 @@ public class ParcellaD16Saver extends ParcellaD32Saver
   protected void writeSubparcelRLE3D(Context ctx, Path file, Subparcel subparcel)
       throws IOException {
     var sb = new StringBuilder(8192);
-    char[] chars = Base32Utils.BASE32_DIGITS;
+    char[] hexChars = HexUtils.UPPERS;
 
     var level = ctx.level;
     var palette = ctx.blockPalette;
@@ -82,17 +82,17 @@ public class ParcellaD16Saver extends ParcellaD32Saver
             });
 
     for (var run : runs) {
-      sb.append(chars[run.minX()]).append(chars[run.minY()]).append(chars[run.minZ()]);
+      sb.append(hexChars[run.minX()]).append(hexChars[run.minY()]).append(hexChars[run.minZ()]);
 
       int maxX = run.maxX();
       int maxY = run.maxY();
       int maxZ = run.maxZ();
 
       if (run.minX() != maxX || run.minY() != maxY || run.minZ() != maxZ) {
-        sb.append(chars[maxX]).append(chars[maxY]).append(chars[maxZ]);
+        sb.append(hexChars[maxX]).append(hexChars[maxY]).append(hexChars[maxZ]);
       }
 
-      sb.append('=').append(Base32Utils.toBase32(run.value())).append('\n');
+      sb.append('=').append(HexUtils.toHexUpperCase(run.value())).append('\n');
     }
 
     Files.writeString(file, sb, StandardCharsets.UTF_8);
