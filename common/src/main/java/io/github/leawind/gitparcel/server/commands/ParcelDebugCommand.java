@@ -162,18 +162,22 @@ public class ParcelDebugCommand {
       Mirror mirror,
       Rotation rotation) {
     try {
-      BoundingBox bounds = BoundingBox.fromCorners(corner1, corner2);
-      BlockPos worldPivotPos = ParcelTransform.getPivotPos(mirror, rotation, bounds);
-      var transform = new ParcelTransform(mirror, rotation, worldPivotPos);
+      BoundingBox boundingBox = BoundingBox.fromCorners(corner1, corner2);
+      ParcelTransform transform = new ParcelTransform(mirror, rotation, boundingBox);
 
-      Vec3i size = new Vec3i(bounds.getXSpan(), bounds.getYSpan(), bounds.getZSpan());
-      Vec3i parcelSize = transform.applyToSizeInverted(size);
-      ParcelMeta meta = ParcelMeta.create(format.id(), format.version(), parcelSize);
+      Vec3i sizeWorldSpace =
+          new Vec3i(boundingBox.getXSpan(), boundingBox.getYSpan(), boundingBox.getZSpan());
+      Vec3i sizeParcelSpace = ParcelTransform.rotateSizeInverted(rotation, sizeWorldSpace);
+
+      ParcelMeta meta = ParcelMeta.create(format.id(), format.version(), sizeParcelSpace);
 
       ParcelFormat.save(source.getLevel(), transform, meta, parcelDir, ignoreEntities);
+
       source.sendSuccess(
           () -> GitParcelTranslations.of("command.parcel_debug.save.success"), ignoreEntities);
+
       return 1;
+
     } catch (IOException | ParcelException e) {
       LOGGER.error("Error while saving parcel", e);
       source.sendFailure(

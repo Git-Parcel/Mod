@@ -41,6 +41,10 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
     this(Mirror.NONE, Rotation.NONE, translation);
   }
 
+  public ParcelTransform(Mirror mirror, Rotation rotation, BoundingBox boundingBox) {
+    this(mirror, rotation, getPivotPos(mirror, rotation, boundingBox));
+  }
+
   /**
    * Transforms a local space size vector to world space.
    *
@@ -51,8 +55,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @return The world space size vector
    */
   public Vec3i applyToSize(Vec3i size) {
-    var rotated = applyRotation(size);
-    return new Vec3i(Math.abs(rotated.getX()), rotated.getY(), Math.abs(rotated.getZ()));
+    return rotateSize(rotation, size);
   }
 
   /**
@@ -65,8 +68,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @return The transformed size vector
    */
   public Vec3i applyToSizeInverted(Vec3i size) {
-    var rotated = applyRotationInverted(size);
-    return new Vec3i(Math.abs(rotated.getX()), rotated.getY(), Math.abs(rotated.getZ()));
+    return rotateSizeInverted(rotation, size);
   }
 
   /**
@@ -402,6 +404,16 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
       case CLOCKWISE_90 -> Rotation.COUNTERCLOCKWISE_90;
       case COUNTERCLOCKWISE_90 -> Rotation.CLOCKWISE_90;
     };
+  }
+
+  public static Vec3i rotateSize(Rotation rotation, Vec3i size) {
+    var rotated = rotate(rotation, size);
+    return new Vec3i(Math.abs(rotated.getX()), rotated.getY(), Math.abs(rotated.getZ()));
+  }
+
+  public static Vec3i rotateSizeInverted(Rotation rotation, Vec3i size) {
+    var rotated = rotate(invert(rotation), size);
+    return new Vec3i(Math.abs(rotated.getX()), rotated.getY(), Math.abs(rotated.getZ()));
   }
 
   public static BlockPos getPivotPos(Mirror mirror, Rotation rotation, BoundingBox bounds) {
