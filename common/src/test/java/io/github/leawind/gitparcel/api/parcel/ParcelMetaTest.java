@@ -73,8 +73,8 @@ class ParcelMetaTest {
     // Test deserialization
     ParcelMeta meta = ParcelMeta.fromJsonObject(json);
 
-    assertEquals("parcel", meta.formatId);
-    assertEquals(1, meta.formatVersion);
+    assertEquals("parcel", meta.format.id());
+    assertEquals(1, meta.format.version());
     assertEquals(1536, meta.dataVersion);
     assertEquals(new Vec3i(15, 12, 20), meta.size);
     assertEquals("Steve's House", meta.name);
@@ -93,14 +93,6 @@ class ParcelMetaTest {
     assertNull(meta.mods.get("mod_4").min());
     assertEquals("1.0.0", meta.mods.get("mod_4").max());
 
-    assertTrue(meta.extra instanceof JsonObject);
-    // assert custom_fields is obj
-    assertTrue(meta.extra.has("custom_fields"));
-    JsonObject customFields = meta.extra.getAsJsonObject("custom_fields");
-    assertNotNull(customFields);
-    assertEquals(
-        "This schema allows custom fields like this", customFields.get("Wow").getAsString());
-
     // Test serialization
     JsonObject serialized = meta.toJsonObject();
     assertNotNull(serialized);
@@ -113,7 +105,6 @@ class ParcelMetaTest {
     assertTrue(serialized.has("tags"));
     assertTrue(serialized.has("mods"));
     assertTrue(serialized.has("excludeEntities"));
-    assertTrue(serialized.has("custom_fields"));
   }
 
   @Test
@@ -138,8 +129,8 @@ class ParcelMetaTest {
     // Test deserialization
     ParcelMeta meta = ParcelMeta.fromJsonObject(json);
 
-    assertEquals("test-format", meta.formatId);
-    assertEquals(1, meta.formatVersion);
+    assertEquals("test-format", meta.format.id());
+    assertEquals(1, meta.format.version());
     assertEquals(12345, meta.dataVersion);
     assertEquals(new Vec3i(10, 20, 30), meta.size);
     assertNull(meta.name);

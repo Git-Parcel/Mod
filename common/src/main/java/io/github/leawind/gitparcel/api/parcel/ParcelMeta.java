@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.api.GitParcelApi;
 import io.github.leawind.gitparcel.api.parcel.exceptions.InvalidParcelMetaException;
 import io.github.leawind.gitparcel.utils.json.JsonAccessException;
@@ -15,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.Vec3i;
 import org.jspecify.annotations.Nullable;
@@ -25,12 +28,63 @@ import org.jspecify.annotations.Nullable;
  * @see <a href="https://git-parcel.github.io/schemas/ParcelMeta.json">Parcel Metadata Schema</a>
  */
 public final class ParcelMeta {
-  public record ModDependency(@Nullable String min, @Nullable String max) {
-    public static final ModDependency ANY = new ModDependency(null, null);
-  }
-
-  private static final Gson GSON = new Gson();
+  @Deprecated private static final Gson GSON = new Gson();
   public static final String SCHEMA_URL = "https://git-parcel.github.io/schemas/ParcelMeta.json";
+
+  public static final Codec<ParcelMeta> CODEC =
+      RecordCodecBuilder.create(
+          inst ->
+              inst.group(
+                      ParcelFormat.Info.CODEC.fieldOf("format").forGetter(ParcelMeta::format),
+                      Codec.INT.fieldOf("dataVersion").forGetter(ParcelMeta::dataVersion),
+                      Vec3i.CODEC.fieldOf("size").forGetter(ParcelMeta::size),
+                      Codec.STRING.optionalFieldOf("name").forGetter(ParcelMeta::getName),
+                      Codec.STRING
+                          .optionalFieldOf("description")
+                          .forGetter(ParcelMeta::getDescription),
+                      Codec.STRING.listOf().optionalFieldOf("tags").forGetter(ParcelMeta::getTags),
+                      Codec.unboundedMap(Codec.STRING, ModDependency.CODEC)
+                          .optionalFieldOf("mods")
+                          .forGetter(ParcelMeta::getMods),
+                      Codec.BOOL
+                          .optionalFieldOf("excludeEntities")
+                          .forGetter(ParcelMeta::getExcludeEntities))
+                  .apply(inst, ParcelMeta::new));
+
+  public record ModDependency(
+      @Nullable String min, @Nullable String max, @Nullable List<String> namespaces) {
+    public static final Codec<ModDependency> CODEC =
+        RecordCodecBuilder.create(
+            inst ->
+                inst.group(
+                        Codec.STRING.optionalFieldOf("min").forGetter(ModDependency::getMin),
+                        Codec.STRING.optionalFieldOf("max").forGetter(ModDependency::getMax),
+                        Codec.STRING
+                            .listOf()
+                            .optionalFieldOf("namespaces")
+                            .forGetter(ModDependency::getNamespaces))
+                    .apply(inst, ModDependency::new));
+
+    public static final ModDependency ANY = new ModDependency((String) null, null, null);
+
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    public ModDependency(
+        Optional<String> min, Optional<String> max, Optional<List<String>> namespaces) {
+      this(min.orElse(null), max.orElse(null), namespaces.orElse(null));
+    }
+
+    public Optional<String> getMin() {
+      return Optional.ofNullable(min);
+    }
+
+    public Optional<String> getMax() {
+      return Optional.ofNullable(max);
+    }
+
+    public Optional<List<String>> getNamespaces() {
+      return Optional.ofNullable(namespaces);
+    }
+  }
 
   public static ParcelMeta create(String formatId, int formatVersion, Vec3i parcelSize) {
     return new ParcelMeta(
@@ -40,11 +94,10 @@ public final class ParcelMeta {
         parcelSize);
   }
 
-  public String formatId;
-  public int formatVersion;
+  public ParcelFormat.Info format;
   public int dataVersion;
-
   public Vec3i size;
+
   public @Nullable String name = null;
   public @Nullable String description = null;
   public @Nullable List<String> tags = null;
@@ -53,27 +106,79 @@ public final class ParcelMeta {
   /** Default is {@code true}. */
   public @Nullable Boolean excludeEntities = null;
 
-  /** Extra fields. */
-  public JsonObject extra = new JsonObject();
+  @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+  private ParcelMeta(
+      ParcelFormat.Info format,
+      Integer dataVersion,
+      Vec3i size,
+      Optional<String> name,
+      Optional<String> description,
+      Optional<List<String>> tgs,
+      Optional<Map<String, ModDependency>> mods,
+      Optional<Boolean> excludeEntities) {
+    this.format = format;
+    this.dataVersion = dataVersion;
+    this.size = size;
+    this.name = name.orElse(null);
+    this.description = description.orElse(null);
+    this.tags = tgs.orElse(null);
+    this.mods = mods.orElse(null);
+    this.excludeEntities = excludeEntities.orElse(true);
+  }
+
+  private ParcelFormat.Info format() {
+    return format;
+  }
+
+  private int dataVersion() {
+    return dataVersion;
+  }
+
+  private Vec3i size() {
+    return size;
+  }
+
+  private Optional<String> getName() {
+    return Optional.ofNullable(name);
+  }
+
+  private Optional<String> getDescription() {
+    return Optional.ofNullable(description);
+  }
+
+  public Optional<List<String>> getTags() {
+    return Optional.ofNullable(tags);
+  }
+
+  public Optional<Map<String, ModDependency>> getMods() {
+    return Optional.ofNullable(mods);
+  }
+
+  public Optional<Boolean> getExcludeEntities() {
+    return Optional.ofNullable(excludeEntities);
+  }
 
   public ParcelFormat.@Nullable Save<?> getFormatSaver() {
-    return GitParcelApi.FORMAT_REGISTRY.getSaver(formatId, formatVersion);
+    return GitParcelApi.FORMAT_REGISTRY.getSaver(format.id(), format.version());
   }
 
   public ParcelFormat.@Nullable Load<?> getFormatLoader() {
-    return GitParcelApi.FORMAT_REGISTRY.getLoader(formatId, formatVersion);
+    return GitParcelApi.FORMAT_REGISTRY.getLoader(format.id(), format.version());
   }
 
   public boolean excludeEntities() {
     return excludeEntities == null || excludeEntities;
   }
 
-  private ParcelMeta(String formatId, int formatVersion, int dataVersion, Vec3i parcelSize) {
-    this.formatId = formatId;
-    this.formatVersion = formatVersion;
+  private ParcelMeta(ParcelFormat.Info format, int dataVersion, Vec3i parcelSize) {
+    this.format = format;
     this.dataVersion = dataVersion;
     this.size = parcelSize;
-    extra.addProperty("$schema", SCHEMA_URL);
+  }
+
+  @Deprecated
+  private ParcelMeta(String formatId, int formatVersion, int dataVersion, Vec3i parcelSize) {
+    this(new ParcelFormat.Info(formatId, formatVersion), dataVersion, parcelSize);
   }
 
   /**
@@ -88,12 +193,13 @@ public final class ParcelMeta {
     Files.writeString(metaFile, GSON.toJson(toJsonObject()));
   }
 
+  @Deprecated
   public JsonObject toJsonObject() {
     JsonObject json = new JsonObject();
     {
       JsonObject formatJson = new JsonObject();
-      formatJson.addProperty("id", formatId);
-      formatJson.addProperty("version", formatVersion);
+      formatJson.addProperty("id", format.id());
+      formatJson.addProperty("version", format.version());
       json.add("format", formatJson);
     }
     json.addProperty("dataVersion", dataVersion);
@@ -128,11 +234,6 @@ public final class ParcelMeta {
     }
     json.addProperty("excludeEntities", excludeEntities);
 
-    // extra fields
-    for (var entry : extra.entrySet()) {
-      json.add(entry.getKey(), entry.getValue());
-    }
-
     return json;
   }
 
@@ -150,6 +251,7 @@ public final class ParcelMeta {
     }
   }
 
+  @Deprecated
   public static ParcelMeta fromJsonObject(JsonObject json) throws JsonAccessException {
     var ja = new JsonObjectAccessor(json);
     ParcelMeta meta;
@@ -211,7 +313,8 @@ public final class ParcelMeta {
               entry.getKey(),
               new ModDependency(
                   modJa.optionalString("min"), //
-                  modJa.optionalString("max")));
+                  modJa.optionalString("max"),
+                  null));
         } else {
           var s = JsonObjectAccessor.requireString(depJson);
           if (!s.equals("*")) {
@@ -227,7 +330,7 @@ public final class ParcelMeta {
       meta.excludeEntities = ja.optionalBool("excludeEntities");
       json.remove("excludeEntities");
     }
-    meta.extra = json;
+    // meta.extra = json;
     return meta;
   }
 }

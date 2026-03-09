@@ -1,5 +1,7 @@
 package io.github.leawind.gitparcel.api.parcel;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,7 +18,7 @@ import org.slf4j.LoggerFactory;
 
 /** A format for saving or loading parcels. */
 public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
-    permits ParcelFormat.Save, ParcelFormat.Load, ParcelFormat.Impl {
+    permits ParcelFormat.Impl, ParcelFormat.Info, ParcelFormat.Load, ParcelFormat.Save {
   Logger LOGGER = LoggerFactory.getLogger("ParcellaFormat");
   String META_FILE_NAME = "parcel.json";
   String CONFIG_FILE_NAME = "config.json";
@@ -63,7 +65,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
 
     ParcelFormat.Save<C> format = (Save<C>) meta.getFormatSaver();
     if (format == null) {
-      throw new ParcelException.UnsupportedFormat(meta.formatId, meta.formatVersion);
+      throw new ParcelException.UnsupportedFormat(meta.format);
     }
 
     var config = format.getDefaultConfig();
@@ -118,7 +120,7 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
     var meta = ParcelMeta.load(parcelDir.resolve(META_FILE_NAME));
     Load<C> loader = (Load<C>) meta.getFormatLoader();
     if (loader == null) {
-      throw new ParcelException.UnsupportedFormat(meta.formatId, meta.formatVersion);
+      throw new ParcelException.UnsupportedFormat(meta.format);
     }
 
     Path configFile = getConfigFile(parcelDir);
@@ -282,4 +284,14 @@ public sealed interface ParcelFormat<C extends ParcelFormatConfig<C>>
   }
 
   non-sealed interface Impl<C extends ParcelFormatConfig<C>> extends ParcelFormat<C> {}
+
+  record Info(String id, int version) implements ParcelFormat<ParcelFormatConfig.None> {
+    public static final Codec<Info> CODEC =
+        RecordCodecBuilder.create(
+            inst ->
+                inst.group(
+                        Codec.STRING.fieldOf("id").forGetter(Info::id),
+                        Codec.INT.fieldOf("version").forGetter(Info::version))
+                    .apply(inst, Info::new));
+  }
 }
