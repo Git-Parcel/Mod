@@ -1,6 +1,6 @@
 package io.github.leawind.gitparcel.mixin;
 
-import io.github.leawind.gitparcel.GameApi;
+import io.github.leawind.gitparcel.GitParcelMod;
 import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import net.minecraft.commands.synchronization.ArgumentTypeInfos;
 import net.minecraft.core.Registry;
@@ -19,6 +19,6 @@ public class MixinArgumentTypeInfos {
   private static void bootstrap(
       Registry<ArgumentTypeInfo<?, ?>> registry,
       CallbackInfoReturnable<ArgumentTypeInfo<?, ?>> cir) {
-    GameApi.registerCommandArgumentTypes(registry);
+    GitParcelMod.registerCommandArgumentTypes(registry);
   }
 }

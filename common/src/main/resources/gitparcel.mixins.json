@@ -8,7 +8,8 @@
   "client": [
     "AccessStateHolder",
     "InvokeArgumentTypeInfos",
-    "MixinArgumentTypeInfos"
+    "MixinArgumentTypeInfos",
+    "MixinMinecraft"
   ],
   "server": [],
   "injectors": {
