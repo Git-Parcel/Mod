@@ -8,7 +8,7 @@ import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.NonNull;
 
 public class GitParcelDebugScreen extends Screen {
-  protected GitParcelDebugScreen(Component title) {
+  public GitParcelDebugScreen(Component title) {
     super(title);
   }
 

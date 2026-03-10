@@ -1,6 +1,7 @@
 package io.github.leawind.gitparcel.client;
 
 import com.mojang.logging.LogUtils;
+import io.github.leawind.gitparcel.client.gui.screens.GitParcelDebugScreen;
 import io.github.leawind.gitparcel.platform.Services;
 import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
@@ -21,9 +22,12 @@ public class GitParcelModClient {
 
     GameClientApi.ON_CLIENT_TICK_START.on(
         minecraft -> {
-          while (GitParcelOptions.keyDebugScreen.consumeClick()) {
-            if (minecraft.player != null) {
-              minecraft.player.displayClientMessage(Component.literal("Key Pressed!"), false);
+          if (!(minecraft.screen instanceof GitParcelDebugScreen)) {
+            while (GitParcelOptions.keyDebugScreen.consumeClick()) {
+              if (minecraft.player != null) {
+                minecraft.setScreen(
+                    new GitParcelDebugScreen(Component.literal("Git Parcel Debug Screen")));
+              }
             }
           }
         });
