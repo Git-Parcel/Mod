@@ -22,6 +22,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import net.minecraft.commands.synchronization.SingletonArgumentInfo;
 import net.minecraft.core.Registry;
+import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 
 /** The main class for the Git Parcel mod. */
@@ -35,6 +36,10 @@ public class GitParcelMod {
 
   /** The logger instance for Git Parcel. */
   public static final Logger LOGGER = LogUtils.getLogger();
+
+  public static Identifier identifier(String path) {
+    return Identifier.fromNamespaceAndPath(MOD_ID, path);
+  }
 
   /**
    * Initializes the Git Parcel mod.
