@@ -9,7 +9,8 @@
     "AccessStateHolder",
     "InvokeArgumentTypeInfos",
     "MixinArgumentTypeInfos",
-    "MixinMinecraft"
+    "MixinMinecraft",
+    "MixinPlayerList"
   ],
   "server": [],
   "injectors": {
