@@ -14,11 +14,11 @@ public class ParcelException extends Exception {
 
   /** Exception thrown when a parcel format is not supported */
   public static class UnsupportedFormat extends ParcelException {
-    public final ParcelFormat format;
+    public final ParcelFormat.Info formatInfo;
 
-    public UnsupportedFormat(ParcelFormat format) {
-      super(String.format("Unsupported format: %s:%d", format.id(), format.version()));
-      this.format = format;
+    public UnsupportedFormat(ParcelFormat.Info formatInfo) {
+      super(String.format("Unsupported format: %s", formatInfo));
+      this.formatInfo = formatInfo;
     }
   }
 

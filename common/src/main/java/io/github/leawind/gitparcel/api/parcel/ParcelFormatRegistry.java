@@ -1,57 +1,53 @@
 package io.github.leawind.gitparcel.api.parcel;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectAVLTreeMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectSortedMap;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 
 public class ParcelFormatRegistry {
-  private final Map<String, Int2ObjectSortedMap<ParcelFormat.Impl<?>>> savers = new HashMap<>();
-  private final Map<String, Int2ObjectSortedMap<ParcelFormat.Impl<?>>> loaders = new HashMap<>();
+  private final Map<ParcelFormat.Info, ParcelFormat.Save<?>> savers = new HashMap<>();
+  private final Map<ParcelFormat.Info, ParcelFormat.Load<?>> loaders = new HashMap<>();
+
   private ParcelFormat.@Nullable Save<?> defaultSaver;
 
   /**
-   * Registers a new format.
+   * Register a format.
    *
    * @param format The format to register.
-   * @param <C> The format config type.
+   * @param <C> The config type of the format.
+   * @throws IllegalArgumentException if the format is not a saver or loader, or if it is a
+   *     duplicate.
    */
-  public <C extends ParcelFormatConfig<C>> void register(ParcelFormat.Impl<C> format) {
-
-    boolean isSaverOrLoader = false;
-
-    if (format instanceof ParcelFormat.Save<C> saver) {
-      registerSaver(saver);
-      isSaverOrLoader = true;
-    }
-
-    if (format instanceof ParcelFormat.Load<C> loader) {
-      registerLoader(loader);
-      isSaverOrLoader = true;
-    }
-
-    if (!isSaverOrLoader) {
-      throw new IllegalArgumentException(
-          "Expected a saver or loader, got " + format.getClass().getSimpleName());
+  public <C extends ParcelFormatConfig<C>> void register(ParcelFormat.Impl<C> format)
+      throws IllegalArgumentException {
+    switch (format) {
+      case ParcelFormat.Save<?> saver -> {
+        if (savers.containsKey(saver.info())) {
+          throw new IllegalArgumentException("duplicate saver: " + saver);
+        }
+        savers.put(format.info(), saver);
+      }
+      case ParcelFormat.Load<?> loader -> {
+        if (loaders.containsKey(loader.info())) {
+          throw new IllegalArgumentException("duplicate loader: " + loader);
+        }
+        loaders.put(format.info(), loader);
+      }
+      default -> throw new IllegalArgumentException("format must be either saver or loader");
     }
   }
 
-  public <C extends ParcelFormatConfig<C>> void registerSaver(ParcelFormat.Save<C> format) {
-    savers
-        .computeIfAbsent(format.id(), k -> new Int2ObjectAVLTreeMap<>())
-        .put(format.version(), format);
-  }
-
-  public <C extends ParcelFormatConfig<C>> void registerLoader(ParcelFormat.Load<C> format) {
-    loaders
-        .computeIfAbsent(format.id(), k -> new Int2ObjectAVLTreeMap<>())
-        .put(format.version(), format);
-  }
-
-  public <C extends ParcelFormatConfig<C>> void registerDefaultSaver(ParcelFormat.Save<C> format) {
+  /**
+   * Register the default saver.
+   *
+   * @throws IllegalArgumentException if the format is not a saver, or if it is not registered.
+   */
+  public <C extends ParcelFormatConfig<C>> void registerDefaultSaver(ParcelFormat.Save<C> format)
+      throws IllegalArgumentException {
     register(format);
     defaultSaver = format;
   }
@@ -72,46 +68,32 @@ public class ParcelFormatRegistry {
    * @return null if no saver is found
    */
   public ParcelFormat.@Nullable Save<?> getSaver(String id) {
-    return (ParcelFormat.Save<?>) getLatest(savers, id);
+    return savers.values().stream()
+        .filter(format -> format.id().equals(id))
+        .max(Comparator.comparingInt(ParcelFormat.Impl::version))
+        .orElse(null);
   }
 
-  public ParcelFormat.@Nullable Save<?> getSaver(String id, int version) {
-    return (ParcelFormat.Save<?>)
-        savers.getOrDefault(id, new Int2ObjectAVLTreeMap<>()).get(version);
+  public ParcelFormat.@Nullable Save<?> getSaver(ParcelFormat.Info info) {
+    return savers.get(info);
   }
 
-  /**
-   * Get the latest version of loader for the given format id.
-   *
-   * @param id The format id.
-   * @return null if no loader is found
-   */
   public ParcelFormat.@Nullable Load<?> getLoader(String id) {
-    return (ParcelFormat.Load<?>) getLatest(loaders, id);
+    return loaders.values().stream()
+        .filter(format -> format.id().equals(id))
+        .max(Comparator.comparingInt(ParcelFormat.Impl::version))
+        .orElse(null);
   }
 
-  public ParcelFormat.@Nullable Load<?> getLoader(String id, int version) {
-    return (ParcelFormat.Load<?>)
-        loaders.getOrDefault(id, new Int2ObjectAVLTreeMap<>()).get(version);
+  public ParcelFormat.@Nullable Load<?> getLoader(ParcelFormat.Info info) {
+    return loaders.get(info);
   }
 
   public Set<String> getSaverNames() {
-    return savers.keySet();
+    return savers.keySet().stream().map(ParcelFormat.Info::id).collect(Collectors.toSet());
   }
 
   public Set<String> getLoaderNames() {
-    return loaders.keySet();
-  }
-
-  private static ParcelFormat.@Nullable Impl<?> getLatest(
-      Map<String, Int2ObjectSortedMap<ParcelFormat.Impl<?>>> formats, String id) {
-
-    var versions = formats.get(id);
-
-    if (versions == null) {
-      return null;
-    }
-
-    return versions.sequencedValues().getLast();
+    return loaders.keySet().stream().map(ParcelFormat.Info::id).collect(Collectors.toSet());
   }
 }

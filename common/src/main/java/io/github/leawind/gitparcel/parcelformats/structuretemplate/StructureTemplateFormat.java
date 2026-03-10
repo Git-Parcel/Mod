@@ -28,14 +28,11 @@ public class StructureTemplateFormat
         ParcelFormat.Load<ParcelFormatConfig.None> {
   String NBT_FILE_NAME = "structure.nbt";
 
-  @Override
-  public String id() {
-    return "structure_template";
-  }
+  private static final Info INFO = new Info("structure_template", 0);
 
   @Override
-  public int version() {
-    return 0;
+  public Info info() {
+    return INFO;
   }
 
   @Override

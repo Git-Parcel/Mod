@@ -37,21 +37,14 @@ public class ParcelFormatRegistryTest {
   static class TestFormat implements ParcelFormat.Impl<ParcelFormatConfig.None> {
 
     @Override
-    public String id() {
-      return id;
+    public Info info() {
+      return info;
     }
 
-    @Override
-    public int version() {
-      return version;
-    }
-
-    private final String id;
-    private final int version;
+    private final Info info;
 
     protected TestFormat(String id, int version) {
-      this.id = id;
-      this.version = version;
+      this.info = new Info(id, version);
     }
   }
 

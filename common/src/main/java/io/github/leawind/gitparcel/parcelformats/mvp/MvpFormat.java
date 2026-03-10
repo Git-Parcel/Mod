@@ -22,15 +22,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
 public class MvpFormat implements ParcelFormat.Save<ParcelFormatConfig.None> {
+  private static final Info INFO = new Info("mvp", 0);
 
   @Override
-  public String id() {
-    return "mvp";
-  }
-
-  @Override
-  public int version() {
-    return 0;
+  public Info info() {
+    return INFO;
   }
 
   @Override

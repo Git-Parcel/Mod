@@ -12,30 +12,45 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Block;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** A format for saving or loading parcels. */
-public sealed interface ParcelFormat permits ParcelFormat.Impl, ParcelFormat.Info {
-  Codec<ParcelFormat> CODEC =
-      RecordCodecBuilder.create(
-          inst ->
-              inst.group(
-                      Codec.STRING.fieldOf("id").forGetter(ParcelFormat::id),
-                      Codec.INT.fieldOf("version").forGetter(ParcelFormat::version))
-                  .apply(inst, Info::new));
-
+public sealed interface ParcelFormat permits ParcelFormat.Impl {
   Logger LOGGER = LoggerFactory.getLogger("Parcel Format");
   String META_FILE_NAME = "parcel.json";
   String CONFIG_FILE_NAME = "config.json";
   String DATA_DIR_NAME = "data";
 
+  Info info();
+
   /** Unique id of the format. */
-  String id();
+  default String id() {
+    return info().id();
+  }
 
   /** Version of the format. */
-  int version();
+  default int version() {
+    return info().version();
+  }
+
+  record Info(String id, int version) {
+    public static final Codec<Info> CODEC =
+        RecordCodecBuilder.create(
+            inst ->
+                inst.group(
+                        Codec.STRING.fieldOf("id").forGetter(Info::id),
+                        Codec.INT.fieldOf("version").forGetter(Info::version))
+                    .apply(inst, Info::new));
+
+    @NonNull
+    @Override
+    public String toString() {
+      return String.format("%s:%d", id, version);
+    }
+  }
 
   non-sealed interface Impl<C extends ParcelFormatConfig<C>> extends ParcelFormat {
     /**
@@ -121,8 +136,6 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl, ParcelFormat.Inf
         @Nullable C config)
         throws IOException, ParcelException.CorruptedParcelException;
   }
-
-  record Info(String id, int version) implements ParcelFormat {}
 
   /** Path to {@value #META_FILE_NAME} in {@code parcelDir} */
   static Path getMetaFile(Path parcelDir) {
@@ -221,7 +234,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl, ParcelFormat.Inf
 
     ParcelFormat.Save<C> format = (Save<C>) meta.getFormatSaver();
     if (format == null) {
-      throw new ParcelException.UnsupportedFormat(meta.format());
+      throw new ParcelException.UnsupportedFormat(meta.formatInfo());
     }
 
     var config = format.getDefaultConfig();
@@ -276,7 +289,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl, ParcelFormat.Inf
     var meta = ParcelMeta.load(parcelDir.resolve(META_FILE_NAME));
     Load<C> loader = (Load<C>) meta.getFormatLoader();
     if (loader == null) {
-      throw new ParcelException.UnsupportedFormat(meta.format());
+      throw new ParcelException.UnsupportedFormat(meta.formatInfo());
     }
 
     Path configFile = getConfigFile(parcelDir);
