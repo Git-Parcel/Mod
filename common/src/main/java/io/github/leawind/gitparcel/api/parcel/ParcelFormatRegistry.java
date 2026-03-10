@@ -1,7 +1,9 @@
 package io.github.leawind.gitparcel.api.parcel;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -160,5 +162,13 @@ public class ParcelFormatRegistry {
    */
   public Set<String> getLoaderNames() {
     return loaders.keySet().stream().map(ParcelFormat.Info::id).collect(Collectors.toSet());
+  }
+
+  public List<ParcelFormat.Info> getSaverInfos() {
+    return new ArrayList<>(savers.keySet());
+  }
+
+  public List<ParcelFormat.Info> getLoaderInfos() {
+    return new ArrayList<>(loaders.keySet());
   }
 }
