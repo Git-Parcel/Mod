@@ -26,16 +26,103 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl, ParcelFormat.Inf
                       Codec.INT.fieldOf("version").forGetter(ParcelFormat::version))
                   .apply(inst, Info::new));
 
+  Logger LOGGER = LoggerFactory.getLogger("Parcel Format");
+  String META_FILE_NAME = "parcel.json";
+  String CONFIG_FILE_NAME = "config.json";
+  String DATA_DIR_NAME = "data";
+
   /** Unique id of the format. */
   String id();
 
   /** Version of the format. */
   int version();
 
-  Logger LOGGER = LoggerFactory.getLogger("ParcellaFormat");
-  String META_FILE_NAME = "parcel.json";
-  String CONFIG_FILE_NAME = "config.json";
-  String DATA_DIR_NAME = "data";
+  non-sealed interface Impl<C extends ParcelFormatConfig<C>> extends ParcelFormat {
+    /**
+     * Safely casts a config object to the current format's configuration type.
+     *
+     * @param config The config object to cast, may be null
+     * @param <T> The type of the input config object
+     * @return The cast config object, or null if both configClass() returns null and config is null
+     * @throws ClassCastException If configClass() returns null but config is non-null, or if the
+     *     config object cannot be cast to the target type
+     */
+    default <T> C castConfig(T config) throws ClassCastException {
+      var clazz = configClass();
+      if (clazz != null) {
+        return clazz.cast(config);
+      }
+      if (config == null) {
+        return null;
+      }
+      throw new ClassCastException("Expected null, got {}" + config);
+    }
+
+    default @Nullable Class<C> configClass() {
+      return null;
+    }
+
+    /**
+     * @return might be null
+     */
+    default @Nullable C getDefaultConfig() {
+      return null;
+    }
+  }
+
+  interface Save<C extends ParcelFormatConfig<C>> extends Impl<C> {
+
+    /**
+     * Save parcel content to directory.
+     *
+     * <p>For implementation, you should save the parcel content to the {@code dataDir} directory
+     * and nowhere else.
+     *
+     * @param level Level
+     * @param parcelSize Real size of the parcel (the one saved in the disk, without transform)
+     * @param transform Treat the parcel instance we are going to save as transformed.
+     * @param dataDir Path to parcel data directory. Will be created if not exist.
+     * @param ignoreEntities Whether to ignore entities in the parcel
+     * @param config format config, can be null
+     */
+    void save(
+        Level level,
+        Vec3i parcelSize,
+        ParcelTransform transform,
+        Path dataDir,
+        boolean ignoreEntities,
+        @Nullable C config)
+        throws IOException;
+  }
+
+  interface Load<C extends ParcelFormatConfig<C>> extends Impl<C> {
+
+    /**
+     * Load parcel content from directory
+     *
+     * @param level Level
+     * @param size Real size of the parcel (the one saved in the disk, without transform)
+     * @param transform Transform the parcel when loading.
+     * @param dataDir Path to parcel data directory
+     * @param ignoreBlocks Whether to ignore blocks
+     * @param ignoreEntities Whether to ignore entities
+     * @param flags Block update flags
+     * @throws ParcelException.CorruptedParcelException If the parcel is invalid and cannot be
+     *     loaded
+     */
+    void load(
+        ServerLevelAccessor level,
+        Vec3i size,
+        ParcelTransform transform,
+        Path dataDir,
+        boolean ignoreBlocks,
+        boolean ignoreEntities,
+        @Block.UpdateFlags int flags,
+        @Nullable C config)
+        throws IOException, ParcelException.CorruptedParcelException;
+  }
+
+  record Info(String id, int version) implements ParcelFormat {}
 
   /** Path to {@value #META_FILE_NAME} in {@code parcelDir} */
   static Path getMetaFile(Path parcelDir) {
@@ -50,6 +137,62 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl, ParcelFormat.Inf
   /** Path to {@value #DATA_DIR_NAME} in {@code parcelDir} */
   static Path getDataDir(Path parcelDir) {
     return parcelDir.resolve(DATA_DIR_NAME);
+  }
+
+  class BaseContext {
+    public final Vec3i parcelSize;
+    public final ParcelTransform transform;
+    public final Path dataDir;
+
+    public BaseContext(Vec3i parcelSize, ParcelTransform transform, Path dataDir) {
+      this.parcelSize = parcelSize;
+      this.transform = transform;
+      this.dataDir = dataDir;
+    }
+  }
+
+  class SaveContext<C extends ParcelFormatConfig<C>> extends BaseContext {
+    public final LevelAccessor level;
+    public final boolean ignoreEntities;
+    public final C config;
+
+    public SaveContext(
+        Level level,
+        Vec3i parcelSize,
+        ParcelTransform transform,
+        Path dataDir,
+        boolean ignoreEntities,
+        C config) {
+      super(parcelSize, transform, dataDir);
+      this.level = level;
+      this.ignoreEntities = ignoreEntities;
+      this.config = config;
+    }
+  }
+
+  class LoadContext<C extends ParcelFormatConfig<C>> extends BaseContext {
+    public final ServerLevelAccessor level;
+    public final boolean ignoreBlocks;
+    public final boolean ignoreEntities;
+    public final @Block.UpdateFlags int flags;
+    public final C config;
+
+    public LoadContext(
+        ServerLevelAccessor level,
+        Vec3i parcelSize,
+        ParcelTransform transform,
+        Path dataDir,
+        boolean ignoreBlocks,
+        boolean ignoreEntities,
+        @Block.UpdateFlags int flags,
+        C config) {
+      super(parcelSize, transform, dataDir);
+      this.level = level;
+      this.ignoreBlocks = ignoreBlocks;
+      this.ignoreEntities = ignoreEntities;
+      this.flags = flags;
+      this.config = config;
+    }
   }
 
   /**
@@ -151,147 +294,4 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl, ParcelFormat.Inf
     loader.load(
         level, meta.size(), transform, dataDir, ignoreBlocks, ignoreEntities, flags, config);
   }
-
-  class BaseContext {
-    public final Vec3i parcelSize;
-    public final ParcelTransform transform;
-    public final Path dataDir;
-
-    public BaseContext(Vec3i parcelSize, ParcelTransform transform, Path dataDir) {
-      this.parcelSize = parcelSize;
-      this.transform = transform;
-      this.dataDir = dataDir;
-    }
-  }
-
-  class SaveContext<C extends ParcelFormatConfig<C>> extends BaseContext {
-    public final LevelAccessor level;
-    public final boolean ignoreEntities;
-    public final C config;
-
-    public SaveContext(
-        Level level,
-        Vec3i parcelSize,
-        ParcelTransform transform,
-        Path dataDir,
-        boolean ignoreEntities,
-        C config) {
-      super(parcelSize, transform, dataDir);
-      this.level = level;
-      this.ignoreEntities = ignoreEntities;
-      this.config = config;
-    }
-  }
-
-  class LoadContext<C extends ParcelFormatConfig<C>> extends BaseContext {
-    public final ServerLevelAccessor level;
-    public final boolean ignoreBlocks;
-    public final boolean ignoreEntities;
-    public final @Block.UpdateFlags int flags;
-    public final C config;
-
-    public LoadContext(
-        ServerLevelAccessor level,
-        Vec3i parcelSize,
-        ParcelTransform transform,
-        Path dataDir,
-        boolean ignoreBlocks,
-        boolean ignoreEntities,
-        @Block.UpdateFlags int flags,
-        C config) {
-      super(parcelSize, transform, dataDir);
-      this.level = level;
-      this.ignoreBlocks = ignoreBlocks;
-      this.ignoreEntities = ignoreEntities;
-      this.flags = flags;
-      this.config = config;
-    }
-  }
-
-  non-sealed interface Impl<C extends ParcelFormatConfig<C>> extends ParcelFormat {
-    /**
-     * Safely casts a config object to the current format's configuration type.
-     *
-     * @param config The config object to cast, may be null
-     * @param <T> The type of the input config object
-     * @return The cast config object, or null if both configClass() returns null and config is null
-     * @throws ClassCastException If configClass() returns null but config is non-null, or if the
-     *     config object cannot be cast to the target type
-     */
-    default <T> C castConfig(T config) throws ClassCastException {
-      var clazz = configClass();
-      if (clazz != null) {
-        return clazz.cast(config);
-      }
-      if (config == null) {
-        return null;
-      }
-      throw new ClassCastException("Expected null, got {}" + config);
-    }
-
-    default @Nullable Class<C> configClass() {
-      return null;
-    }
-
-    /**
-     * @return might be null
-     */
-    default @Nullable C getDefaultConfig() {
-      return null;
-    }
-  }
-
-  interface Save<C extends ParcelFormatConfig<C>> extends Impl<C> {
-
-    /**
-     * Save parcel content to directory.
-     *
-     * <p>For implementation, you should save the parcel content to the {@code dataDir} directory
-     * and nowhere else.
-     *
-     * @param level Level
-     * @param parcelSize Real size of the parcel (the one saved in the disk, without transform)
-     * @param transform Treat the parcel instance we are going to save as transformed.
-     * @param dataDir Path to parcel data directory. Will be created if not exist.
-     * @param ignoreEntities Whether to ignore entities in the parcel
-     * @param config format config, can be null
-     */
-    void save(
-        Level level,
-        Vec3i parcelSize,
-        ParcelTransform transform,
-        Path dataDir,
-        boolean ignoreEntities,
-        @Nullable C config)
-        throws IOException;
-  }
-
-  interface Load<C extends ParcelFormatConfig<C>> extends Impl<C> {
-
-    /**
-     * Load parcel content from directory
-     *
-     * @param level Level
-     * @param size Real size of the parcel (the one saved in the disk, without transform)
-     * @param transform Transform the parcel when loading.
-     * @param dataDir Path to parcel data directory
-     * @param ignoreBlocks Whether to ignore blocks
-     * @param ignoreEntities Whether to ignore entities
-     * @param flags Block update flags
-     * @throws ParcelException.CorruptedParcelException If the parcel is invalid and cannot be
-     *     loaded
-     */
-    void load(
-        ServerLevelAccessor level,
-        Vec3i size,
-        ParcelTransform transform,
-        Path dataDir,
-        boolean ignoreBlocks,
-        boolean ignoreEntities,
-        @Block.UpdateFlags int flags,
-        @Nullable C config)
-        throws IOException, ParcelException.CorruptedParcelException;
-  }
-
-  record Info(String id, int version) implements ParcelFormat {}
 }
