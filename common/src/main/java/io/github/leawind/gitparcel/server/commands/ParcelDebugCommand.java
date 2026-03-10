@@ -6,8 +6,8 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.GitParcelTranslations;
-import io.github.leawind.gitparcel.api.GitParcelApi;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
@@ -98,7 +98,7 @@ public class ParcelDebugCommand {
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         DirPathArgument.getPath(ctx, "path"),
-        GitParcelApi.FORMAT_REGISTRY.defaultSaver(),
+        ParcelFormatRegistry.INSTANCE.defaultSaver(),
         true,
         Mirror.NONE,
         Rotation.NONE);

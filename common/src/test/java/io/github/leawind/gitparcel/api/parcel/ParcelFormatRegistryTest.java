@@ -17,21 +17,21 @@ import org.junit.jupiter.api.Test;
 public class ParcelFormatRegistryTest {
   @Test
   void test() {
-    var mgr = new ParcelFormatRegistry();
+    var regsitry = ParcelFormatRegistry.INSTANCE;
 
-    mgr.registerDefaultSaver(new TestSaver("alpha", 0));
-    mgr.register(new TestSaver("beta", 0));
-    mgr.register(new TestLoader("charlie", 0));
+    regsitry.registerDefaultSaver(new TestSaver("alpha", 0));
+    regsitry.register(new TestSaver("beta", 0));
+    regsitry.register(new TestLoader("charlie", 0));
 
-    assertEquals(mgr.defaultSaver(), mgr.getSaver("alpha"));
+    assertEquals(regsitry.defaultSaver(), regsitry.getSaver("alpha"));
 
-    assertNotNull(mgr.getSaver("beta"));
-    assertNull(mgr.getLoader("beta"));
+    assertNotNull(regsitry.getSaver("beta"));
+    assertNull(regsitry.getLoader("beta"));
 
-    assertNull(mgr.getSaver("charlie"));
-    assertNotNull(mgr.getLoader("charlie"));
+    assertNull(regsitry.getSaver("charlie"));
+    assertNotNull(regsitry.getLoader("charlie"));
 
-    assertNull(mgr.getSaver("non-existent"));
+    assertNull(regsitry.getSaver("non-existent"));
   }
 
   static class TestFormat implements ParcelFormat.Impl<ParcelFormatConfig.None> {

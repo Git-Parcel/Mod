@@ -5,7 +5,6 @@ import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.leawind.gitparcel.api.GitParcelApi;
 import io.github.leawind.gitparcel.api.parcel.exceptions.InvalidParcelMetaException;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -135,11 +134,11 @@ public final class ParcelMeta {
   }
 
   public ParcelFormat.@Nullable Save<?> getFormatSaver() {
-    return GitParcelApi.FORMAT_REGISTRY.getSaver(formatInfo);
+    return ParcelFormatRegistry.INSTANCE.getSaver(formatInfo);
   }
 
   public ParcelFormat.@Nullable Load<?> getFormatLoader() {
-    return GitParcelApi.FORMAT_REGISTRY.getLoader(formatInfo);
+    return ParcelFormatRegistry.INSTANCE.getLoader(formatInfo);
   }
 
   public boolean excludeEntities() {
