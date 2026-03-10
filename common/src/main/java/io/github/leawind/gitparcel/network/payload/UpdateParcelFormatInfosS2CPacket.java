@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.network.payload;
 
 import com.mojang.serialization.Codec;
 import io.github.leawind.gitparcel.GitParcelMod;
+import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.client.ClientParcelFormatInfos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -21,6 +22,11 @@ public record UpdateParcelFormatInfosS2CPacket(ClientParcelFormatInfos formats)
 
   public static final StreamCodec<RegistryFriendlyByteBuf, UpdateParcelFormatInfosS2CPacket>
       STREAM_CODEC = ByteBufCodecs.fromCodecWithRegistries(UpdateParcelFormatInfosS2CPacket.CODEC);
+
+  public static UpdateParcelFormatInfosS2CPacket from(ParcelFormatRegistry registry) {
+    var infos = new ClientParcelFormatInfos(registry.getSaverInfos(), registry.getLoaderInfos());
+    return new UpdateParcelFormatInfosS2CPacket(infos);
+  }
 
   @Override
   public @NonNull Type<UpdateParcelFormatInfosS2CPacket> type() {
