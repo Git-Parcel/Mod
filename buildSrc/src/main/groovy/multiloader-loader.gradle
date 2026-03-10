@@ -11,6 +11,9 @@ configurations {
 		canBeResolved = true
 	}
 	shadow
+	
+	compileClasspath.extendsFrom(shadow)
+	runtimeClasspath.extendsFrom(shadow)
 }
 
 dependencies {
