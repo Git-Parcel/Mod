@@ -28,10 +28,9 @@ public class GitParcelModNeoForge {
 
     @SubscribeEvent
     public static void onRegisterPayloadHandlers(RegisterPayloadHandlersEvent event) {
-      var registerar =
-          event.registrar(GitParcelMod.MOD_ID).versioned(GitParcelMod.PROTOCOL_VERSION);
+      var registrar = event.registrar(GitParcelMod.MOD_ID).versioned(GitParcelMod.PROTOCOL_VERSION);
 
-      registerar.playToClient(
+      registrar.playToClient(
           UpdateParcelFormatInfosS2CPayload.TYPE, UpdateParcelFormatInfosS2CPayload.STREAM_CODEC);
     }
   }

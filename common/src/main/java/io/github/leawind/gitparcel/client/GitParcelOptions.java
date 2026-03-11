@@ -13,11 +13,11 @@ public class GitParcelOptions {
       new KeyMapping(
           "key.gitparcel.admin_screen", InputConstants.KEY_RSHIFT, KeyMapping.Category.CREATIVE);
 
-  public static void registerKeyMappings(Consumer<KeyMapping> registerar) {
+  public static void registerKeyMappings(Consumer<KeyMapping> registrar) {
     if (Services.PLATFORM.isDevelopmentEnvironment()) {
-      registerar.accept(keyDebugScreen);
+      registrar.accept(keyDebugScreen);
     }
 
-    registerar.accept(keyAdminScreen);
+    registrar.accept(keyAdminScreen);
   }
 }
