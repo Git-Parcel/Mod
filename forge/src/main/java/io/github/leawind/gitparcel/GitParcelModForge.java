@@ -30,10 +30,12 @@ public class GitParcelModForge {
 
   public static void init() {
     RegisterCommandsEvent.BUS.addListener(GitParcelModForge::registerCommands);
+
+    // TODO register custom payloads and receivers
   }
 
   public static void registerCommands(RegisterCommandsEvent event) {
     GitParcelMod.registerCommands(
-        event.getDispatcher(), event.getCommandSelection(), event.getBuildContext());
+        event.getDispatcher(), event.getBuildContext(), event.getCommandSelection());
   }
 }

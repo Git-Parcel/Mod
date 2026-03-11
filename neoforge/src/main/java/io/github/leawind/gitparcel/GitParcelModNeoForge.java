@@ -1,6 +1,6 @@
 package io.github.leawind.gitparcel;
 
-import io.github.leawind.gitparcel.network.payload.UpdateParcelFormatInfosS2CPacket;
+import io.github.leawind.gitparcel.network.payload.UpdateParcelFormatInfosS2CPayload;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -23,7 +23,7 @@ public class GitParcelModNeoForge {
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
       GitParcelMod.registerCommands(
-          event.getDispatcher(), event.getCommandSelection(), event.getBuildContext());
+          event.getDispatcher(), event.getBuildContext(), event.getCommandSelection());
     }
 
     @SubscribeEvent
@@ -32,7 +32,7 @@ public class GitParcelModNeoForge {
           event.registrar(GitParcelMod.MOD_ID).versioned(GitParcelMod.PROTOCOL_VERSION);
 
       registerar.playToClient(
-          UpdateParcelFormatInfosS2CPacket.TYPE, UpdateParcelFormatInfosS2CPacket.STREAM_CODEC);
+          UpdateParcelFormatInfosS2CPayload.TYPE, UpdateParcelFormatInfosS2CPayload.STREAM_CODEC);
     }
   }
 }

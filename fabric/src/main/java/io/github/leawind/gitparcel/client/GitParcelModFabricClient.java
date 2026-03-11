@@ -1,7 +1,7 @@
 package io.github.leawind.gitparcel.client;
 
 import com.mojang.logging.LogUtils;
-import io.github.leawind.gitparcel.network.payload.UpdateParcelFormatInfosS2CPacket;
+import io.github.leawind.gitparcel.network.payload.UpdateParcelFormatInfosS2CPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -21,9 +21,8 @@ public class GitParcelModFabricClient implements ClientModInitializer {
     LOGGER.debug("Registering key mappings");
     GitParcelOptions.registerKeyMappings(KeyBindingHelper::registerKeyBinding);
 
-    // NOW neoforge
     ClientPlayNetworking.registerGlobalReceiver(
-        UpdateParcelFormatInfosS2CPacket.TYPE,
-        (payload, context) -> UpdateParcelFormatInfosS2CPacket.handle(payload, context.player()));
+        UpdateParcelFormatInfosS2CPayload.TYPE,
+        (payload, context) -> UpdateParcelFormatInfosS2CPayload.handle(payload, context.player()));
   }
 }

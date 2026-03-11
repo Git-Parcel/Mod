@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.client;
 
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.client.gui.screens.GitParcelDebugScreen;
+import io.github.leawind.gitparcel.network.payload.UpdateParcelFormatInfosS2CPayload;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -12,9 +13,9 @@ public class GitParcelModClient {
   /**
    * Cache of the parcel format infos received from the server.
    *
-   * <p>Updated when received {@code UpdateParcelFormatInfosS2CPacket}.
+   * <p>Updated when received {@link UpdateParcelFormatInfosS2CPayload}.
    *
-   * <p>Should be cleared when the client disconnects from the server.
+   * <p>Better be set to null when the client disconnects from the server.
    */
   public static @Nullable volatile ClientParcelFormatInfos PARCEL_FORMAT_INFOS = null;
 

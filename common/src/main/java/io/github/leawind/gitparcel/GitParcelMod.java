@@ -4,7 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.mixin.InvokeArgumentTypeInfos;
-import io.github.leawind.gitparcel.network.payload.UpdateParcelFormatInfosS2CPacket;
+import io.github.leawind.gitparcel.network.payload.UpdateParcelFormatInfosS2CPayload;
 import io.github.leawind.gitparcel.parcelformats.mvp.MvpFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Loader;
 import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Saver;
@@ -58,7 +58,7 @@ public class GitParcelMod {
 
     GameServerApi.ON_PLAYER_JOIN.on(
         e -> {
-          var payload = UpdateParcelFormatInfosS2CPacket.from(ParcelFormatRegistry.INSTANCE);
+          var payload = UpdateParcelFormatInfosS2CPayload.from(ParcelFormatRegistry.INSTANCE);
           var serverPlayer = e.player();
           serverPlayer.connection.send(new ClientboundCustomPayloadPacket(payload));
         });
@@ -108,8 +108,8 @@ public class GitParcelMod {
 
   public static void registerCommands(
       CommandDispatcher<CommandSourceStack> dispatcher,
-      Commands.CommandSelection commandSelection,
-      CommandBuildContext context) {
+      CommandBuildContext context,
+      Commands.CommandSelection commandSelection) {
     LOGGER.debug("Registering commands");
 
     ParcelCommand.register(dispatcher, context);
