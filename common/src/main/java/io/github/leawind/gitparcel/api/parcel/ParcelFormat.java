@@ -6,6 +6,7 @@ import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Pattern;
 import net.minecraft.core.Vec3i;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
@@ -20,6 +21,7 @@ import org.slf4j.LoggerFactory;
 /** A format for saving or loading parcels. */
 public sealed interface ParcelFormat permits ParcelFormat.Impl {
   Logger LOGGER = LoggerFactory.getLogger("Parcel Format");
+
   String META_FILE_NAME = "parcel.json";
   String CONFIG_FILE_NAME = "config.json";
   String DATA_DIR_NAME = "data";
@@ -36,6 +38,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
     return info().version();
   }
 
+  /** The info of a parcel format. */
   record Info(String id, int version) {
     public static final Codec<Info> CODEC =
         RecordCodecBuilder.create(
@@ -44,6 +47,18 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
                         Codec.STRING.fieldOf("id").forGetter(Info::id),
                         Codec.INT.fieldOf("version").forGetter(Info::version))
                     .apply(inst, Info::new));
+    public static final Pattern ID_PATTERN =
+        Pattern.compile("^[a-zA-Z_\\-]([a-zA-Z_\\-0-9]+){0,63}$");
+
+    /**
+     * @param id The unique id of the format, must match {@link Info#ID_PATTERN}
+     * @param version The version of the format
+     */
+    public Info {
+      if (!ID_PATTERN.matcher(id).matches()) {
+        throw new IllegalArgumentException("ID must match " + ID_PATTERN);
+      }
+    }
 
     @NonNull
     @Override
