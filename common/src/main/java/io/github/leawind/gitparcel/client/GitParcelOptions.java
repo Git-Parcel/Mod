@@ -1,7 +1,8 @@
 package io.github.leawind.gitparcel.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import io.github.leawind.gitparcel.platform.services.IPlatformHelper;
+import io.github.leawind.gitparcel.platform.Services;
+import java.util.function.Consumer;
 import net.minecraft.client.KeyMapping;
 
 public class GitParcelOptions {
@@ -12,11 +13,11 @@ public class GitParcelOptions {
       new KeyMapping(
           "key.gitparcel.admin_screen", InputConstants.KEY_RSHIFT, KeyMapping.Category.CREATIVE);
 
-  public static void registerAllKeyMappings(IPlatformHelper platform) {
-    if (platform.isDevelopmentEnvironment()) {
-      platform.register(keyDebugScreen);
+  public static void registerKeyMappings(Consumer<KeyMapping> registerar) {
+    if (Services.PLATFORM.isDevelopmentEnvironment()) {
+      registerar.accept(keyDebugScreen);
     }
 
-    platform.register(keyAdminScreen);
+    registerar.accept(keyAdminScreen);
   }
 }

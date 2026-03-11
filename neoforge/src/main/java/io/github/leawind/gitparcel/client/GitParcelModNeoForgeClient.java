@@ -1,9 +1,6 @@
 package io.github.leawind.gitparcel.client;
 
 import io.github.leawind.gitparcel.GitParcelMod;
-import java.util.ArrayList;
-import java.util.List;
-import net.minecraft.client.KeyMapping;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -19,14 +16,7 @@ public class GitParcelModNeoForgeClient {
   public static void init(IEventBus eventBus) {
 
     eventBus.addListener(
-        RegisterKeyMappingsEvent.class, event -> KEY_MAPPINGS.forEach(event::register));
+        RegisterKeyMappingsEvent.class,
+        event -> GitParcelOptions.registerKeyMappings(event::register));
   }
-
-  /**
-   * This list is updated in mod client init, and then registered in platform init.
-   *
-   * @see io.github.leawind.gitparcel.platform.NeoForgePlatformHelper#register(KeyMapping)
-   * @see #init(IEventBus)
-   */
-  public static final List<KeyMapping> KEY_MAPPINGS = new ArrayList<>();
 }
