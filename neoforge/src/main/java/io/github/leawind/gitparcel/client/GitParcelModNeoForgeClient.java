@@ -19,15 +19,15 @@ public class GitParcelModNeoForgeClient {
     GitParcelModNeoForgeClient.init(eventBus);
   }
 
-  public static void init(IEventBus eventBus) {
-
-    eventBus.addListener(
-        RegisterKeyMappingsEvent.class,
-        event -> GitParcelOptions.registerKeyMappings(event::register));
-  }
+  public static void init(IEventBus eventBus) {}
 
   @EventBusSubscriber(modid = GitParcelMod.MOD_ID)
   public static class EventHandler {
+
+    @SubscribeEvent
+    public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
+      GitParcelOptions.registerKeyMappings(event::register);
+    }
 
     @SubscribeEvent
     public static void onRegisterClientPayloadHandlers(RegisterClientPayloadHandlersEvent event) {
