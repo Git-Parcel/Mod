@@ -37,6 +37,8 @@ public class GitParcelMod {
   /** The display name for Git Parcel. */
   public static final String MOD_NAME = "Git Parcel";
 
+  public static final String PROTOCOL_VERSION = "1";
+
   /** The logger instance for Git Parcel. */
   public static final Logger LOGGER = LogUtils.getLogger();
 

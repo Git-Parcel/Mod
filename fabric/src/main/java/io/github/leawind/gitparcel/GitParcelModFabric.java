@@ -34,7 +34,6 @@ public class GitParcelModFabric implements ModInitializer {
     GitParcelMod.registerCommands(dispatcher, commandSelection, context);
   }
 
-  // NOW forge, neoforge
   private static void registerPackets() {
     PayloadTypeRegistry.playS2C()
         .register(

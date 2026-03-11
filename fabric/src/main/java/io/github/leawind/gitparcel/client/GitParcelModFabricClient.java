@@ -21,12 +21,9 @@ public class GitParcelModFabricClient implements ClientModInitializer {
     LOGGER.debug("Registering key mappings");
     GitParcelOptions.registerKeyMappings(KeyBindingHelper::registerKeyBinding);
 
-    // NOW forge, neoforge
+    // NOW neoforge
     ClientPlayNetworking.registerGlobalReceiver(
         UpdateParcelFormatInfosS2CPacket.TYPE,
-        (payload, context) -> {
-          LOGGER.info("Received update parcel format infos packet: {}", payload.formats());
-          ClientParcelFormatInfos.CACHE = payload.formats();
-        });
+        (payload, context) -> UpdateParcelFormatInfosS2CPacket.handle(payload, context.player()));
   }
 }
