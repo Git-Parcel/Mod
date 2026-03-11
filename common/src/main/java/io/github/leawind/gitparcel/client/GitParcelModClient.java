@@ -3,7 +3,6 @@ package io.github.leawind.gitparcel.client;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.client.gui.screens.GitParcelDebugScreen;
 import io.github.leawind.gitparcel.network.payload.UpdateParcelFormatInfosS2CPayload;
-import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -32,8 +31,7 @@ public class GitParcelModClient {
           if (!(minecraft.screen instanceof GitParcelDebugScreen)) {
             while (GitParcelOptions.keyDebugScreen.consumeClick()) {
               if (minecraft.player != null) {
-                minecraft.setScreen(
-                    new GitParcelDebugScreen(Component.literal("Git Parcel Debug Screen")));
+                minecraft.setScreen(new GitParcelDebugScreen(minecraft.screen));
               }
             }
           }
