@@ -2,7 +2,9 @@ package io.github.leawind.gitparcel.world.gitparcel;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.UUIDUtil;
@@ -35,6 +37,10 @@ public class GitParcelSavedData extends SavedData {
 
   private Map<UUID, ParcelInstance> getParcelInstances() {
     return parcelInstances;
+  }
+
+  public List<ParcelInstance> listParcelInstances() {
+    return new ArrayList<>(parcelInstances.values());
   }
 
   public static GitParcelSavedData get(ServerLevel level) {
