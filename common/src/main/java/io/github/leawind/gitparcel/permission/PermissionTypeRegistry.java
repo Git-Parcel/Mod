@@ -1,5 +1,6 @@
 package io.github.leawind.gitparcel.permission;
 
+import com.mojang.serialization.Codec;
 import it.unimi.dsi.fastutil.bytes.Byte2ObjectArrayMap;
 import it.unimi.dsi.fastutil.bytes.Byte2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
@@ -37,5 +38,9 @@ public class PermissionTypeRegistry {
     byId.put(type.id(), type);
     byName.put(type.name(), type);
     return type;
+  }
+
+  public record Flags(long bits) {
+    public static final Codec<Flags> CODEC = Codec.LONG.xmap(Flags::new, Flags::bits);
   }
 }

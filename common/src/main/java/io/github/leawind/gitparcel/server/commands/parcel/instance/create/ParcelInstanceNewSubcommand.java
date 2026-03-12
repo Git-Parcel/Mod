@@ -7,7 +7,10 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.GitParcelMod;
 import io.github.leawind.gitparcel.GitParcelTranslations;
+import io.github.leawind.gitparcel.permission.GitParcelPermission;
+import io.github.leawind.gitparcel.permission.WorldPermissions;
 import io.github.leawind.gitparcel.world.gitparcel.GitParcelLevelSavedData;
+import io.github.leawind.gitparcel.world.gitparcel.GitParcelWorldSavedData;
 import io.github.leawind.gitparcel.world.gitparcel.ParcelInstance;
 import java.util.UUID;
 import net.minecraft.commands.CommandSourceStack;
@@ -63,6 +66,22 @@ public class ParcelInstanceNewSubcommand {
     var source = ctx.getSource();
     var level = source.getLevel();
     var savedData = GitParcelLevelSavedData.get(level);
+
+    // Check permission
+    {
+      // NOW
+      var requiredLevel =
+          GitParcelWorldSavedData.get(source.getServer())
+              .getPermissions()
+              .get(WorldPermissions.CREATE_PARCEL_INSTANCE);
+
+      var sourceLevel = GitParcelPermission.levelOf(source.permissions());
+
+      if (!sourceLevel.isEqualOrHigherThan(requiredLevel)) {
+        source.sendFailure(GitParcelTranslations.of("command.gitparcel.no_permission"));
+        return 0;
+      }
+    }
 
     try {
       BoundingBox boundingBox = BoundingBox.fromCorners(from, to);

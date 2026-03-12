@@ -1,73 +1,70 @@
 package io.github.leawind.gitparcel.permission;
 
 import com.mojang.serialization.Codec;
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ByteArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ByteMap;
 import java.util.Map;
+import net.minecraft.server.permissions.PermissionLevel;
 
-public class PermissionSettings implements ReadablePermissionSettings {
-  public final PermissionTypeRegistry registry;
+public class PermissionSettings {
+  private final PermissionTypeRegistry registry;
 
-  /** Indicates which permission is specified */
-  private long specified = 0L;
-
-  /** Permission Type ID --> Required Level */
-  private final byte[] requirements = new byte[64];
+  /** Map from permission type id to required level */
+  private final Int2ObjectMap<PermissionLevel> requirements = new Int2ObjectArrayMap<>();
 
   public PermissionSettings(PermissionTypeRegistry registry) {
     this.registry = registry;
   }
 
-  private boolean isSpecified(long mask) {
-    return (specified & mask) != 0;
-  }
-
-  public boolean isSpecified(PermissionType type) {
-    return isSpecified(type.mask());
-  }
-
-  @Override
   public PermissionTypeRegistry getRegistry() {
     return registry;
   }
 
-  @Override
-  public byte get(PermissionType type) {
-    if (!isSpecified(type)) {
-      return type.defaultLevel();
-    }
-    return requirements[type.id()];
+  public boolean isSpecified(PermissionType type) {
+    return requirements.containsKey(type.id());
+  }
+
+  public PermissionLevel get(PermissionType type) {
+    var level = requirements.get(type.id());
+    return level == null ? type.defaultLevel() : level;
   }
 
   public Object2ByteMap<String> toMap() {
     Object2ByteMap<String> map = new Object2ByteArrayMap<>();
-    int len = requirements.length;
-    for (int i = 0; i < len; i++) {
-      var type = registry.byId(i);
-      if (type != null && isSpecified(type)) {
-        map.put(type.name(), requirements[i]);
-      }
-    }
+    requirements.forEach(
+        (id, level) -> {
+          var type = registry.byId(id);
+          if (type != null) {
+            map.put(type.name(), (byte) level.id());
+          }
+        });
     return map;
   }
 
   public void clear(PermissionType type) {
-    specified &= ~type.mask();
-    requirements[type.id()] = 0;
+    requirements.remove(type.id());
   }
 
-  public void set(PermissionType type, int level) {
-    specified |= type.mask();
-    requirements[type.id()] = (byte) level;
+  public void set(PermissionType type, int levelId) {
+    set(type, PermissionLevel.byId(levelId));
   }
 
+  public void set(PermissionType type, PermissionLevel level) {
+    requirements.put(type.id(), level);
+  }
+
+  /**
+   * @param map Permission type name --> Permission level requirement
+   */
   public static PermissionSettings from(PermissionTypeRegistry registry, Map<String, Byte> map) {
     PermissionSettings settings = new PermissionSettings(registry);
     map.forEach(
-        (name, level) -> {
+        (name, levelId) -> {
           var type = registry.byName(name);
           if (type != null) {
-            settings.set(type, level);
+            settings.set(type, PermissionLevel.byId(levelId));
           }
         });
     return settings;
