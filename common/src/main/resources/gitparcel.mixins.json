@@ -4,13 +4,14 @@
   "package": "io.github.leawind.gitparcel.mixin",
   "refmap": "${mod_id}.refmap.json",
   "compatibilityLevel": "JAVA_18",
-  "mixins": [],
-  "client": [
+  "mixins": [
     "AccessStateHolder",
     "InvokeArgumentTypeInfos",
     "MixinArgumentTypeInfos",
-    "MixinMinecraft",
     "MixinPlayerList"
+  ],
+  "client": [
+    "MixinMinecraft"
   ],
   "server": [],
   "injectors": {
