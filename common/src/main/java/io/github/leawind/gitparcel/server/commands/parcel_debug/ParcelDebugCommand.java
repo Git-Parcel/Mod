@@ -15,7 +15,7 @@ public class ParcelDebugCommand {
 
     var parcel_debug =
         Commands.literal("parcel_debug")
-            .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+            .requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
             .then(ParcelDebugSaveSubcommand.build())
             .then(ParcelDebugLoadSubcommand.build());
 
