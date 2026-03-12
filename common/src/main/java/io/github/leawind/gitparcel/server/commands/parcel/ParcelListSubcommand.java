@@ -4,6 +4,8 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
+import io.github.leawind.gitparcel.permission.WorldPermissions;
+import io.github.leawind.gitparcel.server.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.world.gitparcel.GitParcelLevelSavedData;
 import io.github.leawind.gitparcel.world.gitparcel.ParcelInstance;
 import java.util.List;
@@ -11,7 +13,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 
-public class ParcelListSubcommand {
+public class ParcelListSubcommand extends GitParcelBaseCommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
     // /parcel list format
     var parcel_list_format =
@@ -19,6 +21,11 @@ public class ParcelListSubcommand {
             .executes(
                 (ctx) -> {
                   var source = ctx.getSource();
+
+                  if (!validateWorldPermission(source, WorldPermissions.LIST_FORMAT)) {
+                    return 0;
+                  }
+
                   var registry = ParcelFormatRegistry.INSTANCE;
 
                   List<ParcelFormat.Info> saverInfos = registry.getSaverInfos();
@@ -65,6 +72,11 @@ public class ParcelListSubcommand {
             .executes(
                 (ctx) -> {
                   var source = ctx.getSource();
+
+                  if (!validateWorldPermission(source, WorldPermissions.LIST_INSTANCE)) {
+                    return 0;
+                  }
+
                   var level = source.getLevel();
                   var savedData = GitParcelLevelSavedData.get(level);
                   List<ParcelInstance> instances = savedData.listParcelInstances();
