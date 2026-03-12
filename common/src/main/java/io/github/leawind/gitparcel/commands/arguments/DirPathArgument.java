@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.server.commands.arguments;
+package io.github.leawind.gitparcel.commands.arguments;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.context.CommandContext;

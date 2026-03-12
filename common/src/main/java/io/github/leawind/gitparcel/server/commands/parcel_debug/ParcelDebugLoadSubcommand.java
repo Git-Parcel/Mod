@@ -7,7 +7,7 @@ import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
-import io.github.leawind.gitparcel.server.commands.arguments.DirPathArgument;
+import io.github.leawind.gitparcel.commands.arguments.DirPathArgument;
 import java.io.IOException;
 import java.nio.file.Path;
 import net.minecraft.commands.CommandSourceStack;
