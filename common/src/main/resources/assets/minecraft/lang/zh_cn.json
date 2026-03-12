@@ -3,6 +3,7 @@
   "argument.gitparcel.filepath.invalid_path": "非法的文件路径",
   "argument.gitparcel.filepath.not_dir": "该路径不是目录",
   "argument.parcel_format.invalid": "无效的格式",
+  "command.gitparcel.no_permission": "没有权限",
   "command.parcel_debug.load.failure": "加载失败: %s",
   "command.parcel_debug.load.success": "加载成功",
   "command.parcel_debug.save.failure": "保存失败: %s",
