@@ -35,7 +35,6 @@ public class PermissionSettings implements ReadablePermissionSettings {
     return requirements[type.id()];
   }
 
-  @Override
   public Object2ByteMap<String> toMap() {
     Object2ByteMap<String> map = new Object2ByteArrayMap<>();
     int len = requirements.length;
