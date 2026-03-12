@@ -8,9 +8,8 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.GitParcelMod;
 import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.permission.WorldPermissions;
-import io.github.leawind.gitparcel.utils.permission.PermissionSettings;
+import io.github.leawind.gitparcel.server.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.world.gitparcel.GitParcelLevelSavedData;
-import io.github.leawind.gitparcel.world.gitparcel.GitParcelWorldSavedData;
 import io.github.leawind.gitparcel.world.gitparcel.ParcelInstance;
 import java.util.UUID;
 import net.minecraft.commands.CommandSourceStack;
@@ -19,7 +18,7 @@ import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
-public class ParcelInstanceNewSubcommand {
+public class ParcelInstanceNewSubcommand extends GitParcelBaseCommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
     var showBoundingBox =
         Commands.argument("show_bounding_box", BoolArgumentType.bool())
@@ -68,14 +67,8 @@ public class ParcelInstanceNewSubcommand {
     var savedData = GitParcelLevelSavedData.get(level);
 
     // Check permission
-    {
-      PermissionSettings<WorldPermissions> permissions =
-          GitParcelWorldSavedData.get(source.getServer()).getPermissions();
-
-      if (!permissions.permits(WorldPermissions.CREATE_PARCEL_INSTANCE, source.permissions())) {
-        source.sendFailure(GitParcelTranslations.of("command.gitparcel.no_permission"));
-        return 0;
-      }
+    if (!validateWorldPermission(source, WorldPermissions.CREATE_PARCEL_INSTANCE)) {
+      return 0;
     }
 
     try {
