@@ -35,7 +35,7 @@ public class ParcelInstance {
                           .forGetter(ParcelInstance::showBoundingBox),
                       GitParcelPermission.SETTINGS_CODEC
                           .fieldOf("permission_settings")
-                          .forGetter(ParcelInstance::getPermissionSettings))
+                          .forGetter(ParcelInstance::permissionSettings))
                   .apply(inst, ParcelInstance::new));
 
   // ////////////////////////////////////////////////////////////////
@@ -113,6 +113,14 @@ public class ParcelInstance {
     return showBoundingBox;
   }
 
+  public PermissionSettings permissionSettings() {
+    return permissionSettings;
+  }
+
+  // ////////////////////////////////////////////////////////////////
+  // Others
+  // ////////////////////////////////////////////////////////////////
+
   public ParcelTransform getTransform() {
     return new ParcelTransform(mirror, rotation, getPivotBlock());
   }
@@ -133,14 +141,6 @@ public class ParcelInstance {
   public boolean hasOrientation() {
     return mirror != Mirror.NONE || rotation != Rotation.NONE;
   }
-
-  public PermissionSettings getPermissionSettings() {
-    return permissionSettings;
-  }
-
-  // ////////////////////////////////////////////////////////////////
-  // Others
-  // ////////////////////////////////////////////////////////////////
 
   void setLevelSavedData(@Nullable GitParcelLevelSavedData levelSavedData) {
     this.levelSavedData = levelSavedData;
