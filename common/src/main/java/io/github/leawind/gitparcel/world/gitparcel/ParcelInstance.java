@@ -10,11 +10,12 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import org.jspecify.annotations.Nullable;
 
 /**
- * Parcel Instance represents a specific instance of a parcel in the world.
+ * Parcel Instance represents a specific instance of a parcel in the level.
  *
- * <p>It's saved and loaded with the world level
+ * <p>Managed by {@link GitParcelLevelSavedData}
  */
 public class ParcelInstance {
   public static final Codec<ParcelInstance> CODEC =
@@ -32,13 +33,21 @@ public class ParcelInstance {
                           .forGetter(ParcelInstance::showBoundingBox))
                   .apply(inst, ParcelInstance::new));
 
+  // ////////////////////////////////////////////////////////////////
+  // Serialized Fields
+  // ////////////////////////////////////////////////////////////////
+
   private final UUID uuid;
   private BoundingBox boundingBox;
-
   private Mirror mirror = Mirror.NONE;
   private Rotation rotation = Rotation.NONE;
-
   private boolean showBoundingBox = true;
+
+  // ////////////////////////////////////////////////////////////////
+  // Unserialized Fields
+  // ////////////////////////////////////////////////////////////////
+
+  private @Nullable GitParcelLevelSavedData levelSavedData;
 
   public ParcelInstance() {
     this(UUID.randomUUID());
@@ -60,6 +69,10 @@ public class ParcelInstance {
     this.rotation = rotation;
     this.showBoundingBox = showBoundingBox;
   }
+
+  // ////////////////////////////////////////////////////////////////
+  // Serialized Field Getters
+  // ////////////////////////////////////////////////////////////////
 
   public UUID uuid() {
     return uuid;
@@ -100,5 +113,27 @@ public class ParcelInstance {
 
   public boolean hasOrientation() {
     return mirror != Mirror.NONE || rotation != Rotation.NONE;
+  }
+
+  // ////////////////////////////////////////////////////////////////
+  // Others
+  // ////////////////////////////////////////////////////////////////
+
+  void setLevelSavedData(@Nullable GitParcelLevelSavedData levelSavedData) {
+    this.levelSavedData = levelSavedData;
+  }
+
+  public @Nullable GitParcelLevelSavedData getLevelSavedData() {
+    return levelSavedData;
+  }
+
+  public void setDirty() {
+    setDirty(true);
+  }
+
+  public void setDirty(boolean dirty) {
+    if (levelSavedData != null) {
+      levelSavedData.setDirty(dirty);
+    }
   }
 }

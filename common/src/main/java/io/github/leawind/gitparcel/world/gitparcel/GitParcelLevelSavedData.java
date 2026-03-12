@@ -36,6 +36,7 @@ public class GitParcelLevelSavedData extends SavedData {
 
   private GitParcelLevelSavedData(Map<UUID, ParcelInstance> parcelInstances) {
     this.parcelInstances = new Object2ObjectOpenHashMap<>(parcelInstances);
+    this.parcelInstances.values().forEach(inst -> inst.setLevelSavedData(this));
   }
 
   private Map<UUID, ParcelInstance> getParcelInstances() {
