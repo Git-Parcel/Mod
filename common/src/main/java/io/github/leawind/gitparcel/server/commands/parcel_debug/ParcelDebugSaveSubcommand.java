@@ -136,7 +136,7 @@ public class ParcelDebugSaveSubcommand {
           new Vec3i(boundingBox.getXSpan(), boundingBox.getYSpan(), boundingBox.getZSpan());
       Vec3i sizeParcelSpace = ParcelTransform.rotateSizeInverted(rotation, sizeWorldSpace);
 
-      ParcelMeta meta = ParcelMeta.create(format.id(), format.version(), sizeParcelSpace);
+      ParcelMeta meta = new ParcelMeta(format.info(), sizeParcelSpace);
 
       ParcelFormat.save(source.getLevel(), transform, meta, parcelDir, ignoreEntities);
 

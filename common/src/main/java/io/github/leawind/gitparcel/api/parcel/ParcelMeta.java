@@ -57,15 +57,6 @@ public final class ParcelMeta {
   /** Default is {@code true}. */
   public @Nullable Boolean excludeEntities = null;
 
-  @Deprecated
-  public static ParcelMeta create(String formatId, int formatVersion, Vec3i parcelSize) {
-    return new ParcelMeta(
-        formatId,
-        formatVersion,
-        SharedConstants.getCurrentVersion().dataVersion().version(),
-        parcelSize);
-  }
-
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   private ParcelMeta(
       ParcelFormat.Info formatInfo,
