@@ -4,7 +4,7 @@ import it.unimi.dsi.fastutil.objects.Object2ByteArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ByteMap;
 import java.util.Map;
 
-public class PermissionSettings {
+public class PermissionSettings implements ReadablePermissionSettings {
 
   public final PermissionTypeRegistry registry;
 
@@ -26,6 +26,7 @@ public class PermissionSettings {
     return isSpecified(type.mask());
   }
 
+  @Override
   public byte get(PermissionType type) {
     if (!isSpecified(type)) {
       return type.defaultLevel();
@@ -33,16 +34,7 @@ public class PermissionSettings {
     return requirements[type.id()];
   }
 
-  public void clear(PermissionType type) {
-    specified &= ~type.mask();
-    requirements[type.id()] = 0;
-  }
-
-  public void set(PermissionType type, int level) {
-    specified |= type.mask();
-    requirements[type.id()] = (byte) level;
-  }
-
+  @Override
   public long toLong(int level) {
     long result = 0L;
     int len = requirements.length;
@@ -62,6 +54,7 @@ public class PermissionSettings {
     return result;
   }
 
+  @Override
   public Object2ByteMap<String> toMap() {
     Object2ByteMap<String> map = new Object2ByteArrayMap<>();
     int len = requirements.length;
@@ -72,6 +65,16 @@ public class PermissionSettings {
       }
     }
     return map;
+  }
+
+  public void clear(PermissionType type) {
+    specified &= ~type.mask();
+    requirements[type.id()] = 0;
+  }
+
+  public void set(PermissionType type, int level) {
+    specified |= type.mask();
+    requirements[type.id()] = (byte) level;
   }
 
   public static PermissionSettings from(PermissionTypeRegistry registry, Map<String, Byte> map) {
