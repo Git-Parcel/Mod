@@ -3,6 +3,8 @@ package io.github.leawind.gitparcel.world.gitparcel;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
+import io.github.leawind.gitparcel.permission.GitParcelPermission;
+import io.github.leawind.gitparcel.permission.PermissionSettings;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
@@ -30,7 +32,10 @@ public class ParcelInstance {
                       Rotation.CODEC.fieldOf("rotation").forGetter(ParcelInstance::rotation),
                       Codec.BOOL
                           .fieldOf("show_bounding_box")
-                          .forGetter(ParcelInstance::showBoundingBox))
+                          .forGetter(ParcelInstance::showBoundingBox),
+                      GitParcelPermission.SETTINGS_CODEC
+                          .fieldOf("permission_settings")
+                          .forGetter(ParcelInstance::getPermissionSettings))
                   .apply(inst, ParcelInstance::new));
 
   // ////////////////////////////////////////////////////////////////
@@ -39,9 +44,10 @@ public class ParcelInstance {
 
   private final UUID uuid;
   private BoundingBox boundingBox;
-  private Mirror mirror = Mirror.NONE;
-  private Rotation rotation = Rotation.NONE;
-  private boolean showBoundingBox = true;
+  private Mirror mirror;
+  private Rotation rotation;
+  private boolean showBoundingBox;
+  private PermissionSettings permissionSettings;
 
   // ////////////////////////////////////////////////////////////////
   // Unserialized Fields
@@ -49,12 +55,19 @@ public class ParcelInstance {
 
   private @Nullable GitParcelLevelSavedData levelSavedData;
 
-  public ParcelInstance() {
-    this(UUID.randomUUID());
-  }
-
-  public ParcelInstance(UUID uuid) {
-    this.uuid = uuid;
+  public ParcelInstance(
+      UUID uuid,
+      BoundingBox boundingBox,
+      Mirror mirror,
+      Rotation rotation,
+      Boolean showBoundingBox) {
+    this(
+        uuid,
+        boundingBox,
+        mirror,
+        rotation,
+        showBoundingBox,
+        new PermissionSettings(GitParcelPermission.REGISTRY));
   }
 
   public ParcelInstance(
@@ -62,12 +75,14 @@ public class ParcelInstance {
       BoundingBox boundingBox,
       Mirror mirror,
       Rotation rotation,
-      Boolean showBoundingBox) {
+      Boolean showBoundingBox,
+      PermissionSettings permissionSettings) {
     this.uuid = uuid;
     this.boundingBox = boundingBox;
     this.mirror = mirror;
     this.rotation = rotation;
     this.showBoundingBox = showBoundingBox;
+    this.permissionSettings = permissionSettings;
   }
 
   // ////////////////////////////////////////////////////////////////
@@ -113,6 +128,10 @@ public class ParcelInstance {
 
   public boolean hasOrientation() {
     return mirror != Mirror.NONE || rotation != Rotation.NONE;
+  }
+
+  public PermissionSettings getPermissionSettings() {
+    return permissionSettings;
   }
 
   // ////////////////////////////////////////////////////////////////
