@@ -14,7 +14,7 @@ public class GitParcelWorldSavedData extends SavedData {
       RecordCodecBuilder.create(
           inst ->
               inst.group(
-                      GitParcelPermission.SETTINGS_CODEC
+                      GitParcelPermission.SETTINGS_MAP_CODEC
                           .fieldOf("permissions")
                           .forGetter(GitParcelWorldSavedData::getPermissions))
                   .apply(inst, GitParcelWorldSavedData::new));

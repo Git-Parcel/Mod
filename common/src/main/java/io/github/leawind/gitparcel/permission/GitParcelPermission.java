@@ -9,7 +9,7 @@ public interface GitParcelPermission {
 
   PermissionTypeRegistry REGISTRY = new PermissionTypeRegistry();
 
-  Codec<PermissionSettings> SETTINGS_CODEC = PermissionSettings.getCodec(REGISTRY);
+  Codec<PermissionSettings> SETTINGS_MAP_CODEC = PermissionSettings.getMapCodec(REGISTRY);
 
   PermissionType LIST_FORMAT = type(0, "list_format", 1);
   PermissionType LIST_INSTANCE = type(1, "list_instance", 1);

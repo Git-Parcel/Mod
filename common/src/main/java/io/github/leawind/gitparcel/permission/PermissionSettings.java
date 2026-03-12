@@ -6,7 +6,6 @@ import it.unimi.dsi.fastutil.objects.Object2ByteMap;
 import java.util.Map;
 
 public class PermissionSettings implements ReadablePermissionSettings {
-
   public final PermissionTypeRegistry registry;
 
   /** Indicates which permission is specified */
@@ -74,7 +73,7 @@ public class PermissionSettings implements ReadablePermissionSettings {
     return settings;
   }
 
-  public static Codec<PermissionSettings> getCodec(PermissionTypeRegistry registry) {
+  public static Codec<PermissionSettings> getMapCodec(PermissionTypeRegistry registry) {
     return Codec.unboundedMap(Codec.STRING, Codec.BYTE)
         .xmap(map -> from(registry, map), PermissionSettings::toMap);
   }

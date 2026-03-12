@@ -33,7 +33,7 @@ public class ParcelInstance {
                       Codec.BOOL
                           .fieldOf("show_bounding_box")
                           .forGetter(ParcelInstance::showBoundingBox),
-                      GitParcelPermission.SETTINGS_CODEC
+                      GitParcelPermission.SETTINGS_MAP_CODEC
                           .fieldOf("permission_settings")
                           .forGetter(ParcelInstance::permissionSettings))
                   .apply(inst, ParcelInstance::new));
