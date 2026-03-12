@@ -9,7 +9,10 @@ public class ParcelCommand {
   public static void register(
       CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext context) {
 
-    final var parcel = Commands.literal("parcel").then(ParcelListSubcommand.build());
+    final var parcel =
+        Commands.literal("parcel")
+            .requires(Commands.hasPermission(Commands.LEVEL_ALL))
+            .then(ParcelListSubcommand.build());
 
     dispatcher.register(parcel);
   }
