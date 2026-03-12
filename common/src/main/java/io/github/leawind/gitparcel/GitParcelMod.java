@@ -79,19 +79,17 @@ public class GitParcelMod {
   public static void registerCommandArgumentTypes(Registry<ArgumentTypeInfo<?, ?>> registry) {
     LOGGER.debug("Registering command argument types");
 
-    if (Services.PLATFORM.isDevelopmentEnvironment()) {
-      InvokeArgumentTypeInfos.register(
-          registry,
-          "gitparcel:file_path",
-          FilePathArgument.class,
-          SingletonArgumentInfo.contextFree(FilePathArgument::path));
+    InvokeArgumentTypeInfos.register(
+        registry,
+        "gitparcel:file_path",
+        FilePathArgument.class,
+        SingletonArgumentInfo.contextFree(FilePathArgument::path));
 
-      InvokeArgumentTypeInfos.register(
-          registry,
-          "gitparcel:dir_path",
-          DirPathArgument.class,
-          SingletonArgumentInfo.contextFree(DirPathArgument::path));
-    }
+    InvokeArgumentTypeInfos.register(
+        registry,
+        "gitparcel:dir_path",
+        DirPathArgument.class,
+        SingletonArgumentInfo.contextFree(DirPathArgument::path));
 
     InvokeArgumentTypeInfos.register(
         registry,
