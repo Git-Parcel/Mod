@@ -7,7 +7,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.GitParcelMod;
 import io.github.leawind.gitparcel.GitParcelTranslations;
-import io.github.leawind.gitparcel.permission.GitParcelPermission;
+import io.github.leawind.gitparcel.permission.PermissionSettings;
 import io.github.leawind.gitparcel.permission.WorldPermissions;
 import io.github.leawind.gitparcel.world.gitparcel.GitParcelLevelSavedData;
 import io.github.leawind.gitparcel.world.gitparcel.GitParcelWorldSavedData;
@@ -69,15 +69,10 @@ public class ParcelInstanceNewSubcommand {
 
     // Check permission
     {
-      // NOW
-      var requiredLevel =
-          GitParcelWorldSavedData.get(source.getServer())
-              .getPermissions()
-              .get(WorldPermissions.CREATE_PARCEL_INSTANCE);
+      PermissionSettings<WorldPermissions> permissions =
+          GitParcelWorldSavedData.get(source.getServer()).getPermissions();
 
-      var sourceLevel = GitParcelPermission.levelOf(source.permissions());
-
-      if (!sourceLevel.isEqualOrHigherThan(requiredLevel)) {
+      if (!permissions.permits(WorldPermissions.CREATE_PARCEL_INSTANCE, source.permissions())) {
         source.sendFailure(GitParcelTranslations.of("command.gitparcel.no_permission"));
         return 0;
       }

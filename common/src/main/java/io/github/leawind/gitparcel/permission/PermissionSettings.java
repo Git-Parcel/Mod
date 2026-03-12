@@ -6,7 +6,10 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ByteArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ByteMap;
 import java.util.Map;
+import net.minecraft.commands.Commands;
+import net.minecraft.server.permissions.PermissionCheck;
 import net.minecraft.server.permissions.PermissionLevel;
+import net.minecraft.server.permissions.PermissionSet;
 
 public class PermissionSettings<T> {
   private final PermissionTypeRegistry<T> registry;
@@ -53,6 +56,40 @@ public class PermissionSettings<T> {
 
   public void set(PermissionType<T> type, PermissionLevel level) {
     requirements.put(type.id(), level);
+  }
+
+  public boolean permits(PermissionType<T> type, PermissionLevel level) {
+    return level.isEqualOrHigherThan(get(type));
+  }
+
+  public boolean permits(PermissionType<T> type, PermissionSet set) {
+    return levelOf(set).isEqualOrHigherThan(get(type));
+  }
+
+  public static PermissionLevel levelOf(PermissionSet set) {
+    if (Commands.LEVEL_OWNERS.check(set)) {
+      return PermissionLevel.OWNERS;
+    } else if (Commands.LEVEL_ADMINS.check(set)) {
+      return PermissionLevel.ADMINS;
+    } else if (Commands.LEVEL_GAMEMASTERS.check(set)) {
+      return PermissionLevel.GAMEMASTERS;
+    } else if (Commands.LEVEL_MODERATORS.check(set)) {
+      return PermissionLevel.MODERATORS;
+    } else if (Commands.LEVEL_ALL.check(set)) {
+      return PermissionLevel.ALL;
+    } else {
+      return PermissionLevel.ALL;
+    }
+  }
+
+  public static PermissionCheck getChecker(PermissionLevel level) {
+    return switch (level) {
+      case PermissionLevel.ALL -> Commands.LEVEL_ALL;
+      case PermissionLevel.MODERATORS -> Commands.LEVEL_MODERATORS;
+      case PermissionLevel.GAMEMASTERS -> Commands.LEVEL_GAMEMASTERS;
+      case PermissionLevel.ADMINS -> Commands.LEVEL_ADMINS;
+      case PermissionLevel.OWNERS -> Commands.LEVEL_OWNERS;
+    };
   }
 
   /**
