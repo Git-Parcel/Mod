@@ -28,6 +28,11 @@ public class PermissionSettings implements ReadablePermissionSettings {
   }
 
   @Override
+  public PermissionTypeRegistry getRegistry() {
+    return registry;
+  }
+
+  @Override
   public byte get(PermissionType type) {
     if (!isSpecified(type)) {
       return type.defaultLevel();
