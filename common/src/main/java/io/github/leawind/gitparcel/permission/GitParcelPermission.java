@@ -8,7 +8,7 @@ public interface GitParcelPermission {
 
   Codec<PermissionSettings> SETTINGS_CODEC =
       Codec.unboundedMap(Codec.STRING, Codec.BYTE)
-          .xmap(GitParcelPermission::from, PermissionSettings::toMap);
+          .xmap(GitParcelPermission::settingsFrom, PermissionSettings::toMap);
 
   PermissionType LIST_FORMAT = REGISTRY.register(0, "list_format", 1);
   PermissionType LIST_INSTANCE = REGISTRY.register(1, "list_instance", 1);
@@ -26,7 +26,7 @@ public interface GitParcelPermission {
     return level >= requiredLevel;
   }
 
-  static PermissionSettings from(Map<String, Byte> map) {
+  static PermissionSettings settingsFrom(Map<String, Byte> map) {
     return PermissionSettings.from(REGISTRY, map);
   }
 }

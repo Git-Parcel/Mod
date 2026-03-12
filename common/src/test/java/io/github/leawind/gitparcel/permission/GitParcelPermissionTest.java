@@ -134,7 +134,7 @@ public class GitParcelPermissionTest {
   }
 
   @Test
-  void testFromMap() {
+  void testSettingsFromMap() {
     var map =
         Map.of(
             LIST_FORMAT.name(), (byte) 0,
@@ -157,7 +157,7 @@ public class GitParcelPermissionTest {
   }
 
   @Test
-  void testFromMapWithUnknownPermission() {
+  void testSettingsFromMapWithUnknownPermission() {
     // Map with unknown permission type should not fail
     var map = Map.of(LIST_FORMAT.name(), (byte) 0, "unknown_permission", (byte) 4);
 
