@@ -148,7 +148,9 @@ public class ParcelDebugSaveSubcommand {
     } catch (IOException | ParcelException e) {
       ParcelDebugCommand.LOGGER.error("Error while saving parcel", e);
       source.sendFailure(
-          GitParcelTranslations.of("command.parcel_debug.save.failure", e.getMessage()));
+          GitParcelTranslations.of(
+              "command.parcel_debug.save.failure",
+              e.getClass().getSimpleName() + ": " + e.getMessage()));
       return 0;
     } catch (Exception e) {
       ParcelDebugCommand.LOGGER.error("Unexpected error while saving parcel", e);

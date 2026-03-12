@@ -90,7 +90,9 @@ public class ParcelDebugLoadSubcommand {
     } catch (IOException | ParcelException e) {
       ParcelDebugCommand.LOGGER.error("Error while loading parcel", e);
       source.sendFailure(
-          GitParcelTranslations.of("command.parcel_debug.load.failure", e.getMessage()));
+          GitParcelTranslations.of(
+              "command.parcel_debug.load.failure",
+              e.getClass().getSimpleName() + ": " + e.getMessage()));
       return 0;
     } catch (Exception e) {
       ParcelDebugCommand.LOGGER.error("Unexpected error while loading parcel", e);
