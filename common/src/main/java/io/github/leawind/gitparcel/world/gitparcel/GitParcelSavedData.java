@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.world.gitparcel;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,8 +34,8 @@ public class GitParcelSavedData extends SavedData {
     this(new HashMap<>());
   }
 
-  private GitParcelSavedData(Map<UUID, ParcelInstance> parcelInstance) {
-    this.parcelInstances = parcelInstance;
+  private GitParcelSavedData(Map<UUID, ParcelInstance> parcelInstances) {
+    this.parcelInstances = new Object2ObjectOpenHashMap<>(parcelInstances);
   }
 
   private Map<UUID, ParcelInstance> getParcelInstances() {
@@ -75,8 +76,8 @@ public class GitParcelSavedData extends SavedData {
       }
     }
 
-    setDirty();
     parcelInstances.put(inst.uuid(), inst);
+    setDirty();
   }
 
   public @Nullable ParcelInstance getParcelInstance(UUID uuid) {
