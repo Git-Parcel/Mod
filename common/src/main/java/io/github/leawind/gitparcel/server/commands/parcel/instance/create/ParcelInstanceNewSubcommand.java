@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.server.commands.parcel.instance;
+package io.github.leawind.gitparcel.server.commands.parcel.instance.create;
 
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -22,23 +22,23 @@ public class ParcelInstanceNewSubcommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
     var showBoundingBox =
         Commands.argument("show_bounding_box", BoolArgumentType.bool())
-            .executes(ParcelInstanceNewSubcommand::newInstance2);
+            .executes(ParcelInstanceNewSubcommand::createInstance2);
 
     var name =
         Commands.argument("name", StringArgumentType.string())
-            .executes(ParcelInstanceNewSubcommand::newInstance1)
+            .executes(ParcelInstanceNewSubcommand::createInstance1)
             .then(showBoundingBox);
 
     var to = Commands.argument("to", BlockPosArgument.blockPos()).then(name);
 
     var from = Commands.argument("from", BlockPosArgument.blockPos()).then(to);
 
-    return Commands.literal("new").then(from);
+    return Commands.literal("create").then(from);
   }
 
-  private static int newInstance1(CommandContext<CommandSourceStack> ctx)
+  private static int createInstance1(CommandContext<CommandSourceStack> ctx)
       throws CommandSyntaxException {
-    return newInstance(
+    return createInstance(
         ctx,
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
@@ -46,9 +46,9 @@ public class ParcelInstanceNewSubcommand {
         true);
   }
 
-  private static int newInstance2(CommandContext<CommandSourceStack> ctx)
+  private static int createInstance2(CommandContext<CommandSourceStack> ctx)
       throws CommandSyntaxException {
-    return newInstance(
+    return createInstance(
         ctx,
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
@@ -56,7 +56,7 @@ public class ParcelInstanceNewSubcommand {
         BoolArgumentType.getBool(ctx, "show_bounding_box"));
   }
 
-  private static int newInstance(
+  private static int createInstance(
       CommandContext<CommandSourceStack> ctx,
       BlockPos from,
       BlockPos to,
@@ -75,7 +75,7 @@ public class ParcelInstanceNewSubcommand {
       savedData.addNewParcelInstance(instance);
 
       source.sendSuccess(
-          () -> GitParcelTranslations.of("command.parcel.instance.new.success", name, from, to),
+          () -> GitParcelTranslations.of("command.parcel.instance.create.success", name, from, to),
           false);
 
       GitParcelMod.LOGGER.info(
@@ -86,7 +86,7 @@ public class ParcelInstanceNewSubcommand {
     } catch (IllegalArgumentException e) {
       GitParcelMod.LOGGER.error("Failed to create parcel instance: {}", e.getMessage(), e);
       source.sendFailure(
-          GitParcelTranslations.of("command.parcel.instance.new.failure", e.getMessage()));
+          GitParcelTranslations.of("command.parcel.instance.create.failure", e.getMessage()));
       return 0;
     } catch (Exception e) {
       GitParcelMod.LOGGER.error("Unexpected error while creating parcel instance", e);

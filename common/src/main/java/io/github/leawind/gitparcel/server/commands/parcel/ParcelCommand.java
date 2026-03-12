@@ -1,7 +1,7 @@
 package io.github.leawind.gitparcel.server.commands.parcel;
 
 import com.mojang.brigadier.CommandDispatcher;
-import io.github.leawind.gitparcel.server.commands.parcel.instance.ParcelInstanceSubcommand;
+import io.github.leawind.gitparcel.server.commands.parcel.instance.create.ParcelInstanceSubcommand;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
