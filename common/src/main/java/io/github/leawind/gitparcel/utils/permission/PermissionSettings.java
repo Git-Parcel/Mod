@@ -63,7 +63,7 @@ public class PermissionSettings<T> {
   }
 
   public boolean permits(PermissionType<T> type, PermissionSet set) {
-    return levelOf(set).isEqualOrHigherThan(get(type));
+    return getChecker(get(type)).check(set);
   }
 
   public static PermissionLevel levelOf(PermissionSet set) {
