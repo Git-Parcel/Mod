@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.server.commands;
+package io.github.leawind.gitparcel.server.commands.parcel_debug;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
