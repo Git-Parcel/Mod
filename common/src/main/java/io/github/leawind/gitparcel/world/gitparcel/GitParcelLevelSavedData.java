@@ -15,26 +15,26 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 import org.jspecify.annotations.Nullable;
 
-public class GitParcelSavedData extends SavedData {
-  public static final Codec<GitParcelSavedData> CODEC =
+public class GitParcelLevelSavedData extends SavedData {
+  public static final Codec<GitParcelLevelSavedData> CODEC =
       RecordCodecBuilder.create(
           inst ->
               inst.group(
                       Codec.unboundedMap(UUIDUtil.STRING_CODEC, ParcelInstance.CODEC)
                           .fieldOf("parcel_instances")
-                          .forGetter(GitParcelSavedData::getParcelInstances))
-                  .apply(inst, GitParcelSavedData::new));
+                          .forGetter(GitParcelLevelSavedData::getParcelInstances))
+                  .apply(inst, GitParcelLevelSavedData::new));
 
-  public static final SavedDataType<GitParcelSavedData> TYPE =
-      new SavedDataType<>("gitparcel", GitParcelSavedData::new, CODEC, null);
+  public static final SavedDataType<GitParcelLevelSavedData> TYPE =
+      new SavedDataType<>("gitparcel_level", GitParcelLevelSavedData::new, CODEC, null);
 
   private final Map<UUID, ParcelInstance> parcelInstances;
 
-  private GitParcelSavedData() {
+  private GitParcelLevelSavedData() {
     this(new HashMap<>());
   }
 
-  private GitParcelSavedData(Map<UUID, ParcelInstance> parcelInstances) {
+  private GitParcelLevelSavedData(Map<UUID, ParcelInstance> parcelInstances) {
     this.parcelInstances = new Object2ObjectOpenHashMap<>(parcelInstances);
   }
 
@@ -93,7 +93,7 @@ public class GitParcelSavedData extends SavedData {
     return null;
   }
 
-  public static GitParcelSavedData get(ServerLevel level) {
+  public static GitParcelLevelSavedData get(ServerLevel level) {
     return level.getDataStorage().computeIfAbsent(TYPE);
   }
 

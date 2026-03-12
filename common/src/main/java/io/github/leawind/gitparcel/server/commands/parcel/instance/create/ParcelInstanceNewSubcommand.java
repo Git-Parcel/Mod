@@ -7,7 +7,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.GitParcelMod;
 import io.github.leawind.gitparcel.GitParcelTranslations;
-import io.github.leawind.gitparcel.world.gitparcel.GitParcelSavedData;
+import io.github.leawind.gitparcel.world.gitparcel.GitParcelLevelSavedData;
 import io.github.leawind.gitparcel.world.gitparcel.ParcelInstance;
 import java.util.UUID;
 import net.minecraft.commands.CommandSourceStack;
@@ -64,7 +64,7 @@ public class ParcelInstanceNewSubcommand {
       boolean showBoundingBox) {
     var source = ctx.getSource();
     var level = source.getLevel();
-    var savedData = GitParcelSavedData.get(level);
+    var savedData = GitParcelLevelSavedData.get(level);
 
     try {
       BoundingBox boundingBox = BoundingBox.fromCorners(from, to);
