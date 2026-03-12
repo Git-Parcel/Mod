@@ -63,8 +63,9 @@ public class FilePathArgument implements ArgumentType<Path> {
       final CommandContext<S> context, final SuggestionsBuilder builder) {
     if (context.getSource() instanceof SharedSuggestionProvider source) {
 
-      try {
-        do {
+      do {
+        try {
+          // only suggest to owner
           if (!source.permissions().hasPermission(Permissions.COMMANDS_OWNER)) {
             break;
           }
@@ -124,9 +125,9 @@ public class FilePathArgument implements ArgumentType<Path> {
             }
           }
 
-        } while (false);
-      } catch (InvalidPathException | UnsupportedOperationException | SecurityException ignored) {
-      }
+        } catch (InvalidPathException | UnsupportedOperationException | SecurityException ignored) {
+        }
+      } while (false);
     }
     return Suggestions.empty();
   }
