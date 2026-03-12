@@ -47,7 +47,7 @@ public class ParcelInstance {
   private Mirror mirror;
   private Rotation rotation;
   private boolean showBoundingBox;
-  private PermissionSettings permissions;
+  private PermissionSettings<ParcelInstancePermissions> permissions;
 
   // ////////////////////////////////////////////////////////////////
   // Unserialized Fields
@@ -71,7 +71,7 @@ public class ParcelInstance {
         mirror,
         rotation,
         showBoundingBox,
-        new PermissionSettings(ParcelInstancePermissions.REGISTRY));
+        new PermissionSettings<>(ParcelInstancePermissions.REGISTRY));
   }
 
   public ParcelInstance(
@@ -80,7 +80,7 @@ public class ParcelInstance {
       Mirror mirror,
       Rotation rotation,
       Boolean showBoundingBox,
-      PermissionSettings permissions) {
+      PermissionSettings<ParcelInstancePermissions> permissions) {
     this.uuid = uuid;
     this.boundingBox = boundingBox;
     this.mirror = mirror;
@@ -113,7 +113,7 @@ public class ParcelInstance {
     return showBoundingBox;
   }
 
-  public PermissionSettings permissions() {
+  public PermissionSettings<ParcelInstancePermissions> permissions() {
     return permissions;
   }
 

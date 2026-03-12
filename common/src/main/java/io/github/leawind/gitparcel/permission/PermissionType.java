@@ -7,7 +7,7 @@ import net.minecraft.server.permissions.PermissionLevel;
 /**
  * @see PermissionLevel
  */
-public record PermissionType(byte id, String name, PermissionLevel defaultLevel) {
+public record PermissionType<T>(byte id, String name, PermissionLevel defaultLevel) {
 
   public Component translation() {
     return GitParcelTranslations.of("gitparcel.permission." + name);

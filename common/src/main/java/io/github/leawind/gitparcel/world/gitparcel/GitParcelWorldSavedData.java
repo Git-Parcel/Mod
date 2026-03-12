@@ -20,32 +20,33 @@ public class GitParcelWorldSavedData extends SavedData {
                           .forGetter(GitParcelWorldSavedData::getPermissions),
                       ParcelInstancePermissions.SETTINGS_CODEC
                           .fieldOf("parcel_instance_default_permissions")
-                          .forGetter(GitParcelWorldSavedData::getPermissions))
+                          .forGetter(GitParcelWorldSavedData::getParcelInstanceDefaultPermissions))
                   .apply(inst, GitParcelWorldSavedData::new));
 
   public static final SavedDataType<GitParcelWorldSavedData> TYPE =
       new SavedDataType<>(
           "gitparcel_world", GitParcelWorldSavedData::new, CODEC, DataFixTypes.LEVEL);
 
-  private final PermissionSettings permissions;
-  private final PermissionSettings parcelInstanceDefaultPermissions;
+  private final PermissionSettings<WorldPermissions> permissions;
+  private final PermissionSettings<ParcelInstancePermissions> parcelInstanceDefaultPermissions;
 
-  public PermissionSettings getPermissions() {
+  public PermissionSettings<WorldPermissions> getPermissions() {
     return permissions;
   }
 
-  public PermissionSettings getParcelInstanceDefaultPermissions() {
+  public PermissionSettings<ParcelInstancePermissions> getParcelInstanceDefaultPermissions() {
     return parcelInstanceDefaultPermissions;
   }
 
   private GitParcelWorldSavedData() {
     this(
-        new PermissionSettings(WorldPermissions.REGISTRY),
-        new PermissionSettings(ParcelInstancePermissions.REGISTRY));
+        new PermissionSettings<>(WorldPermissions.REGISTRY),
+        new PermissionSettings<>(ParcelInstancePermissions.REGISTRY));
   }
 
   private GitParcelWorldSavedData(
-      PermissionSettings permissions, PermissionSettings parcelInstanceDefaultPermissions) {
+      PermissionSettings<WorldPermissions> permissions,
+      PermissionSettings<ParcelInstancePermissions> parcelInstanceDefaultPermissions) {
     this.permissions = permissions;
     this.parcelInstanceDefaultPermissions = parcelInstanceDefaultPermissions;
   }

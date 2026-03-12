@@ -7,16 +7,17 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jspecify.annotations.Nullable;
 
-public class PermissionTypeRegistry {
-  private final Byte2ObjectMap<PermissionType> byId = new Byte2ObjectArrayMap<>();
-  private final Object2ObjectMap<String, PermissionType> byName = new Object2ObjectOpenHashMap<>();
+public class PermissionTypeRegistry<T> {
+  private final Byte2ObjectMap<PermissionType<T>> byId = new Byte2ObjectArrayMap<>();
+  private final Object2ObjectMap<String, PermissionType<T>> byName =
+      new Object2ObjectOpenHashMap<>();
   private byte maxId = -1;
 
-  public @Nullable PermissionType byId(int id) {
+  public @Nullable PermissionType<T> byId(int id) {
     return byId.get((byte) id);
   }
 
-  public @Nullable PermissionType byName(String name) {
+  public @Nullable PermissionType<T> byName(String name) {
     return byName.get(name);
   }
 
@@ -24,7 +25,7 @@ public class PermissionTypeRegistry {
     return maxId;
   }
 
-  public PermissionType register(PermissionType type) {
+  public PermissionType<T> register(PermissionType<T> type) {
     if (byId.containsKey(type.id())) {
       throw new IllegalArgumentException("id must be unique: " + type.id());
     }
