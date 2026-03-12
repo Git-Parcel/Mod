@@ -261,26 +261,30 @@ public class GitParcelPermissionTest {
   @Test
   void testRegistryDuplicateId() {
     var registry = new PermissionTypeRegistry();
-    registry.register(0, "test_perm_1", 1);
+    registry.register(new PermissionType((byte) 0, "test_perm_1", (byte) 1));
 
     // Registering another permission with same ID should fail
-    assertThrows(IllegalArgumentException.class, () -> registry.register(0, "test_perm_2", 1));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> registry.register(new PermissionType((byte) 0, "test_perm_2", (byte) 1)));
   }
 
   @Test
   void testRegistryDuplicateName() {
     var registry = new PermissionTypeRegistry();
-    registry.register(0, "test_perm", 1);
+    registry.register(new PermissionType((byte) 0, "test_perm", (byte) 1));
 
     // Registering another permission with same name should fail
-    assertThrows(IllegalArgumentException.class, () -> registry.register(1, "test_perm", 1));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> registry.register(new PermissionType((byte) 1, "test_perm", (byte) 1)));
   }
 
   @Test
   void testRegistryGetByIdAndName() {
     var registry = new PermissionTypeRegistry();
-    var type1 = registry.register(0, "test_by_id", 1);
-    var type2 = registry.register(1, "test_by_name", 2);
+    var type1 = registry.register(new PermissionType((byte) 0, "test_by_id", (byte) 1));
+    var type2 = registry.register(new PermissionType((byte) 1, "test_by_name", (byte) 2));
 
     // Test retrieval by ID
     assertEquals(type1, registry.byId(0));
@@ -298,13 +302,13 @@ public class GitParcelPermissionTest {
     var registry = new PermissionTypeRegistry();
     assertEquals((byte) -1, registry.getMaxId());
 
-    registry.register(0, "perm_0", 1);
+    registry.register(new PermissionType((byte) 0, "perm_0", (byte) 1));
     assertEquals((byte) 0, registry.getMaxId());
 
-    registry.register(5, "perm_5", 1);
+    registry.register(new PermissionType((byte) 5, "perm_5", (byte) 1));
     assertEquals((byte) 5, registry.getMaxId());
 
-    registry.register(3, "perm_3", 1);
+    registry.register(new PermissionType((byte) 3, "perm_3", (byte) 1));
     assertEquals((byte) 5, registry.getMaxId()); // Max should still be 5
   }
 }

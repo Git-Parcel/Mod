@@ -10,17 +10,17 @@ public interface GitParcelPermission {
       Codec.unboundedMap(Codec.STRING, Codec.BYTE)
           .xmap(GitParcelPermission::settingsFrom, PermissionSettings::toMap);
 
-  PermissionType LIST_FORMAT = REGISTRY.register(0, "list_format", 1);
-  PermissionType LIST_INSTANCE = REGISTRY.register(1, "list_instance", 1);
+  PermissionType LIST_FORMAT = type(0, "list_format", 1);
+  PermissionType LIST_INSTANCE = type(1, "list_instance", 1);
 
-  PermissionType SAVE_INSTANCE = REGISTRY.register(2, "save_instance", 3);
-  PermissionType LOAD_INSTANCE = REGISTRY.register(3, "load_instance", 3);
+  PermissionType SAVE_INSTANCE = type(2, "save_instance", 3);
+  PermissionType LOAD_INSTANCE = type(3, "load_instance", 3);
 
-  PermissionType NEW_INSTANCE = REGISTRY.register(4, "new_instance", 4);
-  PermissionType MOD_INSTANCE = REGISTRY.register(5, "mod_instance", 4);
-  PermissionType DEL_INSTANCE = REGISTRY.register(6, "del_instance", 4);
+  PermissionType NEW_INSTANCE = type(4, "new_instance", 4);
+  PermissionType MOD_INSTANCE = type(5, "mod_instance", 4);
+  PermissionType DEL_INSTANCE = type(6, "del_instance", 4);
 
-  PermissionType COMMIT = REGISTRY.register(7, "commit", 3);
+  PermissionType COMMIT = type(7, "commit", 3);
 
   static boolean permits(int requiredLevel, int level) {
     return level >= requiredLevel;
@@ -28,5 +28,9 @@ public interface GitParcelPermission {
 
   static PermissionSettings settingsFrom(Map<String, Byte> map) {
     return PermissionSettings.from(REGISTRY, map);
+  }
+
+  static PermissionType type(int id, String name, int defaultLevel) {
+    return REGISTRY.register(new PermissionType((byte) id, name, (byte) defaultLevel));
   }
 }

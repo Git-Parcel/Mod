@@ -38,8 +38,4 @@ public class PermissionTypeRegistry {
     byName.put(type.name(), type);
     return type;
   }
-
-  public PermissionType register(int id, String name, int defaultLevel) {
-    return register(new PermissionType((byte) id, name, (byte) defaultLevel));
-  }
 }
