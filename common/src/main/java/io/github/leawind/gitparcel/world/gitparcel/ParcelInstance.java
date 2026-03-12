@@ -4,7 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.permission.ParcelInstancePermissions;
-import io.github.leawind.gitparcel.permission.PermissionSettings;
+import io.github.leawind.gitparcel.utils.permission.PermissionSettings;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;

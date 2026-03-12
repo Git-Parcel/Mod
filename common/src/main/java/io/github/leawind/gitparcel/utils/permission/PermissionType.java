@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.permission;
+package io.github.leawind.gitparcel.utils.permission;
 
 import net.minecraft.server.permissions.PermissionLevel;
 

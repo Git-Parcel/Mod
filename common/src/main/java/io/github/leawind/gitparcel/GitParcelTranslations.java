@@ -1,6 +1,6 @@
 package io.github.leawind.gitparcel;
 
-import io.github.leawind.gitparcel.permission.PermissionType;
+import io.github.leawind.gitparcel.utils.permission.PermissionType;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.TranslatableContents;
 

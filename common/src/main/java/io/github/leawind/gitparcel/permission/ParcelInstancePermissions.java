@@ -1,6 +1,9 @@
 package io.github.leawind.gitparcel.permission;
 
 import com.mojang.serialization.Codec;
+import io.github.leawind.gitparcel.utils.permission.PermissionSettings;
+import io.github.leawind.gitparcel.utils.permission.PermissionType;
+import io.github.leawind.gitparcel.utils.permission.PermissionTypeRegistry;
 import net.minecraft.server.permissions.PermissionLevel;
 
 public class ParcelInstancePermissions extends GitParcelPermission {

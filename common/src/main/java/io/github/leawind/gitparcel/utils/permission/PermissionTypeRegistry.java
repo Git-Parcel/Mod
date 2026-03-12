@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.permission;
+package io.github.leawind.gitparcel.utils.permission;
 
 import com.mojang.serialization.Codec;
 import it.unimi.dsi.fastutil.bytes.Byte2ObjectArrayMap;
