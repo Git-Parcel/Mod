@@ -28,9 +28,11 @@ public class FilePathArgument implements ArgumentType<Path> {
           "\"including space\"",
           "'quoted'");
   public static final SimpleCommandExceptionType ERROR_INVALID_PATH =
-      new SimpleCommandExceptionType(GitParcelTranslations.of("argument.filepath.invalid_path"));
+      new SimpleCommandExceptionType(
+          GitParcelTranslations.of("argument.gitparcel.filepath.invalid_path"));
   public static final SimpleCommandExceptionType ERROR_INVALID_CHAR =
-      new SimpleCommandExceptionType(GitParcelTranslations.of("argument.filepath.invalid_char"));
+      new SimpleCommandExceptionType(
+          GitParcelTranslations.of("argument.gitparcel.filepath.invalid_char"));
 
   public static FilePathArgument path() {
     return new FilePathArgument();

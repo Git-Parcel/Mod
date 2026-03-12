@@ -22,7 +22,8 @@ public class DirPathArgument extends FilePathArgument {
           "'quoted'");
 
   public static final SimpleCommandExceptionType ERROR_NOT_DIR =
-      new SimpleCommandExceptionType(GitParcelTranslations.of("argument.filepath.not_dir"));
+      new SimpleCommandExceptionType(
+          GitParcelTranslations.of("argument.gitparcel.filepath.not_dir"));
 
   public static DirPathArgument path() {
     return new DirPathArgument();

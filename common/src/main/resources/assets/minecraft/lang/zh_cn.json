@@ -1,7 +1,7 @@
 {
-  "argument.filepath.invalid_char": "文件路径包含非法字符",
-  "argument.filepath.invalid_path": "非法的文件路径",
-  "argument.filepath.not_dir": "该路径不是目录",
+  "argument.gitparcel.filepath.invalid_char": "文件路径包含非法字符",
+  "argument.gitparcel.filepath.invalid_path": "非法的文件路径",
+  "argument.gitparcel.filepath.not_dir": "该路径不是目录",
   "argument.parcel_format.invalid": "无效的格式",
   "command.parcel_debug.load.failure": "加载失败: %s",
   "command.parcel_debug.load.success": "加载成功",
