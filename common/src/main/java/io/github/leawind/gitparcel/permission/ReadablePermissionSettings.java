@@ -6,7 +6,5 @@ public interface ReadablePermissionSettings {
 
   byte get(PermissionType type);
 
-  long toLong(int level);
-
   Object2ByteMap<String> toMap();
 }

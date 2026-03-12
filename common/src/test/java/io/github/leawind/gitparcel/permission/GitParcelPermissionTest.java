@@ -92,29 +92,6 @@ public class GitParcelPermissionTest {
   }
 
   @Test
-  void testToLong() {
-    var settings = new PermissionSettings(GitParcelPermission.REGISTRY);
-
-    // No specified permissions should return 0 for level 0
-    assertEquals(0L, settings.toLong(0));
-
-    // Set permissions that should be granted at level 3
-    settings.set(SAVE_INSTANCE, 3); // default is 3
-    settings.set(LIST_FORMAT, 0); // default is 1
-
-    // At level 3, SAVE_INSTANCE should be granted (3 >= 3)
-    // LIST_FORMAT should also be granted (3 >= 0)
-    long result = settings.toLong(3);
-    assertTrue((result & SAVE_INSTANCE.mask()) != 0);
-    assertTrue((result & LIST_FORMAT.mask()) != 0);
-
-    // At level 2, SAVE_INSTANCE should NOT be granted (2 < 3)
-    result = settings.toLong(2);
-    assertFalse((result & SAVE_INSTANCE.mask()) != 0);
-    assertTrue((result & LIST_FORMAT.mask()) != 0);
-  }
-
-  @Test
   void testToMap() {
     var settings = new PermissionSettings(GitParcelPermission.REGISTRY);
 

@@ -1,5 +1,6 @@
 package io.github.leawind.gitparcel.permission;
 
+import com.mojang.serialization.Codec;
 import it.unimi.dsi.fastutil.objects.Object2ByteArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ByteMap;
 import java.util.Map;
@@ -35,26 +36,6 @@ public class PermissionSettings implements ReadablePermissionSettings {
   }
 
   @Override
-  public long toLong(int level) {
-    long result = 0L;
-    int len = requirements.length;
-    for (int i = 0; i < len; i++) {
-      var type = registry.byId(i);
-      if (type == null) {
-        continue;
-      }
-      long mask = type.mask();
-      if (isSpecified(mask)) {
-        byte requiredLevel = requirements[i];
-        if (GitParcelPermission.permits(requiredLevel, level)) {
-          result |= mask;
-        }
-      }
-    }
-    return result;
-  }
-
-  @Override
   public Object2ByteMap<String> toMap() {
     Object2ByteMap<String> map = new Object2ByteArrayMap<>();
     int len = requirements.length;
@@ -87,5 +68,10 @@ public class PermissionSettings implements ReadablePermissionSettings {
           }
         });
     return settings;
+  }
+
+  public static Codec<PermissionSettings> getCodec(PermissionTypeRegistry registry) {
+    return Codec.unboundedMap(Codec.STRING, Codec.BYTE)
+        .xmap(map -> from(registry, map), PermissionSettings::toMap);
   }
 }
