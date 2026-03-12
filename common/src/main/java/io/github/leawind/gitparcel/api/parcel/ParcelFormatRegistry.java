@@ -51,20 +51,27 @@ public class ParcelFormatRegistry {
    */
   public <C extends ParcelFormatConfig<C>> void register(ParcelFormat.Impl<C> format)
       throws IllegalArgumentException {
-    switch (format) {
-      case ParcelFormat.Save<?> saver -> {
-        if (savers.containsKey(saver.info())) {
-          throw new IllegalArgumentException("duplicate saver: " + saver);
-        }
-        savers.put(format.info(), saver);
+
+    boolean isSaverOrLoader = false;
+
+    if (format instanceof ParcelFormat.Save<?> saver) {
+      if (savers.containsKey(saver.info())) {
+        throw new IllegalArgumentException("duplicate saver: " + saver);
       }
-      case ParcelFormat.Load<?> loader -> {
-        if (loaders.containsKey(loader.info())) {
-          throw new IllegalArgumentException("duplicate loader: " + loader);
-        }
-        loaders.put(format.info(), loader);
+      savers.put(format.info(), saver);
+      isSaverOrLoader = true;
+    }
+
+    if (format instanceof ParcelFormat.Load<?> loader) {
+      if (loaders.containsKey(loader.info())) {
+        throw new IllegalArgumentException("duplicate loader: " + loader);
       }
-      default -> throw new IllegalArgumentException("format must be either saver or loader");
+      loaders.put(format.info(), loader);
+      isSaverOrLoader = true;
+    }
+
+    if (!isSaverOrLoader) {
+      throw new IllegalArgumentException("format must be either saver or loader");
     }
   }
 
