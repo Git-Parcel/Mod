@@ -1,2 +1,18 @@
 {
+  "argument.filepath.invalid_char": "File path contains invalid characters",
+  "argument.filepath.invalid_path": "Invalid file path",
+  "argument.filepath.not_dir": "The path is not a directory",
+  "argument.parcel_format.invalid": "Invalid format",
+  "command.parcel_debug.load.failure": "Load failed: %s",
+  "command.parcel_debug.load.success": "Load successful",
+  "command.parcel_debug.save.failure": "Save failed: %s",
+  "command.parcel_debug.save.success": "Save successful",
+  "command.parcel_debug.unexpected_error": "Unexpected error: %s",
+  "command.parcel.list.format.header": "Supported parcel formats: {%d savers, %d loaders}",
+  "command.parcel.list.format.loaders_header": "Loaders:",
+  "command.parcel.list.format.savers_header": "Savers:",
+  "command.parcel.list.parcel_instance.header": "Parcel instances in current dimension: %d",
+  "key.gitparcel.admin_screen": "Git Parcel Admin Screen",
+  "key.gitparcel.debug_screen": "Git Parcel Debug Screen",
+  "Z_placeholder.gitparcel": ""
 }
