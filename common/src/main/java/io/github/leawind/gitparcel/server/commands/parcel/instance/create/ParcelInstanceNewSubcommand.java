@@ -14,8 +14,6 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.block.Mirror;
-import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
 public class ParcelInstanceNewSubcommand {
@@ -69,8 +67,7 @@ public class ParcelInstanceNewSubcommand {
     try {
       BoundingBox boundingBox = BoundingBox.fromCorners(from, to);
       UUID uuid = UUID.randomUUID();
-      ParcelInstance instance =
-          new ParcelInstance(uuid, boundingBox, Mirror.NONE, Rotation.NONE, showBoundingBox);
+      ParcelInstance instance = new ParcelInstance(uuid, boundingBox, showBoundingBox);
 
       savedData.addNewParcelInstance(instance);
 

@@ -55,6 +55,10 @@ public class ParcelInstance {
 
   private @Nullable GitParcelLevelSavedData levelSavedData;
 
+  public ParcelInstance(UUID uuid, BoundingBox boundingBox, boolean showBoundingBox) {
+    this(uuid, boundingBox, Mirror.NONE, Rotation.NONE, showBoundingBox);
+  }
+
   public ParcelInstance(
       UUID uuid,
       BoundingBox boundingBox,
