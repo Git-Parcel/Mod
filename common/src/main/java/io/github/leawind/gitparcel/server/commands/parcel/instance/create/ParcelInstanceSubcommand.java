@@ -6,6 +6,6 @@ import net.minecraft.commands.Commands;
 
 public class ParcelInstanceSubcommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
-    return Commands.literal("instance").then(ParcelInstanceNewSubcommand.build());
+    return Commands.literal("instance").then(ParcelInstanceCreateSubcommand.build());
   }
 }
