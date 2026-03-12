@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.server.permissions.Permissions;
 
 public class FilePathArgument implements ArgumentType<Path> {
   private static final Collection<String> EXAMPLES =
@@ -60,9 +61,14 @@ public class FilePathArgument implements ArgumentType<Path> {
   @Override
   public <S> CompletableFuture<Suggestions> listSuggestions(
       final CommandContext<S> context, final SuggestionsBuilder builder) {
-    if (context.getSource() instanceof SharedSuggestionProvider) {
+    if (context.getSource() instanceof SharedSuggestionProvider source) {
+
       try {
         do {
+          if (!source.permissions().hasPermission(Permissions.COMMANDS_OWNER)) {
+            break;
+          }
+
           String remaining = builder.getRemaining();
 
           final Path cwd = Path.of(".");
