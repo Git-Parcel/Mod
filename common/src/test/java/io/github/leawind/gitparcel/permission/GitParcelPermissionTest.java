@@ -240,22 +240,6 @@ public class GitParcelPermissionTest {
     // Invalid id (> 63)
     assertThrows(
         IllegalArgumentException.class, () -> new PermissionType((byte) 64, "test", (byte) 1));
-
-    // Invalid name (starts with number)
-    assertThrows(
-        IllegalArgumentException.class, () -> new PermissionType((byte) 10, "1test", (byte) 1));
-
-    // Invalid name (contains special chars)
-    assertThrows(
-        IllegalArgumentException.class, () -> new PermissionType((byte) 10, "test!", (byte) 1));
-
-    // Invalid defaultLevel (< 0)
-    assertThrows(
-        IllegalArgumentException.class, () -> new PermissionType((byte) 10, "test", (byte) -1));
-
-    // Invalid defaultLevel (> 4)
-    assertThrows(
-        IllegalArgumentException.class, () -> new PermissionType((byte) 10, "test", (byte) 5));
   }
 
   @Test

@@ -2,8 +2,11 @@ package io.github.leawind.gitparcel.permission;
 
 import com.mojang.serialization.Codec;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public interface GitParcelPermission {
+  Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z_\\-]([a-zA-Z_\\-0-9]+){0,63}$");
+
   PermissionTypeRegistry REGISTRY = new PermissionTypeRegistry();
 
   Codec<PermissionSettings> SETTINGS_CODEC =
@@ -30,7 +33,26 @@ public interface GitParcelPermission {
     return PermissionSettings.from(REGISTRY, map);
   }
 
-  static PermissionType type(int id, String name, int defaultLevel) {
+  static PermissionType type(int id, String name, int defaultLevel)
+      throws IllegalArgumentException {
+    if (name == null) {
+      throw new IllegalArgumentException("name cannot be null");
+    }
+
+    // Check name
+    if (!NAME_PATTERN.matcher(name).matches()) {
+      throw new IllegalArgumentException(
+          "name must match pattern " + NAME_PATTERN.pattern() + ", got: " + name);
+    }
+
+    // Check defaultLevel
+    if (defaultLevel < 0) {
+      throw new IllegalArgumentException("defaultLevel must be >= 0, got: " + defaultLevel);
+    }
+    if (defaultLevel > 4) {
+      throw new IllegalArgumentException("defaultLevel must be <= 4, got: " + defaultLevel);
+    }
+
     return REGISTRY.register(new PermissionType((byte) id, name, (byte) defaultLevel));
   }
 }
