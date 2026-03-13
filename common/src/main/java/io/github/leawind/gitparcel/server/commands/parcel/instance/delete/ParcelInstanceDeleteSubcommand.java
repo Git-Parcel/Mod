@@ -4,6 +4,7 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.commands.arguments.ParcelInstanceArgument;
+import io.github.leawind.gitparcel.commands.synchronization.ParcelInstanceSuggestionProvider;
 import io.github.leawind.gitparcel.world.gitparcel.GitParcelLevelSavedData;
 import io.github.leawind.gitparcel.world.gitparcel.ParcelInstance;
 import net.minecraft.commands.CommandSourceStack;
@@ -11,8 +12,11 @@ import net.minecraft.commands.Commands;
 
 public class ParcelInstanceDeleteSubcommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
-    var inst = Commands.argument("parcel_instance", ParcelInstanceArgument.instance());
-    return Commands.literal("delete").then(inst).executes(ParcelInstanceDeleteSubcommand::delete);
+    var inst =
+        Commands.argument("parcel_instance", ParcelInstanceArgument.instance())
+            .suggests(ParcelInstanceSuggestionProvider.INSTANCE);
+
+    return Commands.literal("delete").then(inst.executes(ParcelInstanceDeleteSubcommand::delete));
   }
 
   private static int delete(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
