@@ -6,7 +6,7 @@ import io.github.leawind.gitparcel.utils.permission.PermissionType;
 import io.github.leawind.gitparcel.utils.permission.PermissionTypeRegistry;
 import net.minecraft.server.permissions.PermissionLevel;
 
-public class ParcelInstancePermissions extends GitParcelPermission {
+public class ParcelInstancePermissions extends GitParcelPermissions {
   public static final PermissionTypeRegistry<ParcelInstancePermissions> REGISTRY =
       new PermissionTypeRegistry<>();
   public static final Codec<PermissionConfig<ParcelInstancePermissions>> CONFIG_CODEC =

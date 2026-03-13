@@ -3,7 +3,7 @@ package io.github.leawind.gitparcel.permission;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
-public class GitParcelPermission {
+public class GitParcelPermissions {
   public static final Pattern NAME_PATTERN =
       Pattern.compile("^[a-zA-Z_\\-]([a-zA-Z_\\-0-9]+){0,63}$");
 
