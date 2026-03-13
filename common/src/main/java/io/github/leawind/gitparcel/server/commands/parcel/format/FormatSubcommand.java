@@ -11,7 +11,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 
-public class ParcelFormatSubcommand extends GitParcelBaseCommand {
+public class FormatSubcommand extends GitParcelBaseCommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
     var format_list =
         Commands.literal("list")

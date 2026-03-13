@@ -25,32 +25,30 @@ import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
-public class ParcelDebugSaveSubcommand {
+public class SaveSubcommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
 
     var save_rotation =
         Commands.argument("rotation", TemplateRotationArgument.templateRotation())
-            .executes(ParcelDebugSaveSubcommand::save5);
+            .executes(SaveSubcommand::save5);
 
     var save_mirror =
         Commands.argument("mirror", TemplateMirrorArgument.templateMirror())
-            .executes(ParcelDebugSaveSubcommand::save4)
+            .executes(SaveSubcommand::save4)
             .then(save_rotation);
 
     var save_ignore_entities =
         Commands.argument("ignore_entities", BoolArgumentType.bool())
-            .executes(ParcelDebugSaveSubcommand::save3)
+            .executes(SaveSubcommand::save3)
             .then(save_mirror);
 
     var save_format =
         Commands.argument("format", ParcelFormatArgument.saver())
-            .executes(ParcelDebugSaveSubcommand::save2)
+            .executes(SaveSubcommand::save2)
             .then(save_ignore_entities);
 
     var save_path =
-        FilePathArgument.argOfDir("path", true)
-            .executes(ParcelDebugSaveSubcommand::save1)
-            .then(save_format);
+        FilePathArgument.argOfDir("path", true).executes(SaveSubcommand::save1).then(save_format);
 
     var save_to = Commands.argument("to", BlockPosArgument.blockPos()).then(save_path);
 

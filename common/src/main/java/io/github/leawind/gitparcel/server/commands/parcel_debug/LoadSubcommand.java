@@ -20,22 +20,20 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 
-public class ParcelDebugLoadSubcommand {
+public class LoadSubcommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
 
     var load_rotation =
         Commands.argument("rotation", TemplateRotationArgument.templateRotation())
-            .executes(ParcelDebugLoadSubcommand::load3);
+            .executes(LoadSubcommand::load3);
 
     var load_mirror =
         Commands.argument("mirror", TemplateMirrorArgument.templateMirror())
-            .executes(ParcelDebugLoadSubcommand::load2)
+            .executes(LoadSubcommand::load2)
             .then(load_rotation);
 
     var load_path =
-        FilePathArgument.argOfDir("path", false)
-            .executes(ParcelDebugLoadSubcommand::load1)
-            .then(load_mirror);
+        FilePathArgument.argOfDir("path", false).executes(LoadSubcommand::load1).then(load_mirror);
 
     var load_from = Commands.argument("from", BlockPosArgument.blockPos()).then(load_path);
 

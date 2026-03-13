@@ -10,13 +10,13 @@ import io.github.leawind.gitparcel.world.gitparcel.ParcelInstance;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 
-public class ParcelInstanceDeleteSubcommand {
+public class DeleteSubcommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
     var inst =
         Commands.argument("parcel_instance", ParcelInstanceArgument.instance())
             .suggests(ParcelInstanceSuggestionProvider.INSTANCE);
 
-    return Commands.literal("delete").then(inst.executes(ParcelInstanceDeleteSubcommand::delete));
+    return Commands.literal("delete").then(inst.executes(DeleteSubcommand::delete));
   }
 
   private static int delete(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {

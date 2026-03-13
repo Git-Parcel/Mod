@@ -18,15 +18,15 @@ import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
-public class ParcelInstanceCreateSubcommand extends GitParcelBaseCommand {
+public class CreateSubcommand extends GitParcelBaseCommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
     var showBoundingBox =
         Commands.argument("show_bounding_box", BoolArgumentType.bool())
-            .executes(ParcelInstanceCreateSubcommand::createInstance2);
+            .executes(CreateSubcommand::createInstance2);
 
     var name =
         Commands.argument("name", StringArgumentType.string())
-            .executes(ParcelInstanceCreateSubcommand::createInstance1)
+            .executes(CreateSubcommand::createInstance1)
             .then(showBoundingBox);
 
     var to = Commands.argument("to", BlockPosArgument.blockPos()).then(name);

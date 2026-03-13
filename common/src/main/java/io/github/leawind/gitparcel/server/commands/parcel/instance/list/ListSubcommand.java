@@ -15,14 +15,14 @@ import net.minecraft.commands.arguments.DimensionArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 
-public class ParcelInstanceListSubcommand extends GitParcelBaseCommand {
+public class ListSubcommand extends GitParcelBaseCommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
 
     var dimension =
         Commands.argument("dimension", DimensionArgument.dimension())
-            .executes(ParcelInstanceListSubcommand::list2);
+            .executes(ListSubcommand::list2);
 
-    return Commands.literal("list").executes(ParcelInstanceListSubcommand::list1).then(dimension);
+    return Commands.literal("list").executes(ListSubcommand::list1).then(dimension);
   }
 
   private static int list1(CommandContext<CommandSourceStack> ctx) {
