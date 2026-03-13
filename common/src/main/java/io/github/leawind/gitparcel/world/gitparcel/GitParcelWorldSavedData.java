@@ -4,7 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.permission.ParcelInstancePermissions;
 import io.github.leawind.gitparcel.permission.WorldPermissions;
-import io.github.leawind.gitparcel.utils.permission.PermissionSettings;
+import io.github.leawind.gitparcel.utils.permission.PermissionConfig;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
@@ -15,10 +15,10 @@ public class GitParcelWorldSavedData extends SavedData {
       RecordCodecBuilder.create(
           inst ->
               inst.group(
-                      WorldPermissions.SETTINGS_CODEC
+                      WorldPermissions.CONFIG_CODEC
                           .fieldOf("permissions")
                           .forGetter(GitParcelWorldSavedData::getPermissions),
-                      ParcelInstancePermissions.SETTINGS_CODEC
+                      ParcelInstancePermissions.CONFIG_CODEC
                           .fieldOf("parcel_instance_default_permissions")
                           .forGetter(GitParcelWorldSavedData::getParcelInstanceDefaultPermissions))
                   .apply(inst, GitParcelWorldSavedData::new));
@@ -27,26 +27,26 @@ public class GitParcelWorldSavedData extends SavedData {
       new SavedDataType<>(
           "gitparcel_world", GitParcelWorldSavedData::new, CODEC, DataFixTypes.LEVEL);
 
-  private final PermissionSettings<WorldPermissions> permissions;
-  private final PermissionSettings<ParcelInstancePermissions> parcelInstanceDefaultPermissions;
+  private final PermissionConfig<WorldPermissions> permissions;
+  private final PermissionConfig<ParcelInstancePermissions> parcelInstanceDefaultPermissions;
 
-  public PermissionSettings<WorldPermissions> getPermissions() {
+  public PermissionConfig<WorldPermissions> getPermissions() {
     return permissions;
   }
 
-  public PermissionSettings<ParcelInstancePermissions> getParcelInstanceDefaultPermissions() {
+  public PermissionConfig<ParcelInstancePermissions> getParcelInstanceDefaultPermissions() {
     return parcelInstanceDefaultPermissions;
   }
 
   private GitParcelWorldSavedData() {
     this(
-        new PermissionSettings<>(WorldPermissions.REGISTRY),
-        new PermissionSettings<>(ParcelInstancePermissions.REGISTRY));
+        new PermissionConfig<>(WorldPermissions.REGISTRY),
+        new PermissionConfig<>(ParcelInstancePermissions.REGISTRY));
   }
 
   private GitParcelWorldSavedData(
-      PermissionSettings<WorldPermissions> permissions,
-      PermissionSettings<ParcelInstancePermissions> parcelInstanceDefaultPermissions) {
+      PermissionConfig<WorldPermissions> permissions,
+      PermissionConfig<ParcelInstancePermissions> parcelInstanceDefaultPermissions) {
     this.permissions = permissions;
     this.parcelInstanceDefaultPermissions = parcelInstanceDefaultPermissions;
   }

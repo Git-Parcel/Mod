@@ -4,7 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.permission.ParcelInstancePermissions;
-import io.github.leawind.gitparcel.utils.permission.PermissionSettings;
+import io.github.leawind.gitparcel.utils.permission.PermissionConfig;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
@@ -33,7 +33,7 @@ public class ParcelInstance {
                       Codec.BOOL
                           .fieldOf("show_bounding_box")
                           .forGetter(ParcelInstance::showBoundingBox),
-                      ParcelInstancePermissions.SETTINGS_CODEC
+                      ParcelInstancePermissions.CONFIG_CODEC
                           .fieldOf("permissions")
                           .forGetter(ParcelInstance::permissions))
                   .apply(inst, ParcelInstance::new));
@@ -47,7 +47,7 @@ public class ParcelInstance {
   private Mirror mirror;
   private Rotation rotation;
   private boolean showBoundingBox;
-  private PermissionSettings<ParcelInstancePermissions> permissions;
+  private PermissionConfig<ParcelInstancePermissions> permissions;
 
   // ////////////////////////////////////////////////////////////////
   // Unserialized Fields
@@ -71,7 +71,7 @@ public class ParcelInstance {
         mirror,
         rotation,
         showBoundingBox,
-        new PermissionSettings<>(ParcelInstancePermissions.REGISTRY));
+        new PermissionConfig<>(ParcelInstancePermissions.REGISTRY));
   }
 
   public ParcelInstance(
@@ -80,7 +80,7 @@ public class ParcelInstance {
       Mirror mirror,
       Rotation rotation,
       Boolean showBoundingBox,
-      PermissionSettings<ParcelInstancePermissions> permissions) {
+      PermissionConfig<ParcelInstancePermissions> permissions) {
     this.uuid = uuid;
     this.boundingBox = boundingBox;
     this.mirror = mirror;
@@ -113,7 +113,7 @@ public class ParcelInstance {
     return showBoundingBox;
   }
 
-  public PermissionSettings<ParcelInstancePermissions> permissions() {
+  public PermissionConfig<ParcelInstancePermissions> permissions() {
     return permissions;
   }
 

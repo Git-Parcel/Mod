@@ -11,13 +11,13 @@ import net.minecraft.server.permissions.PermissionCheck;
 import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.server.permissions.PermissionSet;
 
-public class PermissionSettings<T> {
+public class PermissionConfig<T> {
   private final PermissionTypeRegistry<T> registry;
 
   /** Map from permission type id to required level */
   private final Int2ObjectMap<PermissionLevel> requirements = new Int2ObjectArrayMap<>();
 
-  public PermissionSettings(PermissionTypeRegistry<T> registry) {
+  public PermissionConfig(PermissionTypeRegistry<T> registry) {
     this.registry = registry;
   }
 
@@ -95,21 +95,21 @@ public class PermissionSettings<T> {
   /**
    * @param map Permission type name --> Permission level requirement
    */
-  public static <T> PermissionSettings<T> from(
+  public static <T> PermissionConfig<T> from(
       PermissionTypeRegistry<T> registry, Map<String, Byte> map) {
-    PermissionSettings<T> settings = new PermissionSettings<>(registry);
+    PermissionConfig<T> config = new PermissionConfig<>(registry);
     map.forEach(
         (name, levelId) -> {
           var type = registry.byName(name);
           if (type != null) {
-            settings.set(type, PermissionLevel.byId(levelId));
+            config.set(type, PermissionLevel.byId(levelId));
           }
         });
-    return settings;
+    return config;
   }
 
-  public static <T> Codec<PermissionSettings<T>> getMapCodec(PermissionTypeRegistry<T> registry) {
+  public static <T> Codec<PermissionConfig<T>> getMapCodec(PermissionTypeRegistry<T> registry) {
     return Codec.unboundedMap(Codec.STRING, Codec.BYTE)
-        .xmap(map -> from(registry, map), PermissionSettings::toMap);
+        .xmap(map -> from(registry, map), PermissionConfig::toMap);
   }
 }

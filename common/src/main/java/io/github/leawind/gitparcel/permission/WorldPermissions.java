@@ -1,7 +1,7 @@
 package io.github.leawind.gitparcel.permission;
 
 import com.mojang.serialization.Codec;
-import io.github.leawind.gitparcel.utils.permission.PermissionSettings;
+import io.github.leawind.gitparcel.utils.permission.PermissionConfig;
 import io.github.leawind.gitparcel.utils.permission.PermissionType;
 import io.github.leawind.gitparcel.utils.permission.PermissionTypeRegistry;
 import net.minecraft.server.permissions.PermissionLevel;
@@ -9,8 +9,8 @@ import net.minecraft.server.permissions.PermissionLevel;
 public class WorldPermissions extends GitParcelPermission {
   public static final PermissionTypeRegistry<WorldPermissions> REGISTRY =
       new PermissionTypeRegistry<>();
-  public static final Codec<PermissionSettings<WorldPermissions>> SETTINGS_CODEC =
-      PermissionSettings.getMapCodec(REGISTRY);
+  public static final Codec<PermissionConfig<WorldPermissions>> CONFIG_CODEC =
+      PermissionConfig.getMapCodec(REGISTRY);
 
   private static PermissionType<WorldPermissions> type(
       int id, String name, PermissionLevel defaultLevel) {
