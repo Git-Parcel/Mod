@@ -1,14 +1,19 @@
 package io.github.leawind.gitparcel.commands.synchronization;
 
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import io.github.leawind.gitparcel.GitParcelTranslations;
 import java.io.FilenameFilter;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import org.jspecify.annotations.Nullable;
 
@@ -46,9 +51,22 @@ public class FilePathSuggestionProvider<S> implements SuggestionProvider<S> {
     return (FilePathSuggestionProvider<T>) this;
   }
 
+  private static final SimpleCommandExceptionType ERROR_NO_PERMISSION =
+      new SimpleCommandExceptionType(
+          GitParcelTranslations.of("argument.gitparcel.filepath.no_permission"));
+
   @Override
   public CompletableFuture<Suggestions> getSuggestions(
-      CommandContext<S> context, SuggestionsBuilder builder) {
+      CommandContext<S> context, SuggestionsBuilder builder) throws CommandSyntaxException {
+
+    // Only provide suggestions for owner
+    if (context.getSource() instanceof CommandSourceStack source) {
+      var serverPlayer = source.getPlayer();
+      if (serverPlayer == null || !Commands.LEVEL_OWNERS.check(serverPlayer.permissions())) {
+        throw ERROR_NO_PERMISSION.create();
+      }
+    }
+
     do {
       try {
         String remaining = builder.getRemaining();

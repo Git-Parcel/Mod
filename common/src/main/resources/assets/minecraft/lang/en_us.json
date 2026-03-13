@@ -1,5 +1,6 @@
 {
   "argument.gitparcel.filepath.invalid_path": "Invalid file path",
+  "argument.gitparcel.filepath.no_permission": "No permission",
   "argument.gitparcel.filepath.not_dir": "The path is not a directory",
   "argument.gitparcel.parcel_format.invalid": "Invalid format",
   "argument.gitparcel.parcel_instance.notfound": "Parcel instance not found: '%s'",
