@@ -82,8 +82,19 @@ public class GitParcelLevelSavedData extends SavedData {
       }
     }
 
-    parcelInstances.put(inst.uuid(), inst);
     setDirty();
+    parcelInstances.put(inst.uuid(), inst);
+  }
+
+  /**
+   * Deletes a parcel instance by its UUID.
+   *
+   * @param uuid the UUID of the parcel instance to delete
+   * @return the deleted ParcelInstance object, or null if no instance with the given UUID exists
+   */
+  public @Nullable ParcelInstance deleteParcelInstance(UUID uuid) {
+    setDirty();
+    return parcelInstances.remove(uuid);
   }
 
   public @Nullable ParcelInstance getParcelInstance(UUID uuid) {
