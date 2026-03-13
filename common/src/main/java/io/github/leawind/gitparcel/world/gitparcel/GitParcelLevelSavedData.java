@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.server.level.ServerLevel;
@@ -39,12 +40,16 @@ public class GitParcelLevelSavedData extends SavedData {
     this.parcelInstances.values().forEach(inst -> inst.setLevelSavedData(this));
   }
 
-  private Map<UUID, ParcelInstance> getParcelInstances() {
+  public Map<UUID, ParcelInstance> getParcelInstances() {
     return parcelInstances;
   }
 
   public List<ParcelInstance> listParcelInstances() {
     return new ArrayList<>(parcelInstances.values());
+  }
+
+  public Stream<ParcelInstance> streamParcelInstances() {
+    return parcelInstances.values().stream();
   }
 
   /**
