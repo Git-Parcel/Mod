@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.server.commands.parcel;
+package io.github.leawind.gitparcel.server.commands.parcel.format;
 
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import io.github.leawind.gitparcel.GitParcelTranslations;
@@ -11,11 +11,10 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 
-public class ParcelListSubcommand extends GitParcelBaseCommand {
+public class ParcelFormatSubcommand extends GitParcelBaseCommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
-    // /parcel list format
-    var parcel_list_format =
-        Commands.literal("format")
+    var format_list =
+        Commands.literal("list")
             .executes(
                 (ctx) -> {
                   var source = ctx.getSource();
@@ -32,14 +31,14 @@ public class ParcelListSubcommand extends GitParcelBaseCommand {
                   source.sendSuccess(
                       () ->
                           GitParcelTranslations.of(
-                              "command.parcel.list.format.header",
+                              "command.parcel.format.list.header",
                               saverInfos.size(),
                               loaderInfos.size()),
                       false);
 
                   if (!saverInfos.isEmpty()) {
                     source.sendSuccess(
-                        () -> GitParcelTranslations.of("command.parcel.list.format.savers_header"),
+                        () -> GitParcelTranslations.of("command.parcel.format.list.savers_header"),
                         false);
                     for (var info : saverInfos) {
                       source.sendSuccess(
@@ -51,7 +50,7 @@ public class ParcelListSubcommand extends GitParcelBaseCommand {
 
                   if (!loaderInfos.isEmpty()) {
                     source.sendSuccess(
-                        () -> GitParcelTranslations.of("command.parcel.list.format.loaders_header"),
+                        () -> GitParcelTranslations.of("command.parcel.format.list.loaders_header"),
                         false);
                     for (var info : loaderInfos) {
                       source.sendSuccess(
@@ -64,6 +63,6 @@ public class ParcelListSubcommand extends GitParcelBaseCommand {
                   return 1;
                 });
 
-    return Commands.literal("list").then(parcel_list_format);
+    return Commands.literal("format").then(format_list);
   }
 }
