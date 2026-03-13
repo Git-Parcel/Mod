@@ -8,6 +8,7 @@ import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.commands.arguments.DirPathArgument;
+import io.github.leawind.gitparcel.commands.synchronization.FilePathSuggestionProvider;
 import java.io.IOException;
 import java.nio.file.Path;
 import net.minecraft.commands.CommandSourceStack;
@@ -34,6 +35,7 @@ public class ParcelDebugLoadSubcommand {
 
     var load_path =
         Commands.argument("path", DirPathArgument.path())
+            .suggests(FilePathSuggestionProvider.DIRS.as())
             .executes(ParcelDebugLoadSubcommand::load1)
             .then(load_mirror);
 

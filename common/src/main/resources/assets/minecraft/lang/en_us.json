@@ -1,5 +1,4 @@
 {
-  "argument.gitparcel.filepath.invalid_char": "File path contains invalid characters",
   "argument.gitparcel.filepath.invalid_path": "Invalid file path",
   "argument.gitparcel.filepath.not_dir": "The path is not a directory",
   "argument.gitparcel.parcel_format.invalid": "Invalid format",

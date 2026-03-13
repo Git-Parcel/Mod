@@ -34,17 +34,6 @@ public class DirPathArgument extends FilePathArgument {
   }
 
   @Override
-  protected String[] listDir(Path dir) {
-    var children = super.listDir(dir);
-    if (children == null) {
-      return null;
-    }
-    return Arrays.stream(children)
-        .filter(child -> dir.resolve(child).toFile().isDirectory())
-        .toArray(String[]::new);
-  }
-
-  @Override
   public Path parse(StringReader reader) throws CommandSyntaxException {
     var path = super.parse(reader);
     if (path.toFile().isFile()) {
