@@ -3,6 +3,7 @@
   "argument.gitparcel.filepath.invalid_path": "Invalid file path",
   "argument.gitparcel.filepath.not_dir": "The path is not a directory",
   "argument.gitparcel.parcel_format.invalid": "Invalid format",
+  "argument.gitparcel.parcel_instance.notfound": "Parcel instance not found: '%s'",
   "command.gitparcel.no_permission": "No permission",
   "command.gitparcel.parcel_debug.load.failure": "Load failed: %s",
   "command.gitparcel.parcel_debug.load.success": "Load successful",

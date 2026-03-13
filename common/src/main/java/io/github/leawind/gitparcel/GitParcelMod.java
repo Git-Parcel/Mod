@@ -6,6 +6,7 @@ import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.commands.arguments.DirPathArgument;
 import io.github.leawind.gitparcel.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.commands.arguments.ParcelFormatArgument;
+import io.github.leawind.gitparcel.commands.arguments.ParcelInstanceArgument;
 import io.github.leawind.gitparcel.mixin.InvokeArgumentTypeInfos;
 import io.github.leawind.gitparcel.network.payload.UpdateParcelFormatInfosS2CPayload;
 import io.github.leawind.gitparcel.parcelformats.mvp.MvpFormat;
@@ -102,6 +103,12 @@ public class GitParcelMod {
         "gitparcel:parcel_format_loader",
         ParcelFormatArgument.Loader.class,
         SingletonArgumentInfo.contextFree(ParcelFormatArgument::loader));
+
+    InvokeArgumentTypeInfos.register(
+        registry,
+        "gitparcel:parcel_instance",
+        ParcelInstanceArgument.class,
+        SingletonArgumentInfo.contextFree(ParcelInstanceArgument::instance));
   }
 
   public static void registerCommands(
