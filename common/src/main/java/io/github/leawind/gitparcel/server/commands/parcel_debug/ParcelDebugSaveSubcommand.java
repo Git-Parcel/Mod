@@ -141,7 +141,8 @@ public class ParcelDebugSaveSubcommand {
       ParcelFormat.save(source.getLevel(), transform, meta, parcelDir, ignoreEntities);
 
       source.sendSuccess(
-          () -> GitParcelTranslations.of("command.parcel_debug.save.success"), ignoreEntities);
+          () -> GitParcelTranslations.of("command.gitparcel.parcel_debug.save.success"),
+          ignoreEntities);
 
       return 1;
 
@@ -149,13 +150,14 @@ public class ParcelDebugSaveSubcommand {
       ParcelDebugCommand.LOGGER.error("Error while saving parcel", e);
       source.sendFailure(
           GitParcelTranslations.of(
-              "command.parcel_debug.save.failure",
+              "command.gitparcel.parcel_debug.save.failure",
               e.getClass().getSimpleName() + ": " + e.getMessage()));
       return 0;
     } catch (Exception e) {
       ParcelDebugCommand.LOGGER.error("Unexpected error while saving parcel", e);
       source.sendFailure(
-          GitParcelTranslations.of("command.parcel_debug.unexpected_error", e.getMessage()));
+          GitParcelTranslations.of(
+              "command.gitparcel.parcel_debug.unexpected_error", e.getMessage()));
       return 0;
     }
   }

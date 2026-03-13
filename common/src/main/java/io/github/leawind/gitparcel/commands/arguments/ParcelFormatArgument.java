@@ -19,7 +19,8 @@ import net.minecraft.commands.SharedSuggestionProvider;
 public final class ParcelFormatArgument {
   private static final Collection<String> EXAMPLES = Arrays.asList("mvp", "structure_template");
   public static final SimpleCommandExceptionType ERROR_INVALID =
-      new SimpleCommandExceptionType(GitParcelTranslations.of("argument.parcel_format.invalid"));
+      new SimpleCommandExceptionType(
+          GitParcelTranslations.of("argument.gitparcel.parcel_format.invalid"));
 
   public static Saver saver() {
     return new Saver();

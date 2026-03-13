@@ -85,19 +85,21 @@ public class ParcelDebugLoadSubcommand {
       // TODO load entities
       ParcelFormat.load(source.getLevel(), transform, path, false, true, loadFlags);
 
-      source.sendSuccess(() -> GitParcelTranslations.of("command.parcel_debug.load.success"), true);
+      source.sendSuccess(
+          () -> GitParcelTranslations.of("command.gitparcel.parcel_debug.load.success"), true);
       return 1;
     } catch (IOException | ParcelException e) {
       ParcelDebugCommand.LOGGER.error("Error while loading parcel", e);
       source.sendFailure(
           GitParcelTranslations.of(
-              "command.parcel_debug.load.failure",
+              "command.gitparcel.parcel_debug.load.failure",
               e.getClass().getSimpleName() + ": " + e.getMessage()));
       return 0;
     } catch (Exception e) {
       ParcelDebugCommand.LOGGER.error("Unexpected error while loading parcel", e);
       source.sendFailure(
-          GitParcelTranslations.of("command.parcel_debug.unexpected_error", e.getMessage()));
+          GitParcelTranslations.of(
+              "command.gitparcel.parcel_debug.unexpected_error", e.getMessage()));
       return 0;
     }
   }

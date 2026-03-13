@@ -31,14 +31,16 @@ public class ParcelFormatSubcommand extends GitParcelBaseCommand {
                   source.sendSuccess(
                       () ->
                           GitParcelTranslations.of(
-                              "command.parcel.format.list.header",
+                              "command.gitparcel.parcel.format.list.header",
                               saverInfos.size(),
                               loaderInfos.size()),
                       false);
 
                   if (!saverInfos.isEmpty()) {
                     source.sendSuccess(
-                        () -> GitParcelTranslations.of("command.parcel.format.list.savers_header"),
+                        () ->
+                            GitParcelTranslations.of(
+                                "command.gitparcel.parcel.format.list.savers_header"),
                         false);
                     for (var info : saverInfos) {
                       source.sendSuccess(
@@ -50,7 +52,9 @@ public class ParcelFormatSubcommand extends GitParcelBaseCommand {
 
                   if (!loaderInfos.isEmpty()) {
                     source.sendSuccess(
-                        () -> GitParcelTranslations.of("command.parcel.format.list.loaders_header"),
+                        () ->
+                            GitParcelTranslations.of(
+                                "command.gitparcel.parcel.format.list.loaders_header"),
                         false);
                     for (var info : loaderInfos) {
                       source.sendSuccess(

@@ -46,7 +46,7 @@ public class ParcelInstanceListSubcommand extends GitParcelBaseCommand {
     source.sendSuccess(
         () ->
             GitParcelTranslations.of(
-                "command.parcel.list.parcel_instance.header", instances.size()),
+                "command.gitparcel.parcel.list.parcel_instance.header", instances.size()),
         false);
 
     for (var instance : instances) {

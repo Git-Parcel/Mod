@@ -79,7 +79,9 @@ public class ParcelInstanceCreateSubcommand extends GitParcelBaseCommand {
       savedData.addNewParcelInstance(instance);
 
       source.sendSuccess(
-          () -> GitParcelTranslations.of("command.parcel.instance.create.success", name, from, to),
+          () ->
+              GitParcelTranslations.of(
+                  "command.gitparcel.parcel.instance.create.success", name, from, to),
           false);
 
       GitParcelMod.LOGGER.info(
@@ -90,12 +92,13 @@ public class ParcelInstanceCreateSubcommand extends GitParcelBaseCommand {
     } catch (IllegalArgumentException e) {
       GitParcelMod.LOGGER.error("Failed to create parcel instance: {}", e.getMessage(), e);
       source.sendFailure(
-          GitParcelTranslations.of("command.parcel.instance.create.failure", e.getMessage()));
+          GitParcelTranslations.of(
+              "command.gitparcel.parcel.instance.create.failure", e.getMessage()));
       return 0;
     } catch (Exception e) {
       GitParcelMod.LOGGER.error("Unexpected error while creating parcel instance", e);
       source.sendFailure(
-          GitParcelTranslations.of("command.parcel.unexpected_error", e.getMessage()));
+          GitParcelTranslations.of("command.gitparcel.parcel.unexpected_error", e.getMessage()));
       return 0;
     }
   }
