@@ -3,7 +3,6 @@ package io.github.leawind.gitparcel;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
-import io.github.leawind.gitparcel.commands.arguments.DirPathArgument;
 import io.github.leawind.gitparcel.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.commands.arguments.ParcelFormatArgument;
 import io.github.leawind.gitparcel.commands.arguments.ParcelInstanceArgument;
@@ -84,13 +83,7 @@ public class GitParcelMod {
         registry,
         "gitparcel:file_path",
         FilePathArgument.class,
-        SingletonArgumentInfo.contextFree(FilePathArgument::path));
-
-    InvokeArgumentTypeInfos.register(
-        registry,
-        "gitparcel:dir_path",
-        DirPathArgument.class,
-        SingletonArgumentInfo.contextFree(DirPathArgument::path));
+        SingletonArgumentInfo.contextFree(FilePathArgument::new));
 
     InvokeArgumentTypeInfos.register(
         registry,

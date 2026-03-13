@@ -7,8 +7,7 @@ import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
-import io.github.leawind.gitparcel.commands.arguments.DirPathArgument;
-import io.github.leawind.gitparcel.commands.synchronization.FilePathSuggestionProvider;
+import io.github.leawind.gitparcel.commands.arguments.FilePathArgument;
 import java.io.IOException;
 import java.nio.file.Path;
 import net.minecraft.commands.CommandSourceStack;
@@ -34,8 +33,7 @@ public class ParcelDebugLoadSubcommand {
             .then(load_rotation);
 
     var load_path =
-        Commands.argument("path", DirPathArgument.path())
-            .suggests(FilePathSuggestionProvider.DIRS.as())
+        FilePathArgument.argOfDir("path", false)
             .executes(ParcelDebugLoadSubcommand::load1)
             .then(load_mirror);
 
@@ -48,7 +46,7 @@ public class ParcelDebugLoadSubcommand {
     return load(
         ctx.getSource(),
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
-        DirPathArgument.getPath(ctx, "path"),
+        FilePathArgument.getPath(ctx, "path"),
         Mirror.NONE,
         Rotation.NONE);
   }
@@ -57,7 +55,7 @@ public class ParcelDebugLoadSubcommand {
     return load(
         ctx.getSource(),
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
-        DirPathArgument.getPath(ctx, "path"),
+        FilePathArgument.getPath(ctx, "path"),
         TemplateMirrorArgument.getMirror(ctx, "mirror"),
         Rotation.NONE);
   }
@@ -66,7 +64,7 @@ public class ParcelDebugLoadSubcommand {
     return load(
         ctx.getSource(),
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
-        DirPathArgument.getPath(ctx, "path"),
+        FilePathArgument.getPath(ctx, "path"),
         TemplateMirrorArgument.getMirror(ctx, "mirror"),
         TemplateRotationArgument.getRotation(ctx, "rotation"));
   }

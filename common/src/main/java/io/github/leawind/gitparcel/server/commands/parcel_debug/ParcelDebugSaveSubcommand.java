@@ -10,9 +10,8 @@ import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
-import io.github.leawind.gitparcel.commands.arguments.DirPathArgument;
+import io.github.leawind.gitparcel.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.commands.arguments.ParcelFormatArgument;
-import io.github.leawind.gitparcel.commands.synchronization.FilePathSuggestionProvider;
 import java.io.IOException;
 import java.nio.file.Path;
 import net.minecraft.commands.CommandSourceStack;
@@ -49,8 +48,7 @@ public class ParcelDebugSaveSubcommand {
             .then(save_ignore_entities);
 
     var save_path =
-        Commands.argument("path", DirPathArgument.path())
-            .suggests(FilePathSuggestionProvider.DIRS.as())
+        FilePathArgument.argOfDir("path", true)
             .executes(ParcelDebugSaveSubcommand::save1)
             .then(save_format);
 
@@ -66,7 +64,7 @@ public class ParcelDebugSaveSubcommand {
         ctx.getSource(),
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
-        DirPathArgument.getPath(ctx, "path"),
+        FilePathArgument.getPath(ctx, "path"),
         ParcelFormatRegistry.INSTANCE.defaultSaver(),
         true,
         Mirror.NONE,
@@ -78,7 +76,7 @@ public class ParcelDebugSaveSubcommand {
         ctx.getSource(),
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
-        DirPathArgument.getPath(ctx, "path"),
+        FilePathArgument.getPath(ctx, "path"),
         ParcelFormatArgument.getSaver(ctx, "format"),
         true,
         Mirror.NONE,
@@ -90,7 +88,7 @@ public class ParcelDebugSaveSubcommand {
         ctx.getSource(),
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
-        DirPathArgument.getPath(ctx, "path"),
+        FilePathArgument.getPath(ctx, "path"),
         ParcelFormatArgument.getSaver(ctx, "format"),
         BoolArgumentType.getBool(ctx, "ignore_entities"),
         Mirror.NONE,
@@ -102,7 +100,7 @@ public class ParcelDebugSaveSubcommand {
         ctx.getSource(),
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
-        DirPathArgument.getPath(ctx, "path"),
+        FilePathArgument.getPath(ctx, "path"),
         ParcelFormatArgument.getSaver(ctx, "format"),
         BoolArgumentType.getBool(ctx, "ignore_entities"),
         TemplateMirrorArgument.getMirror(ctx, "mirror"),
@@ -114,7 +112,7 @@ public class ParcelDebugSaveSubcommand {
         ctx.getSource(),
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
-        DirPathArgument.getPath(ctx, "path"),
+        FilePathArgument.getPath(ctx, "path"),
         ParcelFormatArgument.getSaver(ctx, "format"),
         BoolArgumentType.getBool(ctx, "ignore_entities"),
         TemplateMirrorArgument.getMirror(ctx, "mirror"),
