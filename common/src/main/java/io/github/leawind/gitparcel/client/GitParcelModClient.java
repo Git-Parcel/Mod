@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.client;
 
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.client.gui.screens.GitParcelDebugScreen;
+import io.github.leawind.gitparcel.client.renderer.ParcelInstanceBoundingBoxRenderer;
 import io.github.leawind.gitparcel.network.payload.UpdateParcelFormatInfosS2CPayload;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -41,5 +42,20 @@ public class GitParcelModClient {
             }
           }
         });
+
+    // Render
+    {
+      GameClientApi.Render.ON_BEFORE_TRANSLUCENT.on(
+          (context) -> {
+            if (!context.isInitialized()) {
+              return;
+            }
+
+            ParcelInstanceBoundingBoxRenderer.INSTANCE.extractAndDrawWaypoint(context);
+          });
+
+      GameClientApi.Render.ON_GAME_RENDERER_CLOSE.on(
+          ParcelInstanceBoundingBoxRenderer.INSTANCE::close);
+    }
   }
 }
