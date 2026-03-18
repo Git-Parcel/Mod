@@ -26,6 +26,11 @@ public class GitParcelModClient {
   public static void init() {
     LOGGER.debug("Initializing Git Parcel mod client");
 
+    GameClientApi.Network.registerGlobalReceiver(
+        UpdateParcelFormatInfosS2CPayload.TYPE,
+        (payload, minecraft) ->
+            UpdateParcelFormatInfosS2CPayload.handle(payload, minecraft.player));
+
     GameClientApi.ON_CLIENT_TICK_START.on(
         minecraft -> {
           if (!(minecraft.screen instanceof GitParcelDebugScreen)) {
