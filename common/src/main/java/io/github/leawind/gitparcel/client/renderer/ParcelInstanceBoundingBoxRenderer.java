@@ -13,12 +13,14 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import io.github.leawind.gitparcel.GitParcelMod;
 import io.github.leawind.gitparcel.client.GameClientApi;
+import io.github.leawind.gitparcel.client.GitParcelModClient;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MappableRingBuffer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
@@ -68,13 +70,28 @@ public class ParcelInstanceBoundingBoxRenderer {
               ALLOCATOR, WIREFRAME_BOX.getVertexFormatMode(), WIREFRAME_BOX.getVertexFormat());
     }
 
-    // TODO
-    renderSimpleWireframeBox(
-        matrices.last().pose(), buffer, 0f, 100f, 0f, 1f, 103f, 3f, 0f, 1f, 0f, 1f);
+    // TODO cache
+    GitParcelModClient.PARCEL_INSTANCES.forEach(
+        (parcelInstance) -> {
+          var box = parcelInstance.boundingBox();
+          var aabb = AABB.of(box);
+
+          renderSimpleWireframeBox(
+              matrices.last().pose(),
+              buffer,
+              (float) aabb.minX,
+              (float) aabb.minY,
+              (float) aabb.minZ,
+              (float) aabb.maxX,
+              (float) aabb.maxY,
+              (float) aabb.maxZ,
+              0f,
+              1f,
+              1f,
+              1f);
+        });
 
     matrices.popPose();
-    // TODO
-    isEmpty = false;
   }
 
   private void renderSimpleWireframeBox(
