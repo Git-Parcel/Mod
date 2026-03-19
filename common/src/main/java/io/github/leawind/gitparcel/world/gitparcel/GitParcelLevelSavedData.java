@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.world.gitparcel;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.leawind.gitparcel.api.GitParcelApi;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,6 +30,7 @@ public class GitParcelLevelSavedData extends SavedData {
   public static final SavedDataType<GitParcelLevelSavedData> TYPE =
       new SavedDataType<>("gitparcel_level", GitParcelLevelSavedData::new, CODEC, null);
 
+  private @Nullable ServerLevel level = null;
   private final Map<UUID, ParcelInstance> parcelInstances;
 
   private GitParcelLevelSavedData() {
@@ -111,7 +113,9 @@ public class GitParcelLevelSavedData extends SavedData {
   }
 
   public static GitParcelLevelSavedData get(ServerLevel level) {
-    return level.getDataStorage().computeIfAbsent(TYPE);
+    var savedData = level.getDataStorage().computeIfAbsent(TYPE);
+    savedData.level = level;
+    return savedData;
   }
 
   public static void moveParcelInstance(ServerLevel fromLevel, ServerLevel toLevel, UUID uuid) {
