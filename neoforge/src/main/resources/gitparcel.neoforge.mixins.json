@@ -4,7 +4,9 @@
   "package": "io.github.leawind.gitparcel.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [],
-  "client": [],
+  "client": [
+    "MixinLevelRenderer"
+  ],
   "server": [],
   "injectors": {
     "defaultRequire": 1

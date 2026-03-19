@@ -13,7 +13,6 @@
   "client": [
     "MixinClientCommonPacketListenerImpl",
     "MixinGameRenderer",
-    "MixinLevelRenderer",
     "MixinMinecraft"
   ],
   "server": [],
