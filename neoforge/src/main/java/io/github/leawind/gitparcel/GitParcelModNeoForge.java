@@ -29,13 +29,18 @@ public class GitParcelModNeoForge {
 
     @SubscribeEvent
     public static void onRegisterPayloadHandlers(RegisterPayloadHandlersEvent event) {
+      GitParcelMod.LOGGER.warn("Register payload handlers");
       var registrar = event.registrar(GitParcelMod.MOD_ID).versioned(GitParcelMod.PROTOCOL_VERSION);
 
       registrar.playToClient(
-          UpdateParcelFormatInfosS2CPayload.TYPE, UpdateParcelFormatInfosS2CPayload.STREAM_CODEC);
+          UpdateParcelFormatInfosS2CPayload.TYPE,
+          UpdateParcelFormatInfosS2CPayload.STREAM_CODEC,
+          (a, b) -> {});
 
       registrar.playToClient(
-          UpdateParcelInstancesS2CPayload.TYPE, UpdateParcelInstancesS2CPayload.STREAM_CODEC);
+          UpdateParcelInstancesS2CPayload.TYPE,
+          UpdateParcelInstancesS2CPayload.STREAM_CODEC,
+          (a, b) -> {});
     }
   }
 }
