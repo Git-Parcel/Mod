@@ -86,6 +86,7 @@ public class GitParcelLevelSavedData extends SavedData {
 
     setDirty();
     parcelInstances.put(inst.uuid(), inst);
+    emitUpdate();
   }
 
   /**
@@ -95,8 +96,13 @@ public class GitParcelLevelSavedData extends SavedData {
    * @return the deleted ParcelInstance object, or null if no instance with the given UUID exists
    */
   public @Nullable ParcelInstance deleteParcelInstance(UUID uuid) {
-    setDirty();
-    return parcelInstances.remove(uuid);
+    var result = parcelInstances.remove(uuid);
+
+    if (result != null) {
+      setDirty();
+      emitUpdate();
+    }
+    return result;
   }
 
   public @Nullable ParcelInstance getParcelInstance(UUID uuid) {
@@ -110,6 +116,13 @@ public class GitParcelLevelSavedData extends SavedData {
       }
     }
     return null;
+  }
+
+  public void emitUpdate() {
+    if (level != null) {
+      GitParcelApi.Events.ON_UPDATE_PARCEL_INSTANCES.emit(
+          new GitParcelApi.Events.UdpateParcelInstancesEvent(level, listParcelInstances()));
+    }
   }
 
   public static GitParcelLevelSavedData get(ServerLevel level) {
