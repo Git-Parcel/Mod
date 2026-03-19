@@ -32,7 +32,7 @@ public class ParcelInstance {
                       Rotation.CODEC.fieldOf("rotation").forGetter(ParcelInstance::rotation),
                       Codec.BOOL
                           .fieldOf("show_bounding_box")
-                          .forGetter(ParcelInstance::showBoundingBox),
+                          .forGetter(ParcelInstance::showWireframe),
                       ParcelInstancePermissions.CONFIG_CODEC
                           .fieldOf("permissions")
                           .forGetter(ParcelInstance::permissions))
@@ -46,7 +46,7 @@ public class ParcelInstance {
   private BoundingBox boundingBox;
   private Mirror mirror;
   private Rotation rotation;
-  private boolean showBoundingBox;
+  private boolean showWireframe;
   private PermissionConfig<ParcelInstancePermissions> permissions;
 
   // ////////////////////////////////////////////////////////////////
@@ -55,22 +55,18 @@ public class ParcelInstance {
 
   private @Nullable GitParcelLevelSavedData levelSavedData;
 
-  public ParcelInstance(UUID uuid, BoundingBox boundingBox, boolean showBoundingBox) {
-    this(uuid, boundingBox, Mirror.NONE, Rotation.NONE, showBoundingBox);
+  public ParcelInstance(UUID uuid, BoundingBox boundingBox, boolean showWireframe) {
+    this(uuid, boundingBox, Mirror.NONE, Rotation.NONE, showWireframe);
   }
 
   public ParcelInstance(
-      UUID uuid,
-      BoundingBox boundingBox,
-      Mirror mirror,
-      Rotation rotation,
-      Boolean showBoundingBox) {
+      UUID uuid, BoundingBox boundingBox, Mirror mirror, Rotation rotation, Boolean showWireframe) {
     this(
         uuid,
         boundingBox,
         mirror,
         rotation,
-        showBoundingBox,
+        showWireframe,
         new PermissionConfig<>(ParcelInstancePermissions.REGISTRY));
   }
 
@@ -79,13 +75,13 @@ public class ParcelInstance {
       BoundingBox boundingBox,
       Mirror mirror,
       Rotation rotation,
-      Boolean showBoundingBox,
+      Boolean showWireframe,
       PermissionConfig<ParcelInstancePermissions> permissions) {
     this.uuid = uuid;
     this.boundingBox = boundingBox;
     this.mirror = mirror;
     this.rotation = rotation;
-    this.showBoundingBox = showBoundingBox;
+    this.showWireframe = showWireframe;
     this.permissions = permissions;
   }
 
@@ -109,8 +105,8 @@ public class ParcelInstance {
     return rotation;
   }
 
-  public boolean showBoundingBox() {
-    return showBoundingBox;
+  public boolean showWireframe() {
+    return showWireframe;
   }
 
   public PermissionConfig<ParcelInstancePermissions> permissions() {
@@ -148,10 +144,6 @@ public class ParcelInstance {
 
   public @Nullable GitParcelLevelSavedData getLevelSavedData() {
     return levelSavedData;
-  }
-
-  public void setDirty() {
-    setDirty(true);
   }
 
   public void setDirty(boolean dirty) {

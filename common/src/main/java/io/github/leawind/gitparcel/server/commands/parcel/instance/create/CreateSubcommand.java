@@ -19,14 +19,14 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
 public class CreateSubcommand extends GitParcelBaseCommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
-    var showBoundingBox =
-        Commands.argument("show_bounding_box", BoolArgumentType.bool())
+    var showWireframe =
+        Commands.argument("show_wireframe", BoolArgumentType.bool())
             .executes(CreateSubcommand::createInstance2);
 
     var to =
         Commands.argument("to", BlockPosArgument.blockPos())
             .executes(CreateSubcommand::createInstance1)
-            .then(showBoundingBox);
+            .then(showWireframe);
 
     var from = Commands.argument("from", BlockPosArgument.blockPos()).then(to);
 
@@ -52,7 +52,7 @@ public class CreateSubcommand extends GitParcelBaseCommand {
   }
 
   private static int createInstance(
-      CommandContext<CommandSourceStack> ctx, BlockPos from, BlockPos to, boolean showBoundingBox) {
+      CommandContext<CommandSourceStack> ctx, BlockPos from, BlockPos to, boolean showWireframe) {
     var source = ctx.getSource();
     var level = source.getLevel();
     var savedData = GitParcelLevelSavedData.get(level);
@@ -65,7 +65,7 @@ public class CreateSubcommand extends GitParcelBaseCommand {
     try {
       BoundingBox boundingBox = BoundingBox.fromCorners(from, to);
       UUID uuid = UUID.randomUUID();
-      ParcelInstance instance = new ParcelInstance(uuid, boundingBox, showBoundingBox);
+      ParcelInstance instance = new ParcelInstance(uuid, boundingBox, showWireframe);
 
       savedData.addNewParcelInstance(instance);
 

@@ -28,6 +28,8 @@ public class GameClientApi {
 
   public static final class Render {
 
+    public static final SimpleEventEmitter<Context> ON_BEFORE_FINALIZE_GIZMOS =
+        new SimpleEventEmitter<>();
     public static final SimpleEventEmitter<Context> ON_BEFORE_TRANSLUCENT =
         new SimpleEventEmitter<>();
     public static final SimpleEventEmitter<Void> ON_GAME_RENDERER_CLOSE =

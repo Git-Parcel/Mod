@@ -31,6 +31,17 @@ public class MixinLevelRenderer {
       method = "lambda$addMainPass$1",
       at =
           @At(
+              value = "INVOKE",
+              target = "Lnet/minecraft/client/renderer/LevelRenderer;finalizeGizmoCollection()V"))
+  private void beforeFinalizeGizmoCollection(CallbackInfo ci, @Local PoseStack matrices) {
+    gitparcel$context.prepare(minecraft, level, levelRenderState, matrices);
+    GameClientApi.Render.ON_BEFORE_FINALIZE_GIZMOS.emit(gitparcel$context);
+  }
+
+  @Inject(
+      method = "lambda$addMainPass$1",
+      at =
+          @At(
               value = "INVOKE_STRING",
               target = "Lnet/minecraft/util/profiling/ProfilerFiller;push(Ljava/lang/String;)V",
               args = "ldc=translucent"))
