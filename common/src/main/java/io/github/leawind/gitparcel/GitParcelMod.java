@@ -7,7 +7,7 @@ import io.github.leawind.gitparcel.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.commands.arguments.ParcelFormatArgument;
 import io.github.leawind.gitparcel.commands.arguments.ParcelInstanceArgument;
 import io.github.leawind.gitparcel.mixin.InvokeArgumentTypeInfos;
-import io.github.leawind.gitparcel.network.payload.UpdateParcelFormatInfosS2CPayload;
+import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatInfosS2CPayload;
 import io.github.leawind.gitparcel.parcelformats.mvp.MvpFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Loader;
 import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Saver;

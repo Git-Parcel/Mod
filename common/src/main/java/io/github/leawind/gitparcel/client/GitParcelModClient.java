@@ -3,7 +3,11 @@ package io.github.leawind.gitparcel.client;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.client.gui.screens.GitParcelDebugScreen;
 import io.github.leawind.gitparcel.client.renderer.ParcelInstanceBoundingBoxRenderer;
-import io.github.leawind.gitparcel.network.payload.UpdateParcelFormatInfosS2CPayload;
+import io.github.leawind.gitparcel.network.protocol.parcelformat.ClientParcelFormatInfos;
+import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatInfosS2CPayload;
+import io.github.leawind.gitparcel.network.protocol.parcelinstance.UpdateParcelInstancesS2CPayload;
+import io.github.leawind.gitparcel.world.gitparcel.ParcelInstance;
+import java.util.List;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -19,6 +23,8 @@ public class GitParcelModClient {
    */
   public static @Nullable volatile ClientParcelFormatInfos PARCEL_FORMAT_INFOS = null;
 
+  public static volatile List<ParcelInstance> PARCEL_INSTANCES = List.of();
+
   /**
    * Initializes the Git Parcel mod client.
    *
@@ -26,11 +32,6 @@ public class GitParcelModClient {
    */
   public static void init() {
     LOGGER.debug("Initializing Git Parcel mod client");
-
-    GameClientApi.Network.registerGlobalReceiver(
-        UpdateParcelFormatInfosS2CPayload.TYPE,
-        (payload, minecraft) ->
-            UpdateParcelFormatInfosS2CPayload.handle(payload, minecraft.player));
 
     GameClientApi.ON_CLIENT_TICK_START.on(
         minecraft -> {
@@ -42,6 +43,19 @@ public class GitParcelModClient {
             }
           }
         });
+
+    // Network
+    {
+      GameClientApi.Network.registerGlobalReceiver(
+          UpdateParcelFormatInfosS2CPayload.TYPE,
+          (payload, minecraft) ->
+              UpdateParcelFormatInfosS2CPayload.handle(payload, minecraft.player));
+
+      GameClientApi.Network.registerGlobalReceiver(
+          UpdateParcelInstancesS2CPayload.TYPE,
+          (payload, minecraft) ->
+              UpdateParcelInstancesS2CPayload.handle(payload, minecraft.player));
+    }
 
     // Render
     {

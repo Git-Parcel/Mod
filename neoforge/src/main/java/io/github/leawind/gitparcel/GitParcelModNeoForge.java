@@ -1,6 +1,6 @@
 package io.github.leawind.gitparcel;
 
-import io.github.leawind.gitparcel.network.payload.UpdateParcelFormatInfosS2CPayload;
+import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatInfosS2CPayload;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;

@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.client;
+package io.github.leawind.gitparcel.network.protocol.parcelformat;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;

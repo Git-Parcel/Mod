@@ -1,9 +1,8 @@
-package io.github.leawind.gitparcel.network.payload;
+package io.github.leawind.gitparcel.network.protocol.parcelformat;
 
 import com.mojang.serialization.Codec;
 import io.github.leawind.gitparcel.GitParcelMod;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
-import io.github.leawind.gitparcel.client.ClientParcelFormatInfos;
 import io.github.leawind.gitparcel.client.GitParcelModClient;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.RegistryFriendlyByteBuf;
