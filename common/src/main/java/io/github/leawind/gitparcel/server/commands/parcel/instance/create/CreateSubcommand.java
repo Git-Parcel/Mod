@@ -1,7 +1,6 @@
 package io.github.leawind.gitparcel.server.commands.parcel.instance.create;
 
 import com.mojang.brigadier.arguments.BoolArgumentType;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -24,12 +23,10 @@ public class CreateSubcommand extends GitParcelBaseCommand {
         Commands.argument("show_bounding_box", BoolArgumentType.bool())
             .executes(CreateSubcommand::createInstance2);
 
-    var name =
-        Commands.argument("name", StringArgumentType.string())
+    var to =
+        Commands.argument("to", BlockPosArgument.blockPos())
             .executes(CreateSubcommand::createInstance1)
             .then(showBoundingBox);
-
-    var to = Commands.argument("to", BlockPosArgument.blockPos()).then(name);
 
     var from = Commands.argument("from", BlockPosArgument.blockPos()).then(to);
 
@@ -42,7 +39,6 @@ public class CreateSubcommand extends GitParcelBaseCommand {
         ctx,
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
-        StringArgumentType.getString(ctx, "name"),
         true);
   }
 
@@ -52,16 +48,11 @@ public class CreateSubcommand extends GitParcelBaseCommand {
         ctx,
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
-        StringArgumentType.getString(ctx, "name"),
         BoolArgumentType.getBool(ctx, "show_bounding_box"));
   }
 
   private static int createInstance(
-      CommandContext<CommandSourceStack> ctx,
-      BlockPos from,
-      BlockPos to,
-      String name,
-      boolean showBoundingBox) {
+      CommandContext<CommandSourceStack> ctx, BlockPos from, BlockPos to, boolean showBoundingBox) {
     var source = ctx.getSource();
     var level = source.getLevel();
     var savedData = GitParcelLevelSavedData.get(level);
@@ -81,11 +72,11 @@ public class CreateSubcommand extends GitParcelBaseCommand {
       source.sendSuccess(
           () ->
               GitParcelTranslations.of(
-                  "command.gitparcel.parcel.instance.create.success", name, from, to),
+                  "command.gitparcel.parcel.instance.create.success", from, to),
           false);
 
       GitParcelMod.LOGGER.info(
-          "Created new parcel instance: name={}, from={}, to={}, uuid={}", name, from, to, uuid);
+          "Created new parcel instance: from={}, to={}, uuid={}", from, to, uuid);
 
       return 1;
 
