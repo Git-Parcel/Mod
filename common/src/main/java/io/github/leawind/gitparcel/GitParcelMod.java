@@ -2,12 +2,14 @@ package io.github.leawind.gitparcel;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
+import io.github.leawind.gitparcel.api.GitParcelApi;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.commands.arguments.ParcelFormatArgument;
 import io.github.leawind.gitparcel.commands.arguments.ParcelInstanceArgument;
 import io.github.leawind.gitparcel.mixin.InvokeArgumentTypeInfos;
 import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatInfosS2CPayload;
+import io.github.leawind.gitparcel.network.protocol.parcelinstance.UpdateParcelInstancesS2CPayload;
 import io.github.leawind.gitparcel.parcelformats.mvp.MvpFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Loader;
 import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Saver;
@@ -18,6 +20,7 @@ import io.github.leawind.gitparcel.platform.Services;
 import io.github.leawind.gitparcel.server.GameServerApi;
 import io.github.leawind.gitparcel.server.commands.parcel.ParcelCommand;
 import io.github.leawind.gitparcel.server.commands.parcel_debug.ParcelDebugCommand;
+import io.github.leawind.gitparcel.world.gitparcel.GitParcelLevelSavedData;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -62,6 +65,8 @@ public class GitParcelMod {
           var serverPlayer = e.player();
           serverPlayer.connection.send(new ClientboundCustomPayloadPacket(payload));
         });
+
+    registerGitParcelEvents();
   }
 
   private static void registerFormats() {
@@ -115,5 +120,26 @@ public class GitParcelMod {
     if (Services.PLATFORM.isDevelopmentEnvironment()) {
       ParcelDebugCommand.register(dispatcher, context);
     }
+  }
+
+  private static void registerGitParcelEvents() {
+    // Notify when player join
+    GameServerApi.ON_PLAYER_JOIN.on(
+        e -> {
+          var player = e.player();
+          var list = GitParcelLevelSavedData.get(player.level()).listParcelInstances();
+          var payload = UpdateParcelInstancesS2CPayload.from(list);
+          player.connection.send(new ClientboundCustomPayloadPacket(payload));
+        });
+    // Notify players when level parcel instances update
+    GitParcelApi.Events.ON_UPDATE_PARCEL_INSTANCES.on(
+        e ->
+            e.level()
+                .players()
+                .forEach(
+                    player -> {
+                      var payload = UpdateParcelInstancesS2CPayload.from(e.list());
+                      player.connection.send(new ClientboundCustomPayloadPacket(payload));
+                    }));
   }
 }

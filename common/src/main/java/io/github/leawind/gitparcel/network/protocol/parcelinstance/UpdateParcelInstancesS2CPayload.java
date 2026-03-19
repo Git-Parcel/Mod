@@ -1,16 +1,16 @@
-package io.github.leawind.gitparcel.network.payload;
+package io.github.leawind.gitparcel.network.protocol.parcelinstance;
 
 import com.mojang.serialization.Codec;
 import io.github.leawind.gitparcel.GitParcelMod;
-import io.github.leawind.gitparcel.world.gitparcel.GitParcelLevelSavedData;
+import io.github.leawind.gitparcel.client.GitParcelModClient;
 import io.github.leawind.gitparcel.world.gitparcel.ParcelInstance;
 import java.util.List;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.level.ServerLevel;
 import org.jspecify.annotations.NonNull;
 
 public record UpdateParcelInstancesS2CPayload(List<ParcelInstance> parcelInstances)
@@ -33,8 +33,12 @@ public record UpdateParcelInstancesS2CPayload(List<ParcelInstance> parcelInstanc
     return TYPE;
   }
 
-  public static UpdateParcelInstancesS2CPayload from(ServerLevel serverLevel) {
-    var data = GitParcelLevelSavedData.get(serverLevel);
-    return new UpdateParcelInstancesS2CPayload(data.listParcelInstances());
+  public static UpdateParcelInstancesS2CPayload from(List<ParcelInstance> parcelInstances) {
+    return new UpdateParcelInstancesS2CPayload(parcelInstances);
+  }
+
+  /** Client-Only */
+  public static void handle(UpdateParcelInstancesS2CPayload payload, LocalPlayer localPlayer) {
+    GitParcelModClient.PARCEL_INSTANCES = payload.parcelInstances;
   }
 }
