@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
 
 /**
  * Represents a <strong>local to world</strong> transformation applicable to parcels, including
@@ -124,11 +125,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @return The mirrored position
    */
   public BlockPos applyMirror(BlockPos pos) {
-    return switch (mirror) {
-      case NONE -> pos;
-      case FRONT_BACK -> new BlockPos(-pos.getX(), pos.getY(), pos.getZ());
-      case LEFT_RIGHT -> new BlockPos(pos.getX(), pos.getY(), -pos.getZ());
-    };
+    return apply(mirror, pos);
   }
 
   /**
@@ -148,7 +145,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @return The rotated vector
    */
   public Vec3i applyRotation(Vec3i vec) {
-    return rotate(rotation, vec);
+    return apply(rotation, vec);
   }
 
   /**
@@ -158,7 +155,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @return The rotated vector
    */
   public Vec3 applyRotation(Vec3 vec) {
-    return rotate(rotation, vec);
+    return apply(rotation, vec);
   }
 
   /**
@@ -188,7 +185,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @return The inversely rotated vector
    */
   public Vec3i applyRotationInverted(Vec3i vec) {
-    return rotate(invert(rotation), vec);
+    return apply(invert(rotation), vec);
   }
 
   /**
@@ -198,7 +195,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @return The inversely rotated vector
    */
   private Vec3 applyRotationInverted(Vec3 vec) {
-    return rotate(invert(rotation), vec);
+    return apply(invert(rotation), vec);
   }
 
   /**
@@ -309,6 +306,12 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
     return blockState.mirror(mirror).rotate(rotation);
   }
 
+  public void apply(Matrix4f matrix) {
+    apply(mirror, matrix);
+    apply(rotation, matrix);
+    apply(translation, matrix);
+  }
+
   /**
    * Applies the inverted transformations (translate, rotate, mirror) to a {@link Vec3i}.
    *
@@ -367,7 +370,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @param vec The vector
    * @return The rotated vector
    */
-  private static Vec3i rotate(Rotation rotation, Vec3i vec) {
+  private static Vec3i apply(Rotation rotation, Vec3i vec) {
     return switch (rotation) {
       case NONE -> vec;
       case CLOCKWISE_90 -> new Vec3i(-vec.getZ(), vec.getY(), vec.getX());
@@ -383,7 +386,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @param vec The vector
    * @return The rotated vector
    */
-  private static Vec3 rotate(Rotation rotation, Vec3 vec) {
+  private static Vec3 apply(Rotation rotation, Vec3 vec) {
     return switch (rotation) {
       case NONE -> vec;
       case CLOCKWISE_90 -> new Vec3(-vec.z, vec.y, vec.x);
@@ -406,13 +409,41 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
     };
   }
 
+  public static BlockPos apply(Mirror mirror, BlockPos pos) {
+    return switch (mirror) {
+      case NONE -> pos;
+      case FRONT_BACK -> new BlockPos(-pos.getX(), pos.getY(), pos.getZ());
+      case LEFT_RIGHT -> new BlockPos(pos.getX(), pos.getY(), -pos.getZ());
+    };
+  }
+
+  public static void apply(Mirror mirror, Matrix4f matrix) {
+    switch (mirror) {
+      case LEFT_RIGHT -> matrix.scale(1, 1, -1);
+      case FRONT_BACK -> matrix.scale(-1, 1, 1);
+    }
+  }
+
+  /** TODO left hand or right hand? */
+  public static void apply(Rotation rotation, Matrix4f matrix) {
+    switch (rotation) {
+      case CLOCKWISE_90 -> matrix.rotateZ((float) Math.toRadians(90));
+      case CLOCKWISE_180 -> matrix.rotateZ((float) Math.toRadians(180));
+      case COUNTERCLOCKWISE_90 -> matrix.rotateZ((float) Math.toRadians(-90));
+    }
+  }
+
+  public static void apply(Vec3i translation, Matrix4f matrix) {
+    matrix.translate(translation.getX(), translation.getY(), translation.getZ());
+  }
+
   public static Vec3i rotateSize(Rotation rotation, Vec3i size) {
-    var rotated = rotate(rotation, size);
+    var rotated = apply(rotation, size);
     return new Vec3i(Math.abs(rotated.getX()), rotated.getY(), Math.abs(rotated.getZ()));
   }
 
   public static Vec3i rotateSizeInverted(Rotation rotation, Vec3i size) {
-    var rotated = rotate(invert(rotation), size);
+    var rotated = apply(invert(rotation), size);
     return new Vec3i(Math.abs(rotated.getX()), rotated.getY(), Math.abs(rotated.getZ()));
   }
 
