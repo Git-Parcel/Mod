@@ -21,7 +21,7 @@ public class WorldPermissions extends GitParcelPermissions {
   public static final PermissionType<WorldPermissions> LIST_FORMATS =
       type(0, "list_formats", PermissionLevel.MODERATORS);
   public static final PermissionType<WorldPermissions> LIST_PARCELS =
-      type(1, "list_parcles", PermissionLevel.MODERATORS);
+      type(1, "list_parcels", PermissionLevel.MODERATORS);
   public static final PermissionType<WorldPermissions> CREATE_PARCEL =
       type(4, "create_parcel", PermissionLevel.OWNERS);
   public static final PermissionType<WorldPermissions> DELETE_PARCEL =
