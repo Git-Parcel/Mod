@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.github.leawind.gitparcel.api.parcel.Parcel;
 import io.github.leawind.gitparcel.parcelformats.parcella.utils.ZOrder3D;
 import io.github.leawind.gitparcel.testutils.RandomForMC;
 import java.util.HashSet;
@@ -81,8 +80,7 @@ public class VolumetricRLETest {
     }
   }
 
-  public static <T extends Parcel> void assertRunsEqual(
-      Vec3i size, Iterable<VolumetricRLE.Run> runs) {
+  public static void assertRunsEqual(Vec3i size, Iterable<VolumetricRLE.Run> runs) {
     Set<BlockPos> blocks = new HashSet<>();
 
     for (var run : runs) {

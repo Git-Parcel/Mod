@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.github.leawind.gitparcel.api.parcel.Parcel;
 import io.github.leawind.gitparcel.parcelformats.parcella.Subparcel;
 import io.github.leawind.gitparcel.testutils.RandomForMC;
 import java.util.HashSet;
@@ -23,7 +22,7 @@ public class ParcelUtilsTest {
    * @param size Size of the entire parcel
    * @param subparcels Bounding boxes of each subparcel, including their corners
    */
-  public static <T extends Parcel> void assertParcelEqual(Vec3i size, Iterable<T> subparcels) {
+  public static void assertParcelEqual(Vec3i size, Iterable<Subparcel> subparcels) {
     Set<BlockPos> blocks = new HashSet<>();
 
     for (var subparcel : subparcels) {

@@ -1,6 +1,5 @@
 package io.github.leawind.gitparcel.algorithms;
 
-import io.github.leawind.gitparcel.api.parcel.Parcel;
 import io.github.leawind.gitparcel.testutils.RandomForMC;
 import java.util.concurrent.TimeUnit;
 import net.minecraft.core.Vec3i;
@@ -22,20 +21,17 @@ public class VolumetricRLEBenchmark {
   @Param({"16", "32", "64"})
   private int size;
 
-  private Parcel parcel;
   private VolumetricRLE.ValueGetter values;
 
   @Setup
   public void setup() {
     var random = new RandomForMC(12138);
-    var size = new Vec3i(this.size, this.size, this.size);
-
-    values = new VolumetricRLETest.TestedValues(size, variance, random);
+    values = new VolumetricRLETest.TestedValues(new Vec3i(size, size, size), variance, random);
   }
 
   @Benchmark
   public void benchmarkV2(Blackhole bh) {
-    var result = VolumetricRLE.IMPL.encode(parcel.sizeX, parcel.sizeY, parcel.sizeZ, values);
+    var result = VolumetricRLE.IMPL.encode(size, size, size, values);
     bh.consume(result);
   }
 }

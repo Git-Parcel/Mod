@@ -1,13 +1,36 @@
 package io.github.leawind.gitparcel.parcelformats.parcella;
 
-import io.github.leawind.gitparcel.api.parcel.Parcel;
 import java.util.Objects;
 import net.minecraft.core.Vec3i;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
-public class Subparcel extends Parcel {
+public class Subparcel {
+
+  /** Minimum X coordinate (inclusive). */
+  public final int originX;
+
+  /** Minimum Y coordinate (inclusive). */
+  public final int originY;
+
+  /** Minimum Z coordinate (inclusive). */
+  public final int originZ;
+
+  /** Size along the X axis in blocks. */
+  public final int sizeX;
+
+  /** Size along the Y axis in blocks. */
+  public final int sizeY;
+
+  /** Size along the Z axis in blocks. */
+  public final int sizeZ;
 
   public Subparcel(int originX, int originY, int originZ, int sizeX, int sizeY, int sizeZ) {
-    super(originX, originY, originZ, sizeX, sizeY, sizeZ);
+    this.originX = originX;
+    this.originY = originY;
+    this.originZ = originZ;
+    this.sizeX = sizeX;
+    this.sizeY = sizeY;
+    this.sizeZ = sizeZ;
   }
 
   /**
@@ -60,5 +83,43 @@ public class Subparcel extends Parcel {
   @Override
   public int hashCode() {
     return Objects.hash(originX, originY, originZ, sizeX, sizeY, sizeZ);
+  }
+
+  /**
+   * Returns the maximum inclusive X coordinate.
+   *
+   * @return max X (inclusive)
+   */
+  public int getMaxX() {
+    return originX + sizeX - 1;
+  }
+
+  /**
+   * Returns the maximum inclusive Y coordinate.
+   *
+   * @return max Y (inclusive)
+   */
+  public int getMaxY() {
+    return originY + sizeY - 1;
+  }
+
+  /**
+   * Returns the maximum inclusive Z coordinate.
+   *
+   * @return max Z (inclusive)
+   */
+  public int getMaxZ() {
+    return originZ + sizeZ - 1;
+  }
+
+  /**
+   * Converts this parcel to a {@link BoundingBox}.
+   *
+   * <p>The resulting bounding box uses inclusive minimum and maximum coordinates.
+   *
+   * @return a bounding box representing this parcel
+   */
+  public BoundingBox getBoundingBox() {
+    return new BoundingBox(originX, originY, originZ, getMaxX(), getMaxY(), getMaxZ());
   }
 }
