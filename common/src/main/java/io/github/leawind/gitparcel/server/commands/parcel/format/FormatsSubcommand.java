@@ -11,7 +11,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 
-public class FormatSubcommand extends GitParcelBaseCommand {
+public class FormatsSubcommand extends GitParcelBaseCommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
     var format_list =
         Commands.literal("list")
@@ -31,7 +31,7 @@ public class FormatSubcommand extends GitParcelBaseCommand {
                   source.sendSuccess(
                       () ->
                           GitParcelTranslations.of(
-                              "command.gitparcel.parcel.format.list.header",
+                              "command.gitparcel.parcel.formats.list.header",
                               saverInfos.size(),
                               loaderInfos.size()),
                       false);
@@ -40,7 +40,7 @@ public class FormatSubcommand extends GitParcelBaseCommand {
                     source.sendSuccess(
                         () ->
                             GitParcelTranslations.of(
-                                "command.gitparcel.parcel.format.list.savers_header"),
+                                "command.gitparcel.parcel.formats.list.savers_header"),
                         false);
                     for (var info : saverInfos) {
                       source.sendSuccess(
@@ -54,7 +54,7 @@ public class FormatSubcommand extends GitParcelBaseCommand {
                     source.sendSuccess(
                         () ->
                             GitParcelTranslations.of(
-                                "command.gitparcel.parcel.format.list.loaders_header"),
+                                "command.gitparcel.parcel.formats.list.loaders_header"),
                         false);
                     for (var info : loaderInfos) {
                       source.sendSuccess(
@@ -67,6 +67,6 @@ public class FormatSubcommand extends GitParcelBaseCommand {
                   return 1;
                 });
 
-    return Commands.literal("format").then(format_list);
+    return Commands.literal("formats").then(format_list);
   }
 }
