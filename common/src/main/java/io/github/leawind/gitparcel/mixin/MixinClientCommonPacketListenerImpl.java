@@ -25,7 +25,7 @@ public class MixinClientCommonPacketListenerImpl {
   public void onCustomPayload(ClientboundCustomPayloadPacket packet, CallbackInfo ci) {
     var payload = packet.payload();
     var type = payload.type();
-    var handler = GameClientApi.Network.ON_HANDLE_CUSTOM_PAYLOAD.get(type);
+    var handler = GameClientApi.Network.CUSTOM_PAYLOAD_HANDLERS.get(type);
 
     if (handler == null) {
       return;

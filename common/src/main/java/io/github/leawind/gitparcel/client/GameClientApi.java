@@ -17,12 +17,12 @@ public class GameClientApi {
 
   public static final class Network {
     public static final Map<CustomPacketPayload.Type<?>, BiConsumer<CustomPacketPayload, Minecraft>>
-        ON_HANDLE_CUSTOM_PAYLOAD = new HashMap<>();
+        CUSTOM_PAYLOAD_HANDLERS = new HashMap<>();
 
     @SuppressWarnings("unchecked")
     public static <T extends CustomPacketPayload> void registerGlobalReceiver(
         CustomPacketPayload.Type<T> type, BiConsumer<T, Minecraft> handler) {
-      ON_HANDLE_CUSTOM_PAYLOAD.put(type, (BiConsumer<CustomPacketPayload, Minecraft>) handler);
+      CUSTOM_PAYLOAD_HANDLERS.put(type, (BiConsumer<CustomPacketPayload, Minecraft>) handler);
     }
   }
 
