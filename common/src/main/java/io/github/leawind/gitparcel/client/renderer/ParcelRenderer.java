@@ -5,7 +5,7 @@ import net.minecraft.gizmos.GizmoStyle;
 import net.minecraft.gizmos.Gizmos;
 import net.minecraft.world.phys.AABB;
 
-public class ParcelInstanceRenderer {
+public class ParcelRenderer {
   private static final int WIREFRAME_COLOR = 0xFFFFFFFF;
   private static final float LINE_WIDTH = 2.5F;
 

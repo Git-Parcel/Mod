@@ -3,9 +3,9 @@ package io.github.leawind.gitparcel.client.renderer;
 public class GitParcelRenderer {
   public static final GitParcelRenderer INSTANCE = new GitParcelRenderer();
 
-  private final ParcelInstanceRenderer parcelInstanceRenderer = new ParcelInstanceRenderer();
+  private final ParcelRenderer parcelRenderer = new ParcelRenderer();
 
   public void render() {
-    parcelInstanceRenderer.render();
+    parcelRenderer.render();
   }
 }

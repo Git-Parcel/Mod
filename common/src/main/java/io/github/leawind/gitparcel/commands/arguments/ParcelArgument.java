@@ -7,38 +7,36 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.world.gitparcel.GitParcelLevelSavedData;
-import io.github.leawind.gitparcel.world.gitparcel.ParcelInstance;
+import io.github.leawind.gitparcel.world.gitparcel.Parcel;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.commands.CommandSourceStack;
 
-public class ParcelInstanceArgument
-    implements ArgumentType<ParcelInstanceArgument.ParcelInstanceSelector> {
+public class ParcelArgument implements ArgumentType<ParcelArgument.ParcelSelector> {
   private static final Collection<String> EXAMPLES =
       List.of("dd12be42-52a9-4a91-a8a1-11c01849e498");
 
   public static final SimpleCommandExceptionType ERROR_TOO_MANY =
-      new SimpleCommandExceptionType(
-          GitParcelTranslations.of("argument.gitparcel.parcel_instance.toomany"));
+      new SimpleCommandExceptionType(GitParcelTranslations.of("argument.gitparcel.parcel.toomany"));
   public static final SimpleCommandExceptionType ERROR_INSTANCE_NOT_FOUND =
       new SimpleCommandExceptionType(
-          GitParcelTranslations.of("argument.gitparcel.parcel_instance.notfound"));
+          GitParcelTranslations.of("argument.gitparcel.parcel.notfound"));
 
-  public static ParcelInstanceArgument instance() {
-    return new ParcelInstanceArgument();
+  public static ParcelArgument instance() {
+    return new ParcelArgument();
   }
 
-  public static ParcelInstance getInstance(CommandContext<CommandSourceStack> context, String name)
+  public static Parcel getInstance(CommandContext<CommandSourceStack> context, String name)
       throws CommandSyntaxException {
-    return context.getArgument(name, ParcelInstanceSelector.class).get(context.getSource());
+    return context.getArgument(name, ParcelSelector.class).get(context.getSource());
   }
 
   @Override
-  public ParcelInstanceSelector parse(StringReader reader) throws CommandSyntaxException {
+  public ParcelSelector parse(StringReader reader) throws CommandSyntaxException {
     String input = reader.readString();
     UUID uuid = UUID.fromString(input);
-    return new ParcelInstanceSelector(uuid);
+    return new ParcelSelector(uuid);
   }
 
   @Override
@@ -47,26 +45,26 @@ public class ParcelInstanceArgument
   }
 
   /** A simple wrapper to represent either UUID-based or name-based lookup */
-  public static class ParcelInstanceSelector {
+  public static class ParcelSelector {
     private final UUID uuid;
 
-    private ParcelInstanceSelector(UUID uuid) {
+    private ParcelSelector(UUID uuid) {
       this.uuid = uuid;
     }
 
     /**
-     * Finds a {@link ParcelInstance} based on the provided {@link CommandSourceStack}.
+     * Finds a {@link Parcel} based on the provided {@link CommandSourceStack}.
      *
      * <p>If the instance is found, it is returned. Otherwise, an exception is thrown.
      *
      * @param source The command source stack providing the context for the lookup.
-     * @return The found {@link ParcelInstance}.
+     * @return The found {@link Parcel}.
      * @throws CommandSyntaxException If the instance is not found
      */
-    public ParcelInstance get(CommandSourceStack source) throws CommandSyntaxException {
+    public Parcel get(CommandSourceStack source) throws CommandSyntaxException {
       var serverLevel = source.getLevel();
       var savedData = GitParcelLevelSavedData.get(serverLevel);
-      var inst = savedData.getParcelInstance(uuid);
+      var inst = savedData.getParcel(uuid);
 
       if (inst == null) {
         throw ERROR_INSTANCE_NOT_FOUND.create();

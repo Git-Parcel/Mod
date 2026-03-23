@@ -12,10 +12,9 @@ import java.util.stream.Stream;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 
-public class ParcelInstanceSuggestionProvider implements SuggestionProvider<CommandSourceStack> {
+public class ParcelSuggestionProvider implements SuggestionProvider<CommandSourceStack> {
 
-  public static final ParcelInstanceSuggestionProvider INSTANCE =
-      new ParcelInstanceSuggestionProvider();
+  public static final ParcelSuggestionProvider INSTANCE = new ParcelSuggestionProvider();
 
   @Override
   public CompletableFuture<Suggestions> getSuggestions(
@@ -34,7 +33,7 @@ public class ParcelInstanceSuggestionProvider implements SuggestionProvider<Comm
 
     var serverLevel = source.getLevel();
     var savedData = GitParcelLevelSavedData.get(serverLevel);
-    var instances = savedData.streamParcelInstances();
+    var instances = savedData.streamParcels();
 
     var suggestions =
         instances

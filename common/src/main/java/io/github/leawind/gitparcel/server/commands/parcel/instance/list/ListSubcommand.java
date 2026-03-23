@@ -7,7 +7,7 @@ import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.permission.WorldPermissions;
 import io.github.leawind.gitparcel.server.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.world.gitparcel.GitParcelLevelSavedData;
-import io.github.leawind.gitparcel.world.gitparcel.ParcelInstance;
+import io.github.leawind.gitparcel.world.gitparcel.Parcel;
 import java.util.List;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -41,7 +41,7 @@ public class ListSubcommand extends GitParcelBaseCommand {
     }
 
     var savedData = GitParcelLevelSavedData.get(serverLevel);
-    List<ParcelInstance> instances = savedData.listParcelInstances();
+    List<Parcel> instances = savedData.listParcels();
 
     source.sendSuccess(
         () ->

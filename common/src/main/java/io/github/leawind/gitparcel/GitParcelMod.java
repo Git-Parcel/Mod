@@ -5,11 +5,11 @@ import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.api.GitParcelApi;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.commands.arguments.FilePathArgument;
+import io.github.leawind.gitparcel.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.commands.arguments.ParcelFormatArgument;
-import io.github.leawind.gitparcel.commands.arguments.ParcelInstanceArgument;
 import io.github.leawind.gitparcel.mixin.InvokeArgumentTypeInfos;
 import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatInfosS2CPayload;
-import io.github.leawind.gitparcel.network.protocol.parcelinstance.UpdateParcelInstancesS2CPayload;
+import io.github.leawind.gitparcel.network.protocol.parcelinstance.UpdateParcelsS2CPayload;
 import io.github.leawind.gitparcel.parcelformats.mvp.MvpFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Loader;
 import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Saver;
@@ -105,8 +105,8 @@ public class GitParcelMod {
     InvokeArgumentTypeInfos.register(
         registry,
         "gitparcel:parcel_instance",
-        ParcelInstanceArgument.class,
-        SingletonArgumentInfo.contextFree(ParcelInstanceArgument::instance));
+        ParcelArgument.class,
+        SingletonArgumentInfo.contextFree(ParcelArgument::instance));
   }
 
   public static void registerCommands(
@@ -127,18 +127,18 @@ public class GitParcelMod {
     GameServerApi.ON_PLAYER_JOIN.on(
         e -> {
           var player = e.player();
-          var list = GitParcelLevelSavedData.get(player.level()).listParcelInstances();
-          var payload = UpdateParcelInstancesS2CPayload.from(list);
+          var list = GitParcelLevelSavedData.get(player.level()).listParcels();
+          var payload = UpdateParcelsS2CPayload.from(list);
           player.connection.send(new ClientboundCustomPayloadPacket(payload));
         });
     // Notify players when level parcel instances update
-    GitParcelApi.Events.ON_UPDATE_PARCEL_INSTANCES.on(
+    GitParcelApi.Events.ON_UPDATE_PARCELS.on(
         e ->
             e.level()
                 .players()
                 .forEach(
                     player -> {
-                      var payload = UpdateParcelInstancesS2CPayload.from(e.list());
+                      var payload = UpdateParcelsS2CPayload.from(e.list());
                       player.connection.send(new ClientboundCustomPayloadPacket(payload));
                     }));
   }

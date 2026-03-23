@@ -5,8 +5,8 @@ import io.github.leawind.gitparcel.client.gui.screens.GitParcelDebugScreen;
 import io.github.leawind.gitparcel.client.renderer.GitParcelRenderer;
 import io.github.leawind.gitparcel.network.protocol.parcelformat.ClientParcelFormatInfos;
 import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatInfosS2CPayload;
-import io.github.leawind.gitparcel.network.protocol.parcelinstance.UpdateParcelInstancesS2CPayload;
-import io.github.leawind.gitparcel.world.gitparcel.ParcelInstance;
+import io.github.leawind.gitparcel.network.protocol.parcelinstance.UpdateParcelsS2CPayload;
+import io.github.leawind.gitparcel.world.gitparcel.Parcel;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -23,7 +23,7 @@ public class GitParcelModClient {
    */
   public static @Nullable volatile ClientParcelFormatInfos PARCEL_FORMAT_INFOS = null;
 
-  public static volatile List<ParcelInstance> PARCEL_INSTANCES = List.of();
+  public static volatile List<Parcel> PARCEL_INSTANCES = List.of();
 
   /**
    * Initializes the Git Parcel mod client.
@@ -52,9 +52,8 @@ public class GitParcelModClient {
               UpdateParcelFormatInfosS2CPayload.handle(payload, minecraft.player));
 
       GameClientApi.Network.registerGlobalReceiver(
-          UpdateParcelInstancesS2CPayload.TYPE,
-          (payload, minecraft) ->
-              UpdateParcelInstancesS2CPayload.handle(payload, minecraft.player));
+          UpdateParcelsS2CPayload.TYPE,
+          (payload, minecraft) -> UpdateParcelsS2CPayload.handle(payload, minecraft.player));
     }
 
     // Render

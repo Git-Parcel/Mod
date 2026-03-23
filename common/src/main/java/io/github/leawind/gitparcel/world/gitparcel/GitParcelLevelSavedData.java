@@ -22,36 +22,36 @@ public class GitParcelLevelSavedData extends SavedData {
       RecordCodecBuilder.create(
           inst ->
               inst.group(
-                      Codec.unboundedMap(UUIDUtil.STRING_CODEC, ParcelInstance.CODEC)
+                      Codec.unboundedMap(UUIDUtil.STRING_CODEC, Parcel.CODEC)
                           .fieldOf("parcel_instances")
-                          .forGetter(GitParcelLevelSavedData::getParcelInstances))
+                          .forGetter(GitParcelLevelSavedData::getParcels))
                   .apply(inst, GitParcelLevelSavedData::new));
 
   public static final SavedDataType<GitParcelLevelSavedData> TYPE =
       new SavedDataType<>("gitparcel_level", GitParcelLevelSavedData::new, CODEC, null);
 
   private @Nullable ServerLevel level = null;
-  private final Map<UUID, ParcelInstance> parcelInstances;
+  private final Map<UUID, Parcel> parcels;
 
   private GitParcelLevelSavedData() {
     this(new HashMap<>());
   }
 
-  private GitParcelLevelSavedData(Map<UUID, ParcelInstance> parcelInstances) {
-    this.parcelInstances = new Object2ObjectOpenHashMap<>(parcelInstances);
-    this.parcelInstances.values().forEach(inst -> inst.setLevelSavedData(this));
+  private GitParcelLevelSavedData(Map<UUID, Parcel> parcels) {
+    this.parcels = new Object2ObjectOpenHashMap<>(parcels);
+    this.parcels.values().forEach(inst -> inst.setLevelSavedData(this));
   }
 
-  public Map<UUID, ParcelInstance> getParcelInstances() {
-    return parcelInstances;
+  public Map<UUID, Parcel> getParcels() {
+    return parcels;
   }
 
-  public List<ParcelInstance> listParcelInstances() {
-    return new ArrayList<>(parcelInstances.values());
+  public List<Parcel> listParcels() {
+    return new ArrayList<>(parcels.values());
   }
 
-  public Stream<ParcelInstance> streamParcelInstances() {
-    return parcelInstances.values().stream();
+  public Stream<Parcel> streamParcels() {
+    return parcels.values().stream();
   }
 
   /**
@@ -68,15 +68,15 @@ public class GitParcelLevelSavedData extends SavedData {
    * @throws IllegalArgumentException if UUID or bounding box conflicts with existing parcel
    *     instances
    */
-  public void addNewParcelInstance(ParcelInstance inst) throws IllegalArgumentException {
+  public void addNewParcel(Parcel inst) throws IllegalArgumentException {
     // Check: unique uuid
-    if (parcelInstances.containsKey(inst.uuid())) {
+    if (parcels.containsKey(inst.uuid())) {
       throw new IllegalArgumentException(
           "Parcel instance with uuid %s already exists".formatted(inst.uuid()));
     }
 
     // Check: bounding box no overlap
-    for (var thatInst : parcelInstances.values()) {
+    for (var thatInst : parcels.values()) {
       if (inst.boundingBox().intersects(thatInst.boundingBox())) {
         throw new IllegalArgumentException(
             "The new parcel instance intersects with existing parcel instance: %s <> %s"
@@ -85,7 +85,7 @@ public class GitParcelLevelSavedData extends SavedData {
     }
 
     setDirty();
-    parcelInstances.put(inst.uuid(), inst);
+    parcels.put(inst.uuid(), inst);
     emitUpdate();
   }
 
@@ -93,10 +93,10 @@ public class GitParcelLevelSavedData extends SavedData {
    * Deletes a parcel instance by its UUID.
    *
    * @param uuid the UUID of the parcel instance to delete
-   * @return the deleted ParcelInstance object, or null if no instance with the given UUID exists
+   * @return the deleted Parcel object, or null if no instance with the given UUID exists
    */
-  public @Nullable ParcelInstance deleteParcelInstance(UUID uuid) {
-    var result = parcelInstances.remove(uuid);
+  public @Nullable Parcel deleteParcel(UUID uuid) {
+    var result = parcels.remove(uuid);
 
     if (result != null) {
       setDirty();
@@ -105,12 +105,12 @@ public class GitParcelLevelSavedData extends SavedData {
     return result;
   }
 
-  public @Nullable ParcelInstance getParcelInstance(UUID uuid) {
-    return parcelInstances.get(uuid);
+  public @Nullable Parcel getParcel(UUID uuid) {
+    return parcels.get(uuid);
   }
 
-  public @Nullable ParcelInstance getParcelInstance(BlockPos pos) {
-    for (var inst : parcelInstances.values()) {
+  public @Nullable Parcel getParcel(BlockPos pos) {
+    for (var inst : parcels.values()) {
       if (inst.boundingBox().isInside(pos)) {
         return inst;
       }
@@ -120,8 +120,8 @@ public class GitParcelLevelSavedData extends SavedData {
 
   public void emitUpdate() {
     if (level != null) {
-      GitParcelApi.Events.ON_UPDATE_PARCEL_INSTANCES.emit(
-          new GitParcelApi.Events.UdpateParcelInstancesEvent(level, listParcelInstances()));
+      GitParcelApi.Events.ON_UPDATE_PARCELS.emit(
+          new GitParcelApi.Events.UdpateParcelsEvent(level, listParcels()));
     }
   }
 
@@ -131,13 +131,13 @@ public class GitParcelLevelSavedData extends SavedData {
     return savedData;
   }
 
-  public static void moveParcelInstance(ServerLevel fromLevel, ServerLevel toLevel, UUID uuid) {
+  public static void moveParcel(ServerLevel fromLevel, ServerLevel toLevel, UUID uuid) {
     var from = fromLevel.getDataStorage().get(TYPE);
     if (from == null) {
       return;
     }
-    var inst = from.getParcelInstances().remove(uuid);
+    var inst = from.getParcels().remove(uuid);
     var to = toLevel.getDataStorage().computeIfAbsent(TYPE);
-    to.getParcelInstances().put(uuid, inst);
+    to.getParcels().put(uuid, inst);
   }
 }

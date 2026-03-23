@@ -9,7 +9,7 @@ import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.permission.WorldPermissions;
 import io.github.leawind.gitparcel.server.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.world.gitparcel.GitParcelLevelSavedData;
-import io.github.leawind.gitparcel.world.gitparcel.ParcelInstance;
+import io.github.leawind.gitparcel.world.gitparcel.Parcel;
 import java.util.UUID;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -65,9 +65,9 @@ public class CreateSubcommand extends GitParcelBaseCommand {
     try {
       BoundingBox boundingBox = BoundingBox.fromCorners(from, to);
       UUID uuid = UUID.randomUUID();
-      ParcelInstance instance = new ParcelInstance(uuid, boundingBox, showWireframe);
+      Parcel parcel = new Parcel(uuid, boundingBox, showWireframe);
 
-      savedData.addNewParcelInstance(instance);
+      savedData.addNewParcel(parcel);
 
       source.sendSuccess(
           () ->
