@@ -31,6 +31,7 @@ runs
 # AI tools
 .trae/
 .lingma/
+.codebuddy/
 
 # logs
 **/logs/*.log
