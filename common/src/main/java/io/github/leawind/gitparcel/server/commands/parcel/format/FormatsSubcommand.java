@@ -19,7 +19,7 @@ public class FormatsSubcommand extends GitParcelBaseCommand {
                 (ctx) -> {
                   var source = ctx.getSource();
 
-                  if (!validateWorldPermission(source, WorldPermissions.LIST_FORMAT)) {
+                  if (!validateWorldPermission(source, WorldPermissions.LIST_FORMATS)) {
                     return 0;
                   }
 

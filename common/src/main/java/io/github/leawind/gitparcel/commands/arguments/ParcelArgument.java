@@ -23,11 +23,11 @@ public class ParcelArgument implements ArgumentType<ParcelArgument.ParcelSelecto
       new SimpleCommandExceptionType(
           GitParcelTranslations.of("argument.gitparcel.parcel.notfound"));
 
-  public static ParcelArgument instance() {
+  public static ParcelArgument parcel() {
     return new ParcelArgument();
   }
 
-  public static Parcel getInstance(CommandContext<CommandSourceStack> context, String name)
+  public static Parcel getParcel(CommandContext<CommandSourceStack> context, String name)
       throws CommandSyntaxException {
     return context.getArgument(name, ParcelSelector.class).get(context.getSource());
   }

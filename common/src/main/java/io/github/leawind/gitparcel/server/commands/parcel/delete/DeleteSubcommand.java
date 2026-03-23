@@ -13,14 +13,14 @@ import net.minecraft.commands.Commands;
 public class DeleteSubcommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
     var inst =
-        Commands.argument("parcel", ParcelArgument.instance())
+        Commands.argument("parcel", ParcelArgument.parcel())
             .suggests(ParcelSuggestionProvider.INSTANCE);
 
     return Commands.literal("delete").then(inst.executes(DeleteSubcommand::delete));
   }
 
   private static int delete(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-    var inst = ParcelArgument.getInstance(ctx, "parcel");
+    var inst = ParcelArgument.getParcel(ctx, "parcel");
     return delete(ctx.getSource(), inst);
   }
 

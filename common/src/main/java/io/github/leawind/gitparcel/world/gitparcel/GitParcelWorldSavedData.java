@@ -19,7 +19,7 @@ public class GitParcelWorldSavedData extends SavedData {
                           .fieldOf("permissions")
                           .forGetter(GitParcelWorldSavedData::getPermissions),
                       ParcelPermissions.CONFIG_CODEC
-                          .fieldOf("parcel_instance_default_permissions")
+                          .fieldOf("parcel_default_permissions")
                           .forGetter(GitParcelWorldSavedData::getParcelDefaultPermissions))
                   .apply(inst, GitParcelWorldSavedData::new));
 
@@ -28,14 +28,14 @@ public class GitParcelWorldSavedData extends SavedData {
           "gitparcel_world", GitParcelWorldSavedData::new, CODEC, DataFixTypes.LEVEL);
 
   private final PermissionConfig<WorldPermissions> permissions;
-  private final PermissionConfig<ParcelPermissions> parcelInstanceDefaultPermissions;
+  private final PermissionConfig<ParcelPermissions> parcelDefaultPermissions;
 
   public PermissionConfig<WorldPermissions> getPermissions() {
     return permissions;
   }
 
   public PermissionConfig<ParcelPermissions> getParcelDefaultPermissions() {
-    return parcelInstanceDefaultPermissions;
+    return parcelDefaultPermissions;
   }
 
   private GitParcelWorldSavedData() {
@@ -46,9 +46,9 @@ public class GitParcelWorldSavedData extends SavedData {
 
   private GitParcelWorldSavedData(
       PermissionConfig<WorldPermissions> permissions,
-      PermissionConfig<ParcelPermissions> parcelInstanceDefaultPermissions) {
+      PermissionConfig<ParcelPermissions> parcelDefaultPermissions) {
     this.permissions = permissions;
-    this.parcelInstanceDefaultPermissions = parcelInstanceDefaultPermissions;
+    this.parcelDefaultPermissions = parcelDefaultPermissions;
   }
 
   public static GitParcelWorldSavedData get(MinecraftServer server) {

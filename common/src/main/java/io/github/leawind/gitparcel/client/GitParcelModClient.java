@@ -5,7 +5,7 @@ import io.github.leawind.gitparcel.client.gui.screens.GitParcelDebugScreen;
 import io.github.leawind.gitparcel.client.renderer.GitParcelRenderer;
 import io.github.leawind.gitparcel.network.protocol.parcelformat.ClientParcelFormatInfos;
 import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatInfosS2CPayload;
-import io.github.leawind.gitparcel.network.protocol.parcelinstance.UpdateParcelsS2CPayload;
+import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelsS2CPayload;
 import io.github.leawind.gitparcel.world.gitparcel.Parcel;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -23,7 +23,7 @@ public class GitParcelModClient {
    */
   public static @Nullable volatile ClientParcelFormatInfos PARCEL_FORMAT_INFOS = null;
 
-  public static volatile List<Parcel> PARCEL_INSTANCES = List.of();
+  public static volatile List<Parcel> PARCELS = List.of();
 
   /**
    * Initializes the Git Parcel mod client.

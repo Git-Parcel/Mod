@@ -18,12 +18,12 @@ public class WorldPermissions extends GitParcelPermissions {
     return REGISTRY.register(new PermissionType<>((byte) id, name, defaultLevel));
   }
 
-  public static final PermissionType<WorldPermissions> LIST_FORMAT =
-      type(0, "list_format", PermissionLevel.MODERATORS);
-  public static final PermissionType<WorldPermissions> LIST_INSTANCE =
-      type(1, "list_instance", PermissionLevel.MODERATORS);
-  public static final PermissionType<WorldPermissions> CREATE_PARCEL_INSTANCE =
-      type(4, "create_instance", PermissionLevel.OWNERS);
-  public static final PermissionType<WorldPermissions> DEL_INSTANCE =
-      type(6, "del_instance", PermissionLevel.OWNERS);
+  public static final PermissionType<WorldPermissions> LIST_FORMATS =
+      type(0, "list_formats", PermissionLevel.MODERATORS);
+  public static final PermissionType<WorldPermissions> LIST_PARCELS =
+      type(1, "list_parcles", PermissionLevel.MODERATORS);
+  public static final PermissionType<WorldPermissions> CREATE_PARCEL =
+      type(4, "create_parcel", PermissionLevel.OWNERS);
+  public static final PermissionType<WorldPermissions> DELETE_PARCEL =
+      type(6, "delete_parcel", PermissionLevel.OWNERS);
 }

@@ -110,7 +110,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
      *
      * @param level Level
      * @param parcelSize Real size of the parcel (the one saved in the disk, without transform)
-     * @param transform Treat the parcel instance we are going to save as transformed.
+     * @param transform Treat the parcel we are going to save as transformed.
      * @param dataDir Path to parcel data directory. Will be created if not exist.
      * @param ignoreEntities Whether to ignore entities in the parcel
      * @param config format config, can be null
@@ -224,7 +224,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
   }
 
   /**
-   * Saves a parcel instance to the specified directory.
+   * Saves a parcel to the specified directory.
    *
    * <p>The position is specified in transform, and the size is specified in meta.
    *

@@ -1,7 +1,7 @@
 package io.github.leawind.gitparcel;
 
 import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatInfosS2CPayload;
-import io.github.leawind.gitparcel.network.protocol.parcelinstance.UpdateParcelsS2CPayload;
+import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelsS2CPayload;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;

@@ -9,7 +9,7 @@ import io.github.leawind.gitparcel.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.commands.arguments.ParcelFormatArgument;
 import io.github.leawind.gitparcel.mixin.InvokeArgumentTypeInfos;
 import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatInfosS2CPayload;
-import io.github.leawind.gitparcel.network.protocol.parcelinstance.UpdateParcelsS2CPayload;
+import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelsS2CPayload;
 import io.github.leawind.gitparcel.parcelformats.mvp.MvpFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Loader;
 import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Saver;
@@ -106,7 +106,7 @@ public class GitParcelMod {
         registry,
         "gitparcel:parcel_instance",
         ParcelArgument.class,
-        SingletonArgumentInfo.contextFree(ParcelArgument::instance));
+        SingletonArgumentInfo.contextFree(ParcelArgument::parcel));
   }
 
   public static void registerCommands(
@@ -131,7 +131,7 @@ public class GitParcelMod {
           var payload = UpdateParcelsS2CPayload.from(list);
           player.connection.send(new ClientboundCustomPayloadPacket(payload));
         });
-    // Notify players when level parcel instances update
+    // Notify players when level parcels update
     GitParcelApi.Events.ON_UPDATE_PARCELS.on(
         e ->
             e.level()

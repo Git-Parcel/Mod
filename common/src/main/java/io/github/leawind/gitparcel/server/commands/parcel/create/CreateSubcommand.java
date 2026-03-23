@@ -58,7 +58,7 @@ public class CreateSubcommand extends GitParcelBaseCommand {
     var savedData = GitParcelLevelSavedData.get(level);
 
     // Check permission
-    if (!validateWorldPermission(source, WorldPermissions.CREATE_PARCEL_INSTANCE)) {
+    if (!validateWorldPermission(source, WorldPermissions.CREATE_PARCEL)) {
       return 0;
     }
 
@@ -75,19 +75,18 @@ public class CreateSubcommand extends GitParcelBaseCommand {
                   "command.gitparcel.parcel.instance.create.success", from, to),
           false);
 
-      GitParcelMod.LOGGER.info(
-          "Created new parcel instance: from={}, to={}, uuid={}", from, to, uuid);
+      GitParcelMod.LOGGER.info("Created new parcel: from={}, to={}, uuid={}", from, to, uuid);
 
       return 1;
 
     } catch (IllegalArgumentException e) {
-      GitParcelMod.LOGGER.error("Failed to create parcel instance: {}", e.getMessage(), e);
+      GitParcelMod.LOGGER.error("Failed to create parcel: {}", e.getMessage(), e);
       source.sendFailure(
           GitParcelTranslations.of(
               "command.gitparcel.parcel.instance.create.failure", e.getMessage()));
       return 0;
     } catch (Exception e) {
-      GitParcelMod.LOGGER.error("Unexpected error while creating parcel instance", e);
+      GitParcelMod.LOGGER.error("Unexpected error while creating parcel", e);
       source.sendFailure(
           GitParcelTranslations.of("command.gitparcel.parcel.unexpected_error", e.getMessage()));
       return 0;

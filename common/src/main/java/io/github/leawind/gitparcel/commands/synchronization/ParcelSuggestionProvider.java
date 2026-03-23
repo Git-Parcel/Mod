@@ -26,7 +26,7 @@ public class ParcelSuggestionProvider implements SuggestionProvider<CommandSourc
       // Check permission
       var server = source.getServer();
       var permissions = GitParcelWorldSavedData.get(server).getPermissions();
-      if (!permissions.permits(WorldPermissions.LIST_INSTANCE, source.permissions())) {
+      if (!permissions.permits(WorldPermissions.LIST_PARCELS, source.permissions())) {
         return Suggestions.empty();
       }
     }

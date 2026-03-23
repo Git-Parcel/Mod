@@ -55,31 +55,30 @@ public class GitParcelLevelSavedData extends SavedData {
   }
 
   /**
-   * Adds a new parcel instance to the saved data.
+   * Adds a new parcel to the saved data.
    *
    * <p>Validation:
    *
    * <ul>
    *   <li>UUID must be unique
-   *   <li>Bounding box must not overlap with existing parcel instances
+   *   <li>Bounding box must not overlap with existing parcels
    * </ul>
    *
-   * @param inst the parcel instance to add
-   * @throws IllegalArgumentException if UUID or bounding box conflicts with existing parcel
-   *     instances
+   * @param inst the parcel to add
+   * @throws IllegalArgumentException if UUID or bounding box conflicts with existing parcels
    */
   public void addNewParcel(Parcel inst) throws IllegalArgumentException {
     // Check: unique uuid
     if (parcels.containsKey(inst.uuid())) {
       throw new IllegalArgumentException(
-          "Parcel instance with uuid %s already exists".formatted(inst.uuid()));
+          "Parcel with uuid %s already exists".formatted(inst.uuid()));
     }
 
     // Check: bounding box no overlap
     for (var thatInst : parcels.values()) {
       if (inst.boundingBox().intersects(thatInst.boundingBox())) {
         throw new IllegalArgumentException(
-            "The new parcel instance intersects with existing parcel instance: %s <> %s"
+            "The new parcel intersects with existing parcel: %s <> %s"
                 .formatted(inst.uuid(), thatInst.uuid()));
       }
     }
@@ -90,10 +89,10 @@ public class GitParcelLevelSavedData extends SavedData {
   }
 
   /**
-   * Deletes a parcel instance by its UUID.
+   * Deletes a parcel by its UUID.
    *
-   * @param uuid the UUID of the parcel instance to delete
-   * @return the deleted Parcel object, or null if no instance with the given UUID exists
+   * @param uuid the UUID of the parcel to delete
+   * @return the deleted Parcel object, or null if no parcel with the given UUID exists
    */
   public @Nullable Parcel deleteParcel(UUID uuid) {
     var result = parcels.remove(uuid);

@@ -36,30 +36,30 @@ public class ListSubcommand extends GitParcelBaseCommand {
   }
 
   private static int list(CommandSourceStack source, ServerLevel serverLevel) {
-    if (!validateWorldPermission(source, WorldPermissions.LIST_INSTANCE)) {
+    if (!validateWorldPermission(source, WorldPermissions.LIST_PARCELS)) {
       return 0;
     }
 
     var savedData = GitParcelLevelSavedData.get(serverLevel);
-    List<Parcel> instances = savedData.listParcels();
+    List<Parcel> parcels = savedData.listParcels();
 
     source.sendSuccess(
         () ->
             GitParcelTranslations.of(
-                "command.gitparcel.parcel.list.parcel_instance.header", instances.size()),
+                "command.gitparcel.parcel.list.parcel_instance.header", parcels.size()),
         false);
 
-    for (var instance : instances) {
+    for (var parcel : parcels) {
       source.sendSuccess(
           () ->
               Component.literal("  - UUID: ")
-                  .append(Component.literal(instance.uuid().toString()))
+                  .append(Component.literal(parcel.uuid().toString()))
                   .append(Component.literal(", Box: "))
-                  .append(Component.literal(instance.boundingBox().toString()))
+                  .append(Component.literal(parcel.boundingBox().toString()))
                   .append(Component.literal(", Rotation: "))
-                  .append(Component.literal(instance.rotation().name()))
+                  .append(Component.literal(parcel.rotation().name()))
                   .append(Component.literal(", Mirror: "))
-                  .append(Component.literal(instance.mirror().name())),
+                  .append(Component.literal(parcel.mirror().name())),
           false);
     }
 

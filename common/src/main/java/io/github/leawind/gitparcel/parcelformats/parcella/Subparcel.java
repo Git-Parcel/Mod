@@ -34,8 +34,6 @@ public class Subparcel {
   }
 
   /**
-   * todo
-   *
    * @return Coordinate of this subparcel
    */
   public Vec3i getCoord(int gridSize, Vec3i anchorPos) {
