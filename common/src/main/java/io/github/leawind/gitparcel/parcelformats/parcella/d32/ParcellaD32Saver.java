@@ -104,7 +104,7 @@ public class ParcellaD32Saver
 
     // Split the parcel into subparcels
     BlockPos anchorPos = new BlockPos(ctx.config.anchorOffset);
-    for (var localSubparcel : ParcelUtils.subdivideParcel(gridSize, ctx.parcelSize, anchorPos)) {
+    for (var localSubparcel : ParcelUtils.subdivideParcel(ctx.parcelSize, anchorPos, gridSize)) {
       Vec3i coord = localSubparcel.getCoord(gridSize, anchorPos);
 
       long index = ZOrder3D.coordToIndexSigned(coord);

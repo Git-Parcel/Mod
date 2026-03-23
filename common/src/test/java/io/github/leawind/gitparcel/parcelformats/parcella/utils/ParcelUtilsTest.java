@@ -65,18 +65,18 @@ public class ParcelUtilsTest {
   @Test
   void testSubdivideSubparcel() {
     {
-      var result = ParcelUtils.subdivideParcel(16, SIZE_16X, BlockPos.ZERO);
+      var result = ParcelUtils.subdivideParcel(SIZE_16X, BlockPos.ZERO, 16);
       assertEquals(List.of(new Subparcel(0, 0, 0, 16, 16, 16)), result);
     }
     {
-      var result = ParcelUtils.subdivideParcel(16, SIZE_16X, new BlockPos(4, 5, 6));
+      var result = ParcelUtils.subdivideParcel(SIZE_16X, new BlockPos(4, 5, 6), 16);
       assertEquals(8, result.size());
     }
 
     var random = new RandomForMC(12138);
     for (int i = 0; i < 1000; i++) {
       var size = random.nextVec3i(1, 50);
-      assertParcelEqual(size, ParcelUtils.subdivideParcel(16, size, random.nextVec3i(-100, 100)));
+      assertParcelEqual(size, ParcelUtils.subdivideParcel(size, random.nextVec3i(-100, 100), 16));
     }
   }
 

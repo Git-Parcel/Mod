@@ -8,7 +8,7 @@ import net.minecraft.core.Vec3i;
 /** Utility class for parcel-related operations, such as subdividing parcels into subparcels. */
 public class ParcelUtils {
 
-  public static ArrayList<Subparcel> subdivideParcel(int gridSize, Vec3i size, Vec3i anchorPos) {
+  public static ArrayList<Subparcel> subdivideParcel(Vec3i size, Vec3i anchorPos, int gridSize) {
     ArrayList<Subparcel> subparcels = new ArrayList<>(1);
 
     int sizeX = size.getX();
