@@ -7,6 +7,7 @@ import io.github.leawind.gitparcel.parcelformats.NbtFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.BlockPalette;
 import io.github.leawind.gitparcel.parcelformats.parcella.Subparcel;
 import io.github.leawind.gitparcel.parcelformats.parcella.utils.IndexPathCodec;
+import io.github.leawind.gitparcel.parcelformats.parcella.utils.ParcelUtils;
 import io.github.leawind.gitparcel.parcelformats.parcella.utils.ZOrder3D;
 import io.github.leawind.gitparcel.utils.numbase.Base32Utils;
 import io.github.leawind.gitparcel.utils.numbase.HexUtils;
@@ -103,7 +104,7 @@ public class ParcellaD32Saver
 
     // Split the parcel into subparcels
     BlockPos anchorPos = new BlockPos(ctx.config.anchorOffset);
-    for (var localSubparcel : Subparcel.subdivideParcel(gridSize, ctx.parcelSize, anchorPos)) {
+    for (var localSubparcel : ParcelUtils.subdivideParcel(gridSize, ctx.parcelSize, anchorPos)) {
       Vec3i coord = localSubparcel.getCoord(gridSize, anchorPos);
 
       long index = ZOrder3D.coordToIndexSigned(coord);
