@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.server.commands.parcel.instance.delete;
+package io.github.leawind.gitparcel.server.commands.parcel.delete;
 
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;

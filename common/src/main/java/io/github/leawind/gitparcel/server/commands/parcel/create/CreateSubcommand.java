@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.server.commands.parcel.instance.create;
+package io.github.leawind.gitparcel.server.commands.parcel.create;
 
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;

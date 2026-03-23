@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.server.commands.parcel.instance.list;
+package io.github.leawind.gitparcel.server.commands.parcel.list;
 
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
