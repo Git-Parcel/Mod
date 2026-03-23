@@ -70,9 +70,7 @@ public class CreateSubcommand extends GitParcelBaseCommand {
       savedData.addNewParcel(parcel);
 
       source.sendSuccess(
-          () ->
-              GitParcelTranslations.of(
-                  "command.gitparcel.parcel.instance.create.success", from, to),
+          () -> GitParcelTranslations.of("command.gitparcel.parcel.create.success", from, to),
           false);
 
       GitParcelMod.LOGGER.info("Created new parcel: from={}, to={}, uuid={}", from, to, uuid);
@@ -82,8 +80,7 @@ public class CreateSubcommand extends GitParcelBaseCommand {
     } catch (IllegalArgumentException e) {
       GitParcelMod.LOGGER.error("Failed to create parcel: {}", e.getMessage(), e);
       source.sendFailure(
-          GitParcelTranslations.of(
-              "command.gitparcel.parcel.instance.create.failure", e.getMessage()));
+          GitParcelTranslations.of("command.gitparcel.parcel.create.failure", e.getMessage()));
       return 0;
     } catch (Exception e) {
       GitParcelMod.LOGGER.error("Unexpected error while creating parcel", e);

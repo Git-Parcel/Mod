@@ -44,9 +44,7 @@ public class ListSubcommand extends GitParcelBaseCommand {
     List<Parcel> parcels = savedData.listParcels();
 
     source.sendSuccess(
-        () ->
-            GitParcelTranslations.of(
-                "command.gitparcel.parcel.list.parcel_instance.header", parcels.size()),
+        () -> GitParcelTranslations.of("command.gitparcel.parcel.list.header", parcels.size()),
         false);
 
     for (var parcel : parcels) {
