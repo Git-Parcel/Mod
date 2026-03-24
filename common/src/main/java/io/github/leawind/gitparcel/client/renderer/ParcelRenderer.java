@@ -15,7 +15,9 @@ public final class ParcelRenderer {
       // Wireframe
       if (visual.showWireframe()) {
         Gizmos.cuboid(
-            AABB.of(parcel.boundingBox()), GizmoStyle.stroke(WIREFRAME_COLOR, LINE_WIDTH), false);
+            AABB.of(parcel.getBoundingBox()),
+            GizmoStyle.stroke(WIREFRAME_COLOR, LINE_WIDTH),
+            false);
       }
       // TODO render more details
 

@@ -25,9 +25,7 @@ public final class Parcel {
               inst.group(
                       UUIDUtil.STRING_CODEC.fieldOf("uuid").forGetter(Parcel::uuid),
                       ParcelMeta.CODEC.fieldOf("meta").forGetter(Parcel::meta),
-                      BoundingBox.CODEC.fieldOf("bounding_box").forGetter(Parcel::boundingBox),
-                      Mirror.CODEC.fieldOf("mirror").forGetter(Parcel::mirror),
-                      Rotation.CODEC.fieldOf("rotation").forGetter(Parcel::rotation),
+                      ParcelTransform.CODEC.fieldOf("transform").forGetter(Parcel::transform),
                       Visual.CODEC.fieldOf("visual").forGetter(Parcel::visual),
                       ParcelPermissions.CONFIG_CODEC
                           .fieldOf("permissions")
@@ -40,10 +38,7 @@ public final class Parcel {
 
   private final UUID uuid;
   private final ParcelMeta meta;
-
-  private BoundingBox boundingBox;
-  private Mirror mirror;
-  private Rotation rotation;
+  private ParcelTransform transform;
 
   private PermissionConfig<ParcelPermissions> permissions;
 
@@ -55,46 +50,27 @@ public final class Parcel {
 
   private @Nullable GitParcelLevelSavedData levelSavedData;
 
-  public Parcel(UUID uuid, BoundingBox boundingBox, Visual visual) {
-    this(
-        uuid,
-        boundingBox,
-        Mirror.NONE,
-        Rotation.NONE,
-        visual,
-        new PermissionConfig<>(ParcelPermissions.REGISTRY));
-  }
+  public static Parcel from(UUID uuid, BoundingBox boundingBox, Visual visual) {
+    var pivot = ParcelTransform.getPivotPos(Mirror.NONE, Rotation.NONE, boundingBox);
+    ParcelTransform transform = new ParcelTransform(pivot);
 
-  public Parcel(
-      UUID uuid,
-      BoundingBox boundingBox,
-      Mirror mirror,
-      Rotation rotation,
-      Visual visual,
-      PermissionConfig<ParcelPermissions> permissions) {
-    this.uuid = uuid;
-    this.meta =
-        ParcelMeta.from(ParcelFormatRegistry.INSTANCE.defaultSaver().info(), boundingBox, rotation);
-    this.boundingBox = boundingBox;
-    this.mirror = mirror;
-    this.rotation = rotation;
-    this.visual = visual;
-    this.permissions = permissions;
+    var meta =
+        ParcelMeta.from(
+            ParcelFormatRegistry.INSTANCE.defaultSaver().info(), boundingBox, Rotation.NONE);
+
+    return new Parcel(
+        uuid, meta, transform, visual, new PermissionConfig<>(ParcelPermissions.REGISTRY));
   }
 
   public Parcel(
       UUID uuid,
       ParcelMeta meta,
-      BoundingBox boundingBox,
-      Mirror mirror,
-      Rotation rotation,
+      ParcelTransform transform,
       Visual visual,
       PermissionConfig<ParcelPermissions> permissions) {
     this.uuid = uuid;
     this.meta = meta;
-    this.boundingBox = boundingBox;
-    this.mirror = mirror;
-    this.rotation = rotation;
+    this.transform = transform;
     this.visual = visual;
     this.permissions = permissions;
   }
@@ -107,16 +83,8 @@ public final class Parcel {
     return uuid;
   }
 
-  public BoundingBox boundingBox() {
-    return boundingBox;
-  }
-
-  public Mirror mirror() {
-    return mirror;
-  }
-
-  public Rotation rotation() {
-    return rotation;
+  public ParcelTransform transform() {
+    return transform;
   }
 
   public Visual visual() {
@@ -135,25 +103,24 @@ public final class Parcel {
   // Others
   // ////////////////////////////////////////////////////////////////
 
-  public ParcelTransform getTransform() {
-    return new ParcelTransform(mirror, rotation, getPivotBlock());
+  public BoundingBox getBoundingBox() {
+    var localSize = meta.size();
+    var localBox =
+        new BoundingBox(0, 0, 0, localSize.getX() - 1, localSize.getY() - 1, localSize.getZ() - 1);
+    return transform.apply(localBox);
   }
 
   public Vec3i getSizeWorldSpace() {
-    return new Vec3i(boundingBox.getXSpan(), boundingBox.getYSpan(), boundingBox.getZSpan());
+    return transform.applyToSize(meta.size());
   }
 
   public Vec3i getSizeParcelSpace() {
-    return ParcelTransform.rotateSizeInverted(rotation, getSizeWorldSpace());
+    return meta.size();
   }
 
   /** Get pivot block position in world space */
   public BlockPos getPivotBlock() {
-    return ParcelTransform.getPivotPos(mirror, rotation, boundingBox);
-  }
-
-  public boolean hasOrientation() {
-    return mirror != Mirror.NONE || rotation != Rotation.NONE;
+    return transform.getTranslatedOrigin();
   }
 
   void setLevelSavedData(@Nullable GitParcelLevelSavedData levelSavedData) {

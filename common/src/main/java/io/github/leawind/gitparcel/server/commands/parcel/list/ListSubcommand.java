@@ -52,12 +52,10 @@ public class ListSubcommand extends GitParcelBaseCommand {
           () ->
               Component.literal("  - UUID: ")
                   .append(Component.literal(parcel.uuid().toString()))
-                  .append(Component.literal(", Box: "))
-                  .append(Component.literal(parcel.boundingBox().toString()))
-                  .append(Component.literal(", Rotation: "))
-                  .append(Component.literal(parcel.rotation().name()))
-                  .append(Component.literal(", Mirror: "))
-                  .append(Component.literal(parcel.mirror().name())),
+                  .append(Component.literal(", BoundingBox: "))
+                  .append(Component.literal(parcel.getBoundingBox().toString()))
+                  .append(Component.literal(", Transform: "))
+                  .append(Component.literal(parcel.transform().toString())),
           false);
     }
 

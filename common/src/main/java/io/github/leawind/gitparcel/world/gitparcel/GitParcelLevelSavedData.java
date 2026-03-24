@@ -76,7 +76,7 @@ public final class GitParcelLevelSavedData extends SavedData {
 
     // Check: bounding box no overlap
     for (var thatInst : parcels.values()) {
-      if (inst.boundingBox().intersects(thatInst.boundingBox())) {
+      if (inst.getBoundingBox().intersects(thatInst.getBoundingBox())) {
         throw new IllegalArgumentException(
             "The new parcel intersects with existing parcel: %s <> %s"
                 .formatted(inst.uuid(), thatInst.uuid()));
@@ -110,7 +110,7 @@ public final class GitParcelLevelSavedData extends SavedData {
 
   public @Nullable Parcel getParcel(BlockPos pos) {
     for (var inst : parcels.values()) {
-      if (inst.boundingBox().isInside(pos)) {
+      if (inst.getBoundingBox().isInside(pos)) {
         return inst;
       }
     }

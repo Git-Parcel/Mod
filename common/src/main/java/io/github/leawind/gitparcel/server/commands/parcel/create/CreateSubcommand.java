@@ -63,7 +63,7 @@ public class CreateSubcommand extends GitParcelBaseCommand {
     try {
       BoundingBox boundingBox = BoundingBox.fromCorners(from, to);
       UUID uuid = UUID.randomUUID();
-      Parcel parcel = new Parcel(uuid, boundingBox, new Parcel.Visual(showWireframe));
+      Parcel parcel = Parcel.from(uuid, boundingBox, new Parcel.Visual(showWireframe));
 
       savedData.addNewParcel(parcel);
 
