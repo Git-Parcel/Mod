@@ -11,7 +11,7 @@ public class ParcelRenderer {
 
   protected void render() {
     for (var parcel : GitParcelModClient.PARCELS) {
-      if (parcel.showWireframe()) {
+      if (parcel.visual().showWireframe()) {
         Gizmos.cuboid(
             AABB.of(parcel.boundingBox()), GizmoStyle.stroke(WIREFRAME_COLOR, LINE_WIDTH), false);
         // TODO render more details

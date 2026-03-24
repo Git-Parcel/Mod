@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.world.gitparcel;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.leawind.gitparcel.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.permission.ParcelPermissions;
 import io.github.leawind.gitparcel.utils.permission.PermissionConfig;
@@ -16,6 +17,7 @@ import org.jspecify.annotations.Nullable;
 
 /** Parcel represents a cuboid area in the world. */
 public class Parcel {
+
   public static final Codec<Parcel> CODEC =
       RecordCodecBuilder.create(
           inst ->
@@ -24,7 +26,7 @@ public class Parcel {
                       BoundingBox.CODEC.fieldOf("bounding_box").forGetter(Parcel::boundingBox),
                       Mirror.CODEC.fieldOf("mirror").forGetter(Parcel::mirror),
                       Rotation.CODEC.fieldOf("rotation").forGetter(Parcel::rotation),
-                      Codec.BOOL.fieldOf("show_bounding_box").forGetter(Parcel::showWireframe),
+                      Visual.CODEC.fieldOf("visual").forGetter(Parcel::visual),
                       ParcelPermissions.CONFIG_CODEC
                           .fieldOf("permissions")
                           .forGetter(Parcel::permissions))
@@ -35,11 +37,14 @@ public class Parcel {
   // ////////////////////////////////////////////////////////////////
 
   private final UUID uuid;
+
   private BoundingBox boundingBox;
   private Mirror mirror;
   private Rotation rotation;
-  private boolean showWireframe;
+
   private PermissionConfig<ParcelPermissions> permissions;
+
+  private Visual visual;
 
   // ////////////////////////////////////////////////////////////////
   // Unserialized Fields
@@ -47,18 +52,13 @@ public class Parcel {
 
   private @Nullable GitParcelLevelSavedData levelSavedData;
 
-  public Parcel(UUID uuid, BoundingBox boundingBox, boolean showWireframe) {
-    this(uuid, boundingBox, Mirror.NONE, Rotation.NONE, showWireframe);
-  }
-
-  public Parcel(
-      UUID uuid, BoundingBox boundingBox, Mirror mirror, Rotation rotation, Boolean showWireframe) {
+  public Parcel(UUID uuid, BoundingBox boundingBox, Visual visual) {
     this(
         uuid,
         boundingBox,
-        mirror,
-        rotation,
-        showWireframe,
+        Mirror.NONE,
+        Rotation.NONE,
+        visual,
         new PermissionConfig<>(ParcelPermissions.REGISTRY));
   }
 
@@ -67,13 +67,13 @@ public class Parcel {
       BoundingBox boundingBox,
       Mirror mirror,
       Rotation rotation,
-      Boolean showWireframe,
+      Visual visual,
       PermissionConfig<ParcelPermissions> permissions) {
     this.uuid = uuid;
     this.boundingBox = boundingBox;
     this.mirror = mirror;
     this.rotation = rotation;
-    this.showWireframe = showWireframe;
+    this.visual = visual;
     this.permissions = permissions;
   }
 
@@ -97,8 +97,8 @@ public class Parcel {
     return rotation;
   }
 
-  public boolean showWireframe() {
-    return showWireframe;
+  public Visual visual() {
+    return visual;
   }
 
   public PermissionConfig<ParcelPermissions> permissions() {
@@ -141,6 +141,31 @@ public class Parcel {
   public void setDirty(boolean dirty) {
     if (levelSavedData != null) {
       levelSavedData.setDirty(dirty);
+    }
+  }
+
+  /** Visual settings controlling how a parcel is rendered on the client. */
+  public static final class Visual {
+    public static final Codec<Visual> CODEC =
+        RecordCodecBuilder.create(
+            inst ->
+                inst.group(Codec.BOOL.fieldOf("show_wireframe").forGetter(Visual::showWireframe))
+                    .apply(inst, Visual::new));
+
+    private boolean showWireframe;
+
+    public Visual(boolean showWireframe) {
+      this.showWireframe = showWireframe;
+    }
+
+    /** Whether the parcel wireframe should be rendered. */
+    public boolean showWireframe() {
+      return showWireframe;
+    }
+
+    /** Sets whether the parcel wireframe should be rendered. */
+    public void showWireframe(boolean showWireframe) {
+      this.showWireframe = showWireframe;
     }
   }
 }
