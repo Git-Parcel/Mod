@@ -65,7 +65,7 @@ public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.C
     /**
      * Parse entity ID from NBT file path.
      *
-     * @return Entity ID parsed from file name, or -1 if not valid
+     * @return Entity ID parsed from file key, or -1 if not valid
      */
     static int fromPath(Path nbtFile, NbtFormat nbtFormat) {
       String fileName = nbtFile.getFileName().toString();

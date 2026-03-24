@@ -32,7 +32,7 @@ public final class ParcelMeta {
                       ParcelFormat.Info.CODEC.fieldOf("format").forGetter(ParcelMeta::formatInfo),
                       Codec.INT.fieldOf("dataVersion").forGetter(ParcelMeta::dataVersion),
                       Vec3i.CODEC.fieldOf("size").forGetter(ParcelMeta::size),
-                      Codec.STRING.optionalFieldOf("name").forGetter(ParcelMeta::getName),
+                      Codec.STRING.optionalFieldOf("key").forGetter(ParcelMeta::getName),
                       Codec.STRING
                           .optionalFieldOf("description")
                           .forGetter(ParcelMeta::getDescription),

@@ -6,24 +6,22 @@ import io.github.leawind.gitparcel.utils.permission.PermissionType;
 import io.github.leawind.gitparcel.utils.permission.PermissionTypeRegistry;
 import net.minecraft.server.permissions.PermissionLevel;
 
-public class WorldPermissions extends GitParcelPermissions {
+public class WorldPermissions {
   public static final PermissionTypeRegistry<WorldPermissions> REGISTRY =
       new PermissionTypeRegistry<>();
   public static final Codec<PermissionConfig<WorldPermissions>> CONFIG_CODEC =
       PermissionConfig.getMapCodec(REGISTRY);
 
-  private static PermissionType<WorldPermissions> type(
-      int id, String name, PermissionLevel defaultLevel) {
-    validateName(name);
-    return REGISTRY.register(new PermissionType<>((byte) id, name, defaultLevel));
+  private static PermissionType<WorldPermissions> type(String id, PermissionLevel defaultLevel) {
+    return REGISTRY.register(new PermissionType<>(id, defaultLevel));
   }
 
   public static final PermissionType<WorldPermissions> LIST_FORMATS =
-      type(0, "list_formats", PermissionLevel.MODERATORS);
+      type("list_formats", PermissionLevel.MODERATORS);
   public static final PermissionType<WorldPermissions> LIST_PARCELS =
-      type(1, "list_parcels", PermissionLevel.MODERATORS);
+      type("list_pararcels", PermissionLevel.MODERATORS);
   public static final PermissionType<WorldPermissions> CREATE_PARCEL =
-      type(4, "create_parcel", PermissionLevel.OWNERS);
+      type("create_parcel", PermissionLevel.OWNERS);
   public static final PermissionType<WorldPermissions> DELETE_PARCEL =
-      type(6, "delete_parcel", PermissionLevel.OWNERS);
+      type("delete_parcel", PermissionLevel.OWNERS);
 }

@@ -13,14 +13,14 @@ import org.junit.jupiter.api.Test;
 
 public class PermissionConfigTest {
 
-  private PermissionTypeRegistry<String> registry;
-  private PermissionConfig<String> config;
+  private PermissionTypeRegistry<Void> registry;
+  private PermissionConfig<Void> config;
 
   // Test permission types
-  private PermissionType<String> ADMIN;
-  private PermissionType<String> EDIT;
-  private PermissionType<String> VIEW;
-  private PermissionType<String> CUSTOM;
+  private PermissionType<Void> ADMIN;
+  private PermissionType<Void> EDIT;
+  private PermissionType<Void> VIEW;
+  private PermissionType<Void> CUSTOM;
 
   @BeforeEach
   void setUp() {
@@ -28,11 +28,10 @@ public class PermissionConfigTest {
     config = new PermissionConfig<>(registry);
 
     // Register test permission types with different default levels
-    ADMIN = registry.register(new PermissionType<>((byte) 0, "admin", PermissionLevel.ADMINS));
-    EDIT = registry.register(new PermissionType<>((byte) 1, "edit", PermissionLevel.MODERATORS));
-    VIEW = registry.register(new PermissionType<>((byte) 2, "view", PermissionLevel.ALL));
-    CUSTOM =
-        registry.register(new PermissionType<>((byte) 3, "custom", PermissionLevel.GAMEMASTERS));
+    ADMIN = registry.register(new PermissionType<>("admin", PermissionLevel.ADMINS));
+    EDIT = registry.register(new PermissionType<>("edit", PermissionLevel.MODERATORS));
+    VIEW = registry.register(new PermissionType<>("view,", PermissionLevel.ALL));
+    CUSTOM = registry.register(new PermissionType<>("custom,", PermissionLevel.GAMEMASTERS));
   }
 
   @Test
@@ -125,14 +124,9 @@ public class PermissionConfigTest {
 
     assertEquals(3, map.size());
     // Verify all three permissions are in the map
-    assertTrue(map.containsKey("admin"));
-    assertTrue(map.containsKey("edit"));
-    assertTrue(map.containsKey("view"));
-
-    // Verify the levels by converting back
-    assertEquals(PermissionLevel.OWNERS.id(), map.getByte("admin"));
-    assertEquals(PermissionLevel.GAMEMASTERS.id(), map.getByte("edit"));
-    assertEquals(PermissionLevel.MODERATORS.id(), map.getByte("view"));
+    assertTrue(map.containsKey(ADMIN.id()));
+    assertTrue(map.containsKey(EDIT.id()));
+    assertTrue(map.containsKey(VIEW.id()));
   }
 
   @Test
@@ -143,13 +137,13 @@ public class PermissionConfigTest {
   @Test
   void testFrom() {
     // Use the actual PermissionLevel IDs instead of hardcoded values
-    Map<String, Byte> inputMap =
+    var inputMap =
         Map.of(
-            "admin", (byte) PermissionLevel.OWNERS.id(),
-            "edit", (byte) PermissionLevel.GAMEMASTERS.id(),
-            "view", (byte) PermissionLevel.ALL.id());
+            ADMIN.id(), (byte) PermissionLevel.OWNERS.id(),
+            EDIT.id(), (byte) PermissionLevel.GAMEMASTERS.id(),
+            VIEW.id(), (byte) PermissionLevel.ALL.id());
 
-    PermissionConfig<String> loadedConfig = PermissionConfig.from(registry, inputMap);
+    var loadedConfig = PermissionConfig.from(registry, inputMap);
 
     assertEquals(PermissionLevel.OWNERS, loadedConfig.get(ADMIN));
     assertEquals(PermissionLevel.GAMEMASTERS, loadedConfig.get(EDIT));
@@ -161,13 +155,16 @@ public class PermissionConfigTest {
 
   @Test
   void testFrom_WithInvalidNames() {
-    Map<String, Byte> inputMap =
+    var inputMap =
         Map.of(
-            "admin", (byte) PermissionLevel.OWNERS.id(),
-            "nonexistent", (byte) 2, // This should be ignored
-            "edit", (byte) PermissionLevel.GAMEMASTERS.id());
+            ADMIN.id(),
+            (byte) PermissionLevel.OWNERS.id(),
+            "unexist",
+            (byte) 2, // This should be ignored
+            EDIT.id(),
+            (byte) PermissionLevel.GAMEMASTERS.id());
 
-    PermissionConfig<String> loadedConfig = PermissionConfig.from(registry, inputMap);
+    var loadedConfig = PermissionConfig.from(registry, inputMap);
 
     assertEquals(PermissionLevel.OWNERS, loadedConfig.get(ADMIN));
     assertEquals(PermissionLevel.GAMEMASTERS, loadedConfig.get(EDIT));
@@ -178,7 +175,7 @@ public class PermissionConfigTest {
 
   @Test
   void testFrom_EmptyMap() {
-    PermissionConfig<String> loadedConfig = PermissionConfig.from(registry, Map.of());
+    var loadedConfig = PermissionConfig.from(registry, Map.of());
 
     assertEquals(PermissionLevel.ADMINS, loadedConfig.get(ADMIN));
     assertEquals(PermissionLevel.MODERATORS, loadedConfig.get(EDIT));
@@ -195,8 +192,7 @@ public class PermissionConfigTest {
     config.set(VIEW, PermissionLevel.MODERATORS);
 
     // Encode to map using DataResult
-    var encodedResult = codec.encodeStart(JsonOps.INSTANCE, config);
-    var encodedMap = encodedResult.getOrThrow();
+    var encodedMap = codec.encodeStart(JsonOps.INSTANCE, config).getOrThrow();
 
     // Decode back
     var decodedResult = codec.parse(JsonOps.INSTANCE, encodedMap);

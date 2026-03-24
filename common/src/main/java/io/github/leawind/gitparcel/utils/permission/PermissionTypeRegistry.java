@@ -1,47 +1,43 @@
 package io.github.leawind.gitparcel.utils.permission;
 
-import com.mojang.serialization.Codec;
-import it.unimi.dsi.fastutil.bytes.Byte2ObjectArrayMap;
-import it.unimi.dsi.fastutil.bytes.Byte2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * A registry for {@link PermissionType}s, indexed by id.
+ *
+ * <p>Types are registered at class-load time via {@link #register(PermissionType)}.
+ *
+ * @param <T> A type-safety tag, used to distinguish between different registries
+ */
 public class PermissionTypeRegistry<T> {
-  private final Byte2ObjectMap<PermissionType<T>> byId = new Byte2ObjectArrayMap<>();
-  private final Object2ObjectMap<String, PermissionType<T>> byName =
-      new Object2ObjectOpenHashMap<>();
-  private byte maxId = -1;
+  private final Object2ObjectMap<String, PermissionType<T>> byId = new Object2ObjectArrayMap<>();
 
-  public @Nullable PermissionType<T> byId(int id) {
-    return byId.get((byte) id);
+  public PermissionTypeRegistry() {}
+
+  /**
+   * Returns the registered type by its string id, or {@code null} if not found.
+   *
+   * @param id the permission type id
+   */
+  public @Nullable PermissionType<T> byId(String id) {
+    return byId.get(id);
   }
 
-  public @Nullable PermissionType<T> byName(String name) {
-    return byName.get(name);
-  }
-
-  public byte getMaxId() {
-    return maxId;
-  }
-
+  /**
+   * Registers a permission type. The id must be unique within this registry.
+   *
+   * @param type the permission type to register
+   * @return the registered type
+   * @throws IllegalArgumentException if the id is already taken
+   */
   public PermissionType<T> register(PermissionType<T> type) {
     if (byId.containsKey(type.id())) {
-      throw new IllegalArgumentException("id must be unique: " + type.id());
+      throw new IllegalArgumentException("id must be unique in this registry: " + type.id());
     }
-
-    if (byName.containsKey(type.name())) {
-      throw new IllegalArgumentException("name must be unique: " + type.name());
-    }
-
-    maxId = (byte) Math.max(maxId, type.id());
-
     byId.put(type.id(), type);
-    byName.put(type.name(), type);
-    return type;
-  }
 
-  public record Flags(long bits) {
-    public static final Codec<Flags> CODEC = Codec.LONG.xmap(Flags::new, Flags::bits);
+    return type;
   }
 }

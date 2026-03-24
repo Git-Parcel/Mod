@@ -81,9 +81,9 @@ public abstract sealed class ConfigItem<T, Self extends ConfigItem<T, Self>>
   }
 
   /**
-   * Gets the name of this configuration item.
+   * Gets the key of this configuration item.
    *
-   * @return the configuration item name
+   * @return the configuration item key
    */
   public String name() {
     return name;

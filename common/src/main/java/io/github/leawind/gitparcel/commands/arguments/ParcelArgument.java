@@ -44,7 +44,7 @@ public class ParcelArgument implements ArgumentType<ParcelArgument.ParcelSelecto
     return EXAMPLES;
   }
 
-  /** A simple wrapper to represent either UUID-based or name-based lookup */
+  /** A simple wrapper to represent either UUID-based or key-based lookup */
   public static class ParcelSelector {
     private final UUID uuid;
 

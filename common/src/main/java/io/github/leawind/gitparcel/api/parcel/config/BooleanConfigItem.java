@@ -26,7 +26,7 @@ public final class BooleanConfigItem extends ConfigItem<Boolean, BooleanConfigIt
   /**
    * Creates a new boolean configuration item.
    *
-   * @param name the name of the configuration item
+   * @param name the key of the configuration item
    */
   public BooleanConfigItem(String name) {
     super(name);
