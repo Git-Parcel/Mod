@@ -1,5 +1,7 @@
 package io.github.leawind.gitparcel.api.parcel;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.utils.TransformUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
@@ -31,6 +33,15 @@ import org.joml.Matrix4f;
  * @see StructurePlaceSettings
  */
 public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translation) {
+  public static final Codec<ParcelTransform> CODEC =
+      RecordCodecBuilder.create(
+          inst ->
+              inst.group(
+                      Mirror.CODEC.fieldOf("mirror").forGetter(ParcelTransform::mirror),
+                      Rotation.CODEC.fieldOf("rotation").forGetter(ParcelTransform::rotation),
+                      Vec3i.CODEC.fieldOf("translation").forGetter(ParcelTransform::translation))
+                  .apply(inst, ParcelTransform::new));
+
   /** Identity transform. */
   public static final ParcelTransform IDENTITY = new ParcelTransform(Vec3i.ZERO);
 
