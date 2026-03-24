@@ -35,7 +35,9 @@ public class MixinLevelRenderer {
               target = "Lnet/minecraft/client/renderer/LevelRenderer;finalizeGizmoCollection()V"))
   private void beforeFinalizeGizmoCollection(CallbackInfo ci, @Local PoseStack matrices) {
     gitparcel$context.prepare(minecraft, level, levelRenderState, matrices);
-    GameClientApi.Render.ON_BEFORE_FINALIZE_GIZMOS.emit(gitparcel$context);
+    if (gitparcel$context.isInitialized()) {
+      GameClientApi.Render.ON_BEFORE_FINALIZE_GIZMOS.emit(gitparcel$context);
+    }
   }
 
   @Inject(

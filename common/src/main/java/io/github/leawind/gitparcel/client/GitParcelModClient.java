@@ -59,13 +59,7 @@ public final class GitParcelModClient {
     // Render
     {
       GameClientApi.Render.ON_BEFORE_FINALIZE_GIZMOS.on(
-          (context) -> {
-            if (!context.isInitialized()) {
-              return;
-            }
-
-            GitParcelRenderer.INSTANCE.render();
-          });
+          (context) -> GitParcelRenderer.INSTANCE.renderGizmos());
     }
   }
 }

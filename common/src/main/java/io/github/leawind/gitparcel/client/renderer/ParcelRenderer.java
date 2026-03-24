@@ -9,13 +9,16 @@ public final class ParcelRenderer {
   private static final int WIREFRAME_COLOR = 0xFFFFFFFF;
   private static final float LINE_WIDTH = 2.5F;
 
-  void render() {
+  void renderGizmos() {
     for (var parcel : GitParcelModClient.PARCELS) {
-      if (parcel.visual().showWireframe()) {
+      var visual = parcel.visual();
+      // Wireframe
+      if (visual.showWireframe()) {
         Gizmos.cuboid(
             AABB.of(parcel.boundingBox()), GizmoStyle.stroke(WIREFRAME_COLOR, LINE_WIDTH), false);
-        // TODO render more details
       }
+      // TODO render more details
+
     }
   }
 }

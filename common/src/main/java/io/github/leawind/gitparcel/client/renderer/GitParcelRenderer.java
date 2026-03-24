@@ -5,7 +5,7 @@ public final class GitParcelRenderer {
 
   private final ParcelRenderer parcelRenderer = new ParcelRenderer();
 
-  public void render() {
-    parcelRenderer.render();
+  public void renderGizmos() {
+    parcelRenderer.renderGizmos();
   }
 }
