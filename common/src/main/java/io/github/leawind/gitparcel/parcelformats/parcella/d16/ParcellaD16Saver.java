@@ -39,7 +39,7 @@ public class ParcellaD16Saver extends ParcellaD32Saver
 
     try (var problemReporter = new ProblemReporter.ScopedCollector(LOGGER)) {
 
-      saveBlocks(ctx, 32);
+      saveBlocks(ctx, 16);
 
       if (!ignoreEntities) {
         saveEntities(ctx, problemReporter);
