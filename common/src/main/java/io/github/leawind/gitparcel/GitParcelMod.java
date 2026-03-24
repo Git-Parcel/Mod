@@ -104,7 +104,7 @@ public final class GitParcelMod {
 
     InvokeArgumentTypeInfos.register(
         registry,
-        "gitparcel:parcel_instance",
+        "gitparcel:parcel",
         ParcelArgument.class,
         SingletonArgumentInfo.contextFree(ParcelArgument::parcel));
   }

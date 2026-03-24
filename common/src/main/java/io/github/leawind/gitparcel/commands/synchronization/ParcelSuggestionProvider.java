@@ -33,10 +33,10 @@ public class ParcelSuggestionProvider implements SuggestionProvider<CommandSourc
 
     var serverLevel = source.getLevel();
     var savedData = GitParcelLevelSavedData.get(serverLevel);
-    var instances = savedData.streamParcels();
+    var parcels = savedData.streamParcels();
 
     var suggestions =
-        instances
+        parcels
             .flatMap(inst -> Stream.of(inst.uuid().toString()))
             .filter(s -> s.startsWith(builder.getRemaining()));
 

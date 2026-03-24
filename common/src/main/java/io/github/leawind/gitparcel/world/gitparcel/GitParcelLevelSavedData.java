@@ -23,7 +23,7 @@ public final class GitParcelLevelSavedData extends SavedData {
           inst ->
               inst.group(
                       Codec.unboundedMap(UUIDUtil.STRING_CODEC, Parcel.CODEC)
-                          .fieldOf("parcel_instances")
+                          .fieldOf("parcels")
                           .forGetter(GitParcelLevelSavedData::getParcels))
                   .apply(inst, GitParcelLevelSavedData::new));
 

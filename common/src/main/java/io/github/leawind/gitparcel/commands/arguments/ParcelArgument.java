@@ -19,7 +19,7 @@ public class ParcelArgument implements ArgumentType<ParcelArgument.ParcelSelecto
 
   public static final SimpleCommandExceptionType ERROR_TOO_MANY =
       new SimpleCommandExceptionType(GitParcelTranslations.of("argument.gitparcel.parcel.toomany"));
-  public static final SimpleCommandExceptionType ERROR_INSTANCE_NOT_FOUND =
+  public static final SimpleCommandExceptionType ERROR_PARCEL_NOT_FOUND =
       new SimpleCommandExceptionType(
           GitParcelTranslations.of("argument.gitparcel.parcel.notfound"));
 
@@ -55,11 +55,11 @@ public class ParcelArgument implements ArgumentType<ParcelArgument.ParcelSelecto
     /**
      * Finds a {@link Parcel} based on the provided {@link CommandSourceStack}.
      *
-     * <p>If the instance is found, it is returned. Otherwise, an exception is thrown.
+     * <p>If the parcel is found, it is returned. Otherwise, an exception is thrown.
      *
      * @param source The command source stack providing the context for the lookup.
      * @return The found {@link Parcel}.
-     * @throws CommandSyntaxException If the instance is not found
+     * @throws CommandSyntaxException If the parcel is not found
      */
     public Parcel get(CommandSourceStack source) throws CommandSyntaxException {
       var serverLevel = source.getLevel();
@@ -67,7 +67,7 @@ public class ParcelArgument implements ArgumentType<ParcelArgument.ParcelSelecto
       var inst = savedData.getParcel(uuid);
 
       if (inst == null) {
-        throw ERROR_INSTANCE_NOT_FOUND.create();
+        throw ERROR_PARCEL_NOT_FOUND.create();
       }
 
       return inst;

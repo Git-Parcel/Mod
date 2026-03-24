@@ -21,11 +21,11 @@ public class CreateSubcommand extends GitParcelBaseCommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
     var showWireframe =
         Commands.argument("show_wireframe", BoolArgumentType.bool())
-            .executes(CreateSubcommand::createInstance2);
+            .executes(CreateSubcommand::create2);
 
     var to =
         Commands.argument("to", BlockPosArgument.blockPos())
-            .executes(CreateSubcommand::createInstance1)
+            .executes(CreateSubcommand::create1)
             .then(showWireframe);
 
     var from = Commands.argument("from", BlockPosArgument.blockPos()).then(to);
@@ -33,25 +33,23 @@ public class CreateSubcommand extends GitParcelBaseCommand {
     return Commands.literal("create").then(from);
   }
 
-  private static int createInstance1(CommandContext<CommandSourceStack> ctx)
-      throws CommandSyntaxException {
-    return createInstance(
+  private static int create1(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+    return create(
         ctx,
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         true);
   }
 
-  private static int createInstance2(CommandContext<CommandSourceStack> ctx)
-      throws CommandSyntaxException {
-    return createInstance(
+  private static int create2(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+    return create(
         ctx,
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         BoolArgumentType.getBool(ctx, "show_wireframe"));
   }
 
-  private static int createInstance(
+  private static int create(
       CommandContext<CommandSourceStack> ctx, BlockPos from, BlockPos to, boolean showWireframe) {
     var source = ctx.getSource();
     var level = source.getLevel();
