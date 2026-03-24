@@ -24,7 +24,7 @@ import org.jspecify.annotations.Nullable;
  * @see <a href="https://git-parcel.github.io/schemas/ParcelMeta.json">Parcel Metadata Schema</a>
  */
 public final class ParcelMeta {
-  @Deprecated private static final Gson GSON = new Gson();
+  private static final Gson GSON = new Gson();
   public static final String SCHEMA_URL = "https://git-parcel.github.io/schemas/ParcelMeta.json";
 
   public static final Codec<ParcelMeta> CODEC =
@@ -87,11 +87,6 @@ public final class ParcelMeta {
     this.formatInfo = formatInfo;
     this.dataVersion = dataVersion;
     this.size = parcelSize;
-  }
-
-  @Deprecated
-  private ParcelMeta(String formatId, int formatVersion, int dataVersion, Vec3i parcelSize) {
-    this(new ParcelFormat.Info(formatId, formatVersion), dataVersion, parcelSize);
   }
 
   public ParcelFormat.Info formatInfo() {
