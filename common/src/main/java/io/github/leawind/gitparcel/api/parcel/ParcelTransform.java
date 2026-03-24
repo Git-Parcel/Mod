@@ -131,6 +131,13 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
     TransformUtils.translate(translation, matrix);
   }
 
+  public BoundingBox apply(BoundingBox boundingBox) {
+    boundingBox = TransformUtils.mirror(mirror, boundingBox);
+    boundingBox = TransformUtils.rotate(rotation, boundingBox);
+    boundingBox = TransformUtils.translate(translation, boundingBox);
+    return boundingBox;
+  }
+
   /**
    * Applies the inverted transformations (translate, rotate, mirror) to a {@link Vec3i}.
    *

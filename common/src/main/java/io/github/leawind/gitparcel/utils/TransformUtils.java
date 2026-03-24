@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
@@ -35,6 +36,36 @@ public final class TransformUtils {
       case CLOCKWISE_90 -> new Vec3i(-vec.getZ(), vec.getY(), vec.getX());
       case CLOCKWISE_180 -> new Vec3i(-vec.getX(), vec.getY(), -vec.getZ());
       case COUNTERCLOCKWISE_90 -> new Vec3i(vec.getZ(), vec.getY(), -vec.getX());
+    };
+  }
+
+  public static BoundingBox rotate(Rotation rotation, BoundingBox boundingBox) {
+    return switch (rotation) {
+      case NONE -> boundingBox;
+      case CLOCKWISE_90 ->
+          new BoundingBox(
+              -boundingBox.minZ(),
+              boundingBox.minY(),
+              boundingBox.minX(),
+              -boundingBox.maxZ(),
+              boundingBox.maxY(),
+              boundingBox.maxX());
+      case CLOCKWISE_180 ->
+          new BoundingBox(
+              -boundingBox.minX(),
+              boundingBox.minY(),
+              -boundingBox.minZ(),
+              -boundingBox.maxX(),
+              boundingBox.maxY(),
+              -boundingBox.maxZ());
+      case COUNTERCLOCKWISE_90 ->
+          new BoundingBox(
+              boundingBox.minZ(),
+              boundingBox.minY(),
+              -boundingBox.minX(),
+              boundingBox.maxZ(),
+              boundingBox.maxY(),
+              -boundingBox.maxX());
     };
   }
 
@@ -98,6 +129,28 @@ public final class TransformUtils {
     };
   }
 
+  public static BoundingBox mirror(Mirror mirror, BoundingBox boundingBox) {
+    return switch (mirror) {
+      case NONE -> boundingBox;
+      case FRONT_BACK ->
+          new BoundingBox(
+              -boundingBox.minX(),
+              boundingBox.minY(),
+              boundingBox.minZ(),
+              -boundingBox.maxX(),
+              boundingBox.maxY(),
+              boundingBox.maxZ());
+      case LEFT_RIGHT ->
+          new BoundingBox(
+              boundingBox.minX(),
+              boundingBox.minY(),
+              -boundingBox.minZ(),
+              boundingBox.maxX(),
+              boundingBox.maxY(),
+              -boundingBox.maxZ());
+    };
+  }
+
   public static void mirror(Mirror mirror, Matrix4f matrix) {
     switch (mirror) {
       case LEFT_RIGHT -> matrix.scale(1, 1, -1);
@@ -115,6 +168,16 @@ public final class TransformUtils {
 
   public static BlockPos translate(Vec3i translation, BlockPos pos) {
     return pos.offset(translation);
+  }
+
+  public static BoundingBox translate(Vec3i translation, BoundingBox boundingBox) {
+    return new BoundingBox(
+        boundingBox.minX() + translation.getX(),
+        boundingBox.minY() + translation.getY(),
+        boundingBox.minZ() + translation.getZ(),
+        boundingBox.maxX() + translation.getX(),
+        boundingBox.maxY() + translation.getY(),
+        boundingBox.maxZ() + translation.getZ());
   }
 
   public static Vec3 translateInverted(Vec3i translation, Vec3 vec) {
