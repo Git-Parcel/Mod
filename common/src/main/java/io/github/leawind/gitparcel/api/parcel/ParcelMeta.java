@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.Optional;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.Vec3i;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -183,6 +185,14 @@ public final class ParcelMeta {
     public Optional<List<String>> getNamespaces() {
       return Optional.ofNullable(namespaces);
     }
+  }
+
+  public static ParcelMeta from(
+      ParcelFormat.Info format, BoundingBox boundingBox, Rotation rotation) {
+    Vec3i sizeWorldSpace =
+        new Vec3i(boundingBox.getXSpan(), boundingBox.getYSpan(), boundingBox.getZSpan());
+    Vec3i sizeParcelSpace = ParcelTransform.rotateSizeInverted(rotation, sizeWorldSpace);
+    return new ParcelMeta(format, sizeParcelSpace);
   }
 
   /**

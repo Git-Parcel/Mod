@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.world.gitparcel;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.permission.ParcelPermissions;
@@ -23,6 +24,7 @@ public class Parcel {
           inst ->
               inst.group(
                       UUIDUtil.STRING_CODEC.fieldOf("uuid").forGetter(Parcel::uuid),
+                      ParcelMeta.CODEC.fieldOf("meta").forGetter(Parcel::meta),
                       BoundingBox.CODEC.fieldOf("bounding_box").forGetter(Parcel::boundingBox),
                       Mirror.CODEC.fieldOf("mirror").forGetter(Parcel::mirror),
                       Rotation.CODEC.fieldOf("rotation").forGetter(Parcel::rotation),
@@ -37,6 +39,7 @@ public class Parcel {
   // ////////////////////////////////////////////////////////////////
 
   private final UUID uuid;
+  private final ParcelMeta meta;
 
   private BoundingBox boundingBox;
   private Mirror mirror;
@@ -70,6 +73,25 @@ public class Parcel {
       Visual visual,
       PermissionConfig<ParcelPermissions> permissions) {
     this.uuid = uuid;
+    this.meta =
+        ParcelMeta.from(ParcelFormatRegistry.INSTANCE.defaultSaver().info(), boundingBox, rotation);
+    this.boundingBox = boundingBox;
+    this.mirror = mirror;
+    this.rotation = rotation;
+    this.visual = visual;
+    this.permissions = permissions;
+  }
+
+  public Parcel(
+      UUID uuid,
+      ParcelMeta meta,
+      BoundingBox boundingBox,
+      Mirror mirror,
+      Rotation rotation,
+      Visual visual,
+      PermissionConfig<ParcelPermissions> permissions) {
+    this.uuid = uuid;
+    this.meta = meta;
     this.boundingBox = boundingBox;
     this.mirror = mirror;
     this.rotation = rotation;
@@ -103,6 +125,10 @@ public class Parcel {
 
   public PermissionConfig<ParcelPermissions> permissions() {
     return permissions;
+  }
+
+  public ParcelMeta meta() {
+    return meta;
   }
 
   // ////////////////////////////////////////////////////////////////

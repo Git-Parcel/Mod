@@ -42,10 +42,6 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
     this(Mirror.NONE, Rotation.NONE, translation);
   }
 
-  public ParcelTransform(Mirror mirror, Rotation rotation, BoundingBox boundingBox) {
-    this(mirror, rotation, getPivotPos(mirror, rotation, boundingBox));
-  }
-
   /**
    * Transforms a local space size vector to world space.
    *

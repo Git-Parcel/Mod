@@ -128,7 +128,8 @@ public class SaveSubcommand {
       Rotation rotation) {
     try {
       BoundingBox boundingBox = BoundingBox.fromCorners(corner1, corner2);
-      ParcelTransform transform = new ParcelTransform(mirror, rotation, boundingBox);
+      var pivot = ParcelTransform.getPivotPos(mirror, rotation, boundingBox);
+      ParcelTransform transform = new ParcelTransform(mirror, rotation, pivot);
 
       Vec3i sizeWorldSpace =
           new Vec3i(boundingBox.getXSpan(), boundingBox.getYSpan(), boundingBox.getZSpan());
