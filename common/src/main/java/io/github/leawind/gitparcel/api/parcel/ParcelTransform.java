@@ -1,5 +1,6 @@
 package io.github.leawind.gitparcel.api.parcel;
 
+import io.github.leawind.gitparcel.utils.TransformUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
@@ -87,193 +88,15 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
   }
 
   /**
-   * Applies the mirror transformation to a {@link Vec3i}.
-   *
-   * @param vec The vector
-   * @return The mirrored vector
-   */
-  public Vec3i applyMirror(Vec3i vec) {
-    return switch (mirror) {
-      case NONE -> vec;
-      case LEFT_RIGHT -> new Vec3i(vec.getX(), vec.getY(), -vec.getZ());
-      case FRONT_BACK -> new Vec3i(-vec.getX(), vec.getY(), vec.getZ());
-    };
-  }
-
-  /**
-   * Applies the mirror transformation to a {@link Vec3}.
-   *
-   * @param vec The vector
-   * @return The mirrored vector
-   */
-  private Vec3 applyMirror(Vec3 vec) {
-    return switch (mirror) {
-      case NONE -> vec;
-      case LEFT_RIGHT -> new Vec3(vec.x, vec.y, -vec.z);
-      case FRONT_BACK -> new Vec3(-vec.x, vec.y, vec.z);
-    };
-  }
-
-  /**
-   * Applies the mirror transformation to a {@link BlockPos}.
-   *
-   * @param pos The position
-   * @return The mirrored position
-   */
-  public BlockPos applyMirror(BlockPos pos) {
-    return apply(mirror, pos);
-  }
-
-  /**
-   * Applies the mirror transformation to a {@link BlockState}.
-   *
-   * @param blockState The block state
-   * @return The mirrored block state
-   */
-  public BlockState applyMirror(BlockState blockState) {
-    return blockState.mirror(mirror);
-  }
-
-  /**
-   * Applies the rotation transformation to a {@link Vec3i}.
-   *
-   * @param vec The vector
-   * @return The rotated vector
-   */
-  public Vec3i applyRotation(Vec3i vec) {
-    return apply(rotation, vec);
-  }
-
-  /**
-   * Applies the rotation transformation to a {@link Vec3}.
-   *
-   * @param vec The vector
-   * @return The rotated vector
-   */
-  public Vec3 applyRotation(Vec3 vec) {
-    return apply(rotation, vec);
-  }
-
-  /**
-   * Applies the rotation transformation to a {@link BlockPos}.
-   *
-   * @param pos The position
-   * @return The rotated position
-   */
-  public BlockPos applyRotation(BlockPos pos) {
-    return pos.rotate(rotation);
-  }
-
-  /**
-   * Applies the rotation transformation to a {@link BlockState}.
-   *
-   * @param blockState The block state
-   * @return The rotated block state
-   */
-  public BlockState applyRotation(BlockState blockState) {
-    return blockState.rotate(rotation);
-  }
-
-  /**
-   * Applies the inverted rotation transformation to a {@link Vec3i}.
-   *
-   * @param vec The vector
-   * @return The inversely rotated vector
-   */
-  public Vec3i applyRotationInverted(Vec3i vec) {
-    return apply(invert(rotation), vec);
-  }
-
-  /**
-   * Applies the inverted rotation transformation to a {@link Vec3}.
-   *
-   * @param vec The vector
-   * @return The inversely rotated vector
-   */
-  private Vec3 applyRotationInverted(Vec3 vec) {
-    return apply(invert(rotation), vec);
-  }
-
-  /**
-   * Applies the inverted rotation transformation to a {@link BlockPos}.
-   *
-   * @param pos The position
-   * @return The inversely rotated position
-   */
-  public BlockPos applyRotationInverted(BlockPos pos) {
-    return pos.rotate(invert(rotation));
-  }
-
-  /**
-   * Applies the inverted rotation transformation to a {@link BlockState}.
-   *
-   * @param blockState The block state
-   * @return The inversely rotated block state
-   */
-  public BlockState applyRotationInverted(BlockState blockState) {
-    return blockState.rotate(invert(rotation));
-  }
-
-  /**
-   * Applies the translation transformation to a {@link Vec3i}.
-   *
-   * @param vec The vector
-   * @return The translated vector
-   */
-  public Vec3i applyTranslation(Vec3i vec) {
-    return vec.offset(translation);
-  }
-
-  /**
-   * Applies the translation transformation to a {@link BlockPos}.
-   *
-   * @param pos The position
-   * @return The translated position
-   */
-  public BlockPos applyTranslation(BlockPos pos) {
-    return pos.offset(translation);
-  }
-
-  /**
-   * Applies the inverted translation transformation to a {@link Vec3i}.
-   *
-   * @param vec The vector
-   * @return The inversely translated vector
-   */
-  public Vec3i applyTranslationInverted(Vec3i vec) {
-    return vec.subtract(translation);
-  }
-
-  /**
-   * Applies the inverted translation transformation to a {@link Vec3}.
-   *
-   * @param vec The vector
-   * @return The inversely translated vector
-   */
-  private Vec3 applyTranslationInverted(Vec3 vec) {
-    return vec.subtract(translation.getX(), translation.getY(), translation.getZ());
-  }
-
-  /**
-   * Applies the inverted translation transformation to a {@link BlockPos}.
-   *
-   * @param pos The position
-   * @return The inversely translated position
-   */
-  public BlockPos applyTranslationInverted(BlockPos pos) {
-    return pos.subtract(translation);
-  }
-
-  /**
    * Applies all transformations (mirror, rotate, translate) to a {@link Vec3i}.
    *
    * @param vec The vector
    * @return The transformed vector
    */
   public Vec3i apply(Vec3i vec) {
-    vec = applyMirror(vec);
-    vec = applyRotation(vec);
-    vec = applyTranslation(vec);
+    vec = TransformUtils.mirror(mirror, vec);
+    vec = TransformUtils.rotate(rotation, vec);
+    vec = TransformUtils.translate(translation, vec);
     return vec;
   }
 
@@ -284,9 +107,9 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @return The transformed position
    */
   public BlockPos apply(BlockPos pos) {
-    pos = applyMirror(pos);
-    pos = applyRotation(pos);
-    pos = applyTranslation(pos);
+    pos = TransformUtils.mirror(mirror, pos);
+    pos = pos.rotate(rotation);
+    pos = TransformUtils.translate(translation, pos);
     return pos;
   }
 
@@ -303,9 +126,9 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
   }
 
   public void apply(Matrix4f matrix) {
-    apply(mirror, matrix);
-    apply(rotation, matrix);
-    apply(translation, matrix);
+    TransformUtils.mirror(mirror, matrix);
+    TransformUtils.rotateY(rotation, matrix);
+    TransformUtils.translate(translation, matrix);
   }
 
   /**
@@ -315,9 +138,9 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @return The inversely transformed vector
    */
   public Vec3i applyInverted(Vec3i vec) {
-    vec = applyTranslationInverted(vec);
-    vec = applyRotationInverted(vec);
-    vec = applyMirror(vec);
+    vec = TransformUtils.translateInverted(translation, vec);
+    vec = TransformUtils.rotateInverted(rotation, vec);
+    vec = TransformUtils.mirror(mirror, vec);
     return vec;
   }
 
@@ -328,9 +151,9 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @return The inversely transformed vector
    */
   public Vec3 applyInverted(Vec3 vec) {
-    vec = applyTranslationInverted(vec);
-    vec = applyRotationInverted(vec);
-    vec = applyMirror(vec);
+    vec = TransformUtils.translateInverted(translation, vec);
+    vec = TransformUtils.rotateInverted(rotation, vec);
+    vec = TransformUtils.mirror(mirror, vec);
     return vec;
   }
 
@@ -341,9 +164,9 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @return The inversely transformed position
    */
   public BlockPos applyInverted(BlockPos pos) {
-    pos = applyTranslationInverted(pos);
-    pos = applyRotationInverted(pos);
-    pos = applyMirror(pos);
+    pos = TransformUtils.translateInverted(translation, pos);
+    pos = TransformUtils.rotateInverted(rotation, pos);
+    pos = TransformUtils.mirror(mirror, pos);
     return pos;
   }
 
@@ -356,90 +179,16 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    * @return The inversely transformed block state
    */
   public BlockState applyInverted(BlockState blockState) {
-    return blockState.rotate(invert(rotation)).mirror(mirror);
-  }
-
-  /**
-   * Rotates a {@link Vec3i} by the specified rotation.
-   *
-   * @param rotation The rotation
-   * @param vec The vector
-   * @return The rotated vector
-   */
-  private static Vec3i apply(Rotation rotation, Vec3i vec) {
-    return switch (rotation) {
-      case NONE -> vec;
-      case CLOCKWISE_90 -> new Vec3i(-vec.getZ(), vec.getY(), vec.getX());
-      case CLOCKWISE_180 -> new Vec3i(-vec.getX(), vec.getY(), -vec.getZ());
-      case COUNTERCLOCKWISE_90 -> new Vec3i(vec.getZ(), vec.getY(), -vec.getX());
-    };
-  }
-
-  /**
-   * Rotates a {@link Vec3} by the specified rotation.
-   *
-   * @param rotation The rotation
-   * @param vec The vector
-   * @return The rotated vector
-   */
-  private static Vec3 apply(Rotation rotation, Vec3 vec) {
-    return switch (rotation) {
-      case NONE -> vec;
-      case CLOCKWISE_90 -> new Vec3(-vec.z, vec.y, vec.x);
-      case CLOCKWISE_180 -> new Vec3(-vec.x, vec.y, -vec.z);
-      case COUNTERCLOCKWISE_90 -> new Vec3(vec.z, vec.y, -vec.x);
-    };
-  }
-
-  /**
-   * Inverts the specified rotation.
-   *
-   * @param rotation The rotation
-   * @return The inverted rotation
-   */
-  private static Rotation invert(Rotation rotation) {
-    return switch (rotation) {
-      case NONE, CLOCKWISE_180 -> rotation;
-      case CLOCKWISE_90 -> Rotation.COUNTERCLOCKWISE_90;
-      case COUNTERCLOCKWISE_90 -> Rotation.CLOCKWISE_90;
-    };
-  }
-
-  public static BlockPos apply(Mirror mirror, BlockPos pos) {
-    return switch (mirror) {
-      case NONE -> pos;
-      case FRONT_BACK -> new BlockPos(-pos.getX(), pos.getY(), pos.getZ());
-      case LEFT_RIGHT -> new BlockPos(pos.getX(), pos.getY(), -pos.getZ());
-    };
-  }
-
-  public static void apply(Mirror mirror, Matrix4f matrix) {
-    switch (mirror) {
-      case LEFT_RIGHT -> matrix.scale(1, 1, -1);
-      case FRONT_BACK -> matrix.scale(-1, 1, 1);
-    }
-  }
-
-  /** TODO left hand or right hand? */
-  public static void apply(Rotation rotation, Matrix4f matrix) {
-    switch (rotation) {
-      case CLOCKWISE_90 -> matrix.rotateZ((float) Math.toRadians(90));
-      case CLOCKWISE_180 -> matrix.rotateZ((float) Math.toRadians(180));
-      case COUNTERCLOCKWISE_90 -> matrix.rotateZ((float) Math.toRadians(-90));
-    }
-  }
-
-  public static void apply(Vec3i translation, Matrix4f matrix) {
-    matrix.translate(translation.getX(), translation.getY(), translation.getZ());
+    return blockState.rotate(TransformUtils.invert(rotation)).mirror(mirror);
   }
 
   public static Vec3i rotateSize(Rotation rotation, Vec3i size) {
-    var rotated = apply(rotation, size);
+    var rotated = TransformUtils.rotate(rotation, size);
     return new Vec3i(Math.abs(rotated.getX()), rotated.getY(), Math.abs(rotated.getZ()));
   }
 
   public static Vec3i rotateSizeInverted(Rotation rotation, Vec3i size) {
-    var rotated = apply(invert(rotation), size);
+    var rotated = TransformUtils.rotate(TransformUtils.invert(rotation), size);
     return new Vec3i(Math.abs(rotated.getX()), rotated.getY(), Math.abs(rotated.getZ()));
   }
 

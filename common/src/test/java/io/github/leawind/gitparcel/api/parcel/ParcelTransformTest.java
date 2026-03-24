@@ -169,40 +169,6 @@ public class ParcelTransformTest {
   }
 
   @Test
-  void testApplyMirror() {
-    ParcelTransform transform =
-        new ParcelTransform(Mirror.FRONT_BACK, Rotation.NONE, BlockPos.ZERO);
-    BlockPos pos = new BlockPos(1, 2, 3);
-    Vec3i vec = new Vec3i(1, 2, 3);
-
-    assertEquals(new BlockPos(-1, 2, 3), transform.applyMirror(pos));
-    assertEquals(new Vec3i(-1, 2, 3), transform.applyMirror(vec));
-  }
-
-  @Test
-  void testApplyRotation() {
-    ParcelTransform transform =
-        new ParcelTransform(Mirror.NONE, Rotation.CLOCKWISE_90, BlockPos.ZERO);
-    BlockPos pos = new BlockPos(1, 2, 3);
-    Vec3i vec = new Vec3i(1, 2, 3);
-    Vec3 vec3 = new Vec3(1, 2, 3);
-
-    assertEquals(new BlockPos(-3, 2, 1), transform.applyRotation(pos));
-    assertEquals(new Vec3i(-3, 2, 1), transform.applyRotation(vec));
-    assertEquals(new Vec3(-3, 2, 1), transform.applyRotation(vec3));
-  }
-
-  @Test
-  void testApplyTranslation() {
-    ParcelTransform transform = new ParcelTransform(new BlockPos(1, 2, 3));
-    BlockPos pos = new BlockPos(0, 0, 0);
-    Vec3i vec = new Vec3i(0, 0, 0);
-
-    assertEquals(new BlockPos(1, 2, 3), transform.applyTranslation(pos));
-    assertEquals(new Vec3i(1, 2, 3), transform.applyTranslation(vec));
-  }
-
-  @Test
   void testApplyInvertedVec3i() {
     ParcelTransform transform =
         new ParcelTransform(Mirror.FRONT_BACK, Rotation.CLOCKWISE_90, new BlockPos(1, 2, 3));
