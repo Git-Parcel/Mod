@@ -70,7 +70,11 @@ public class CreateSubcommand extends GitParcelBaseCommand {
       savedData.addNewParcel(parcel);
 
       source.sendSuccess(
-          () -> GitParcelTranslations.of("command.gitparcel.parcel.create.success", from, to),
+          () ->
+              GitParcelTranslations.of(
+                  "command.gitparcel.parcel.create.success",
+                  from.toShortString(),
+                  to.toShortString()),
           false);
 
       GitParcelMod.LOGGER.info("Created new parcel: from={}, to={}, uuid={}", from, to, uuid);
