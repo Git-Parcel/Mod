@@ -48,7 +48,7 @@ public class CreateSubcommand extends GitParcelBaseCommand {
         ctx,
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
-        BoolArgumentType.getBool(ctx, "show_bounding_box"));
+        BoolArgumentType.getBool(ctx, "show_wireframe"));
   }
 
   private static int createInstance(
