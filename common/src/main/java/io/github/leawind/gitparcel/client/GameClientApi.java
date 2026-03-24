@@ -12,10 +12,10 @@ import net.minecraft.client.renderer.state.LevelRenderState;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import org.jspecify.annotations.Nullable;
 
-public class GameClientApi {
+public final class GameClientApi {
   public static final EventEmitter<Minecraft> ON_CLIENT_TICK_START = new EventEmitter<>();
 
-  public static final class Network {
+  public static class Network {
     public static final Map<CustomPacketPayload.Type<?>, BiConsumer<CustomPacketPayload, Minecraft>>
         CUSTOM_PAYLOAD_HANDLERS = new HashMap<>();
 

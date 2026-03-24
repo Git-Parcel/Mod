@@ -1,6 +1,6 @@
 package io.github.leawind.gitparcel.client.renderer;
 
-public class GitParcelRenderer {
+public final class GitParcelRenderer {
   public static final GitParcelRenderer INSTANCE = new GitParcelRenderer();
 
   private final ParcelRenderer parcelRenderer = new ParcelRenderer();

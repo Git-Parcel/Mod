@@ -17,7 +17,7 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import org.jspecify.annotations.Nullable;
 
 /** Parcel represents a cuboid area in the world. */
-public class Parcel {
+public final class Parcel {
 
   public static final Codec<Parcel> CODEC =
       RecordCodecBuilder.create(

@@ -10,7 +10,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 
 @Mod(GitParcelMod.MOD_ID)
-public class GitParcelModForge {
+public final class GitParcelModForge {
 
   public GitParcelModForge() {
     GitParcelMod.init();

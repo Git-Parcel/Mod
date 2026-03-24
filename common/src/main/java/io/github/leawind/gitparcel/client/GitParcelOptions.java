@@ -5,7 +5,7 @@ import io.github.leawind.gitparcel.platform.Services;
 import java.util.function.Consumer;
 import net.minecraft.client.KeyMapping;
 
-public class GitParcelOptions {
+public final class GitParcelOptions {
   public static final KeyMapping keyDebugScreen =
       new KeyMapping("key.gitparcel.debug_screen", InputConstants.KEY_R, KeyMapping.Category.DEBUG);
 

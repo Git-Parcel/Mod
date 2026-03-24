@@ -20,7 +20,7 @@ import org.jspecify.annotations.Nullable;
  * <p>A singleton instance is available via {@link #INSTANCE}, though subclasses may create
  * additional registries as needed.
  */
-public class ParcelFormatRegistry {
+public final class ParcelFormatRegistry {
   /** The global singleton instance of {@code ParcelFormatRegistry}. */
   public static final ParcelFormatRegistry INSTANCE = new ParcelFormatRegistry();
 
@@ -35,7 +35,7 @@ public class ParcelFormatRegistry {
    * <p>Protected to allow subclassing while discouraging direct instantiation in favor of {@link
    * #INSTANCE}.
    */
-  protected ParcelFormatRegistry() {}
+  private ParcelFormatRegistry() {}
 
   /**
    * Registers a format implementation as either a saver or a loader.

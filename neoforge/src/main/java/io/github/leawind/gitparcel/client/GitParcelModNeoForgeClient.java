@@ -9,7 +9,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 
 @Mod(value = GitParcelMod.MOD_ID, dist = Dist.CLIENT)
-public class GitParcelModNeoForgeClient {
+public final class GitParcelModNeoForgeClient {
   public GitParcelModNeoForgeClient(IEventBus eventBus) {
     GitParcelModClient.init();
     GitParcelModNeoForgeClient.init(eventBus);

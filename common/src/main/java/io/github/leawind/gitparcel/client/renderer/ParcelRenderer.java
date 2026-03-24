@@ -5,11 +5,11 @@ import net.minecraft.gizmos.GizmoStyle;
 import net.minecraft.gizmos.Gizmos;
 import net.minecraft.world.phys.AABB;
 
-public class ParcelRenderer {
+public final class ParcelRenderer {
   private static final int WIREFRAME_COLOR = 0xFFFFFFFF;
   private static final float LINE_WIDTH = 2.5F;
 
-  protected void render() {
+  void render() {
     for (var parcel : GitParcelModClient.PARCELS) {
       if (parcel.visual().showWireframe()) {
         Gizmos.cuboid(

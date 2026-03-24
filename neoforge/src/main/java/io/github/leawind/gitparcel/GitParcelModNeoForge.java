@@ -10,7 +10,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 @Mod(GitParcelMod.MOD_ID)
-public class GitParcelModNeoForge {
+public final class GitParcelModNeoForge {
 
   public GitParcelModNeoForge(IEventBus eventBus) {
     GitParcelMod.init();

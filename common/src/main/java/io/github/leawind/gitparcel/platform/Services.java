@@ -5,7 +5,7 @@ import io.github.leawind.gitparcel.platform.services.IPlatformHelper;
 import java.util.ServiceLoader;
 import org.slf4j.Logger;
 
-public class Services {
+public final class Services {
   private static final Logger LOGGER = LogUtils.getLogger();
 
   public static final IPlatformHelper PLATFORM = load(IPlatformHelper.class);

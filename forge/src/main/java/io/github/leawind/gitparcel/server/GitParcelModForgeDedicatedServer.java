@@ -1,5 +1,5 @@
 package io.github.leawind.gitparcel.server;
 
-public class GitParcelModForgeDedicatedServer {
+public final class GitParcelModForgeDedicatedServer {
   public static void init() {}
 }

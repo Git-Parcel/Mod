@@ -17,7 +17,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 import org.jspecify.annotations.Nullable;
 
-public class GitParcelLevelSavedData extends SavedData {
+public final class GitParcelLevelSavedData extends SavedData {
   public static final Codec<GitParcelLevelSavedData> CODEC =
       RecordCodecBuilder.create(
           inst ->

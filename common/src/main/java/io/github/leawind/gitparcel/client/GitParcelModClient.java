@@ -11,7 +11,7 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
-public class GitParcelModClient {
+public final class GitParcelModClient {
   private static final Logger LOGGER = LogUtils.getLogger();
 
   /**

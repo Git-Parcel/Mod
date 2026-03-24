@@ -6,7 +6,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 
-public class GitParcelModFabric implements ModInitializer {
+public final class GitParcelModFabric implements ModInitializer {
 
   @Override
   public void onInitialize() {

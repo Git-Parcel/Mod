@@ -3,7 +3,7 @@ package io.github.leawind.gitparcel;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.TranslatableContents;
 
-public class GitParcelTranslations {
+public final class GitParcelTranslations {
   /**
    * @see net.minecraft.network.chat.Component#translatable(String)
    */

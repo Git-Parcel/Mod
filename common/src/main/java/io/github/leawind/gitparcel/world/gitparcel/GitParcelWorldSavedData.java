@@ -10,7 +10,7 @@ import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
-public class GitParcelWorldSavedData extends SavedData {
+public final class GitParcelWorldSavedData extends SavedData {
   public static final Codec<GitParcelWorldSavedData> CODEC =
       RecordCodecBuilder.create(
           inst ->

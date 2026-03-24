@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @param <T> A type-safety tag, used to distinguish between different registries
  */
-public class PermissionTypeRegistry<T> {
+public final class PermissionTypeRegistry<T> {
   private final Object2ObjectMap<String, PermissionType<T>> byId = new Object2ObjectArrayMap<>();
 
   public PermissionTypeRegistry() {}

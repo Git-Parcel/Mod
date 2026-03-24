@@ -34,7 +34,7 @@ import net.minecraft.server.permissions.PermissionSet;
  *
  * @param <T> the type-safety tag, matching the corresponding registry and permission types
  */
-public class PermissionConfig<T> {
+public final class PermissionConfig<T> {
   private final PermissionTypeRegistry<T> registry;
 
   private final Object2ObjectMap<String, PermissionLevel> requirements =
