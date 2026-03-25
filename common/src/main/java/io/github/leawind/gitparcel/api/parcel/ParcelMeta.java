@@ -186,7 +186,7 @@ public final class ParcelMeta {
       ParcelFormat.Info format, BoundingBox boundingBox, Rotation rotation) {
     Vec3i sizeWorldSpace =
         new Vec3i(boundingBox.getXSpan(), boundingBox.getYSpan(), boundingBox.getZSpan());
-    Vec3i sizeParcelSpace = ParcelTransform.rotateSizeInverted(rotation, sizeWorldSpace);
+    Vec3i sizeParcelSpace = ParcelTransform.rotateSize(rotation, sizeWorldSpace);
     return new ParcelMeta(format, sizeParcelSpace);
   }
 

@@ -133,7 +133,7 @@ public class SaveSubcommand {
 
       Vec3i sizeWorldSpace =
           new Vec3i(boundingBox.getXSpan(), boundingBox.getYSpan(), boundingBox.getZSpan());
-      Vec3i sizeParcelSpace = ParcelTransform.rotateSizeInverted(rotation, sizeWorldSpace);
+      Vec3i sizeParcelSpace = ParcelTransform.rotateSize(rotation, sizeWorldSpace);
 
       ParcelMeta meta = new ParcelMeta(format.info(), sizeParcelSpace);
 

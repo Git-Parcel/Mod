@@ -68,19 +68,6 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
   }
 
   /**
-   * Transforms a world space size vector using the inverted transformation.
-   *
-   * <p>Only inverted rotation is considered (Y-axis only). X and Z components are normalized to
-   * absolute values.
-   *
-   * @param size The world space size vector
-   * @return The transformed size vector
-   */
-  public Vec3i applyToSizeInverted(Vec3i size) {
-    return rotateSizeInverted(rotation, size);
-  }
-
-  /**
    * Returns the world origin translated by this transform's offset.
    *
    * @return The translated world origin
@@ -119,7 +106,7 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
    */
   public BlockPos apply(BlockPos pos) {
     pos = TransformUtils.mirror(mirror, pos);
-    pos = pos.rotate(rotation);
+    pos = TransformUtils.rotate(rotation, pos);
     pos = TransformUtils.translate(translation, pos);
     return pos;
   }
@@ -201,13 +188,10 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
   }
 
   public static Vec3i rotateSize(Rotation rotation, Vec3i size) {
-    var rotated = TransformUtils.rotate(rotation, size);
-    return new Vec3i(Math.abs(rotated.getX()), rotated.getY(), Math.abs(rotated.getZ()));
-  }
-
-  public static Vec3i rotateSizeInverted(Rotation rotation, Vec3i size) {
-    var rotated = TransformUtils.rotate(TransformUtils.invert(rotation), size);
-    return new Vec3i(Math.abs(rotated.getX()), rotated.getY(), Math.abs(rotated.getZ()));
+    return switch (rotation) {
+      case NONE, CLOCKWISE_180 -> size;
+      case CLOCKWISE_90, COUNTERCLOCKWISE_90 -> new Vec3i(size.getZ(), size.getY(), size.getX());
+    };
   }
 
   public static BlockPos getPivotPos(Mirror mirror, Rotation rotation, BoundingBox bounds) {

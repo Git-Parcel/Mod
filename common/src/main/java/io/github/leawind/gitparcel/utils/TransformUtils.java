@@ -39,6 +39,15 @@ public final class TransformUtils {
     };
   }
 
+  public static Vec3i rotateInverted(Rotation rotation, Vec3i vec) {
+    return switch (rotation) {
+      case NONE -> vec;
+      case CLOCKWISE_90 -> new Vec3i(vec.getZ(), vec.getY(), -vec.getX());
+      case CLOCKWISE_180 -> new Vec3i(-vec.getX(), vec.getY(), -vec.getZ());
+      case COUNTERCLOCKWISE_90 -> new Vec3i(-vec.getZ(), vec.getY(), vec.getX());
+    };
+  }
+
   public static BoundingBox rotate(Rotation rotation, BoundingBox boundingBox) {
     return switch (rotation) {
       case NONE -> boundingBox;
@@ -69,10 +78,6 @@ public final class TransformUtils {
     };
   }
 
-  public static Vec3i rotateInverted(Rotation rotation, Vec3i vec) {
-    return TransformUtils.rotate(TransformUtils.invert(rotation), vec);
-  }
-
   /**
    * Rotates a {@link Vec3} by the specified rotation.
    *
@@ -90,11 +95,30 @@ public final class TransformUtils {
   }
 
   public static Vec3 rotateInverted(Rotation rotation, Vec3 vec) {
-    return TransformUtils.rotate(TransformUtils.invert(rotation), vec);
+    return switch (rotation) {
+      case NONE -> vec;
+      case CLOCKWISE_90 -> new Vec3(vec.z, vec.y, -vec.x);
+      case CLOCKWISE_180 -> new Vec3(-vec.x, vec.y, -vec.z);
+      case COUNTERCLOCKWISE_90 -> new Vec3(-vec.z, vec.y, vec.x);
+    };
+  }
+
+  public static BlockPos rotate(Rotation rotation, BlockPos pos) {
+    return switch (rotation) {
+      case NONE -> pos;
+      case CLOCKWISE_90 -> new BlockPos(-pos.getZ(), pos.getY(), pos.getX());
+      case CLOCKWISE_180 -> new BlockPos(-pos.getX(), pos.getY(), -pos.getZ());
+      case COUNTERCLOCKWISE_90 -> new BlockPos(pos.getZ(), pos.getY(), -pos.getX());
+    };
   }
 
   public static BlockPos rotateInverted(Rotation rotation, BlockPos pos) {
-    return pos.rotate(TransformUtils.invert(rotation));
+    return switch (rotation) {
+      case NONE -> pos;
+      case CLOCKWISE_90 -> new BlockPos(pos.getZ(), pos.getY(), -pos.getX());
+      case CLOCKWISE_180 -> new BlockPos(-pos.getX(), pos.getY(), -pos.getZ());
+      case COUNTERCLOCKWISE_90 -> new BlockPos(-pos.getZ(), pos.getY(), pos.getX());
+    };
   }
 
   public static void rotateY(Rotation rotation, Matrix4f matrix) {

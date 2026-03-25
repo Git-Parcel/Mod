@@ -226,7 +226,7 @@ public class ParcelTransformTest {
 
       var worldPivot = ParcelTransform.getPivotPos(mirror, rotation, worldBounds);
       var transform = new ParcelTransform(mirror, rotation, worldPivot);
-      var localSize = transform.applyToSizeInverted(worldSize);
+      var localSize = transform.applyToSize(worldSize);
       var localPivot = transform.applyInverted(worldPivot);
       var localBounds = BoundingBox.fromCorners(Vec3i.ZERO, localSize);
 
@@ -320,16 +320,6 @@ public class ParcelTransformTest {
   }
 
   @Test
-  void testRotateSizeInversionRoundtrip() {
-    Vec3i size = new Vec3i(3, 5, 7);
-    for (Rotation rotation : Rotation.values()) {
-      Vec3i transformed = ParcelTransform.rotateSize(rotation, size);
-      Vec3i back = ParcelTransform.rotateSizeInverted(rotation, transformed);
-      assertEquals(size, back);
-    }
-  }
-
-  @Test
   void testApplyToSizeWithMirror() {
     Vec3i size = new Vec3i(3, 5, 7);
     assertEquals(
@@ -365,18 +355,8 @@ public class ParcelTransformTest {
   }
 
   Vec3i randomApplyToSize(ParcelTransform transform, Vec3i size, int rounds) {
-    Boolean[] ops = new Boolean[rounds * 2];
-    for (int i : iter(rounds)) {
-      ops[i * 2] = true;
-      ops[i * 2 + 1] = false;
-    }
-    random.shuffle(ops);
-    for (Boolean op : ops) {
-      if (op) {
-        size = transform.applyToSize(size);
-      } else {
-        size = transform.applyToSizeInverted(size);
-      }
+    for (var i : iter(rounds * 2)) {
+      size = transform.applyToSize(size);
     }
     return size;
   }
