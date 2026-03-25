@@ -43,7 +43,8 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
                   .apply(inst, ParcelTransform::new));
 
   /** Identity transform. */
-  public static final ParcelTransform IDENTITY = new ParcelTransform(Vec3i.ZERO);
+  public static final ParcelTransform IDENTITY =
+      new ParcelTransform(Mirror.NONE, Rotation.NONE, Vec3i.ZERO);
 
   /**
    * Creates a transform with only translation.

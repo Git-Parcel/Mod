@@ -128,7 +128,7 @@ public final class Parcel {
 
   public static Parcel create(BoundingBox boundingBox, Mirror mirror, Rotation rotation) {
     var pivot = ParcelTransform.getPivotPos(mirror, rotation, boundingBox);
-    ParcelTransform transform = new ParcelTransform(pivot);
+    ParcelTransform transform = new ParcelTransform(mirror, rotation, pivot);
 
     var meta =
         ParcelMeta.from(ParcelFormatRegistry.INSTANCE.defaultSaver().info(), boundingBox, rotation);
