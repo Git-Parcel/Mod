@@ -164,11 +164,12 @@ public final class Parcel {
     }
 
     /** Sets whether the parcel wireframe should be rendered. */
-    public void showWireframe(boolean showWireframe) {
+    public Visual showWireframe(boolean showWireframe) {
       if (this.showWireframe != showWireframe) {
         this.showWireframe = showWireframe;
         setDirty();
       }
+      return this;
     }
 
     public void setDirty() {
