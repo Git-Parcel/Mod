@@ -55,6 +55,12 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
     this(Mirror.NONE, Rotation.NONE, translation);
   }
 
+  public Matrix4f toMatrix4f() {
+    var m = new Matrix4f();
+    apply(m);
+    return m;
+  }
+
   /**
    * Transforms a local space size vector to world space.
    *

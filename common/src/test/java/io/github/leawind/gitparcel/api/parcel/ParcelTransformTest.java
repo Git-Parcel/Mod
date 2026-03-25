@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.mojang.serialization.JsonOps;
 import io.github.leawind.gitparcel.testutils.RandomForMC;
 import it.unimi.dsi.fastutil.ints.IntIterable;
 import it.unimi.dsi.fastutil.ints.IntIterator;
@@ -13,6 +14,7 @@ import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -359,5 +361,142 @@ public class ParcelTransformTest {
       size = transform.applyToSize(size);
     }
     return size;
+  }
+
+  @Test
+  void testToMatrix4fAgainstApply() {
+    for (int i : iter(100)) {
+      var mirror = random.nextEnum(Mirror.class);
+      var rotation = random.nextEnum(Rotation.class);
+      var translate = random.nextVec3i(-50, 50);
+      var transform = new ParcelTransform(mirror, rotation, translate);
+
+      Matrix4f expected = new Matrix4f();
+      transform.apply(expected);
+      Matrix4f actual = transform.toMatrix4f();
+
+      assertMatrixEquals(expected, actual, 1e-6f);
+    }
+  }
+
+  @Test
+  void testApplyMatrix4fOnIdentity() {
+    var transform =
+        new ParcelTransform(Mirror.FRONT_BACK, Rotation.CLOCKWISE_90, new BlockPos(1, 2, 3));
+    Matrix4f viaApply = new Matrix4f();
+    transform.apply(viaApply);
+    Matrix4f viaConstructor = transform.toMatrix4f();
+
+    assertMatrixEquals(viaApply, viaConstructor, 1e-6f);
+  }
+
+  @Test
+  void testGetPivotPosAllCombinations() {
+    var bounds = BoundingBox.fromCorners(new BlockPos(1, 2, 3), new BlockPos(5, 8, 11));
+
+    // NONE × rotations
+    assertEquals(
+        new BlockPos(1, 2, 3), ParcelTransform.getPivotPos(Mirror.NONE, Rotation.NONE, bounds));
+    assertEquals(
+        new BlockPos(5, 2, 3),
+        ParcelTransform.getPivotPos(Mirror.NONE, Rotation.CLOCKWISE_90, bounds));
+    assertEquals(
+        new BlockPos(5, 2, 11),
+        ParcelTransform.getPivotPos(Mirror.NONE, Rotation.CLOCKWISE_180, bounds));
+    assertEquals(
+        new BlockPos(1, 2, 11),
+        ParcelTransform.getPivotPos(Mirror.NONE, Rotation.COUNTERCLOCKWISE_90, bounds));
+
+    // LEFT_RIGHT × rotations
+    assertEquals(
+        new BlockPos(1, 2, 11),
+        ParcelTransform.getPivotPos(Mirror.LEFT_RIGHT, Rotation.NONE, bounds));
+    assertEquals(
+        new BlockPos(5, 2, -3),
+        ParcelTransform.getPivotPos(Mirror.LEFT_RIGHT, Rotation.CLOCKWISE_90, bounds));
+    assertEquals(
+        new BlockPos(5, 2, -11),
+        ParcelTransform.getPivotPos(Mirror.LEFT_RIGHT, Rotation.CLOCKWISE_180, bounds));
+    assertEquals(
+        new BlockPos(1, 2, -11),
+        ParcelTransform.getPivotPos(Mirror.LEFT_RIGHT, Rotation.COUNTERCLOCKWISE_90, bounds));
+
+    // FRONT_BACK × rotations
+    assertEquals(
+        new BlockPos(5, 2, 3),
+        ParcelTransform.getPivotPos(Mirror.FRONT_BACK, Rotation.NONE, bounds));
+    assertEquals(
+        new BlockPos(-5, 2, 3),
+        ParcelTransform.getPivotPos(Mirror.FRONT_BACK, Rotation.CLOCKWISE_90, bounds));
+    assertEquals(
+        new BlockPos(-5, 2, 11),
+        ParcelTransform.getPivotPos(Mirror.FRONT_BACK, Rotation.CLOCKWISE_180, bounds));
+    assertEquals(
+        new BlockPos(-1, 2, 11),
+        ParcelTransform.getPivotPos(Mirror.FRONT_BACK, Rotation.COUNTERCLOCKWISE_90, bounds));
+  }
+
+  @Test
+  void testCodecRoundtrip() {
+    var transform =
+        new ParcelTransform(Mirror.FRONT_BACK, Rotation.CLOCKWISE_90, new Vec3i(1, 2, 3));
+    var json = ParcelTransform.CODEC.encodeStart(JsonOps.INSTANCE, transform).getOrThrow();
+    var decoded = ParcelTransform.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
+    assertEquals(transform, decoded);
+  }
+
+  @Test
+  void testCodecRoundtripIdentity() {
+    var json =
+        ParcelTransform.CODEC.encodeStart(JsonOps.INSTANCE, ParcelTransform.IDENTITY).getOrThrow();
+    var decoded = ParcelTransform.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
+    assertEquals(ParcelTransform.IDENTITY, decoded);
+  }
+
+  @Test
+  void testCodecRoundtripAllValues() {
+    for (int i : iter(100)) {
+      var mirror = random.nextEnum(Mirror.class);
+      var rotation = random.nextEnum(Rotation.class);
+      var translation = random.nextVec3i(-100, 100);
+      var transform = new ParcelTransform(mirror, rotation, translation);
+
+      var json = ParcelTransform.CODEC.encodeStart(JsonOps.INSTANCE, transform).getOrThrow();
+      var decoded = ParcelTransform.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
+      assertEquals(transform, decoded);
+    }
+  }
+
+  @Test
+  void testIdentityFields() {
+    assertEquals(Mirror.NONE, ParcelTransform.IDENTITY.mirror());
+    assertEquals(Rotation.NONE, ParcelTransform.IDENTITY.rotation());
+    assertEquals(Vec3i.ZERO, ParcelTransform.IDENTITY.translation());
+  }
+
+  @Test
+  void testTranslationApplyToVec3i() {
+    var transform = new ParcelTransform(new Vec3i(10, 20, 30));
+    assertEquals(new Vec3i(11, 22, 33), transform.apply(new Vec3i(1, 2, 3)));
+    assertEquals(new Vec3i(1, 2, 3), transform.applyInverted(new Vec3i(11, 22, 33)));
+  }
+
+  static void assertMatrixEquals(Matrix4f expected, Matrix4f actual, float epsilon) {
+    assertEquals(expected.m00(), actual.m00(), epsilon);
+    assertEquals(expected.m01(), actual.m01(), epsilon);
+    assertEquals(expected.m02(), actual.m02(), epsilon);
+    assertEquals(expected.m03(), actual.m03(), epsilon);
+    assertEquals(expected.m10(), actual.m10(), epsilon);
+    assertEquals(expected.m11(), actual.m11(), epsilon);
+    assertEquals(expected.m12(), actual.m12(), epsilon);
+    assertEquals(expected.m13(), actual.m13(), epsilon);
+    assertEquals(expected.m20(), actual.m20(), epsilon);
+    assertEquals(expected.m21(), actual.m21(), epsilon);
+    assertEquals(expected.m22(), actual.m22(), epsilon);
+    assertEquals(expected.m23(), actual.m23(), epsilon);
+    assertEquals(expected.m30(), actual.m30(), epsilon);
+    assertEquals(expected.m31(), actual.m31(), epsilon);
+    assertEquals(expected.m32(), actual.m32(), epsilon);
+    assertEquals(expected.m33(), actual.m33(), epsilon);
   }
 }
