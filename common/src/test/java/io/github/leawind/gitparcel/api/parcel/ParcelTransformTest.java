@@ -246,6 +246,106 @@ public class ParcelTransformTest {
     }
   }
 
+  @Test
+  void testApplyInvertedVec3() {
+    var transform =
+        new ParcelTransform(Mirror.FRONT_BACK, Rotation.CLOCKWISE_90, new BlockPos(2, 3, 4));
+    // Forward: mirror(3,4,5)->(-3,4,5), rotate CW90->(-5,4,-3), translate->(-3,7,1)
+    assertEquals(new Vec3i(-3, 7, 1), transform.apply(new Vec3i(3, 4, 5)));
+
+    Vec3 inverted = transform.applyInverted(new Vec3(-3, 7, 1));
+    assertEquals(3.0, inverted.x, 1e-6);
+    assertEquals(4.0, inverted.y, 1e-6);
+    assertEquals(5.0, inverted.z, 1e-6);
+  }
+
+  @Test
+  void testApplyInvertedVec3ViaBlockPos() {
+    for (int i : iter(100)) {
+      var mirror = random.nextEnum(Mirror.class);
+      var rotation = random.nextEnum(Rotation.class);
+      var translate = random.nextVec3i(-100, 100);
+      var transform = new ParcelTransform(mirror, rotation, translate);
+
+      for (int j : iter(100)) {
+        var pos = random.nextBlockPos(-100, 100);
+        var transformedPos = transform.apply(pos);
+        var inverted =
+            transform.applyInverted(
+                new Vec3(transformedPos.getX(), transformedPos.getY(), transformedPos.getZ()));
+        assertEquals(pos.getX(), (int) inverted.x);
+        assertEquals(pos.getY(), (int) inverted.y);
+        assertEquals(pos.getZ(), (int) inverted.z);
+      }
+    }
+  }
+
+  @Test
+  void testApplyInvertedBlockPosRoundtrip() {
+    for (int i : iter(100)) {
+      var mirror = random.nextEnum(Mirror.class);
+      var rotation = random.nextEnum(Rotation.class);
+      var translate = random.nextVec3i(-100, 100);
+      var transform = new ParcelTransform(mirror, rotation, translate);
+
+      for (int j : iter(100)) {
+        var pos = random.nextBlockPos(-100, 100);
+        assertEquals(pos, transform.applyInverted(transform.apply(pos)));
+      }
+    }
+  }
+
+  @Test
+  void testApplyBoundingBoxTranslationOnly() {
+    var transform = new ParcelTransform(new BlockPos(5, 10, 15));
+    var box = BoundingBox.fromCorners(new BlockPos(1, 2, 3), new BlockPos(4, 6, 9));
+    var result = transform.apply(box);
+
+    assertEquals(6, result.minX());
+    assertEquals(12, result.minY());
+    assertEquals(18, result.minZ());
+    assertEquals(9, result.maxX());
+    assertEquals(16, result.maxY());
+    assertEquals(24, result.maxZ());
+  }
+
+  @Test
+  void testRotateSizeAllRotations() {
+    Vec3i size = new Vec3i(3, 5, 7);
+    assertEquals(new Vec3i(3, 5, 7), ParcelTransform.rotateSize(Rotation.NONE, size));
+    assertEquals(new Vec3i(7, 5, 3), ParcelTransform.rotateSize(Rotation.CLOCKWISE_90, size));
+    assertEquals(new Vec3i(3, 5, 7), ParcelTransform.rotateSize(Rotation.CLOCKWISE_180, size));
+    assertEquals(
+        new Vec3i(7, 5, 3), ParcelTransform.rotateSize(Rotation.COUNTERCLOCKWISE_90, size));
+  }
+
+  @Test
+  void testRotateSizeInversionRoundtrip() {
+    Vec3i size = new Vec3i(3, 5, 7);
+    for (Rotation rotation : Rotation.values()) {
+      Vec3i transformed = ParcelTransform.rotateSize(rotation, size);
+      Vec3i back = ParcelTransform.rotateSizeInverted(rotation, transformed);
+      assertEquals(size, back);
+    }
+  }
+
+  @Test
+  void testApplyToSizeWithMirror() {
+    Vec3i size = new Vec3i(3, 5, 7);
+    assertEquals(
+        size,
+        new ParcelTransform(Mirror.FRONT_BACK, Rotation.NONE, BlockPos.ZERO).applyToSize(size));
+    assertEquals(
+        size,
+        new ParcelTransform(Mirror.LEFT_RIGHT, Rotation.NONE, BlockPos.ZERO).applyToSize(size));
+  }
+
+  @Test
+  void testApplyToSizeWithTranslation() {
+    Vec3i size = new Vec3i(3, 5, 7);
+    assertEquals(size, new ParcelTransform(new BlockPos(10, 20, 30)).applyToSize(size));
+  }
+
   Vec3i randomApply(ParcelTransform transform, Vec3i v, int rounds) {
     Boolean[] ops = new Boolean[rounds * 2];
 
