@@ -50,19 +50,7 @@ public final class Parcel {
 
   private @Nullable GitParcelLevelSavedData levelSavedData;
 
-  public static Parcel from(UUID uuid, BoundingBox boundingBox, Visual visual) {
-    var pivot = ParcelTransform.getPivotPos(Mirror.NONE, Rotation.NONE, boundingBox);
-    ParcelTransform transform = new ParcelTransform(pivot);
-
-    var meta =
-        ParcelMeta.from(
-            ParcelFormatRegistry.INSTANCE.defaultSaver().info(), boundingBox, Rotation.NONE);
-
-    return new Parcel(
-        uuid, meta, transform, visual, new PermissionConfig<>(ParcelPermissions.REGISTRY));
-  }
-
-  public Parcel(
+  private Parcel(
       UUID uuid,
       ParcelMeta meta,
       ParcelTransform transform,
@@ -138,6 +126,21 @@ public final class Parcel {
     }
   }
 
+  public static Parcel create(BoundingBox boundingBox, Mirror mirror, Rotation rotation) {
+    var pivot = ParcelTransform.getPivotPos(mirror, rotation, boundingBox);
+    ParcelTransform transform = new ParcelTransform(pivot);
+
+    var meta =
+        ParcelMeta.from(ParcelFormatRegistry.INSTANCE.defaultSaver().info(), boundingBox, rotation);
+
+    return new Parcel(
+        UUID.randomUUID(),
+        meta,
+        transform,
+        new Visual(),
+        new PermissionConfig<>(ParcelPermissions.REGISTRY));
+  }
+
   /** Visual settings controlling how a parcel is rendered on the client. */
   public static final class Visual {
     public static final Codec<Visual> CODEC =
@@ -154,7 +157,7 @@ public final class Parcel {
       this(true);
     }
 
-    public Visual(boolean showWireframe) {
+    private Visual(boolean showWireframe) {
       this.showWireframe = showWireframe;
     }
 

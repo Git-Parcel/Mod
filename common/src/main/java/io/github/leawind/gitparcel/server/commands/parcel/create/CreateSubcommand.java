@@ -1,6 +1,5 @@
 package io.github.leawind.gitparcel.server.commands.parcel.create;
 
-import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -10,47 +9,74 @@ import io.github.leawind.gitparcel.permission.WorldPermissions;
 import io.github.leawind.gitparcel.server.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.world.gitparcel.GitParcelLevelSavedData;
 import io.github.leawind.gitparcel.world.gitparcel.Parcel;
-import java.util.UUID;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.TemplateMirrorArgument;
+import net.minecraft.commands.arguments.TemplateRotationArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
 public class CreateSubcommand extends GitParcelBaseCommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
-    var showWireframe =
-        Commands.argument("show_wireframe", BoolArgumentType.bool())
-            .executes(CreateSubcommand::create2);
+
+    var rotation =
+        Commands.argument("rotation", TemplateRotationArgument.templateRotation())
+            .executes(CreateSubcommand::createAtRotation);
+
+    var mirror =
+        Commands.argument("mirror", TemplateMirrorArgument.templateMirror())
+            .executes(CreateSubcommand::createAtMirror)
+            .then(rotation);
 
     var to =
         Commands.argument("to", BlockPosArgument.blockPos())
-            .executes(CreateSubcommand::create1)
-            .then(showWireframe);
+            .executes(CreateSubcommand::createAtTo)
+            .then(mirror);
 
     var from = Commands.argument("from", BlockPosArgument.blockPos()).then(to);
 
     return Commands.literal("create").then(from);
   }
 
-  private static int create1(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+  private static int createAtTo(CommandContext<CommandSourceStack> ctx)
+      throws CommandSyntaxException {
     return create(
         ctx,
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
-        true);
+        Mirror.NONE,
+        Rotation.NONE);
   }
 
-  private static int create2(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+  private static int createAtMirror(CommandContext<CommandSourceStack> ctx)
+      throws CommandSyntaxException {
     return create(
         ctx,
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
-        BoolArgumentType.getBool(ctx, "show_wireframe"));
+        TemplateMirrorArgument.getMirror(ctx, "mirror"),
+        Rotation.NONE);
+  }
+
+  private static int createAtRotation(CommandContext<CommandSourceStack> ctx)
+      throws CommandSyntaxException {
+    return create(
+        ctx,
+        BlockPosArgument.getLoadedBlockPos(ctx, "from"),
+        BlockPosArgument.getLoadedBlockPos(ctx, "to"),
+        TemplateMirrorArgument.getMirror(ctx, "mirror"),
+        TemplateRotationArgument.getRotation(ctx, "rotation"));
   }
 
   private static int create(
-      CommandContext<CommandSourceStack> ctx, BlockPos from, BlockPos to, boolean showWireframe) {
+      CommandContext<CommandSourceStack> ctx,
+      BlockPos from,
+      BlockPos to,
+      Mirror mirror,
+      Rotation rotation) {
     var source = ctx.getSource();
     var level = source.getLevel();
     var savedData = GitParcelLevelSavedData.get(level);
@@ -62,8 +88,7 @@ public class CreateSubcommand extends GitParcelBaseCommand {
 
     try {
       BoundingBox boundingBox = BoundingBox.fromCorners(from, to);
-      UUID uuid = UUID.randomUUID();
-      Parcel parcel = Parcel.from(uuid, boundingBox, new Parcel.Visual(showWireframe));
+      Parcel parcel = Parcel.create(boundingBox, mirror, rotation);
 
       savedData.addNewParcel(parcel);
 
@@ -75,7 +100,8 @@ public class CreateSubcommand extends GitParcelBaseCommand {
                   to.toShortString()),
           false);
 
-      GitParcelMod.LOGGER.info("Created new parcel: from={}, to={}, uuid={}", from, to, uuid);
+      GitParcelMod.LOGGER.info(
+          "Created new parcel: from={}, to={}, uuid={}", from, to, parcel.uuid());
 
       return 1;
 
