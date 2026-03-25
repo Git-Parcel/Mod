@@ -71,6 +71,7 @@ public final class Parcel {
     this.uuid = uuid;
     this.meta = meta;
     this.transform = transform;
+    visual.parcel = this;
     this.visual = visual;
     this.permissions = permissions;
   }
@@ -131,9 +132,9 @@ public final class Parcel {
     return levelSavedData;
   }
 
-  public void setDirty(boolean dirty) {
+  public void setDirty() {
     if (levelSavedData != null) {
-      levelSavedData.setDirty(dirty);
+      levelSavedData.setDirty();
     }
   }
 
@@ -147,6 +148,12 @@ public final class Parcel {
 
     private boolean showWireframe;
 
+    private @Nullable Parcel parcel;
+
+    public Visual() {
+      this(true);
+    }
+
     public Visual(boolean showWireframe) {
       this.showWireframe = showWireframe;
     }
@@ -158,7 +165,16 @@ public final class Parcel {
 
     /** Sets whether the parcel wireframe should be rendered. */
     public void showWireframe(boolean showWireframe) {
-      this.showWireframe = showWireframe;
+      if (this.showWireframe != showWireframe) {
+        this.showWireframe = showWireframe;
+        setDirty();
+      }
+    }
+
+    public void setDirty() {
+      if (parcel != null) {
+        parcel.setDirty();
+      }
     }
   }
 }
