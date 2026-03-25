@@ -99,6 +99,13 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
     return vec;
   }
 
+  public Vec3 apply(Vec3 vec) {
+    vec = TransformUtils.mirror(mirror, vec);
+    vec = TransformUtils.rotate(rotation, vec);
+    vec = TransformUtils.translate(translation, vec);
+    return vec;
+  }
+
   /**
    * Applies all transformations (mirror, rotate, translate) to a {@link BlockPos}.
    *

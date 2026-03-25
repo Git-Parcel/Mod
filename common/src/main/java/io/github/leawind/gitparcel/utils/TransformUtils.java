@@ -190,6 +190,10 @@ public final class TransformUtils {
     return vec.offset(translation);
   }
 
+  public static Vec3 translate(Vec3i translation, Vec3 vec) {
+    return vec.add(translation.getX(), translation.getY(), translation.getZ());
+  }
+
   public static BlockPos translate(Vec3i translation, BlockPos pos) {
     return pos.offset(translation);
   }

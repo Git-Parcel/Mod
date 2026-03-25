@@ -146,19 +146,23 @@ public final class Parcel {
     public static final Codec<Visual> CODEC =
         RecordCodecBuilder.create(
             inst ->
-                inst.group(Codec.BOOL.fieldOf("show_wireframe").forGetter(Visual::showWireframe))
+                inst.group(
+                        Codec.BOOL.fieldOf("show_wireframe").forGetter(Visual::showWireframe),
+                        Codec.BOOL.fieldOf("show_pivot").forGetter(Visual::showPivot))
                     .apply(inst, Visual::new));
 
     private boolean showWireframe;
+    private boolean showPivot;
 
     private @Nullable Parcel parcel;
 
     public Visual() {
-      this(true);
+      this(true, true);
     }
 
-    private Visual(boolean showWireframe) {
+    private Visual(boolean showWireframe, boolean showPivot) {
       this.showWireframe = showWireframe;
+      this.showPivot = showPivot;
     }
 
     /** Whether the parcel wireframe should be rendered. */
@@ -170,6 +174,18 @@ public final class Parcel {
     public Visual showWireframe(boolean showWireframe) {
       if (this.showWireframe != showWireframe) {
         this.showWireframe = showWireframe;
+        setDirty();
+      }
+      return this;
+    }
+
+    public boolean showPivot() {
+      return showPivot;
+    }
+
+    public Visual showPivot(boolean showPivot) {
+      if (this.showPivot != showPivot) {
+        this.showPivot = showPivot;
         setDirty();
       }
       return this;

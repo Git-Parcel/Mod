@@ -4,6 +4,7 @@ import io.github.leawind.gitparcel.client.GitParcelModClient;
 import net.minecraft.gizmos.GizmoStyle;
 import net.minecraft.gizmos.Gizmos;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 public final class ParcelRenderer {
   private static final int WIREFRAME_COLOR = 0xFFFFFFFF;
@@ -19,8 +20,41 @@ public final class ParcelRenderer {
             GizmoStyle.stroke(WIREFRAME_COLOR, LINE_WIDTH),
             false);
       }
-      // TODO render more details
 
+      // Pivot
+      if (visual.showPivot()) {
+        final float pivotSize = 2F;
+        final float pivotWidth = LINE_WIDTH;
+        final boolean onBlockCenter = true;
+
+        Gizmos.point(parcel.getPivotBlock().getCenter(), 0x80FFFFFF, LINE_WIDTH * 4);
+
+        var transform = parcel.transform();
+
+        // Pivot and offsets in local space
+        Vec3 pivot = Vec3.ZERO;
+        Vec3 offsetX = new Vec3(pivotSize, 0, 0);
+        Vec3 offsetY = new Vec3(0, pivotSize, 0);
+        Vec3 offsetZ = new Vec3(0, 0, pivotSize);
+
+        if (onBlockCenter) {
+          pivot = pivot.add(0.5);
+          offsetX = offsetX.add(0.5);
+          offsetY = offsetY.add(0.5);
+          offsetZ = offsetZ.add(0.5);
+        }
+
+        // Transform to world space
+        pivot = transform.apply(pivot);
+        offsetX = transform.apply(offsetX);
+        offsetY = transform.apply(offsetY);
+        offsetZ = transform.apply(offsetZ);
+
+        // Add gizmos
+        Gizmos.arrow(pivot, offsetX, 0xFFFF0000, pivotWidth);
+        Gizmos.arrow(pivot, offsetY, 0xFF00FF00, pivotWidth);
+        Gizmos.arrow(pivot, offsetZ, 0xFF0000FF, pivotWidth);
+      }
     }
   }
 }
