@@ -1,6 +1,6 @@
 package io.github.leawind.gitparcel.algorithms;
 
-import io.github.leawind.gitparcel.testutils.RandomForMC;
+import io.github.leawind.gitparcel.testutils.GitParcelRandom;
 import java.util.concurrent.TimeUnit;
 import net.minecraft.core.Vec3i;
 import org.openjdk.jmh.annotations.*;
@@ -25,7 +25,7 @@ public class VolumetricRLEBenchmark {
 
   @Setup
   public void setup() {
-    var random = new RandomForMC(12138);
+    var random = new GitParcelRandom(12138);
     values = new VolumetricRLETest.TestedValues(new Vec3i(size, size, size), variance, random);
   }
 

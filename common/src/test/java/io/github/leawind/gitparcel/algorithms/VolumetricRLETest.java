@@ -5,8 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.leawind.gitparcel.parcelformats.parcella.utils.ZOrder3D;
-import io.github.leawind.gitparcel.testutils.RandomForMC;
+import io.github.leawind.gitparcel.testutils.GitParcelRandom;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
@@ -19,7 +20,7 @@ public class VolumetricRLETest {
     public final Vec3i size;
     private final int[][][] valuesArray;
 
-    public TestedValues(Vec3i size, int valueVariance, RandomForMC random) {
+    public TestedValues(Vec3i size, int valueVariance, Random random) {
       this.size = size;
       valuesArray = new int[size.getX()][size.getY()][size.getZ()];
       for (var pos : BlockPos.betweenClosed(1, 1, 1, size.getX(), size.getY(), size.getZ())) {
@@ -39,7 +40,7 @@ public class VolumetricRLETest {
   }
 
   static void testAlgo(String name, VolumetricRLE.Encoder algo, int maxVariances) {
-    var random = new RandomForMC(12138);
+    var random = new GitParcelRandom(12138);
 
     System.out.println("Testing " + name);
 

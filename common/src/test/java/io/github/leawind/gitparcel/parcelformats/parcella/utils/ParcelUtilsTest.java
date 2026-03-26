@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.leawind.gitparcel.parcelformats.parcella.Subparcel;
-import io.github.leawind.gitparcel.testutils.RandomForMC;
+import io.github.leawind.gitparcel.testutils.AbstractGitParcelTest;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -15,7 +15,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import org.junit.jupiter.api.Test;
 
-public class ParcelUtilsTest {
+public class ParcelUtilsTest extends AbstractGitParcelTest {
   private static final Vec3i SIZE_16X = new Vec3i(16, 16, 16);
 
   /**
@@ -72,7 +72,6 @@ public class ParcelUtilsTest {
       assertEquals(8, result.size());
     }
 
-    var random = new RandomForMC(12138);
     for (int i = 0; i < 1000; i++) {
       var size = random.nextVec3i(1, 50);
       assertParcelEqual(size, ParcelUtils.subdivideParcel(size, random.nextVec3i(-100, 100), 16));

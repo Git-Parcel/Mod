@@ -5,8 +5,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.phys.Vec3;
 
-public class RandomForMC extends Random {
-  public RandomForMC(long seed) {
+public class GitParcelRandom extends Random {
+  public GitParcelRandom(long seed) {
     super(seed);
   }
 

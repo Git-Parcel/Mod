@@ -2,94 +2,17 @@ package io.github.leawind.gitparcel.world;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
-import io.github.leawind.gitparcel.api.parcel.ParcelFormatConfig;
-import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
-import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
-import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
-import io.github.leawind.gitparcel.testutils.RandomForMC;
+import io.github.leawind.gitparcel.testutils.AbstractGitParcelTest;
 import io.github.leawind.gitparcel.world.gitparcel.Parcel;
-import java.io.IOException;
-import java.nio.file.Path;
-import net.minecraft.DetectedVersion;
-import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.ServerLevelAccessor;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.Vec3;
-import org.jspecify.annotations.Nullable;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-public class ParcelTest {
-  RandomForMC random;
-
-  static class TestFormat implements ParcelFormat.Impl<ParcelFormatConfig.None> {
-
-    @Override
-    public Info info() {
-      return info;
-    }
-
-    private final Info info;
-
-    protected TestFormat(String id, int version) {
-      this.info = new Info(id, version);
-    }
-  }
-
-  static class TestSaver extends TestFormat implements ParcelFormat.Save<ParcelFormatConfig.None> {
-
-    protected TestSaver(String id, int version) {
-      super(id, version);
-    }
-
-    @Override
-    public void save(
-        Level level,
-        Vec3i parcelSize,
-        ParcelTransform transform,
-        Path dataDir,
-        boolean ignoreEntities,
-        ParcelFormatConfig.@Nullable None config)
-        throws IOException {
-      throw new IOException("Unimplemented");
-    }
-  }
-
-  static class TestLoader extends TestFormat implements ParcelFormat.Load<ParcelFormatConfig.None> {
-    protected TestLoader(String id, int version) {
-      super(id, version);
-    }
-
-    @Override
-    public void load(
-        ServerLevelAccessor level,
-        Vec3i size,
-        ParcelTransform transform,
-        Path dataDir,
-        boolean ignoreBlocks,
-        boolean ignoreEntities,
-        @Block.UpdateFlags int flags,
-        ParcelFormatConfig.@Nullable None config)
-        throws IOException, ParcelException.CorruptedParcelException {
-      throw new IOException("Unimplemented");
-    }
-  }
-
-  @BeforeAll
-  static void setup() {
-    SharedConstants.setVersion(DetectedVersion.BUILT_IN);
-    ParcelFormatRegistry.INSTANCE.clear();
-    ParcelFormatRegistry.INSTANCE.registerDefaultSaver(new TestSaver("alpha", 0));
-    ParcelFormatRegistry.INSTANCE.register(new TestSaver("beta", 0));
-    ParcelFormatRegistry.INSTANCE.register(new TestLoader("charlie", 0));
-  }
+public class ParcelTest extends AbstractGitParcelTest {
 
   @Test
   void testGetPivotBlockPosPos() {

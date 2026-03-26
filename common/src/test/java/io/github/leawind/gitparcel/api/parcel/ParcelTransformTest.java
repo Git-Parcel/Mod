@@ -5,48 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.mojang.serialization.JsonOps;
-import io.github.leawind.gitparcel.testutils.RandomForMC;
-import it.unimi.dsi.fastutil.ints.IntIterable;
-import it.unimi.dsi.fastutil.ints.IntIterator;
+import io.github.leawind.gitparcel.testutils.AbstractGitParcelTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
-import org.jspecify.annotations.NonNull;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class ParcelTransformTest {
-
-  RandomForMC random;
-
-  @BeforeEach
-  void setup() {
-    random = new RandomForMC(12138);
-  }
-
-  IntIterable iter(int times) {
-    return new IntIterable() {
-      @Override
-      public @NonNull IntIterator iterator() {
-        return new IntIterator() {
-          int i = 0;
-
-          @Override
-          public int nextInt() {
-            return i++;
-          }
-
-          @Override
-          public boolean hasNext() {
-            return i < times;
-          }
-        };
-      }
-    };
-  }
+public class ParcelTransformTest extends AbstractGitParcelTest {
 
   @Test
   void testIdentity() {
