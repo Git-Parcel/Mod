@@ -54,4 +54,10 @@ public final class GitParcelWorldSavedData extends SavedData {
   public static GitParcelWorldSavedData get(MinecraftServer server) {
     return server.overworld().getDataStorage().computeIfAbsent(TYPE);
   }
+
+  public void reset() {
+    permissions.clearAll();
+    parcelDefaultPermissions.clearAll();
+    setDirty();
+  }
 }

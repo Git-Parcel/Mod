@@ -89,6 +89,11 @@ public final class PermissionConfig<T> {
     requirements.remove(type.id());
   }
 
+  /** Removes all explicit requirements, reverting every type to its default level. */
+  public void clearAll() {
+    requirements.clear();
+  }
+
   /**
    * Sets the required level for the given type by level id.
    *

@@ -46,6 +46,13 @@ public final class GitParcelLevelSavedData extends SavedData {
     return parcels;
   }
 
+  public void reset() {
+    parcels.clear();
+
+    setDirty();
+    emitUpdate();
+  }
+
   public List<Parcel> listParcels() {
     return new ArrayList<>(parcels.values());
   }
