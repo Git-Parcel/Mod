@@ -37,6 +37,13 @@ public final class ParcelFormatRegistry {
    */
   private ParcelFormatRegistry() {}
 
+  /** Clears all registered formats. */
+  public void clear() {
+    savers.clear();
+    loaders.clear();
+    defaultSaver = null;
+  }
+
   /**
    * Registers a format implementation as either a saver or a loader.
    *

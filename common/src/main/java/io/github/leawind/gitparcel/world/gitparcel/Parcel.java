@@ -14,9 +14,46 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
-/** Parcel represents a cuboid area in the world. */
+/// Parcel represents a cuboid area in the world.
+///
+/// - The pivot is treatedd as a point, not block pos.
+///
+/// ### Demo
+///
+/// Lets's say we have a parcel:
+///
+/// - Size`(x, z)` = `(3, 5)`
+/// - Pivot point is `(0, 0)`
+///
+/// ```txt
+/// Pivot Point
+///   👇
+///    0      3
+/// 0  P------+
+///    | 3x5  |
+///    |      |
+///    |      |
+/// 5  +------+
+/// ```
+///
+/// Let's place it somewhere in the world with transformation:
+///
+/// - Mirror: {@link Mirror#NONE}
+/// - Rotation: {@link Rotation#CLOCKWISE_90}
+///
+/// ```txt
+///    4          9
+/// 2  +----------P 👈Pivot point
+///    | 5x3      |
+///    |          |
+/// 5  +----------+
+/// ```
+///
+/// - BoundingBox: `[(4, 2), (9, 5)]`
+///
 public final class Parcel {
 
   public static final Codec<Parcel> CODEC =
@@ -64,6 +101,70 @@ public final class Parcel {
     this.permissions = permissions;
   }
 
+  public static BlockPos getPivotBlockPos(Mirror mirror, Rotation rotation, BoundingBox box) {
+    return switch (mirror) {
+      // P+
+      // ++
+      case NONE ->
+          switch (rotation) {
+            case NONE -> new BlockPos(box.minX(), box.minY(), box.minZ());
+            case CLOCKWISE_90 -> new BlockPos(box.maxX(), box.minY(), box.minZ());
+            case CLOCKWISE_180 -> new BlockPos(box.maxX(), box.minY(), box.maxZ());
+            case COUNTERCLOCKWISE_90 -> new BlockPos(box.minX(), box.minY(), box.maxZ());
+          };
+      // ++
+      // P+
+      case LEFT_RIGHT ->
+          switch (rotation) {
+            case NONE -> new BlockPos(box.minX(), box.minY(), box.maxZ());
+            case CLOCKWISE_90 -> new BlockPos(box.minX(), box.minY(), box.minZ());
+            case CLOCKWISE_180 -> new BlockPos(box.maxX(), box.minY(), box.minZ());
+            case COUNTERCLOCKWISE_90 -> new BlockPos(box.maxX(), box.minY(), box.maxZ());
+          };
+      // +P
+      // ++
+      case FRONT_BACK ->
+          switch (rotation) {
+            case NONE -> new BlockPos(box.maxX(), box.minY(), box.minZ());
+            case CLOCKWISE_90 -> new BlockPos(box.maxX(), box.minY(), box.maxZ());
+            case CLOCKWISE_180 -> new BlockPos(box.minX(), box.minY(), box.maxZ());
+            case COUNTERCLOCKWISE_90 -> new BlockPos(box.minX(), box.minY(), box.minZ());
+          };
+    };
+  }
+
+  public static Vec3 getPivot(Mirror mirror, Rotation rotation, BoundingBox box) {
+    return switch (mirror) {
+      // P+
+      // ++
+      case NONE ->
+          switch (rotation) {
+            case NONE -> new Vec3(box.minX(), box.minY(), box.minZ());
+            case CLOCKWISE_90 -> new Vec3(1 + box.maxX(), box.minY(), box.minZ());
+            case CLOCKWISE_180 -> new Vec3(1 + box.maxX(), box.minY(), 1 + box.maxZ());
+            case COUNTERCLOCKWISE_90 -> new Vec3(box.minX(), box.minY(), 1 + box.maxZ());
+          };
+      // ++
+      // P+
+      case LEFT_RIGHT ->
+          switch (rotation) {
+            case NONE -> new Vec3(box.minX(), box.minY(), 1 + box.maxZ());
+            case CLOCKWISE_90 -> new Vec3(box.minX(), box.minY(), box.minZ());
+            case CLOCKWISE_180 -> new Vec3(1 + box.maxX(), box.minY(), box.minZ());
+            case COUNTERCLOCKWISE_90 -> new Vec3(1 + box.maxX(), box.minY(), 1 + box.maxZ());
+          };
+      // +P
+      // ++
+      case FRONT_BACK ->
+          switch (rotation) {
+            case NONE -> new Vec3(1 + box.maxX(), box.minY(), box.minZ());
+            case CLOCKWISE_90 -> new Vec3(1 + box.maxX(), box.minY(), 1 + box.maxZ());
+            case CLOCKWISE_180 -> new Vec3(box.minX(), box.minY(), 1 + box.maxZ());
+            case COUNTERCLOCKWISE_90 -> new Vec3(box.minX(), box.minY(), box.minZ());
+          };
+    };
+  }
+
   // ////////////////////////////////////////////////////////////////
   // Serialized Field Getters
   // ////////////////////////////////////////////////////////////////
@@ -94,9 +195,9 @@ public final class Parcel {
 
   public BoundingBox getBoundingBox() {
     var localSize = meta.size();
-    var localBox =
-        new BoundingBox(0, 0, 0, localSize.getX() - 1, localSize.getY() - 1, localSize.getZ() - 1);
-    return transform.apply(localBox);
+    var maxBlockPos =
+        new BlockPos(localSize.getX() - 1, localSize.getY() - 1, localSize.getZ() - 1);
+    return BoundingBox.fromCorners(getPivotBlockPos(), transform.apply(maxBlockPos));
   }
 
   public Vec3i getSizeWorldSpace() {
@@ -107,9 +208,18 @@ public final class Parcel {
     return meta.size();
   }
 
+  public Vec3 getPivot() {
+    var translation = transform.translation();
+    return new Vec3(translation.getX(), translation.getY(), translation.getZ());
+  }
+
+  public Vec3 getPivotBlockCenter() {
+    return transform.apply(new Vec3(0.5, 0.5, 0.5));
+  }
+
   /** Get pivot block position in world space */
-  public BlockPos getPivotBlock() {
-    return transform.getTranslatedOrigin();
+  public BlockPos getPivotBlockPos() {
+    return BlockPos.containing(getPivotBlockCenter());
   }
 
   void setLevelSavedData(@Nullable GitParcelLevelSavedData levelSavedData) {
@@ -127,8 +237,11 @@ public final class Parcel {
   }
 
   public static Parcel create(BoundingBox boundingBox, Mirror mirror, Rotation rotation) {
-    var pivot = ParcelTransform.getPivotPos(mirror, rotation, boundingBox);
-    ParcelTransform transform = new ParcelTransform(mirror, rotation, pivot);
+
+    var pivot = getPivot(mirror, rotation, boundingBox);
+    ParcelTransform transform =
+        new ParcelTransform(
+            mirror, rotation, new Vec3i((int) pivot.x, (int) pivot.y, (int) pivot.z));
 
     var meta =
         ParcelMeta.from(ParcelFormatRegistry.INSTANCE.defaultSaver().info(), boundingBox, rotation);

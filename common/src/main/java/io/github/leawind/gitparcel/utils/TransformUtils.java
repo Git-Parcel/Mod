@@ -4,7 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
-import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
@@ -20,61 +19,6 @@ public final class TransformUtils {
       case NONE, CLOCKWISE_180 -> rotation;
       case CLOCKWISE_90 -> Rotation.COUNTERCLOCKWISE_90;
       case COUNTERCLOCKWISE_90 -> Rotation.CLOCKWISE_90;
-    };
-  }
-
-  /**
-   * Rotates a {@link Vec3i} by the specified rotation.
-   *
-   * @param rotation The rotation
-   * @param vec The vector
-   * @return The rotated vector
-   */
-  public static Vec3i rotate(Rotation rotation, Vec3i vec) {
-    return switch (rotation) {
-      case NONE -> vec;
-      case CLOCKWISE_90 -> new Vec3i(-vec.getZ(), vec.getY(), vec.getX());
-      case CLOCKWISE_180 -> new Vec3i(-vec.getX(), vec.getY(), -vec.getZ());
-      case COUNTERCLOCKWISE_90 -> new Vec3i(vec.getZ(), vec.getY(), -vec.getX());
-    };
-  }
-
-  public static Vec3i rotateInverted(Rotation rotation, Vec3i vec) {
-    return switch (rotation) {
-      case NONE -> vec;
-      case CLOCKWISE_90 -> new Vec3i(vec.getZ(), vec.getY(), -vec.getX());
-      case CLOCKWISE_180 -> new Vec3i(-vec.getX(), vec.getY(), -vec.getZ());
-      case COUNTERCLOCKWISE_90 -> new Vec3i(-vec.getZ(), vec.getY(), vec.getX());
-    };
-  }
-
-  public static BoundingBox rotate(Rotation rotation, BoundingBox boundingBox) {
-    return switch (rotation) {
-      case NONE -> boundingBox;
-      case CLOCKWISE_90 ->
-          new BoundingBox(
-              -boundingBox.minZ(),
-              boundingBox.minY(),
-              boundingBox.minX(),
-              -boundingBox.maxZ(),
-              boundingBox.maxY(),
-              boundingBox.maxX());
-      case CLOCKWISE_180 ->
-          new BoundingBox(
-              -boundingBox.minX(),
-              boundingBox.minY(),
-              -boundingBox.minZ(),
-              -boundingBox.maxX(),
-              boundingBox.maxY(),
-              -boundingBox.maxZ());
-      case COUNTERCLOCKWISE_90 ->
-          new BoundingBox(
-              boundingBox.minZ(),
-              boundingBox.minY(),
-              -boundingBox.minX(),
-              boundingBox.maxZ(),
-              boundingBox.maxY(),
-              -boundingBox.maxX());
     };
   }
 
@@ -106,18 +50,18 @@ public final class TransformUtils {
   public static BlockPos rotate(Rotation rotation, BlockPos pos) {
     return switch (rotation) {
       case NONE -> pos;
-      case CLOCKWISE_90 -> new BlockPos(-pos.getZ(), pos.getY(), pos.getX());
-      case CLOCKWISE_180 -> new BlockPos(-pos.getX(), pos.getY(), -pos.getZ());
-      case COUNTERCLOCKWISE_90 -> new BlockPos(pos.getZ(), pos.getY(), -pos.getX());
+      case CLOCKWISE_90 -> new BlockPos(-1 - pos.getZ(), pos.getY(), pos.getX());
+      case CLOCKWISE_180 -> new BlockPos(-1 - pos.getX(), pos.getY(), -1 - pos.getZ());
+      case COUNTERCLOCKWISE_90 -> new BlockPos(pos.getZ(), pos.getY(), -1 - pos.getX());
     };
   }
 
   public static BlockPos rotateInverted(Rotation rotation, BlockPos pos) {
     return switch (rotation) {
       case NONE -> pos;
-      case CLOCKWISE_90 -> new BlockPos(pos.getZ(), pos.getY(), -pos.getX());
-      case CLOCKWISE_180 -> new BlockPos(-pos.getX(), pos.getY(), -pos.getZ());
-      case COUNTERCLOCKWISE_90 -> new BlockPos(-pos.getZ(), pos.getY(), pos.getX());
+      case CLOCKWISE_90 -> new BlockPos(pos.getZ(), pos.getY(), -1 - pos.getX());
+      case CLOCKWISE_180 -> new BlockPos(-1 - pos.getX(), pos.getY(), -1 - pos.getZ());
+      case COUNTERCLOCKWISE_90 -> new BlockPos(-1 - pos.getZ(), pos.getY(), pos.getX());
     };
   }
 
@@ -148,30 +92,8 @@ public final class TransformUtils {
   public static BlockPos mirror(Mirror mirror, BlockPos pos) {
     return switch (mirror) {
       case NONE -> pos;
-      case FRONT_BACK -> new BlockPos(-pos.getX(), pos.getY(), pos.getZ());
-      case LEFT_RIGHT -> new BlockPos(pos.getX(), pos.getY(), -pos.getZ());
-    };
-  }
-
-  public static BoundingBox mirror(Mirror mirror, BoundingBox boundingBox) {
-    return switch (mirror) {
-      case NONE -> boundingBox;
-      case FRONT_BACK ->
-          new BoundingBox(
-              -boundingBox.minX(),
-              boundingBox.minY(),
-              boundingBox.minZ(),
-              -boundingBox.maxX(),
-              boundingBox.maxY(),
-              boundingBox.maxZ());
-      case LEFT_RIGHT ->
-          new BoundingBox(
-              boundingBox.minX(),
-              boundingBox.minY(),
-              -boundingBox.minZ(),
-              boundingBox.maxX(),
-              boundingBox.maxY(),
-              -boundingBox.maxZ());
+      case FRONT_BACK -> new BlockPos(-1 - pos.getX(), pos.getY(), pos.getZ());
+      case LEFT_RIGHT -> new BlockPos(pos.getX(), pos.getY(), -1 - pos.getZ());
     };
   }
 
@@ -196,16 +118,6 @@ public final class TransformUtils {
 
   public static BlockPos translate(Vec3i translation, BlockPos pos) {
     return pos.offset(translation);
-  }
-
-  public static BoundingBox translate(Vec3i translation, BoundingBox boundingBox) {
-    return new BoundingBox(
-        boundingBox.minX() + translation.getX(),
-        boundingBox.minY() + translation.getY(),
-        boundingBox.minZ() + translation.getZ(),
-        boundingBox.maxX() + translation.getX(),
-        boundingBox.maxY() + translation.getY(),
-        boundingBox.maxZ() + translation.getZ());
   }
 
   public static Vec3 translateInverted(Vec3i translation, Vec3 vec) {

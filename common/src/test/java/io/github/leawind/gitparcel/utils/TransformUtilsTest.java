@@ -31,23 +31,6 @@ public class TransformUtilsTest {
   }
 
   @Test
-  void testRotateVec3i() {
-    assertEquals(new Vec3i(2, 3, 5), TransformUtils.rotate(Rotation.NONE, V));
-    assertEquals(new Vec3i(-5, 3, 2), TransformUtils.rotate(Rotation.CLOCKWISE_90, V));
-    assertEquals(new Vec3i(-2, 3, -5), TransformUtils.rotate(Rotation.CLOCKWISE_180, V));
-    assertEquals(new Vec3i(5, 3, -2), TransformUtils.rotate(Rotation.COUNTERCLOCKWISE_90, V));
-  }
-
-  @Test
-  void testRotateVec3iIdentity() {
-    for (Rotation r : Rotation.values()) {
-      Vec3i rotated = TransformUtils.rotate(r, V);
-      Vec3i inverted = TransformUtils.rotateInverted(r, rotated);
-      assertEquals(V, inverted);
-    }
-  }
-
-  @Test
   void testRotateVec3() {
     Vec3 v = new Vec3(2, 3, 5);
     assertEquals(new Vec3(2, 3, 5), TransformUtils.rotate(Rotation.NONE, v));
@@ -69,10 +52,19 @@ public class TransformUtilsTest {
   }
 
   @Test
-  void testRotateInvertedBlockPos() {
+  void testRotateBlockPos() {
+    BlockPos pos = new BlockPos(2, 1, 0);
+    assertEquals(pos, TransformUtils.rotate(Rotation.NONE, pos));
+    assertEquals(new BlockPos(-1, 1, 2), TransformUtils.rotate(Rotation.CLOCKWISE_90, pos));
+    assertEquals(new BlockPos(-3, 1, -1), TransformUtils.rotate(Rotation.CLOCKWISE_180, pos));
+    assertEquals(new BlockPos(0, 1, -3), TransformUtils.rotate(Rotation.COUNTERCLOCKWISE_90, pos));
+  }
+
+  @Test
+  void testRotateBlockPosRoundtrip() {
     BlockPos pos = new BlockPos(2, 3, 5);
     for (Rotation r : Rotation.values()) {
-      BlockPos rotated = pos.rotate(r);
+      BlockPos rotated = TransformUtils.rotate(r, pos);
       BlockPos inverted = TransformUtils.rotateInverted(r, rotated);
       assertEquals(pos, inverted);
     }
@@ -97,8 +89,8 @@ public class TransformUtilsTest {
   void testMirrorBlockPos() {
     BlockPos pos = new BlockPos(2, 3, 5);
     assertEquals(new BlockPos(2, 3, 5), TransformUtils.mirror(Mirror.NONE, pos));
-    assertEquals(new BlockPos(2, 3, -5), TransformUtils.mirror(Mirror.LEFT_RIGHT, pos));
-    assertEquals(new BlockPos(-2, 3, 5), TransformUtils.mirror(Mirror.FRONT_BACK, pos));
+    assertEquals(new BlockPos(2, 3, -6), TransformUtils.mirror(Mirror.LEFT_RIGHT, pos));
+    assertEquals(new BlockPos(-3, 3, 5), TransformUtils.mirror(Mirror.FRONT_BACK, pos));
   }
 
   @Test

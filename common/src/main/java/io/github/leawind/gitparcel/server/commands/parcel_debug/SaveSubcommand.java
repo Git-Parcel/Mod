@@ -12,6 +12,7 @@ import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.commands.arguments.ParcelFormatArgument;
+import io.github.leawind.gitparcel.world.gitparcel.Parcel;
 import java.io.IOException;
 import java.nio.file.Path;
 import net.minecraft.commands.CommandSourceStack;
@@ -128,7 +129,7 @@ public class SaveSubcommand {
       Rotation rotation) {
     try {
       BoundingBox boundingBox = BoundingBox.fromCorners(corner1, corner2);
-      var pivot = ParcelTransform.getPivotPos(mirror, rotation, boundingBox);
+      var pivot = Parcel.getPivotBlockPos(mirror, rotation, boundingBox);
       ParcelTransform transform = new ParcelTransform(mirror, rotation, pivot);
 
       Vec3i sizeWorldSpace =

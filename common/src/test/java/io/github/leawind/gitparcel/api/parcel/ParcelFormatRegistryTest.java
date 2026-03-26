@@ -18,7 +18,7 @@ public class ParcelFormatRegistryTest {
   @Test
   void test() {
     var regsitry = ParcelFormatRegistry.INSTANCE;
-
+    regsitry.clear();
     regsitry.registerDefaultSaver(new TestSaver("alpha", 0));
     regsitry.register(new TestSaver("beta", 0));
     regsitry.register(new TestLoader("charlie", 0));

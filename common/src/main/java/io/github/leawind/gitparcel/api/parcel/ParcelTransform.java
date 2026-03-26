@@ -8,7 +8,6 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
@@ -24,9 +23,6 @@ import org.joml.Matrix4f;
  *   <li>Rotate
  *   <li>Translate
  * </ol>
- *
- * <p>Provides methods to apply transformations to {@link Vec3i}, {@link BlockPos}, {@link
- * BlockState}, and {@link Vec3}. Inverted transformations are supported.
  *
  * <p>The pivot point for mirroring and rotation is (0, 0, 0).
  *
@@ -45,15 +41,6 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
   /** Identity transform. */
   public static final ParcelTransform IDENTITY =
       new ParcelTransform(Mirror.NONE, Rotation.NONE, Vec3i.ZERO);
-
-  /**
-   * Creates a transform with only translation.
-   *
-   * @param translation The translation offset
-   */
-  public ParcelTransform(Vec3i translation) {
-    this(Mirror.NONE, Rotation.NONE, translation);
-  }
 
   public Matrix4f toMatrix4f() {
     var m = new Matrix4f();
@@ -92,19 +79,6 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
     return mirror != Mirror.NONE || rotation != Rotation.NONE;
   }
 
-  /**
-   * Applies all transformations (mirror, rotate, translate) to a {@link Vec3i}.
-   *
-   * @param vec The vector
-   * @return The transformed vector
-   */
-  public Vec3i apply(Vec3i vec) {
-    vec = TransformUtils.mirror(mirror, vec);
-    vec = TransformUtils.rotate(rotation, vec);
-    vec = TransformUtils.translate(translation, vec);
-    return vec;
-  }
-
   public Vec3 apply(Vec3 vec) {
     vec = TransformUtils.mirror(mirror, vec);
     vec = TransformUtils.rotate(rotation, vec);
@@ -141,26 +115,6 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
     TransformUtils.mirror(mirror, matrix);
     TransformUtils.rotateY(rotation, matrix);
     TransformUtils.translate(translation, matrix);
-  }
-
-  public BoundingBox apply(BoundingBox boundingBox) {
-    boundingBox = TransformUtils.mirror(mirror, boundingBox);
-    boundingBox = TransformUtils.rotate(rotation, boundingBox);
-    boundingBox = TransformUtils.translate(translation, boundingBox);
-    return boundingBox;
-  }
-
-  /**
-   * Applies the inverted transformations (translate, rotate, mirror) to a {@link Vec3i}.
-   *
-   * @param vec The vector
-   * @return The inversely transformed vector
-   */
-  public Vec3i applyInverted(Vec3i vec) {
-    vec = TransformUtils.translateInverted(translation, vec);
-    vec = TransformUtils.rotateInverted(rotation, vec);
-    vec = TransformUtils.mirror(mirror, vec);
-    return vec;
   }
 
   /**
@@ -205,32 +159,6 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
     return switch (rotation) {
       case NONE, CLOCKWISE_180 -> size;
       case CLOCKWISE_90, COUNTERCLOCKWISE_90 -> new Vec3i(size.getZ(), size.getY(), size.getX());
-    };
-  }
-
-  public static BlockPos getPivotPos(Mirror mirror, Rotation rotation, BoundingBox bounds) {
-    return switch (mirror) {
-      case NONE ->
-          switch (rotation) {
-            case NONE -> new BlockPos(bounds.minX(), bounds.minY(), bounds.minZ());
-            case CLOCKWISE_90 -> new BlockPos(bounds.maxX(), bounds.minY(), bounds.minZ());
-            case CLOCKWISE_180 -> new BlockPos(bounds.maxX(), bounds.minY(), bounds.maxZ());
-            case COUNTERCLOCKWISE_90 -> new BlockPos(bounds.minX(), bounds.minY(), bounds.maxZ());
-          };
-      case LEFT_RIGHT ->
-          switch (rotation) {
-            case NONE -> new BlockPos(bounds.minX(), bounds.minY(), bounds.maxZ());
-            case CLOCKWISE_90 -> new BlockPos(bounds.maxX(), bounds.minY(), -bounds.minZ());
-            case CLOCKWISE_180 -> new BlockPos(bounds.maxX(), bounds.minY(), -bounds.maxZ());
-            case COUNTERCLOCKWISE_90 -> new BlockPos(bounds.minX(), bounds.minY(), -bounds.maxZ());
-          };
-      case FRONT_BACK ->
-          switch (rotation) {
-            case NONE -> new BlockPos(bounds.maxX(), bounds.minY(), bounds.minZ());
-            case CLOCKWISE_90 -> new BlockPos(-bounds.maxX(), bounds.minY(), bounds.minZ());
-            case CLOCKWISE_180 -> new BlockPos(-bounds.maxX(), bounds.minY(), bounds.maxZ());
-            case COUNTERCLOCKWISE_90 -> new BlockPos(-bounds.minX(), bounds.minY(), bounds.maxZ());
-          };
     };
   }
 }

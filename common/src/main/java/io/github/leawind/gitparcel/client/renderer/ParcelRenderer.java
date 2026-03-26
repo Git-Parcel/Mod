@@ -25,9 +25,6 @@ public final class ParcelRenderer {
       if (visual.showPivot()) {
         final float pivotSize = 2F;
         final float pivotWidth = LINE_WIDTH;
-        final boolean onBlockCenter = true;
-
-        Gizmos.point(parcel.getPivotBlock().getCenter(), 0x80FFFFFF, LINE_WIDTH * 4);
 
         var transform = parcel.transform();
 
@@ -36,13 +33,6 @@ public final class ParcelRenderer {
         Vec3 offsetX = new Vec3(pivotSize, 0, 0);
         Vec3 offsetY = new Vec3(0, pivotSize, 0);
         Vec3 offsetZ = new Vec3(0, 0, pivotSize);
-
-        if (onBlockCenter) {
-          pivot = pivot.add(0.5);
-          offsetX = offsetX.add(0.5);
-          offsetY = offsetY.add(0.5);
-          offsetZ = offsetZ.add(0.5);
-        }
 
         // Transform to world space
         pivot = transform.apply(pivot);
