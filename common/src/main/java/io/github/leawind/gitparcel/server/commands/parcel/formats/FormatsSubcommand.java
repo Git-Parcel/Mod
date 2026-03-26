@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.server.commands.parcel.format;
+package io.github.leawind.gitparcel.server.commands.parcel.formats;
 
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import io.github.leawind.gitparcel.GitParcelTranslations;

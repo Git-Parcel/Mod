@@ -3,7 +3,7 @@ package io.github.leawind.gitparcel.server.commands.parcel;
 import com.mojang.brigadier.CommandDispatcher;
 import io.github.leawind.gitparcel.server.commands.parcel.create.CreateSubcommand;
 import io.github.leawind.gitparcel.server.commands.parcel.delete.DeleteSubcommand;
-import io.github.leawind.gitparcel.server.commands.parcel.format.FormatsSubcommand;
+import io.github.leawind.gitparcel.server.commands.parcel.formats.FormatsSubcommand;
 import io.github.leawind.gitparcel.server.commands.parcel.list.ListSubcommand;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
