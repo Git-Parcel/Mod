@@ -1,6 +1,8 @@
-package io.github.leawind.gitparcel.client;
+package io.github.leawind.gitparcel.platform.client;
 
 import com.mojang.logging.LogUtils;
+import io.github.leawind.gitparcel.client.GitParcelModClient;
+import io.github.leawind.gitparcel.client.GitParcelOptions;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import org.slf4j.Logger;

@@ -1,5 +1,6 @@
-package io.github.leawind.gitparcel.client;
+package io.github.leawind.gitparcel.platform.client;
 
+import io.github.leawind.gitparcel.client.GitParcelOptions;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 
 public final class GitParcelModForgeClient {

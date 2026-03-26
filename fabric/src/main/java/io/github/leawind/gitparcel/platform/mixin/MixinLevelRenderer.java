@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.mixin;
+package io.github.leawind.gitparcel.platform.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.PoseStack;

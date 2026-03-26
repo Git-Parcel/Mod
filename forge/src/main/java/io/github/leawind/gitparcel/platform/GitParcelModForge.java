@@ -1,9 +1,10 @@
-package io.github.leawind.gitparcel;
+package io.github.leawind.gitparcel.platform;
 
+import io.github.leawind.gitparcel.GitParcelMod;
 import io.github.leawind.gitparcel.client.GitParcelModClient;
-import io.github.leawind.gitparcel.client.GitParcelModForgeClient;
+import io.github.leawind.gitparcel.platform.client.GitParcelModForgeClient;
+import io.github.leawind.gitparcel.platform.server.GitParcelModForgeDedicatedServer;
 import io.github.leawind.gitparcel.server.GitParcelModDedicatedServer;
-import io.github.leawind.gitparcel.server.GitParcelModForgeDedicatedServer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.fml.common.Mod;

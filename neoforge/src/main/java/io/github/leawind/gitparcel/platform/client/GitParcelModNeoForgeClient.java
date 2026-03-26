@@ -1,6 +1,8 @@
-package io.github.leawind.gitparcel.client;
+package io.github.leawind.gitparcel.platform.client;
 
 import io.github.leawind.gitparcel.GitParcelMod;
+import io.github.leawind.gitparcel.client.GitParcelModClient;
+import io.github.leawind.gitparcel.client.GitParcelOptions;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
