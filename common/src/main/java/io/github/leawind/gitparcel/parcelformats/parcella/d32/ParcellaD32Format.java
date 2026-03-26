@@ -6,7 +6,6 @@ import io.github.leawind.gitparcel.api.parcel.config.EnumConfigItem;
 import io.github.leawind.gitparcel.parcelformats.NbtFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.SubparcelFormat;
 import java.nio.file.Path;
-import net.minecraft.core.Vec3i;
 
 public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.Config> {
   String BLOCKS_DIR_NAME = "blocks";
@@ -36,8 +35,6 @@ public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.C
   class Config extends ParcelFormatConfig<Config> {
     private static final String SCHEMA_URL =
         "https://git-parcel.github.io/schemas/ParcellaFormatConfig.json";
-
-    public Vec3i anchorOffset = Vec3i.ZERO;
 
     public EnumConfigItem<NbtFormat> blockEntityDataFormat =
         new EnumConfigItem<>(NbtFormat.class, "blockEntityDataFormat")

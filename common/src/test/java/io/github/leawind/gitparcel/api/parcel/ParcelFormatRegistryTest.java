@@ -58,6 +58,7 @@ public class ParcelFormatRegistryTest {
     public void save(
         Level level,
         Vec3i parcelSize,
+        Vec3i anchor,
         ParcelTransform transform,
         Path dataDir,
         boolean ignoreEntities,
@@ -76,6 +77,7 @@ public class ParcelFormatRegistryTest {
     public void load(
         ServerLevelAccessor level,
         Vec3i size,
+        Vec3i anchor,
         ParcelTransform transform,
         Path dataDir,
         boolean ignoreBlocks,

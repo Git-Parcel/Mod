@@ -110,6 +110,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
      *
      * @param level Level
      * @param parcelSize Real size of the parcel (the one saved in the disk, without transform)
+     * @param anchor Anchor offset relative to (0, 0, 0)
      * @param transform Treat the parcel we are going to save as transformed.
      * @param dataDir Path to parcel data directory. Will be created if not exist.
      * @param ignoreEntities Whether to ignore entities in the parcel
@@ -118,6 +119,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
     void save(
         Level level,
         Vec3i parcelSize,
+        Vec3i anchor,
         ParcelTransform transform,
         Path dataDir,
         boolean ignoreEntities,
@@ -132,17 +134,20 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
      *
      * @param level Level
      * @param size Real size of the parcel (the one saved in the disk, without transform)
+     * @param anchor Anchor offset relative to (0, 0, 0)
      * @param transform Transform the parcel when loading.
      * @param dataDir Path to parcel data directory
      * @param ignoreBlocks Whether to ignore blocks
      * @param ignoreEntities Whether to ignore entities
      * @param flags Block update flags
+     * @param config format config, can be null
      * @throws ParcelException.CorruptedParcelException If the parcel is invalid and cannot be
      *     loaded
      */
     void load(
         ServerLevelAccessor level,
         Vec3i size,
+        Vec3i anchor,
         ParcelTransform transform,
         Path dataDir,
         boolean ignoreBlocks,
@@ -171,11 +176,13 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
     public final Vec3i parcelSize;
     public final ParcelTransform transform;
     public final Path dataDir;
+    public final Vec3i anchor;
 
-    public BaseContext(Vec3i parcelSize, ParcelTransform transform, Path dataDir) {
+    public BaseContext(Vec3i parcelSize, ParcelTransform transform, Path dataDir, Vec3i anchor) {
       this.parcelSize = parcelSize;
       this.transform = transform;
       this.dataDir = dataDir;
+      this.anchor = anchor;
     }
   }
 
@@ -188,10 +195,11 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
         Level level,
         Vec3i parcelSize,
         ParcelTransform transform,
+        Vec3i anchor,
         Path dataDir,
         boolean ignoreEntities,
         C config) {
-      super(parcelSize, transform, dataDir);
+      super(parcelSize, transform, dataDir, anchor);
       this.level = level;
       this.ignoreEntities = ignoreEntities;
       this.config = config;
@@ -209,12 +217,13 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
         ServerLevelAccessor level,
         Vec3i parcelSize,
         ParcelTransform transform,
+        Vec3i anchor,
         Path dataDir,
         boolean ignoreBlocks,
         boolean ignoreEntities,
         @Block.UpdateFlags int flags,
         C config) {
-      super(parcelSize, transform, dataDir);
+      super(parcelSize, transform, dataDir, anchor);
       this.level = level;
       this.ignoreBlocks = ignoreBlocks;
       this.ignoreEntities = ignoreEntities;
@@ -272,6 +281,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
     format.save(
         level,
         meta.size(),
+        meta.anchor(),
         transform,
         getDataDir(parcelDir),
         ignoreEntities && meta.excludeEntities(),
@@ -320,6 +330,14 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
 
     Path dataDir = parcelDir.resolve(DATA_DIR_NAME);
     loader.load(
-        level, meta.size(), transform, dataDir, ignoreBlocks, ignoreEntities, flags, config);
+        level,
+        meta.size(),
+        meta.anchor(),
+        transform,
+        dataDir,
+        ignoreBlocks,
+        ignoreEntities,
+        flags,
+        config);
   }
 }

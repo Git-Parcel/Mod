@@ -49,11 +49,12 @@ public class ParcellaD32Saver
     public Context(
         Level level,
         Vec3i parcelSize,
+        Vec3i anchor,
         ParcelTransform transform,
         Path dataDir,
         boolean ignoreEntities,
         Config config) {
-      super(level, parcelSize, transform, dataDir, ignoreEntities, config);
+      super(level, parcelSize, transform, anchor, dataDir, ignoreEntities, config);
       blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
       blocksPaletteFile = blocksDir.resolve(PALETTE_FILE_NAME);
       blocksNbtDir = blocksDir.resolve(NBT_DIR_NAME);
@@ -65,6 +66,7 @@ public class ParcellaD32Saver
   public void save(
       Level level,
       Vec3i parcelSize,
+      Vec3i anchor,
       ParcelTransform transform,
       Path dataDir,
       boolean ignoreEntities,
@@ -74,7 +76,7 @@ public class ParcellaD32Saver
       config = new Config();
     }
 
-    var ctx = new Context(level, parcelSize, transform, dataDir, ignoreEntities, config);
+    var ctx = new Context(level, parcelSize, anchor, transform, dataDir, ignoreEntities, config);
 
     try (var problemReporter = new ProblemReporter.ScopedCollector(LOGGER)) {
       saveBlocks(ctx, 32);
@@ -103,7 +105,7 @@ public class ParcellaD32Saver
     Files.createDirectories(subParcelsDir);
 
     // Split the parcel into subparcels
-    BlockPos anchorPos = new BlockPos(ctx.config.anchorOffset);
+    BlockPos anchorPos = new BlockPos(ctx.anchor);
     for (var localSubparcel : ParcelUtils.subdivideParcel(ctx.parcelSize, anchorPos, gridSize)) {
       Vec3i coord = localSubparcel.getCoord(gridSize, anchorPos);
 

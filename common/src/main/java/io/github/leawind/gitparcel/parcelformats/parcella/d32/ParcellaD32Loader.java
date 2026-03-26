@@ -44,12 +44,22 @@ public class ParcellaD32Loader
         ServerLevelAccessor level,
         Vec3i parcelSize,
         ParcelTransform transform,
+        Vec3i anchor,
         Path dataDir,
         boolean ignoreBlocks,
         boolean ignoreEntities,
         @Block.UpdateFlags int flags,
         @Nullable Config config) {
-      super(level, parcelSize, transform, dataDir, ignoreBlocks, ignoreEntities, flags, config);
+      super(
+          level,
+          parcelSize,
+          transform,
+          anchor,
+          dataDir,
+          ignoreBlocks,
+          ignoreEntities,
+          flags,
+          config);
       blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
       blocksPaletteFile = blocksDir.resolve(PALETTE_FILE_NAME);
       blocksNbtDir = blocksDir.resolve(NBT_DIR_NAME);
@@ -65,6 +75,7 @@ public class ParcellaD32Loader
   public void load(
       ServerLevelAccessor level,
       Vec3i size,
+      Vec3i anchor,
       ParcelTransform transform,
       Path dataDir,
       boolean ignoreBlocks,
@@ -81,7 +92,8 @@ public class ParcellaD32Loader
     LOGGER.debug("    Config: {}", config);
 
     Context ctx =
-        new Context(level, size, transform, dataDir, ignoreBlocks, ignoreEntities, flags, config);
+        new Context(
+            level, size, transform, anchor, dataDir, ignoreBlocks, ignoreEntities, flags, config);
 
     try (var problemReporter = new ProblemReporter.ScopedCollector(LOGGER)) {
       if (!ignoreBlocks) {
@@ -122,7 +134,7 @@ public class ParcellaD32Loader
             ctx.config.blockEntityDataFormat.get());
 
     // Split the parcel into subparcels
-    BlockPos anchorPos = new BlockPos(ctx.config.anchorOffset);
+    BlockPos anchorPos = new BlockPos(ctx.anchor);
     for (var localSubparcel : ParcelUtils.subdivideParcel(ctx.parcelSize, anchorPos, gridSize)) {
       Vec3i coord = localSubparcel.getCoord(gridSize, anchorPos);
       long index = ZOrder3D.coordToIndexSigned(coord);

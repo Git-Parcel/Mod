@@ -34,6 +34,7 @@ public final class ParcelMeta {
                       ParcelFormat.Info.CODEC.fieldOf("format").forGetter(ParcelMeta::formatInfo),
                       Codec.INT.fieldOf("dataVersion").forGetter(ParcelMeta::dataVersion),
                       Vec3i.CODEC.fieldOf("size").forGetter(ParcelMeta::size),
+                      Vec3i.CODEC.fieldOf("anchor").forGetter(ParcelMeta::anchor),
                       Codec.STRING.optionalFieldOf("key").forGetter(ParcelMeta::getName),
                       Codec.STRING
                           .optionalFieldOf("description")
@@ -50,6 +51,7 @@ public final class ParcelMeta {
   private ParcelFormat.Info formatInfo;
   private int dataVersion;
   private Vec3i size;
+  private Vec3i anchor;
 
   private @Nullable String name = null;
   private @Nullable String description = null;
@@ -64,6 +66,7 @@ public final class ParcelMeta {
       ParcelFormat.Info formatInfo,
       Integer dataVersion,
       Vec3i size,
+      Vec3i anchor,
       Optional<String> name,
       Optional<String> description,
       Optional<List<String>> tgs,
@@ -72,6 +75,7 @@ public final class ParcelMeta {
     this.formatInfo = formatInfo;
     this.dataVersion = dataVersion;
     this.size = size;
+    this.anchor = anchor;
     this.name = name.orElse(null);
     this.description = description.orElse(null);
     this.tags = tgs.orElse(null);
@@ -79,14 +83,19 @@ public final class ParcelMeta {
     this.excludeEntities = excludeEntities.orElse(true);
   }
 
-  public ParcelMeta(ParcelFormat.Info formatInfo, Vec3i parcelSize) {
-    this(formatInfo, SharedConstants.getCurrentVersion().dataVersion().version(), parcelSize);
+  public ParcelMeta(ParcelFormat.Info formatInfo, Vec3i parcelSize, Vec3i anchor) {
+    this(
+        formatInfo,
+        SharedConstants.getCurrentVersion().dataVersion().version(),
+        parcelSize,
+        anchor);
   }
 
-  public ParcelMeta(ParcelFormat.Info formatInfo, int dataVersion, Vec3i parcelSize) {
+  public ParcelMeta(ParcelFormat.Info formatInfo, int dataVersion, Vec3i parcelSize, Vec3i anchor) {
     this.formatInfo = formatInfo;
     this.dataVersion = dataVersion;
     this.size = parcelSize;
+    this.anchor = anchor;
   }
 
   public ParcelFormat.Info formatInfo() {
@@ -99,6 +108,10 @@ public final class ParcelMeta {
 
   public Vec3i size() {
     return size;
+  }
+
+  public Vec3i anchor() {
+    return anchor;
   }
 
   private Optional<String> getName() {
@@ -187,7 +200,7 @@ public final class ParcelMeta {
     Vec3i sizeWorldSpace =
         new Vec3i(boundingBox.getXSpan(), boundingBox.getYSpan(), boundingBox.getZSpan());
     Vec3i sizeParcelSpace = ParcelTransform.rotateSize(rotation, sizeWorldSpace);
-    return new ParcelMeta(format, sizeParcelSpace);
+    return new ParcelMeta(format, sizeParcelSpace, Vec3i.ZERO);
   }
 
   /**

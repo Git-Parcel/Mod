@@ -26,6 +26,7 @@ public class ParcellaD16Saver extends ParcellaD32Saver
   public void save(
       Level level,
       Vec3i parcelSize,
+      Vec3i anchor,
       ParcelTransform transform,
       Path dataDir,
       boolean ignoreEntities,
@@ -35,7 +36,7 @@ public class ParcellaD16Saver extends ParcellaD32Saver
       config = new Config();
     }
 
-    var ctx = new Context(level, parcelSize, transform, dataDir, ignoreEntities, config);
+    var ctx = new Context(level, parcelSize, anchor, transform, dataDir, ignoreEntities, config);
 
     try (var problemReporter = new ProblemReporter.ScopedCollector(LOGGER)) {
 
