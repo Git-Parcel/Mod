@@ -22,7 +22,7 @@ public final class ParcelRenderer {
       }
 
       // Pivot
-      if (visual.showPivot()) {
+      if (visual.showAnchor()) {
         final float pivotSize = 2F;
         final float pivotWidth = LINE_WIDTH;
 
