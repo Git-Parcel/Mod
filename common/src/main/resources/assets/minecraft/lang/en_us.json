@@ -5,6 +5,8 @@
   "argument.gitparcel.parcel_format.invalid": "Invalid format",
   "argument.gitparcel.parcel.notfound": "Parcel not found: '%s'",
   "command.gitparcel.no_permission": "No permission",
+  "command.gitparcel.parcel_debug.clear_data.level.success": "Saved data in level %s has been cleared",
+  "command.gitparcel.parcel_debug.clear_data.world.success": "Saved data in world has been cleared",
   "command.gitparcel.parcel_debug.load.failure": "Load failed: %s",
   "command.gitparcel.parcel_debug.load.success": "Load successful",
   "command.gitparcel.parcel_debug.save.failure": "Save failed: %s",

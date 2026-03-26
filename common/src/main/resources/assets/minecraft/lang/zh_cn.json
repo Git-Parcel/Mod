@@ -5,6 +5,8 @@
   "argument.gitparcel.parcel_format.invalid": "无效的格式",
   "argument.gitparcel.parcel.notfound": "未找到 Parcel '%s'",
   "command.gitparcel.no_permission": "没有权限",
+  "command.gitparcel.parcel_debug.clear_data.level.success": "维度 %s 中的数据已清除",
+  "command.gitparcel.parcel_debug.clear_data.world.success": "世界数据已清除",
   "command.gitparcel.parcel_debug.load.failure": "加载失败: %s",
   "command.gitparcel.parcel_debug.load.success": "加载成功",
   "command.gitparcel.parcel_debug.save.failure": "保存失败: %s",
