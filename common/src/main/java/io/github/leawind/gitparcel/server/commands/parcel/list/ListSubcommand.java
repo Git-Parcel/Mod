@@ -20,17 +20,18 @@ public class ListSubcommand extends GitParcelBaseCommand {
 
     var dimension =
         Commands.argument("dimension", DimensionArgument.dimension())
-            .executes(ListSubcommand::list2);
+            .executes(ListSubcommand::listDimension);
 
-    return Commands.literal("list").executes(ListSubcommand::list1).then(dimension);
+    return Commands.literal("list").executes(ListSubcommand::listCurrentDimension).then(dimension);
   }
 
-  private static int list1(CommandContext<CommandSourceStack> ctx) {
+  private static int listCurrentDimension(CommandContext<CommandSourceStack> ctx) {
     var serverLevel = ctx.getSource().getLevel();
     return list(ctx.getSource(), serverLevel);
   }
 
-  private static int list2(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+  private static int listDimension(CommandContext<CommandSourceStack> ctx)
+      throws CommandSyntaxException {
     var serverLevel = DimensionArgument.getDimension(ctx, "dimension");
     return list(ctx.getSource(), serverLevel);
   }
