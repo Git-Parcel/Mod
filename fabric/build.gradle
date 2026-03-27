@@ -63,3 +63,15 @@ loom.remapConfigurations.configureEach {
 		}
 	}
 }
+
+// Override shadow jar classifier to avoid output path conflict with remapJar
+tasks.named('shadowJar') {
+	archiveClassifier = 'shadow-dev'
+}
+
+// Remap the shadow jar (Mojang mapped) to Intermediary so mixin references work at runtime
+tasks.remapJar {
+	dependsOn 'shadowJar'
+	
+	inputFile.set(tasks.shadowJar.archiveFile)
+}
