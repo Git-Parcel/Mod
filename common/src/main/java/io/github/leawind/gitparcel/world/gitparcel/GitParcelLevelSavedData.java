@@ -39,7 +39,7 @@ public final class GitParcelLevelSavedData extends SavedData {
 
   private GitParcelLevelSavedData(Map<UUID, Parcel> parcels) {
     this.parcels = new Object2ObjectOpenHashMap<>(parcels);
-    this.parcels.values().forEach(inst -> inst.setLevelSavedData(this));
+    this.parcels.values().forEach(parcel -> parcel.setLevelSavedData(this));
   }
 
   public Map<UUID, Parcel> getParcels() {
@@ -71,27 +71,27 @@ public final class GitParcelLevelSavedData extends SavedData {
    *   <li>Bounding box must not overlap with existing parcels
    * </ul>
    *
-   * @param inst the parcel to add
+   * @param parcel the parcel to add
    * @throws IllegalArgumentException if UUID or bounding box conflicts with existing parcels
    */
-  public void addNewParcel(Parcel inst) throws IllegalArgumentException {
+  public void addNewParcel(Parcel parcel) throws IllegalArgumentException {
     // Check: unique uuid
-    if (parcels.containsKey(inst.uuid())) {
+    if (parcels.containsKey(parcel.uuid())) {
       throw new IllegalArgumentException(
-          "Parcel with uuid %s already exists".formatted(inst.uuid()));
+          "Parcel with uuid %s already exists".formatted(parcel.uuid()));
     }
 
     // Check: bounding box no overlap
-    for (var thatInst : parcels.values()) {
-      if (inst.getBoundingBox().intersects(thatInst.getBoundingBox())) {
+    for (var oldParcel : parcels.values()) {
+      if (parcel.getBoundingBox().intersects(oldParcel.getBoundingBox())) {
         throw new IllegalArgumentException(
             "The new parcel intersects with existing parcel: %s <> %s"
-                .formatted(inst.uuid(), thatInst.uuid()));
+                .formatted(parcel.uuid(), oldParcel.uuid()));
       }
     }
 
-    inst.setLevelSavedData(this);
-    parcels.put(inst.uuid(), inst);
+    parcel.setLevelSavedData(this);
+    parcels.put(parcel.uuid(), parcel);
     setDirty();
     emitParcelsUpdate();
   }
@@ -117,9 +117,9 @@ public final class GitParcelLevelSavedData extends SavedData {
   }
 
   public @Nullable Parcel getParcel(BlockPos pos) {
-    for (var inst : parcels.values()) {
-      if (inst.getBoundingBox().isInside(pos)) {
-        return inst;
+    for (var parcel : parcels.values()) {
+      if (parcel.getBoundingBox().isInside(pos)) {
+        return parcel;
       }
     }
     return null;
@@ -150,8 +150,8 @@ public final class GitParcelLevelSavedData extends SavedData {
     if (from == null) {
       return;
     }
-    var inst = from.getParcels().remove(uuid);
+    var parcel = from.getParcels().remove(uuid);
     var to = toLevel.getDataStorage().computeIfAbsent(TYPE);
-    to.getParcels().put(uuid, inst);
+    to.getParcels().put(uuid, parcel);
   }
 }

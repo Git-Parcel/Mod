@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.world.gitparcel;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.leawind.gitparcel.GitParcelMod;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
@@ -232,7 +233,7 @@ public final class Parcel {
     return BlockPos.containing(getPivotBlockCenter());
   }
 
-  void setLevelSavedData(@Nullable GitParcelLevelSavedData levelSavedData) {
+  public void setLevelSavedData(@Nullable GitParcelLevelSavedData levelSavedData) {
     this.levelSavedData = levelSavedData;
   }
 
@@ -249,10 +250,12 @@ public final class Parcel {
 
   /** Should be called when this parcel is updated. */
   public void emitUpdate() {
-    if (levelSavedData != null) {
-      levelSavedData.setDirty();
-      levelSavedData.emitParcelUpdate(this);
+    if (levelSavedData == null) {
+      GitParcelMod.LOGGER.warn("Parcel {} is not in a level saved data", this);
+      return;
     }
+    levelSavedData.setDirty();
+    levelSavedData.emitParcelUpdate(this);
   }
 
   public static Parcel create(BoundingBox boundingBox, Mirror mirror, Rotation rotation) {

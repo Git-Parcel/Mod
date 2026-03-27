@@ -37,7 +37,7 @@ public class ParcelSuggestionProvider implements SuggestionProvider<CommandSourc
 
     var suggestions =
         parcels
-            .flatMap(inst -> Stream.of(inst.uuid().toString()))
+            .flatMap(parcel -> Stream.of(parcel.uuid().toString()))
             .filter(s -> s.startsWith(builder.getRemaining()));
 
     return SharedSuggestionProvider.suggest(suggestions, builder);

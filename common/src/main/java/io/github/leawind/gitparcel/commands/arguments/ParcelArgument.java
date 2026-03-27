@@ -64,13 +64,13 @@ public class ParcelArgument implements ArgumentType<ParcelArgument.ParcelSelecto
     public Parcel get(CommandSourceStack source) throws CommandSyntaxException {
       var serverLevel = source.getLevel();
       var savedData = GitParcelLevelSavedData.get(serverLevel);
-      var inst = savedData.getParcel(uuid);
+      var parcel = savedData.getParcel(uuid);
 
-      if (inst == null) {
+      if (parcel == null) {
         throw ERROR_PARCEL_NOT_FOUND.create();
       }
 
-      return inst;
+      return parcel;
     }
   }
 }
