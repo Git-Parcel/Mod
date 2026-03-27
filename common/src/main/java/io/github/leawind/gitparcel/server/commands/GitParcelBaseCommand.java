@@ -11,10 +11,14 @@ public abstract class GitParcelBaseCommand {
 
   protected static boolean validateWorldPermission(
       CommandSourceStack source, PermissionType<WorldPermissions> type) {
+    return validateWorldPermission(source, type, GitParcelWorldSavedData.get(source.getServer()));
+  }
 
-    PermissionConfig<WorldPermissions> permissions =
-        GitParcelWorldSavedData.get(source.getServer()).getPermissions();
-
+  protected static boolean validateWorldPermission(
+      CommandSourceStack source,
+      PermissionType<WorldPermissions> type,
+      GitParcelWorldSavedData worldSavedData) {
+    PermissionConfig<WorldPermissions> permissions = worldSavedData.getPermissions();
     if (!permissions.permits(type, source.permissions())) {
       source.sendFailure(GitParcelTranslations.of("command.gitparcel.no_permission"));
       return false;
