@@ -15,7 +15,7 @@ public final class ParcelRenderer {
   private static final float WIREFRAME_LINE_WIDTH = 2.5F;
 
   void renderGizmos() {
-    for (var parcel : GitParcelModClient.PARCELS) {
+    for (var parcel : GitParcelModClient.PARCELS.values()) {
       Vec3i size = parcel.meta().size();
       var visual = parcel.visual();
       var transform = parcel.transform();

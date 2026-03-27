@@ -8,7 +8,9 @@ import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFor
 import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelS2CPayload;
 import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelsS2CPayload;
 import io.github.leawind.gitparcel.world.gitparcel.Parcel;
-import java.util.List;
+import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -24,7 +26,7 @@ public final class GitParcelModClient {
    */
   public static @Nullable volatile ClientParcelFormatInfos PARCEL_FORMAT_INFOS = null;
 
-  public static volatile List<Parcel> PARCELS = List.of();
+  public static volatile Object2ObjectMap<UUID, Parcel> PARCELS = new Object2ObjectArrayMap<>();
 
   /**
    * Initializes the Git Parcel mod client.

@@ -33,9 +33,6 @@ public record UpdateParcelS2CPayload(Parcel parcel) implements CustomPacketPaylo
 
   /** Client-Only */
   public static void handle(UpdateParcelS2CPayload payload, LocalPlayer localPlayer) {
-    var updated = payload.parcel;
-    var current = GitParcelModClient.PARCELS;
-    GitParcelModClient.PARCELS =
-        current.stream().map(p -> p.uuid().equals(updated.uuid()) ? updated : p).toList();
+    GitParcelModClient.PARCELS.put(payload.parcel.uuid(), payload.parcel);
   }
 }
