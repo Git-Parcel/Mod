@@ -30,7 +30,7 @@ public final class GitParcelModNeoForge {
 
     @SubscribeEvent
     public static void onRegisterPayloadHandlers(RegisterPayloadHandlersEvent event) {
-      GitParcelMod.LOGGER.warn("Register payload handlers");
+      GitParcelMod.LOGGER.debug("Register payload handlers");
       var registrar = event.registrar(GitParcelMod.MOD_ID).versioned(GitParcelMod.PROTOCOL_VERSION);
 
       registrar.playToClient(

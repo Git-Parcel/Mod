@@ -36,7 +36,7 @@ public record UpdateParcelFormatInfosS2CPayload(ClientParcelFormatInfos infos)
 
   /** Client-Only */
   public static void handle(UpdateParcelFormatInfosS2CPayload payload, LocalPlayer localPlayer) {
-    GitParcelMod.LOGGER.info("Update parcel format info: {}", payload.infos());
+    GitParcelMod.LOGGER.debug("Update parcel format info: {}", payload.infos());
     GitParcelModClient.PARCEL_FORMAT_INFOS = payload.infos();
   }
 }
