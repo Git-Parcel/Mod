@@ -17,11 +17,22 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
-/// Parcel represents a cuboid area in the world.
+/// Parcel represents an axially aligned cuboid area in the world.
 ///
-/// - The pivot is treatedd as a point, not block pos.
+/// - The pivot and anchor are treated as a point, not block position.
 ///
 /// ### Demo
+///
+/// In this demo, we omit the y coordinate and focus on `(x, z)`.
+///
+/// Direction:
+///
+/// ```txt
+///  o----> +x
+///  |
+///  ↓
+///  +z
+/// ```
 ///
 /// Lets's say we have a parcel:
 ///
