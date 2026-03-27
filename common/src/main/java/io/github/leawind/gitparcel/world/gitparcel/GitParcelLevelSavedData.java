@@ -50,7 +50,7 @@ public final class GitParcelLevelSavedData extends SavedData {
     parcels.clear();
 
     setDirty();
-    emitUpdate();
+    emitParcelsUpdate();
   }
 
   public List<Parcel> listParcels() {
@@ -92,7 +92,7 @@ public final class GitParcelLevelSavedData extends SavedData {
 
     setDirty();
     parcels.put(inst.uuid(), inst);
-    emitUpdate();
+    emitParcelsUpdate();
   }
 
   /**
@@ -106,7 +106,7 @@ public final class GitParcelLevelSavedData extends SavedData {
 
     if (result != null) {
       setDirty();
-      emitUpdate();
+      emitParcelsUpdate();
     }
     return result;
   }
@@ -124,9 +124,9 @@ public final class GitParcelLevelSavedData extends SavedData {
     return null;
   }
 
-  public void emitUpdate() {
+  public void emitParcelsUpdate() {
     if (level != null) {
-      GitParcelApi.Events.ON_UPDATE_PARCELS.emit(
+      GitParcelApi.Events.ON_PARCELS_UPDATE.emit(
           new GitParcelApi.Events.UdpateParcelsEvent(level, listParcels()));
     }
   }

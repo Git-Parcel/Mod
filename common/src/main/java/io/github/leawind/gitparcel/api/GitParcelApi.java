@@ -7,7 +7,7 @@ import net.minecraft.server.level.ServerLevel;
 
 public final class GitParcelApi {
   public static class Events {
-    public static final EventEmitter<UdpateParcelsEvent> ON_UPDATE_PARCELS = new EventEmitter<>();
+    public static final EventEmitter<UdpateParcelsEvent> ON_PARCELS_UPDATE = new EventEmitter<>();
 
     public record UdpateParcelsEvent(ServerLevel level, List<Parcel> list) {}
   }

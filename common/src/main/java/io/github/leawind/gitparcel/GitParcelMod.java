@@ -130,7 +130,7 @@ public final class GitParcelMod {
           player.connection.send(new ClientboundCustomPayloadPacket(payload));
         });
     // Notify players when level parcels update
-    GitParcelApi.Events.ON_UPDATE_PARCELS.on(
+    GitParcelApi.Events.ON_PARCELS_UPDATE.on(
         e -> {
           try (var serverLevel = e.level()) {
             serverLevel
