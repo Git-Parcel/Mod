@@ -21,6 +21,7 @@ import io.github.leawind.gitparcel.server.GameServerApi;
 import io.github.leawind.gitparcel.server.commands.parcel.ParcelCommand;
 import io.github.leawind.gitparcel.server.commands.parcel_debug.ParcelDebugCommand;
 import io.github.leawind.gitparcel.world.gitparcel.GitParcelLevelSavedData;
+import java.io.IOException;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -130,13 +131,18 @@ public final class GitParcelMod {
         });
     // Notify players when level parcels update
     GitParcelApi.Events.ON_UPDATE_PARCELS.on(
-        e ->
-            e.level()
+        e -> {
+          try (var serverLevel = e.level()) {
+            serverLevel
                 .players()
                 .forEach(
                     player -> {
                       var payload = UpdateParcelsS2CPayload.from(e.list());
                       player.connection.send(new ClientboundCustomPayloadPacket(payload));
-                    }));
+                    });
+          } catch (IOException ex) {
+            throw new RuntimeException("Failed to send update parcels packet", ex);
+          }
+        });
   }
 }
