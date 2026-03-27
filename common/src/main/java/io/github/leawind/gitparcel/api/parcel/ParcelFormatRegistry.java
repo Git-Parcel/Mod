@@ -1,8 +1,8 @@
 package io.github.leawind.gitparcel.api.parcel;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -24,8 +24,9 @@ public final class ParcelFormatRegistry {
   /** The global singleton instance of {@code ParcelFormatRegistry}. */
   public static final ParcelFormatRegistry INSTANCE = new ParcelFormatRegistry();
 
-  private final Map<ParcelFormat.Info, ParcelFormat.Save<?>> savers = new HashMap<>();
-  private final Map<ParcelFormat.Info, ParcelFormat.Load<?>> loaders = new HashMap<>();
+  private final Map<ParcelFormat.Info, ParcelFormat.Save<?>> savers = new Object2ObjectArrayMap<>();
+  private final Map<ParcelFormat.Info, ParcelFormat.Load<?>> loaders =
+      new Object2ObjectArrayMap<>();
 
   private ParcelFormat.@Nullable Save<?> defaultSaver;
 

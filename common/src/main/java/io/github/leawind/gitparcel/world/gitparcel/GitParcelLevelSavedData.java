@@ -3,9 +3,9 @@ package io.github.leawind.gitparcel.world.gitparcel;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.api.GitParcelApi;
+import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -34,7 +34,7 @@ public final class GitParcelLevelSavedData extends SavedData {
   private final Map<UUID, Parcel> parcels;
 
   private GitParcelLevelSavedData() {
-    this(new HashMap<>());
+    this(new Object2ObjectArrayMap<>(4));
   }
 
   private GitParcelLevelSavedData(Map<UUID, Parcel> parcels) {

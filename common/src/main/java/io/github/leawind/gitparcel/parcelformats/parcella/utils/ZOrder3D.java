@@ -1,6 +1,6 @@
 package io.github.leawind.gitparcel.parcelformats.parcella.utils;
 
-import java.util.HashMap;
+import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
@@ -193,7 +193,7 @@ public class ZOrder3D {
   private static final Vector3i[] INDEX_TO_COORD_CACHE;
 
   static {
-    COORD_TO_INDEX_CACHE = new HashMap<>(CACHE_SIZE);
+    COORD_TO_INDEX_CACHE = new Long2LongOpenHashMap(CACHE_SIZE);
     INDEX_TO_COORD_CACHE = new Vector3i[CACHE_SIZE];
     for (int i = 0; i < CACHE_SIZE; i++) {
       var coord = indexToCoordSignedImpl(i);

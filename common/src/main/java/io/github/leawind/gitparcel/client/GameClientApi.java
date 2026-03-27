@@ -3,7 +3,7 @@ package io.github.leawind.gitparcel.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.leawind.inventory.event.EventEmitter;
 import io.github.leawind.inventory.event.SimpleEventEmitter;
-import java.util.HashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import net.minecraft.client.Minecraft;
@@ -17,7 +17,7 @@ public final class GameClientApi {
 
   public static class Network {
     public static final Map<CustomPacketPayload.Type<?>, BiConsumer<CustomPacketPayload, Minecraft>>
-        CUSTOM_PAYLOAD_HANDLERS = new HashMap<>();
+        CUSTOM_PAYLOAD_HANDLERS = new Object2ObjectOpenHashMap<>();
 
     @SuppressWarnings("unchecked")
     public static <T extends CustomPacketPayload> void registerGlobalReceiver(
