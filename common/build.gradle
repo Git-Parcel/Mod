@@ -35,6 +35,11 @@ dependencies {
 	testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 	
 	implementation "com.github.Leawind:inventory-java:${leawind_inventory_version}"
+	implementation("org.eclipse.jgit:org.eclipse.jgit:${jgit_version}") {
+		// Exclude transitive dependencies that are already provided by the Minecraft environment
+		exclude group: 'commons-codec', module: 'commons-codec' // conflicts with NeoForm's strictly 1.19.0
+		exclude group: 'org.slf4j', module: 'slf4j-api' // already provided by Minecraft
+	}
 }
 
 test {

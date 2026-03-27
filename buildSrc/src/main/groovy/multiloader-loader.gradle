@@ -30,6 +30,11 @@ dependencies {
 	commonResources project(path: ':common', configuration: 'commonResources')
 	
 	shadow "com.github.Leawind:inventory-java:${leawind_inventory_version}"
+	shadow("org.eclipse.jgit:org.eclipse.jgit:${jgit_version}") {
+		// Exclude transitive dependencies that are already provided by the Minecraft environment
+		exclude group: 'commons-codec', module: 'commons-codec' // conflicts with NeoForm's strictly 1.19.0
+		exclude group: 'org.slf4j', module: 'slf4j-api' // already provided by Minecraft
+	}
 }
 
 tasks.named('compileJava', JavaCompile) {
@@ -58,6 +63,15 @@ tasks.named('shadowJar') {
 	archiveClassifier = ''
 	configurations = [project.configurations.shadow]
 	relocate('io.github.leawind.inventory', 'io.github.leawind.gitparcel.lib.inventory')
+	relocate('org.eclipse.jgit', 'io.github.leawind.gitparcel.lib.jgit')
+	relocate('com.googlecode.javaewah', 'io.github.leawind.gitparcel.lib.javaewah') // from jgit
+	relocate('com.googlecode.javaewah', 'io.github.leawind.gitparcel.lib.javaewah32') // from jgit
+	
+	// Exclude license files and metadata from bundled libraries to avoid confusion
+	exclude 'about.html' // from jgit
+	exclude 'META-INF/maven/**' // from jgit
+	exclude 'OSGI-INF/**' // from jgit
+	
 	minimize()
 }
 
