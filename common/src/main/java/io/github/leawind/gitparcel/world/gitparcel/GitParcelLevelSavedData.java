@@ -127,7 +127,7 @@ public final class GitParcelLevelSavedData extends SavedData {
   public void emitParcelsUpdate() {
     if (level != null) {
       GitParcelApi.Events.ON_PARCELS_UPDATE.emit(
-          new GitParcelApi.Events.UdpateParcelsEvent(level, listParcels()));
+          new GitParcelApi.Events.UpdateParcelsEvent(level, listParcels()));
     }
   }
 
