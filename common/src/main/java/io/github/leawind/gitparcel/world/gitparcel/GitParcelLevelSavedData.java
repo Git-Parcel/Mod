@@ -90,8 +90,9 @@ public final class GitParcelLevelSavedData extends SavedData {
       }
     }
 
-    setDirty();
+    inst.setLevelSavedData(this);
     parcels.put(inst.uuid(), inst);
+    setDirty();
     emitParcelsUpdate();
   }
 
