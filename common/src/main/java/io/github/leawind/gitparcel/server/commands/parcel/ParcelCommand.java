@@ -1,6 +1,7 @@
 package io.github.leawind.gitparcel.server.commands.parcel;
 
 import com.mojang.brigadier.CommandDispatcher;
+import io.github.leawind.gitparcel.server.commands.parcel.config.ConfigSubcommand;
 import io.github.leawind.gitparcel.server.commands.parcel.create.CreateSubcommand;
 import io.github.leawind.gitparcel.server.commands.parcel.delete.DeleteSubcommand;
 import io.github.leawind.gitparcel.server.commands.parcel.formats.FormatsSubcommand;
@@ -16,6 +17,7 @@ public class ParcelCommand {
     final var parcel =
         Commands.literal("parcel")
             .requires(Commands.hasPermission(Commands.LEVEL_ALL))
+            .then(ConfigSubcommand.build())
             .then(FormatsSubcommand.build())
             .then(CreateSubcommand.build())
             .then(DeleteSubcommand.build())

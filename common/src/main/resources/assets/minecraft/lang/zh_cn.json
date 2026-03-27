@@ -12,6 +12,7 @@
   "command.gitparcel.parcel_debug.save.failure": "保存失败: %s",
   "command.gitparcel.parcel_debug.save.success": "保存成功",
   "command.gitparcel.parcel_debug.unexpected_error": "意外错误: %s",
+  "command.gitparcel.parcel.config.set.success": "已将 Parcel %s 的 %s 设为 '%s'",
   "command.gitparcel.parcel.create.failure": "创建 Parcel 失败: %s",
   "command.gitparcel.parcel.create.success": "已创建 Parcel：从 %s 到 %s",
   "command.gitparcel.parcel.formats.list.header": "支持的 parcel 格式：{%d 个保存器，%d 个加载器}",

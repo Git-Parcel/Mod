@@ -39,6 +39,7 @@ public final class ParcelMeta {
                       Codec.STRING
                           .optionalFieldOf("description")
                           .forGetter(ParcelMeta::getDescription),
+                      Codec.STRING.optionalFieldOf("author").forGetter(ParcelMeta::getAuthor),
                       Codec.STRING.listOf().optionalFieldOf("tags").forGetter(ParcelMeta::getTags),
                       Codec.unboundedMap(Codec.STRING, ModDependency.CODEC)
                           .optionalFieldOf("mods")
@@ -55,6 +56,7 @@ public final class ParcelMeta {
 
   private @Nullable String name = null;
   private @Nullable String description = null;
+  private @Nullable String author = null;
   private @Nullable List<String> tags = null;
   private @Nullable Map<String, ModDependency> mods = null;
 
@@ -69,6 +71,7 @@ public final class ParcelMeta {
       Vec3i anchor,
       Optional<String> name,
       Optional<String> description,
+      Optional<String> author,
       Optional<List<String>> tgs,
       Optional<Map<String, ModDependency>> mods,
       Optional<Boolean> excludeEntities) {
@@ -78,6 +81,7 @@ public final class ParcelMeta {
     this.anchor = anchor;
     this.name = name.orElse(null);
     this.description = description.orElse(null);
+    this.author = author.orElse(null);
     this.tags = tgs.orElse(null);
     this.mods = mods.orElse(null);
     this.excludeEntities = excludeEntities.orElse(true);
@@ -122,6 +126,10 @@ public final class ParcelMeta {
     return Optional.ofNullable(description);
   }
 
+  private Optional<String> getAuthor() {
+    return Optional.ofNullable(author);
+  }
+
   public Optional<List<String>> getTags() {
     return Optional.ofNullable(tags);
   }
@@ -144,6 +152,31 @@ public final class ParcelMeta {
 
   public boolean excludeEntities() {
     return excludeEntities == null || excludeEntities;
+  }
+
+  /** Sets the format info. */
+  public void setFormatInfo(ParcelFormat.Info formatInfo) {
+    this.formatInfo = formatInfo;
+  }
+
+  /** Sets the name. */
+  public void setName(@Nullable String name) {
+    this.name = name;
+  }
+
+  /** Sets the author. */
+  public void setAuthor(@Nullable String author) {
+    this.author = author;
+  }
+
+  /** Sets the description. */
+  public void setDescription(@Nullable String description) {
+    this.description = description;
+  }
+
+  /** Sets whether entities should be excluded. */
+  public void setExcludeEntities(@Nullable Boolean excludeEntities) {
+    this.excludeEntities = excludeEntities;
   }
 
   /**

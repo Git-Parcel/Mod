@@ -1,0 +1,176 @@
+package io.github.leawind.gitparcel.server.commands.parcel.config;
+
+import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.github.leawind.gitparcel.GitParcelTranslations;
+import io.github.leawind.gitparcel.commands.arguments.ParcelArgument;
+import io.github.leawind.gitparcel.commands.arguments.ParcelFormatArgument;
+import io.github.leawind.gitparcel.commands.synchronization.ParcelSuggestionProvider;
+import io.github.leawind.gitparcel.permission.WorldPermissions;
+import io.github.leawind.gitparcel.server.commands.GitParcelBaseCommand;
+import io.github.leawind.gitparcel.world.gitparcel.Parcel;
+import java.util.function.BiConsumer;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+
+public class ConfigSubcommand extends GitParcelBaseCommand {
+  public static ArgumentBuilder<CommandSourceStack, ?> build() {
+    var set =
+        Commands.literal("set")
+            .then(buildMetaFormat())
+            .then(buildMetaName())
+            .then(buildMetaAuthor())
+            .then(buildMetaDescription())
+            .then(buildMetaExcludeEntities())
+            .then(buildVisualShowWireframe())
+            .then(buildVisualShowAnchor());
+
+    var parcel =
+        Commands.argument("parcel", ParcelArgument.parcel())
+            .suggests(ParcelSuggestionProvider.INSTANCE)
+            .then(set);
+
+    return Commands.literal("config").then(parcel);
+  }
+
+  // ////////////////////////////////////////////////////////////////
+  // Helpers
+  // ////////////////////////////////////////////////////////////////
+
+  private static <T> int handle(
+      CommandContext<CommandSourceStack> ctx,
+      String key,
+      ParcelValueReader<T> valueReader,
+      BiConsumer<Parcel, T> setter)
+      throws CommandSyntaxException {
+    var source = ctx.getSource();
+    if (!validateWorldPermission(source, WorldPermissions.CONFIG_PARCEL)) {
+      return 0;
+    }
+
+    var parcel = ParcelArgument.getParcel(ctx, "parcel");
+    var value = valueReader.read(ctx);
+
+    setter.accept(parcel, value);
+    parcel.setDirty();
+
+    source.sendSuccess(
+        () ->
+            GitParcelTranslations.of(
+                "command.gitparcel.parcel.config.set.success",
+                parcel.uuid().toString(),
+                key,
+                value.toString()),
+        false);
+    return 1;
+  }
+
+  @FunctionalInterface
+  private interface ParcelValueReader<T> {
+    T read(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException;
+  }
+
+  // ////////////////////////////////////////////////////////////////
+  // meta
+  // ////////////////////////////////////////////////////////////////
+
+  private static ArgumentBuilder<CommandSourceStack, ?> buildMetaFormat() {
+    return Commands.literal("meta.format")
+        .then(
+            Commands.argument("save_format", ParcelFormatArgument.saver())
+                .executes(
+                    ctx -> {
+                      var saver = ParcelFormatArgument.getSaver(ctx, "save_format");
+                      return handle(
+                          ctx,
+                          "meta.format",
+                          c -> saver,
+                          (p, s) -> p.meta().setFormatInfo(s.info()));
+                    }));
+  }
+
+  private static ArgumentBuilder<CommandSourceStack, ?> buildMetaName() {
+    return Commands.literal("meta.name")
+        .then(
+            Commands.argument("name", StringArgumentType.word())
+                .executes(
+                    ctx ->
+                        handle(
+                            ctx,
+                            "meta.name",
+                            c -> StringArgumentType.getString(c, "name"),
+                            (p, v) -> p.meta().setName(v))));
+  }
+
+  private static ArgumentBuilder<CommandSourceStack, ?> buildMetaAuthor() {
+    return Commands.literal("meta.author")
+        .then(
+            Commands.argument("author", StringArgumentType.word())
+                .executes(
+                    ctx ->
+                        handle(
+                            ctx,
+                            "meta.author",
+                            c -> StringArgumentType.getString(c, "author"),
+                            (p, v) -> p.meta().setAuthor(v))));
+  }
+
+  private static ArgumentBuilder<CommandSourceStack, ?> buildMetaDescription() {
+    return Commands.literal("meta.description")
+        .then(
+            Commands.argument("description", StringArgumentType.greedyString())
+                .executes(
+                    ctx ->
+                        handle(
+                            ctx,
+                            "meta.description",
+                            c -> StringArgumentType.getString(c, "description"),
+                            (p, v) -> p.meta().setDescription(v))));
+  }
+
+  private static ArgumentBuilder<CommandSourceStack, ?> buildMetaExcludeEntities() {
+    return Commands.literal("meta.excludeEntities")
+        .then(
+            Commands.argument("bool", BoolArgumentType.bool())
+                .executes(
+                    ctx ->
+                        handle(
+                            ctx,
+                            "meta.excludeEntities",
+                            c -> BoolArgumentType.getBool(c, "bool"),
+                            (p, v) -> p.meta().setExcludeEntities(v))));
+  }
+
+  // ////////////////////////////////////////////////////////////////
+  // visual
+  // ////////////////////////////////////////////////////////////////
+
+  private static ArgumentBuilder<CommandSourceStack, ?> buildVisualShowWireframe() {
+    return Commands.literal("visual.showWireframe")
+        .then(
+            Commands.argument("bool", BoolArgumentType.bool())
+                .executes(
+                    ctx ->
+                        handle(
+                            ctx,
+                            "visual.showWireframe",
+                            c -> BoolArgumentType.getBool(c, "bool"),
+                            (p, v) -> p.visual().showWireframe(v))));
+  }
+
+  private static ArgumentBuilder<CommandSourceStack, ?> buildVisualShowAnchor() {
+    return Commands.literal("visual.showAnchor")
+        .then(
+            Commands.argument("bool", BoolArgumentType.bool())
+                .executes(
+                    ctx ->
+                        handle(
+                            ctx,
+                            "visual.showAnchor",
+                            c -> BoolArgumentType.getBool(c, "bool"),
+                            (p, v) -> p.visual().showAnchor(v))));
+  }
+}

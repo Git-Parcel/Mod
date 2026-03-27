@@ -24,4 +24,6 @@ public class WorldPermissions {
       type("create_parcel", PermissionLevel.OWNERS);
   public static final PermissionType<WorldPermissions> DELETE_PARCEL =
       type("delete_parcel", PermissionLevel.OWNERS);
+  public static final PermissionType<WorldPermissions> CONFIG_PARCEL =
+      type("config_parcel", PermissionLevel.OWNERS);
 }
