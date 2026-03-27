@@ -120,6 +120,7 @@ public final class GitParcelMod {
     }
   }
 
+  @SuppressWarnings("resource")
   private static void registerGitParcelEvents() {
     // Notify when player join
     GameServerApi.ON_PLAYER_JOIN.on(
