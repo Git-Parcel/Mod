@@ -37,9 +37,6 @@ public final class GitParcelMod {
   /** The mod ID for Git Parcel. */
   public static final String MOD_ID = "gitparcel";
 
-  /** The display key for Git Parcel. */
-  public static final String MOD_NAME = "Git Parcel";
-
   public static final String PROTOCOL_VERSION = "1";
 
   /** The logger instance for Git Parcel. */
