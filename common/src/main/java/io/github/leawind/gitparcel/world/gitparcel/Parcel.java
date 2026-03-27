@@ -107,7 +107,6 @@ public final class Parcel {
     this.uuid = uuid;
     this.meta = meta;
     this.transform = transform;
-    visual.parcel = this;
     this.visual = visual;
     this.permissions = permissions;
   }
@@ -241,9 +240,18 @@ public final class Parcel {
     return levelSavedData;
   }
 
+  @Deprecated
   public void setDirty() {
     if (levelSavedData != null) {
       levelSavedData.setDirty();
+    }
+  }
+
+  /** Should be called when this parcel is updated. */
+  public void emitUpdate() {
+    if (levelSavedData != null) {
+      levelSavedData.setDirty();
+      levelSavedData.emitParcelUpdate(this);
     }
   }
 
@@ -278,8 +286,6 @@ public final class Parcel {
     private boolean showWireframe;
     private boolean showAnchor;
 
-    private @Nullable Parcel parcel;
-
     public Visual() {
       this(true, true);
     }
@@ -298,7 +304,6 @@ public final class Parcel {
     public Visual showWireframe(boolean showWireframe) {
       if (this.showWireframe != showWireframe) {
         this.showWireframe = showWireframe;
-        setDirty();
       }
       return this;
     }
@@ -310,15 +315,8 @@ public final class Parcel {
     public Visual showAnchor(boolean showAnchor) {
       if (this.showAnchor != showAnchor) {
         this.showAnchor = showAnchor;
-        setDirty();
       }
       return this;
-    }
-
-    public void setDirty() {
-      if (parcel != null) {
-        parcel.setDirty();
-      }
     }
   }
 }

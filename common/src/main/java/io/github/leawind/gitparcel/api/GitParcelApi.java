@@ -9,6 +9,10 @@ public final class GitParcelApi {
   public static class Events {
     public static final EventEmitter<UpdateParcelsEvent> ON_PARCELS_UPDATE = new EventEmitter<>();
 
-    public record UpdateParcelsEvent(ServerLevel level, List<Parcel> list) {}
+    public record UpdateParcelsEvent(ServerLevel level, List<Parcel> parcels) {}
+
+    public static final EventEmitter<UpdateParcelEvent> ON_PARCEL_UPDATE = new EventEmitter<>();
+
+    public record UpdateParcelEvent(ServerLevel level, Parcel parcel) {}
   }
 }

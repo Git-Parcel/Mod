@@ -131,6 +131,13 @@ public final class GitParcelLevelSavedData extends SavedData {
     }
   }
 
+  public void emitParcelUpdate(Parcel parcel) {
+    if (level != null && parcels.containsKey(parcel.uuid())) {
+      GitParcelApi.Events.ON_PARCEL_UPDATE.emit(
+          new GitParcelApi.Events.UpdateParcelEvent(level, parcel));
+    }
+  }
+
   public static GitParcelLevelSavedData get(ServerLevel level) {
     var savedData = level.getDataStorage().computeIfAbsent(TYPE);
     savedData.level = level;

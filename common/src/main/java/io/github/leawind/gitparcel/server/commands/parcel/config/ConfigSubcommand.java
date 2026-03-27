@@ -55,7 +55,7 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
     var value = valueReader.read(ctx);
 
     setter.accept(parcel, value);
-    parcel.setDirty();
+    parcel.emitUpdate();
 
     source.sendSuccess(
         () ->
