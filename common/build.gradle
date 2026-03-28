@@ -40,6 +40,7 @@ dependencies {
 		exclude group: 'commons-codec', module: 'commons-codec' // conflicts with NeoForm's strictly 1.19.0
 		exclude group: 'org.slf4j', module: 'slf4j-api' // already provided by Minecraft
 	}
+	implementation "dev.dirs:directories:${directories_version}"
 }
 
 test {

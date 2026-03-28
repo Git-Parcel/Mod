@@ -35,6 +35,7 @@ dependencies {
 		exclude group: 'commons-codec', module: 'commons-codec' // conflicts with NeoForm's strictly 1.19.0
 		exclude group: 'org.slf4j', module: 'slf4j-api' // already provided by Minecraft
 	}
+	shadow "dev.dirs:directories:${directories_version}"
 }
 
 tasks.named('compileJava', JavaCompile) {
@@ -66,11 +67,13 @@ tasks.named('shadowJar') {
 	relocate('org.eclipse.jgit', 'io.github.leawind.gitparcel.lib.jgit')
 	relocate('com.googlecode.javaewah', 'io.github.leawind.gitparcel.lib.javaewah') // from jgit
 	relocate('com.googlecode.javaewah', 'io.github.leawind.gitparcel.lib.javaewah32') // from jgit
+	relocate('dev.dirs', 'io.github.leawind.gitparcel.lib.dirs') // dev.dirs:directories
 	
 	// Exclude license files and metadata from bundled libraries to avoid confusion
 	exclude 'about.html' // from jgit
 	exclude 'META-INF/maven/**' // from jgit
 	exclude 'OSGI-INF/**' // from jgit
+	exclude 'META-INF/native-images/**' // dev.dirs:directories
 	
 	minimize()
 }
