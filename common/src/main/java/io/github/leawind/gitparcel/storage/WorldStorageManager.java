@@ -10,6 +10,7 @@ import net.minecraft.server.MinecraftServer;
 
 public final class WorldStorageManager {
   private static final String DIR_NAME = GitParcelMod.MOD_ID;
+  private static final String PARCELS_DIR_NAME = "parcels";
 
   private static final Map<Path, WeakReference<WorldStorageManager>> CACHE =
       new ConcurrentHashMap<>();
@@ -38,6 +39,21 @@ public final class WorldStorageManager {
 
   public Path getRoot() {
     return root;
+  }
+
+  /**
+   * Internal parcel repositories directory.
+   *
+   * <p>Directory structure:
+   *
+   * <pre>
+   * parcels/
+   *   - <parcel-uuid>/
+   *     - .git/
+   * </pre>
+   */
+  public Path getInternalParcelsDir() {
+    return root.resolve(PARCELS_DIR_NAME);
   }
 
   public static Path getWorldDir(MinecraftServer server) {
