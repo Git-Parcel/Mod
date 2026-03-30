@@ -48,6 +48,6 @@ public class GameStorageManagerTest {
 
     var config = gameStorageManager.getConfig();
     assertNotNull(config);
-    assertFalse(config.isUseSystemStorage());
+    assertFalse(config.useSystemStorage());
   }
 }

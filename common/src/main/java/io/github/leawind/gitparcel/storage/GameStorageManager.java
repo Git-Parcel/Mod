@@ -130,8 +130,8 @@ public class GameStorageManager {
             inst ->
                 inst.group(
                         Codec.BOOL
-                            .optionalFieldOf("isUseSystemStorage", false)
-                            .forGetter(Config::isUseSystemStorage))
+                            .optionalFieldOf("useSystemStorage", false)
+                            .forGetter(Config::useSystemStorage))
                     .apply(inst, Config::new));
 
     /**
@@ -152,12 +152,12 @@ public class GameStorageManager {
       Files.writeString(file, StorageManager.GSON.toJson((JsonObject) result.getOrThrow()));
     }
 
-    private boolean isUseSystemStorage = false;
+    private boolean useSystemStorage = false;
 
     private Config() {}
 
-    private Config(boolean isUseSystemStorage) {
-      this.isUseSystemStorage = isUseSystemStorage;
+    private Config(boolean useSystemStorage) {
+      this.useSystemStorage = useSystemStorage;
     }
 
     /**
@@ -165,8 +165,8 @@ public class GameStorageManager {
      *
      * @return true if system storage should be used
      */
-    public boolean isUseSystemStorage() {
-      return isUseSystemStorage;
+    public boolean useSystemStorage() {
+      return useSystemStorage;
     }
 
     /**
@@ -174,8 +174,8 @@ public class GameStorageManager {
      *
      * @param value true to enable system storage
      */
-    public void setUseSystemStorage(boolean value) {
-      this.isUseSystemStorage = value;
+    public void useSystemStorage(boolean value) {
+      this.useSystemStorage = value;
     }
   }
 }

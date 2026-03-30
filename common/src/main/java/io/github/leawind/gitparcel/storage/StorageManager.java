@@ -177,7 +177,7 @@ public final class StorageManager {
     }
 
     // 2. Check if system storage is enabled
-    if (gameStorage().getConfig().isUseSystemStorage()) {
+    if (gameStorage().getConfig().useSystemStorage()) {
       return systemPathSupplier.get();
     }
 
