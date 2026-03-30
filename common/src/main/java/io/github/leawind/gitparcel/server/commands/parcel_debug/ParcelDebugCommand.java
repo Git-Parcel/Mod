@@ -18,6 +18,7 @@ public class ParcelDebugCommand {
             .requires(Commands.hasPermission(Commands.LEVEL_ADMINS))
             .then(ClearDataSubcommand.build())
             .then(SaveSubcommand.build())
+            .then(StorageSubcommand.build())
             .then(LoadSubcommand.build());
 
     dispatcher.register(parcel_debug);
