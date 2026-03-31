@@ -8,6 +8,8 @@ import io.github.leawind.gitparcel.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.permission.ParcelPermissions;
 import io.github.leawind.gitparcel.utils.permission.PermissionConfig;
+import java.nio.file.Path;
+import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
@@ -78,7 +80,10 @@ public final class Parcel {
                       Visual.CODEC.fieldOf("visual").forGetter(Parcel::visual),
                       ParcelPermissions.CONFIG_CODEC
                           .fieldOf("permissions")
-                          .forGetter(Parcel::permissions))
+                          .forGetter(Parcel::permissions),
+                      ParcelLocation.CODEC
+                          .optionalFieldOf("location")
+                          .forGetter(Parcel::optionalLocation))
                   .apply(inst, Parcel::new));
 
   // ////////////////////////////////////////////////////////////////
@@ -88,6 +93,7 @@ public final class Parcel {
   private final UUID uuid;
   private final ParcelMeta meta;
   private ParcelTransform transform;
+  private @Nullable ParcelLocation location;
 
   private PermissionConfig<ParcelPermissions> permissions;
 
@@ -99,17 +105,20 @@ public final class Parcel {
 
   private @Nullable GitParcelLevelSavedData levelSavedData;
 
+  @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   private Parcel(
       UUID uuid,
       ParcelMeta meta,
       ParcelTransform transform,
       Visual visual,
-      PermissionConfig<ParcelPermissions> permissions) {
+      PermissionConfig<ParcelPermissions> permissions,
+      Optional<ParcelLocation> location) {
     this.uuid = uuid;
     this.meta = meta;
     this.transform = transform;
     this.visual = visual;
     this.permissions = permissions;
+    this.location = location.orElse(null);
   }
 
   public static BlockPos getPivotBlockPos(Mirror mirror, Rotation rotation, BoundingBox box) {
@@ -186,6 +195,10 @@ public final class Parcel {
 
   public ParcelTransform transform() {
     return transform;
+  }
+
+  private Optional<ParcelLocation> optionalLocation() {
+    return Optional.ofNullable(location);
   }
 
   public Visual visual() {
@@ -273,7 +286,8 @@ public final class Parcel {
         meta,
         transform,
         new Visual(),
-        new PermissionConfig<>(ParcelPermissions.REGISTRY));
+        new PermissionConfig<>(ParcelPermissions.REGISTRY),
+        Optional.empty());
   }
 
   /** Visual settings controlling how a parcel is rendered on the client. */
@@ -320,6 +334,41 @@ public final class Parcel {
         this.showAnchor = showAnchor;
       }
       return this;
+    }
+  }
+
+  /**
+   * @param repo Git repository path
+   * @param relative Parcel directory path relative to the repo path
+   */
+  public record ParcelLocation(Path repo, Path relative) {
+    public static final Codec<ParcelLocation> CODEC =
+        RecordCodecBuilder.create(
+            inst ->
+                inst.group(
+                        Codec.STRING.fieldOf("repo").forGetter(ParcelLocation::getRepoPathString),
+                        Codec.STRING
+                            .fieldOf("relative")
+                            .forGetter(ParcelLocation::getParcelPathString))
+                    .apply(inst, ParcelLocation::new));
+
+    public ParcelLocation(String repoPathString, String parcelPathString) {
+      this(Path.of(repoPathString), Path.of(parcelPathString));
+      if (relative.isAbsolute()) {
+        throw new IllegalArgumentException("Parcel path must be relative");
+      }
+    }
+
+    private String getRepoPathString() {
+      return repo.toString();
+    }
+
+    private String getParcelPathString() {
+      return relative.toString();
+    }
+
+    public Path getParcelPath() {
+      return repo.resolve(relative);
     }
   }
 }
