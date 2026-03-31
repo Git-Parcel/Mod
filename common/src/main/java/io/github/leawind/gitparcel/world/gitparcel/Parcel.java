@@ -121,70 +121,6 @@ public final class Parcel {
     this.location = location.orElse(null);
   }
 
-  public static BlockPos getPivotBlockPos(Mirror mirror, Rotation rotation, BoundingBox box) {
-    return switch (mirror) {
-      // P+
-      // ++
-      case NONE ->
-          switch (rotation) {
-            case NONE -> new BlockPos(box.minX(), box.minY(), box.minZ());
-            case CLOCKWISE_90 -> new BlockPos(box.maxX(), box.minY(), box.minZ());
-            case CLOCKWISE_180 -> new BlockPos(box.maxX(), box.minY(), box.maxZ());
-            case COUNTERCLOCKWISE_90 -> new BlockPos(box.minX(), box.minY(), box.maxZ());
-          };
-      // ++
-      // P+
-      case LEFT_RIGHT ->
-          switch (rotation) {
-            case NONE -> new BlockPos(box.minX(), box.minY(), box.maxZ());
-            case CLOCKWISE_90 -> new BlockPos(box.minX(), box.minY(), box.minZ());
-            case CLOCKWISE_180 -> new BlockPos(box.maxX(), box.minY(), box.minZ());
-            case COUNTERCLOCKWISE_90 -> new BlockPos(box.maxX(), box.minY(), box.maxZ());
-          };
-      // +P
-      // ++
-      case FRONT_BACK ->
-          switch (rotation) {
-            case NONE -> new BlockPos(box.maxX(), box.minY(), box.minZ());
-            case CLOCKWISE_90 -> new BlockPos(box.maxX(), box.minY(), box.maxZ());
-            case CLOCKWISE_180 -> new BlockPos(box.minX(), box.minY(), box.maxZ());
-            case COUNTERCLOCKWISE_90 -> new BlockPos(box.minX(), box.minY(), box.minZ());
-          };
-    };
-  }
-
-  public static Vec3 getPivot(Mirror mirror, Rotation rotation, BoundingBox box) {
-    return switch (mirror) {
-      // P+
-      // ++
-      case NONE ->
-          switch (rotation) {
-            case NONE -> new Vec3(box.minX(), box.minY(), box.minZ());
-            case CLOCKWISE_90 -> new Vec3(1 + box.maxX(), box.minY(), box.minZ());
-            case CLOCKWISE_180 -> new Vec3(1 + box.maxX(), box.minY(), 1 + box.maxZ());
-            case COUNTERCLOCKWISE_90 -> new Vec3(box.minX(), box.minY(), 1 + box.maxZ());
-          };
-      // ++
-      // P+
-      case LEFT_RIGHT ->
-          switch (rotation) {
-            case NONE -> new Vec3(box.minX(), box.minY(), 1 + box.maxZ());
-            case CLOCKWISE_90 -> new Vec3(box.minX(), box.minY(), box.minZ());
-            case CLOCKWISE_180 -> new Vec3(1 + box.maxX(), box.minY(), box.minZ());
-            case COUNTERCLOCKWISE_90 -> new Vec3(1 + box.maxX(), box.minY(), 1 + box.maxZ());
-          };
-      // +P
-      // ++
-      case FRONT_BACK ->
-          switch (rotation) {
-            case NONE -> new Vec3(1 + box.maxX(), box.minY(), box.minZ());
-            case CLOCKWISE_90 -> new Vec3(1 + box.maxX(), box.minY(), 1 + box.maxZ());
-            case CLOCKWISE_180 -> new Vec3(box.minX(), box.minY(), 1 + box.maxZ());
-            case COUNTERCLOCKWISE_90 -> new Vec3(box.minX(), box.minY(), box.minZ());
-          };
-    };
-  }
-
   // ////////////////////////////////////////////////////////////////
   // Serialized Field Getters
   // ////////////////////////////////////////////////////////////////
@@ -288,6 +224,70 @@ public final class Parcel {
         new Visual(),
         new PermissionConfig<>(ParcelPermissions.REGISTRY),
         Optional.empty());
+  }
+
+  public static BlockPos getPivotBlockPos(Mirror mirror, Rotation rotation, BoundingBox box) {
+    return switch (mirror) {
+      // P+
+      // ++
+      case NONE ->
+          switch (rotation) {
+            case NONE -> new BlockPos(box.minX(), box.minY(), box.minZ());
+            case CLOCKWISE_90 -> new BlockPos(box.maxX(), box.minY(), box.minZ());
+            case CLOCKWISE_180 -> new BlockPos(box.maxX(), box.minY(), box.maxZ());
+            case COUNTERCLOCKWISE_90 -> new BlockPos(box.minX(), box.minY(), box.maxZ());
+          };
+      // ++
+      // P+
+      case LEFT_RIGHT ->
+          switch (rotation) {
+            case NONE -> new BlockPos(box.minX(), box.minY(), box.maxZ());
+            case CLOCKWISE_90 -> new BlockPos(box.minX(), box.minY(), box.minZ());
+            case CLOCKWISE_180 -> new BlockPos(box.maxX(), box.minY(), box.minZ());
+            case COUNTERCLOCKWISE_90 -> new BlockPos(box.maxX(), box.minY(), box.maxZ());
+          };
+      // +P
+      // ++
+      case FRONT_BACK ->
+          switch (rotation) {
+            case NONE -> new BlockPos(box.maxX(), box.minY(), box.minZ());
+            case CLOCKWISE_90 -> new BlockPos(box.maxX(), box.minY(), box.maxZ());
+            case CLOCKWISE_180 -> new BlockPos(box.minX(), box.minY(), box.maxZ());
+            case COUNTERCLOCKWISE_90 -> new BlockPos(box.minX(), box.minY(), box.minZ());
+          };
+    };
+  }
+
+  public static Vec3 getPivot(Mirror mirror, Rotation rotation, BoundingBox box) {
+    return switch (mirror) {
+      // P+
+      // ++
+      case NONE ->
+          switch (rotation) {
+            case NONE -> new Vec3(box.minX(), box.minY(), box.minZ());
+            case CLOCKWISE_90 -> new Vec3(1 + box.maxX(), box.minY(), box.minZ());
+            case CLOCKWISE_180 -> new Vec3(1 + box.maxX(), box.minY(), 1 + box.maxZ());
+            case COUNTERCLOCKWISE_90 -> new Vec3(box.minX(), box.minY(), 1 + box.maxZ());
+          };
+      // ++
+      // P+
+      case LEFT_RIGHT ->
+          switch (rotation) {
+            case NONE -> new Vec3(box.minX(), box.minY(), 1 + box.maxZ());
+            case CLOCKWISE_90 -> new Vec3(box.minX(), box.minY(), box.minZ());
+            case CLOCKWISE_180 -> new Vec3(1 + box.maxX(), box.minY(), box.minZ());
+            case COUNTERCLOCKWISE_90 -> new Vec3(1 + box.maxX(), box.minY(), 1 + box.maxZ());
+          };
+      // +P
+      // ++
+      case FRONT_BACK ->
+          switch (rotation) {
+            case NONE -> new Vec3(1 + box.maxX(), box.minY(), box.minZ());
+            case CLOCKWISE_90 -> new Vec3(1 + box.maxX(), box.minY(), 1 + box.maxZ());
+            case CLOCKWISE_180 -> new Vec3(box.minX(), box.minY(), 1 + box.maxZ());
+            case COUNTERCLOCKWISE_90 -> new Vec3(box.minX(), box.minY(), box.minZ());
+          };
+    };
   }
 
   /** Visual settings controlling how a parcel is rendered on the client. */
