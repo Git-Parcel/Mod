@@ -1,24 +1,37 @@
 package io.github.leawind.gitparcel.world.gitparcel;
 
+import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.GitParcelMod;
+import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.api.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
+import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.permission.ParcelPermissions;
+import io.github.leawind.gitparcel.repo.CustomParcelInRepo;
+import io.github.leawind.gitparcel.repo.InternalParcelInRepo;
+import io.github.leawind.gitparcel.repo.ParcelInRepo;
+import io.github.leawind.gitparcel.storage.StorageManager;
+import io.github.leawind.gitparcel.storage.WorldStorageManager;
 import io.github.leawind.gitparcel.utils.permission.PermissionConfig;
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.Vec3i;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
 
 /// Parcel represents an axially aligned cuboid area in the world.
 ///
@@ -69,6 +82,7 @@ import org.jspecify.annotations.Nullable;
 /// - BoundingBox: `[(4, 2), (9, 5)]`
 ///
 public final class Parcel {
+  public static final Logger LOGGER = LogUtils.getLogger();
 
   public static final Codec<Parcel> CODEC =
       RecordCodecBuilder.create(
@@ -93,6 +107,16 @@ public final class Parcel {
   private final UUID uuid;
   private final ParcelMeta meta;
   private ParcelTransform transform;
+
+  /**
+   * Where to save this parcel.
+   *
+   * <ul>
+   *   <li>If {@code null}, the parcel is saved to internal parcel repo, refer to {@link
+   *       WorldStorageManager#getInternalParcelsDir}.
+   *   <li>If not null, the parcel is saved to custom location in a custom repo.
+   * </ul>
+   */
   private @Nullable ParcelLocation location;
 
   private PermissionConfig<ParcelPermissions> permissions;
@@ -103,6 +127,7 @@ public final class Parcel {
   // Unserialized Fields
   // ////////////////////////////////////////////////////////////////
 
+  /** Set by Level Saved Data, when creating a new one or loaded from saved data */
   private @Nullable GitParcelLevelSavedData levelSavedData;
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -190,11 +215,30 @@ public final class Parcel {
     return levelSavedData;
   }
 
-  @Deprecated
-  public void setDirty() {
-    if (levelSavedData != null) {
-      levelSavedData.setDirty();
+  /**
+   * @return ServerLevel of this parcel or null if not initialized
+   */
+  public @Nullable ServerLevel getLevel() {
+    return levelSavedData == null ? null : levelSavedData.getLevel();
+  }
+
+  /**
+   * @throws NullPointerException if this parcel is manually created and levelSavedData is not set
+   */
+  public ParcelInRepo getParcelInRepo() throws NullPointerException {
+    if (location == null) {
+      var storage = StorageManager.getInstance((Objects.requireNonNull(getLevel())).getServer());
+      var repoPath = storage.worldStorage().getInternalParcelsDir().resolve(uuid.toString());
+      return new InternalParcelInRepo(repoPath);
+    } else {
+      return new CustomParcelInRepo(location.repo, location.relative);
     }
+  }
+
+  public <C extends ParcelFormatConfig<C>> void save(boolean ignoreEntities)
+      throws IOException, ParcelException {
+    ParcelFormat.save(
+        getLevel(), transform, meta, getParcelInRepo().getParcelDir(), ignoreEntities);
   }
 
   /** Should be called when this parcel is updated. */
