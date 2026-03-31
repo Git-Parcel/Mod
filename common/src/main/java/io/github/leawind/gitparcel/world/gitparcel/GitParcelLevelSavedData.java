@@ -30,7 +30,13 @@ public final class GitParcelLevelSavedData extends SavedData {
   public static final SavedDataType<GitParcelLevelSavedData> TYPE =
       new SavedDataType<>("gitparcel_level", GitParcelLevelSavedData::new, CODEC, null);
 
+  /**
+   * Set when the saved data is loaded from the level.
+   *
+   * @see #get(ServerLevel)
+   */
   private @Nullable ServerLevel level = null;
+
   private final Map<UUID, Parcel> parcels;
 
   private GitParcelLevelSavedData() {
@@ -137,6 +143,10 @@ public final class GitParcelLevelSavedData extends SavedData {
       GitParcelApi.Events.ON_PARCEL_UPDATE.emit(
           new GitParcelApi.Events.UpdateParcelEvent(level, parcel));
     }
+  }
+
+  public @Nullable ServerLevel getLevel() {
+    return level;
   }
 
   public static GitParcelLevelSavedData get(ServerLevel level) {
