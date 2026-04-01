@@ -41,17 +41,7 @@ public final class WorldStorageManager {
     return root;
   }
 
-  /**
-   * Internal parcel repositories directory.
-   *
-   * <p>Directory structure:
-   *
-   * <pre>
-   * parcels/
-   *   - <parcel-uuid>/
-   *     - .git/
-   * </pre>
-   */
+  /** Internal parcel repositories directory. */
   public Path getInternalParcelsDir() {
     return root.resolve(PARCELS_DIR_NAME);
   }

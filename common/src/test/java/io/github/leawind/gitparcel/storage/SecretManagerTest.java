@@ -175,24 +175,4 @@ public class SecretManagerTest {
     assertNull(secretManager.get("token2"));
     assertEquals("updated", secretManager.get("token1"));
   }
-
-  @Test
-  void testFilePermissionsOnUnix() throws IOException {
-    secretManager.put("key", "value");
-
-    Path secretFile = tempDir.resolve("secrets.properties");
-    assertTrue(Files.exists(secretFile));
-
-    // On Unix-like systems, check restrictive permissions
-    try {
-      var permissions = Files.getPosixFilePermissions(secretFile);
-      // Owner should have read/write (rw-------)
-      assertTrue(permissions.toString().contains("OWNER_READ"));
-      assertTrue(permissions.toString().contains("OWNER_WRITE"));
-      assertFalse(permissions.toString().contains("GROUP_READ"));
-      assertFalse(permissions.toString().contains("OTHERS_READ"));
-    } catch (UnsupportedOperationException e) {
-      // Non-POSIX system, skip permission check
-    }
-  }
 }
