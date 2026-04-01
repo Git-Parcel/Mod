@@ -73,7 +73,7 @@ tasks.named('shadowJar') {
 	exclude 'about.html' // from jgit
 	exclude 'META-INF/maven/**' // from jgit
 	exclude 'OSGI-INF/**' // from jgit
-	exclude 'META-INF/native-images/**' // dev.dirs:directories
+	exclude 'META-INF/native-image/**' // dev.dirs:directories
 	
 	minimize()
 }
