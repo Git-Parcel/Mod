@@ -36,6 +36,9 @@ dependencies {
 		exclude group: 'org.slf4j', module: 'slf4j-api' // already provided by Minecraft
 	}
 	shadow "dev.dirs:directories:${directories_version}"
+	shadow("com.github.ben-manes.caffeine:caffeine:${caffeine_version}") {
+		exclude group: 'org.jspecify', module: 'jspecify'
+	}
 }
 
 tasks.named('compileJava', JavaCompile) {
@@ -68,6 +71,7 @@ tasks.named('shadowJar') {
 	relocate('com.googlecode.javaewah', 'io.github.leawind.gitparcel.lib.javaewah') // from jgit
 	relocate('com.googlecode.javaewah', 'io.github.leawind.gitparcel.lib.javaewah32') // from jgit
 	relocate('dev.dirs', 'io.github.leawind.gitparcel.lib.dirs') // dev.dirs:directories
+	relocate('com.github.benmanes.caffeine', 'io.github.leawind.gitparcel.lib.caffeine') // caffeine
 	
 	// Exclude license files and metadata from bundled libraries to avoid confusion
 	exclude 'about.html' // from jgit

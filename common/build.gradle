@@ -41,6 +41,8 @@ dependencies {
 		exclude group: 'org.slf4j', module: 'slf4j-api' // already provided by Minecraft
 	}
 	implementation "dev.dirs:directories:${directories_version}"
+	
+	implementation "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
 }
 
 test {
