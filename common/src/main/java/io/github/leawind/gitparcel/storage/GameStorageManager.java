@@ -1,5 +1,7 @@
 package io.github.leawind.gitparcel.storage;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
@@ -8,11 +10,9 @@ import io.github.leawind.gitparcel.GitParcelMod;
 import io.github.leawind.gitparcel.storage.cached.CachedContent;
 import io.github.leawind.gitparcel.storage.shared.SharedContent;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import net.minecraft.server.MinecraftServer;
 import org.jspecify.annotations.Nullable;
 
@@ -34,22 +34,15 @@ public class GameStorageManager {
   /** Configuration file name. */
   public static final String CONFIG_FILE_NAME = "config.json";
 
-  private static final Map<Path, WeakReference<GameStorageManager>> CACHE =
-      new ConcurrentHashMap<>();
+  private static final LoadingCache<Path, GameStorageManager> CACHE =
+      Caffeine.newBuilder()
+          .maximumSize(4)
+          .expireAfterAccess(30, TimeUnit.MINUTES)
+          .weakValues()
+          .build(GameStorageManager::new);
 
   public static GameStorageManager getInstance(MinecraftServer server) {
-    var directory = server.getServerDirectory().resolve(DIR_NAME).normalize();
-    WeakReference<GameStorageManager> ref =
-        CACHE.compute(
-            directory,
-            (key, currentRef) -> {
-              if (currentRef != null && currentRef.get() != null) {
-                return currentRef;
-              }
-              return new WeakReference<>(new GameStorageManager(directory));
-            });
-
-    return ref.get();
+    return CACHE.get(server.getServerDirectory().resolve(DIR_NAME).normalize());
   }
 
   private final Path root;

@@ -1,34 +1,26 @@
 package io.github.leawind.gitparcel.storage;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import io.github.leawind.gitparcel.GitParcelMod;
 import io.github.leawind.gitparcel.mixin.AccessMinecraftServer;
-import java.lang.ref.WeakReference;
 import java.nio.file.Path;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import net.minecraft.server.MinecraftServer;
 
 public final class WorldStorageManager {
   private static final String DIR_NAME = GitParcelMod.MOD_ID;
   private static final String PARCELS_DIR_NAME = "parcels";
 
-  private static final Map<Path, WeakReference<WorldStorageManager>> CACHE =
-      new ConcurrentHashMap<>();
+  private static final LoadingCache<Path, WorldStorageManager> CACHE =
+      Caffeine.newBuilder()
+          .maximumSize(32)
+          .expireAfterAccess(10, TimeUnit.MINUTES)
+          .weakValues()
+          .build(WorldStorageManager::new);
 
   public static WorldStorageManager getInstance(MinecraftServer server) {
-    var directory = getWorldDir(server).normalize();
-
-    WeakReference<WorldStorageManager> ref =
-        CACHE.compute(
-            directory,
-            (key, currentRef) -> {
-              if (currentRef != null && currentRef.get() != null) {
-                return currentRef;
-              }
-              return new WeakReference<>(new WorldStorageManager(directory));
-            });
-
-    return ref.get();
+    return CACHE.get(getWorldDir(server).normalize());
   }
 
   private final Path root;

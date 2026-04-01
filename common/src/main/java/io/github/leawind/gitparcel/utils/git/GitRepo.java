@@ -1,31 +1,27 @@
 package io.github.leawind.gitparcel.utils.git;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import java.io.File;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.jspecify.annotations.Nullable;
 
 public final class GitRepo {
-  private static final Map<Path, WeakReference<GitRepo>> CACHE = new ConcurrentHashMap<>();
+
+  private static final LoadingCache<Path, GitRepo> CACHE =
+      Caffeine.newBuilder()
+          .maximumSize(64)
+          .expireAfterAccess(10, TimeUnit.MINUTES)
+          .weakValues()
+          .build(GitRepo::new);
 
   public static GitRepo get(Path path) {
-    var normalizedPath = path.normalize();
-    return CACHE
-        .compute(
-            normalizedPath,
-            (key, ref) -> {
-              if (ref != null && ref.get() != null) {
-                return ref;
-              }
-              return new WeakReference<>(new GitRepo(normalizedPath));
-            })
-        .get();
+    return CACHE.get(path.normalize());
   }
 
   private final Path path;
