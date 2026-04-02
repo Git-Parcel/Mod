@@ -2,8 +2,8 @@ package io.github.leawind.gitparcel.server.commands.parcel_debug;
 
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import io.github.leawind.gitparcel.storage.StorageManager;
-import io.github.leawind.gitparcel.storage.SystemStorageManager;
+import io.github.leawind.gitparcel.server.storage.StorageManager;
+import io.github.leawind.gitparcel.server.storage.SystemStorageManager;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;

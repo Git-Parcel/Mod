@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.storage;
+package io.github.leawind.gitparcel.server.storage;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;

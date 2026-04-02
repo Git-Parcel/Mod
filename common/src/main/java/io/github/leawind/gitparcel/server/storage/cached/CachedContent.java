@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.storage.cached;
+package io.github.leawind.gitparcel.server.storage.cached;
 
 import java.nio.file.Path;
 

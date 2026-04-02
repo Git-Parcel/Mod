@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.storage;
+package io.github.leawind.gitparcel.server.storage;
 
 import static org.junit.jupiter.api.Assertions.*;
 

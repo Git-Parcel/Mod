@@ -1,10 +1,10 @@
-package io.github.leawind.gitparcel.storage;
+package io.github.leawind.gitparcel.server.storage;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import dev.dirs.BaseDirectories;
-import io.github.leawind.gitparcel.storage.cached.CachedContent;
-import io.github.leawind.gitparcel.storage.shared.SharedContent;
+import io.github.leawind.gitparcel.server.storage.cached.CachedContent;
+import io.github.leawind.gitparcel.server.storage.shared.SharedContent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

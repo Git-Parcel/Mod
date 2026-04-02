@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.storage;
+package io.github.leawind.gitparcel.server.storage;
 
 import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
@@ -6,8 +6,8 @@ import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.dirs.BaseDirectories;
 import io.github.leawind.gitparcel.GitParcelMod;
-import io.github.leawind.gitparcel.storage.cached.CachedContent;
-import io.github.leawind.gitparcel.storage.shared.SharedContent;
+import io.github.leawind.gitparcel.server.storage.cached.CachedContent;
+import io.github.leawind.gitparcel.server.storage.shared.SharedContent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;

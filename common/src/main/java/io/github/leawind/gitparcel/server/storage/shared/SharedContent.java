@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.storage.shared;
+package io.github.leawind.gitparcel.server.storage.shared;
 
 import java.nio.file.Path;
 
