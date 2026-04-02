@@ -17,8 +17,10 @@
  * <p>Storage locations can be customized via environment variables:
  *
  * <ul>
- *   <li>{@code GITPARCEL_SHARE_DIR} - Override shared content directory
- *   <li>{@code GITPARCEL_CACHE_DIR} - Override cache directory
+ *   <li>{@value io.github.leawind.gitparcel.server.storage.StorageManager#ENV_SHARE_DIR} - Override
+ *       shared content directory
+ *   <li>{@value io.github.leawind.gitparcel.server.storage.StorageManager#ENV_CACHE_DIR} - Override
+ *       cache directory
  * </ul>
  */
 package io.github.leawind.gitparcel.server.storage;
