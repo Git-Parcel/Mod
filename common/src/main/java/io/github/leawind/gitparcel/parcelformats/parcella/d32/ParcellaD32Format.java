@@ -6,6 +6,7 @@ import io.github.leawind.gitparcel.api.parcel.config.EnumConfigItem;
 import io.github.leawind.gitparcel.parcelformats.NbtFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.SubparcelFormat;
 import java.nio.file.Path;
+import org.jspecify.annotations.NonNull;
 
 public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.Config> {
   String BLOCKS_DIR_NAME = "blocks";
@@ -23,7 +24,7 @@ public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.C
   }
 
   @Override
-  default <T> Config castConfig(T config) throws ClassCastException {
+  default <T> @NonNull Config castConfig(@NonNull T config) throws ClassCastException {
     return (Config) config;
   }
 

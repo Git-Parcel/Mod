@@ -71,21 +71,19 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
     /**
      * Safely casts a config object to the current format's configuration type.
      *
-     * @param config The config object to cast, may be null
-     * @param <T> The type of the input config object
-     * @return The cast config object, or null if both configClass() returns null and config is null
+     * @param config The config object to cast
+     * @param <T> The type to cast from
+     * @return The castted config object
      * @throws ClassCastException If configClass() returns null but config is non-null, or if the
      *     config object cannot be cast to the target type
      */
-    default <T> C castConfig(T config) throws ClassCastException {
+    default @NonNull <T> C castConfig(@NonNull T config) throws ClassCastException {
       var clazz = configClass();
-      if (clazz != null) {
-        return clazz.cast(config);
+      if (clazz == null) {
+        throw new ClassCastException(
+            String.format("Expected null, got %s: %s", config.getClass().getSimpleName(), config));
       }
-      if (config == null) {
-        return null;
-      }
-      throw new ClassCastException("Expected null, got {}" + config);
+      return clazz.cast(config);
     }
 
     default @Nullable Class<C> configClass() {
