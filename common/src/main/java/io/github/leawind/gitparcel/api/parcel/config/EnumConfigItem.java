@@ -20,17 +20,18 @@ public final class EnumConfigItem<E extends Enum<?>> extends ConfigItem<E, EnumC
 
   @Override
   public E fromJson(JsonElement json) throws IllegalArgumentException {
+    String name;
     try {
-      String name = json.getAsJsonPrimitive().getAsString();
-      for (var value : values) {
-        if (value.name().equals(name)) {
-          return value;
-        }
-      }
-      throw new IllegalArgumentException("Unrecognized enum value: " + name);
+      name = json.getAsJsonPrimitive().getAsString();
     } catch (Exception e) {
       throw new IllegalArgumentException("Expected string, but got " + json);
     }
+    for (var value : values) {
+      if (value.name().equals(name)) {
+        return value;
+      }
+    }
+    throw new IllegalArgumentException("Unrecognized enum value: " + name);
   }
 
   public EnumConfigItem(Class<E> enumClass, String name) {
