@@ -112,7 +112,8 @@ public final class Parcel {
   private final UUID uuid;
   private final ParcelMeta meta;
   private ParcelTransform transform;
-
+  private Visual visual;
+  private PermissionConfig<ParcelPermissions> permissions;
   private @Nullable JsonElement formatConfig;
 
   /**
@@ -125,10 +126,6 @@ public final class Parcel {
    * </ul>
    */
   private @Nullable ParcelLocation location;
-
-  private PermissionConfig<ParcelPermissions> permissions;
-
-  private Visual visual;
 
   // ////////////////////////////////////////////////////////////////
   // Unserialized Fields
@@ -163,16 +160,12 @@ public final class Parcel {
     return uuid;
   }
 
+  public ParcelMeta meta() {
+    return meta;
+  }
+
   public ParcelTransform transform() {
     return transform;
-  }
-
-  public Optional<JsonElement> optionalFormatConfig() {
-    return Optional.ofNullable(formatConfig);
-  }
-
-  private Optional<ParcelLocation> optionalLocation() {
-    return Optional.ofNullable(location);
   }
 
   public Visual visual() {
@@ -183,8 +176,12 @@ public final class Parcel {
     return permissions;
   }
 
-  public ParcelMeta meta() {
-    return meta;
+  private Optional<JsonElement> optionalFormatConfig() {
+    return Optional.ofNullable(formatConfig);
+  }
+
+  private Optional<ParcelLocation> optionalLocation() {
+    return Optional.ofNullable(location);
   }
 
   // ////////////////////////////////////////////////////////////////
