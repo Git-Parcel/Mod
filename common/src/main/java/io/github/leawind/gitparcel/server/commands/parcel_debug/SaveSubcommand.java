@@ -138,7 +138,7 @@ public class SaveSubcommand {
 
       ParcelMeta meta = new ParcelMeta(format.info(), sizeParcelSpace, Vec3i.ZERO);
 
-      ParcelFormat.save(source.getLevel(), transform, meta, parcelDir, ignoreEntities);
+      ParcelFormat.save(source.getLevel(), transform, meta, null, parcelDir, ignoreEntities);
 
       source.sendSuccess(
           () -> GitParcelTranslations.of("command.gitparcel.parcel_debug.save.success"),

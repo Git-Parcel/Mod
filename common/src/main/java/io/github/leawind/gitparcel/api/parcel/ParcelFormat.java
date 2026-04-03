@@ -249,6 +249,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
       Level level,
       ParcelTransform transform,
       ParcelMeta meta,
+      @Nullable C config,
       Path parcelDir,
       boolean ignoreEntities)
       throws IOException, ParcelException {
@@ -259,20 +260,24 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
       throw new ParcelException.UnsupportedFormat(meta.formatInfo());
     }
 
-    var config = format.getDefaultConfig();
-    if (config != null) {
+    C actualConfig = config;
+    if (actualConfig == null) {
+      actualConfig = format.getDefaultConfig();
+    }
+
+    if (actualConfig != null) {
       var configFile = getConfigFile(parcelDir);
       if (Files.exists(configFile)) {
         try {
-          config.load(configFile);
+          actualConfig.load(configFile);
         } catch (Exception e) {
           LOGGER.error(
               "Failed to load format config, use default and overwrite: {}", e.getMessage(), e);
-          config.resetToDefault();
-          config.save(configFile);
+          actualConfig.resetToDefault();
+          actualConfig.save(configFile);
         }
       } else {
-        config.save(configFile);
+        actualConfig.save(configFile);
       }
     }
 
@@ -283,7 +288,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
         transform,
         getDataDir(parcelDir),
         ignoreEntities && meta.excludeEntities(),
-        config);
+        actualConfig);
   }
 
   /**

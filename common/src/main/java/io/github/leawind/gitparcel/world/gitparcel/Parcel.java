@@ -245,10 +245,26 @@ public final class Parcel {
     }
   }
 
+  @SuppressWarnings("unchecked")
   public <C extends ParcelFormatConfig<C>> void save(boolean ignoreEntities)
       throws IOException, ParcelException {
+
+    C config = null;
+    if (formatConfig != null) {
+      ParcelFormat.Save<C> format = (ParcelFormat.Save<C>) meta.getFormatSaver();
+      if (format == null) {
+        LOGGER.warn("Parcel {} has unsupported saving format {}", this, meta.formatInfo());
+        throw new ParcelException.UnsupportedFormat(meta.formatInfo());
+      }
+
+      config = format.getDefaultConfig();
+      if (config != null) {
+        config.setFromJson(formatConfig.getAsJsonObject());
+      }
+    }
+
     ParcelFormat.save(
-        getLevel(), transform, meta, getParcelInRepo().getParcelDir(), ignoreEntities);
+        getLevel(), transform, meta, config, getParcelInRepo().getParcelDir(), ignoreEntities);
   }
 
   /** Should be called when this parcel is updated. */
