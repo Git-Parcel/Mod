@@ -1,5 +1,6 @@
 package io.github.leawind.gitparcel.world.gitparcel;
 
+import com.google.gson.JsonElement;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -26,6 +27,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.Vec3i;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
@@ -95,6 +97,9 @@ public final class Parcel {
                       ParcelPermissions.CONFIG_CODEC
                           .fieldOf("permissions")
                           .forGetter(Parcel::permissions),
+                      ExtraCodecs.JSON
+                          .optionalFieldOf("formatConfig")
+                          .forGetter(Parcel::optionalFormatConfig),
                       ParcelLocation.CODEC
                           .optionalFieldOf("location")
                           .forGetter(Parcel::optionalLocation))
@@ -107,6 +112,8 @@ public final class Parcel {
   private final UUID uuid;
   private final ParcelMeta meta;
   private ParcelTransform transform;
+
+  private @Nullable JsonElement formatConfig;
 
   /**
    * Where to save this parcel.
@@ -137,12 +144,14 @@ public final class Parcel {
       ParcelTransform transform,
       Visual visual,
       PermissionConfig<ParcelPermissions> permissions,
+      Optional<JsonElement> formatConfig,
       Optional<ParcelLocation> location) {
     this.uuid = uuid;
     this.meta = meta;
     this.transform = transform;
     this.visual = visual;
     this.permissions = permissions;
+    this.formatConfig = formatConfig.orElse(null);
     this.location = location.orElse(null);
   }
 
@@ -156,6 +165,10 @@ public final class Parcel {
 
   public ParcelTransform transform() {
     return transform;
+  }
+
+  public Optional<JsonElement> optionalFormatConfig() {
+    return Optional.ofNullable(formatConfig);
   }
 
   private Optional<ParcelLocation> optionalLocation() {
@@ -267,6 +280,7 @@ public final class Parcel {
         transform,
         new Visual(),
         new PermissionConfig<>(ParcelPermissions.REGISTRY),
+        Optional.empty(),
         Optional.empty());
   }
 
