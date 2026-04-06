@@ -18,27 +18,71 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** A format for saving or loading parcels. */
+/**
+ * Defines a serialization format for reading and writing parcel data.
+ *
+ * <p>This is the main entry point for all parcel serialization operations. Implementations provide
+ * format-specific logic for saving world data to disk and loading it back into the world.
+ *
+ * <p>ParcelFormat uses a sealed interface hierarchy:
+ *
+ * <ul>
+ *   <li>{@link ParcelFormat} - Base interface with common utilities
+ *   <li>{@link Impl} - Base interface for format implementations
+ *   <li>{@link Save} - Interface for formats that support saving
+ *   <li>{@link Load} - Interface for formats that support loading
+ * </ul>
+ *
+ * <p>A format may implement just Save, just Load, or both interfaces. This allows for read-only or
+ * write-only format implementations.
+ */
 public sealed interface ParcelFormat permits ParcelFormat.Impl {
   Logger LOGGER = LoggerFactory.getLogger("Parcel Format");
 
+  /** Filename for parcel metadata JSON file */
   String META_FILE_NAME = "parcel.json";
+
+  /** Filename for format-specific configuration JSON file */
   String CONFIG_FILE_NAME = "config.json";
+
+  /** Directory name for storing format-specific parcel data */
   String DATA_DIR_NAME = "data";
 
+  /**
+   * Returns the identifying information for this format.
+   *
+   * @return format info containing id and version
+   */
   Info info();
 
-  /** Unique id of the format. */
+  /**
+   * Returns the unique identifier of this format.
+   *
+   * @return format id string
+   */
   default String id() {
     return info().id();
   }
 
-  /** Version of the format. */
+  /**
+   * Returns the version number of this format implementation.
+   *
+   * @return format version integer
+   */
   default int version() {
     return info().version();
   }
 
-  /** The info of a parcel format. */
+  /**
+   * Immutable identifying information for a parcel format.
+   *
+   * <p>Combines a human-readable identifier with a version number to uniquely identify a specific
+   * format implementation. This is used for format registration and compatibility checking.
+   *
+   * @param id Unique string identifier for the format
+   * @param version Version number of the format implementation
+   * @see ParcelFormatRegistry
+   */
   record Info(String id, int version) {
     public static final Codec<Info> CODEC =
         RecordCodecBuilder.create(
@@ -67,15 +111,24 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
     }
   }
 
+  /**
+   * Base interface for all concrete parcel format implementations.
+   *
+   * <p>Provides configuration handling capabilities common to both saving and loading operations.
+   * Format implementations should not directly implement this interface, but rather implement
+   * {@link Save} and/or {@link Load} interfaces as appropriate.
+   *
+   * @param <C> The configuration type used by this format
+   */
   non-sealed interface Impl<C extends ParcelFormatConfig<C>> extends ParcelFormat {
     /**
-     * Safely casts a config object to the current format's configuration type.
+     * Safely casts an arbitrary config object to this format's specific configuration type.
      *
      * @param config The config object to cast
-     * @param <T> The type to cast from
-     * @return The castted config object
-     * @throws ClassCastException If configClass() returns null but config is non-null, or if the
-     *     config object cannot be cast to the target type
+     * @param <T> The source type of the config object
+     * @return The config object cast to the appropriate type
+     * @throws ClassCastException If the config object cannot be cast, or if this format does not
+     *     support configuration and a non-null config was provided
      */
     default @NonNull <T> C castConfig(@NonNull T config) throws ClassCastException {
       var clazz = configClass();
@@ -86,33 +139,49 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
       return clazz.cast(config);
     }
 
+    /**
+     * Returns the runtime class of this format's configuration type.
+     *
+     * @return configuration class, or null if this format does not use configuration
+     */
     default @Nullable Class<C> configClass() {
       return null;
     }
 
     /**
-     * @return might be null
+     * Creates and returns a new configuration instance with default values.
+     *
+     * @return new default configuration instance, or null if this format does not use configuration
      */
     default @Nullable C getDefaultConfig() {
       return null;
     }
   }
 
+  /**
+   * Interface for parcel formats that support saving operations.
+   *
+   * <p>Implementations of this interface can write world data from a game level into the
+   * standardized parcel directory structure.
+   *
+   * @param <C> The configuration type used by this format
+   */
   interface Save<C extends ParcelFormatConfig<C>> extends Impl<C> {
 
     /**
-     * Save parcel content to directory.
+     * Writes parcel content from the world into the specified data directory.
      *
-     * <p>For implementation, you should save the parcel content to the {@code dataDir} directory
-     * and nowhere else.
+     * <p>Implementation contract: All data must be written exclusively to the provided {@code
+     * dataDir} directory. Implementations must not modify any other files or directories.
      *
-     * @param level Level
-     * @param parcelSize Real size of the parcel (the one saved in the disk, without transform)
-     * @param anchor Anchor offset relative to (0, 0, 0)
-     * @param transform Treat the parcel we are going to save as transformed.
-     * @param dataDir Path to parcel data directory. Will be created if not exist.
-     * @param ignoreEntities Whether to ignore entities in the parcel
-     * @param config format config, can be null
+     * @param level Source game level to read blocks and entities from
+     * @param parcelSize Original dimensions of the parcel before transformation
+     * @param anchor Offset point that defines the parcel's origin relative to its bounds
+     * @param transform Transformation to apply to coordinates before reading from the world
+     * @param dataDir Directory where format-specific data should be written
+     * @param ignoreEntities When true, entities should not be included in the saved output
+     * @param config Format-specific configuration, may be null
+     * @throws IOException If any I/O error occurs during writing
      */
     void save(
         Level level,
@@ -125,22 +194,34 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
         throws IOException;
   }
 
+  /**
+   * Interface for parcel formats that support loading operations.
+   *
+   * <p>Implementations of this interface can read parcel data from disk and place it into a game
+   * world.
+   *
+   * @param <C> The configuration type used by this format
+   */
   interface Load<C extends ParcelFormatConfig<C>> extends Impl<C> {
 
     /**
-     * Load parcel content from directory
+     * Reads parcel content from disk and places it into the target game level.
      *
-     * @param level Level
-     * @param size Real size of the parcel (the one saved in the disk, without transform)
-     * @param anchor Anchor offset relative to (0, 0, 0)
-     * @param transform Transform the parcel when loading.
-     * @param dataDir Path to parcel data directory
-     * @param ignoreBlocks Whether to ignore blocks
-     * @param ignoreEntities Whether to ignore entities
-     * @param flags Block update flags
-     * @param config format config, can be null
-     * @throws ParcelException.CorruptedParcelException If the parcel is invalid and cannot be
-     *     loaded
+     * @param level Target level where blocks and entities will be placed
+     * @param size Original dimensions of the parcel as stored on disk
+     * @param anchor Offset point that defines the parcel's origin relative to its bounds
+     * @param transform Transformation to apply when placing the parcel in the world
+     * @param dataDir Directory containing the format-specific parcel data
+     * @param ignoreBlocks When true, blocks will not be placed into the world. Not guaranteed to be
+     *     supported by all formats.
+     * @param ignoreEntities When true, entities will not be spawned into the world. Guaranteed to
+     *     be supported by all formats.
+     * @param flags Block update flags to use when placing blocks. Usually {@code
+     *     Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE | Block.UPDATE_KNOWN_SHAPE |
+     *     Block.UPDATE_SKIP_ALL_SIDEEFFECTS}
+     * @param config Format-specific configuration, may be null
+     * @throws IOException If any I/O error occurs during reading
+     * @throws ParcelException.CorruptedParcelException If the parcel data is invalid or corrupted
      */
     void load(
         ServerLevelAccessor level,
@@ -170,10 +251,23 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
     return parcelDir.resolve(DATA_DIR_NAME);
   }
 
+  /**
+   * Base context object containing common parameters for parcel operations.
+   *
+   * <p>This class encapsulates the shared parameters that are used by both save and load
+   * operations, eliminating redundant parameter passing.
+   */
   class BaseContext {
+    /** Original dimensions of the parcel */
     public final Vec3i parcelSize;
+
+    /** Transformation to apply to the parcel */
     public final ParcelTransform transform;
+
+    /** Directory containing format-specific data */
     public final Path dataDir;
+
+    /** Origin anchor point of the parcel */
     public final Vec3i anchor;
 
     public BaseContext(Vec3i parcelSize, ParcelTransform transform, Path dataDir, Vec3i anchor) {
@@ -184,9 +278,19 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
     }
   }
 
+  /**
+   * Context object containing all parameters required for a parcel save operation.
+   *
+   * @param <C> The configuration type used by the format
+   */
   class SaveContext<C extends ParcelFormatConfig<C>> extends BaseContext {
+    /** Source level to read world data from */
     public final LevelAccessor level;
+
+    /** Flag indicating if entities should be excluded */
     public final boolean ignoreEntities;
+
+    /** Format-specific configuration */
     public final C config;
 
     public SaveContext(
@@ -204,11 +308,25 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
     }
   }
 
+  /**
+   * Context object containing all parameters required for a parcel load operation.
+   *
+   * @param <C> The configuration type used by the format
+   */
   class LoadContext<C extends ParcelFormatConfig<C>> extends BaseContext {
+    /** Target level to place the parcel into */
     public final ServerLevelAccessor level;
+
+    /** Flag indicating if blocks should be skipped */
     public final boolean ignoreBlocks;
+
+    /** Flag indicating if entities should be skipped */
     public final boolean ignoreEntities;
+
+    /** Block update flags for block placement */
     public final @Block.UpdateFlags int flags;
+
+    /** Format-specific configuration */
     public final C config;
 
     public LoadContext(
