@@ -12,9 +12,6 @@ import io.github.leawind.gitparcel.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.permission.ParcelPermissions;
-import io.github.leawind.gitparcel.repo.CustomParcelInRepo;
-import io.github.leawind.gitparcel.repo.InternalParcelInRepo;
-import io.github.leawind.gitparcel.repo.ParcelInRepo;
 import io.github.leawind.gitparcel.server.storage.StorageManager;
 import io.github.leawind.gitparcel.server.storage.WorldStorageManager;
 import io.github.leawind.gitparcel.utils.permission.PermissionConfig;
@@ -235,13 +232,13 @@ public final class Parcel {
   /**
    * @throws NullPointerException if this parcel is manually created and levelSavedData is not set
    */
-  public ParcelInRepo getParcelInRepo() throws NullPointerException {
+  public Path getParcelDirectory() throws NullPointerException {
     if (location == null) {
       var storage = StorageManager.getInstance((Objects.requireNonNull(getLevel())).getServer());
       var repoPath = storage.worldStorage().getInternalParcelsDir().resolve(uuid.toString());
-      return new InternalParcelInRepo(repoPath);
+      return repoPath.resolve("parcel");
     } else {
-      return new CustomParcelInRepo(location.repo, location.relative);
+      return location.getParcelPath();
     }
   }
 
@@ -263,8 +260,7 @@ public final class Parcel {
       }
     }
 
-    ParcelFormat.save(
-        getLevel(), transform, meta, config, getParcelInRepo().getParcelDir(), ignoreEntities);
+    ParcelFormat.save(getLevel(), transform, meta, config, getParcelDirectory(), ignoreEntities);
   }
 
   /** Should be called when this parcel is updated. */
