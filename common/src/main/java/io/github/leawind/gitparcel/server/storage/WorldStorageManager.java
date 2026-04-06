@@ -2,14 +2,14 @@ package io.github.leawind.gitparcel.server.storage;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
-import io.github.leawind.gitparcel.GitParcelMod;
+import io.github.leawind.gitparcel.GitParcel;
 import io.github.leawind.gitparcel.mixin.AccessMinecraftServer;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import net.minecraft.server.MinecraftServer;
 
 public final class WorldStorageManager {
-  private static final String DIR_NAME = GitParcelMod.MOD_ID;
+  private static final String DIR_NAME = GitParcel.MOD_ID;
   private static final String PARCELS_DIR_NAME = "parcels";
 
   private static final LoadingCache<Path, WorldStorageManager> CACHE =

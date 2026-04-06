@@ -1,7 +1,7 @@
 package io.github.leawind.gitparcel.client.gui.screens;
 
 import io.github.leawind.gitparcel.GitParcelTranslations;
-import io.github.leawind.gitparcel.client.GitParcelModClient;
+import io.github.leawind.gitparcel.client.GitParcelClient;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
@@ -26,7 +26,7 @@ public class GitParcelDebugScreen extends Screen {
   private String getFormatInfos() {
     var sb = new StringBuilder();
     sb.append("Supported Parcel Formats\n");
-    var infos = GitParcelModClient.PARCEL_FORMAT_INFOS;
+    var infos = GitParcelClient.PARCEL_FORMAT_INFOS;
 
     if (infos == null) {
       sb.append("Unavailable\n");

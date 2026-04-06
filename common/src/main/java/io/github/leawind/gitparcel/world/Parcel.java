@@ -4,7 +4,7 @@ import com.google.gson.JsonElement;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.leawind.gitparcel.GitParcelMod;
+import io.github.leawind.gitparcel.GitParcel;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
@@ -270,7 +270,7 @@ public final class Parcel {
   /** Should be called when this parcel is updated. */
   public void emitUpdate() {
     if (levelSavedData == null) {
-      GitParcelMod.LOGGER.warn("Parcel {} is not in a level saved data", this);
+      GitParcel.LOGGER.warn("Parcel {} is not in a level saved data", this);
       return;
     }
     levelSavedData.setDirty();

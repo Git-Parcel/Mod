@@ -33,7 +33,7 @@ import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 
 /** The main class for the Git Parcel mod. */
-public final class GitParcelMod {
+public final class GitParcel {
 
   /** The mod ID for Git Parcel. */
   public static final String MOD_ID = "gitparcel";

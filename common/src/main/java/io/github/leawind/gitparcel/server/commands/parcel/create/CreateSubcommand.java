@@ -3,7 +3,7 @@ package io.github.leawind.gitparcel.server.commands.parcel.create;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import io.github.leawind.gitparcel.GitParcelMod;
+import io.github.leawind.gitparcel.GitParcel;
 import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.permission.WorldPermissions;
 import io.github.leawind.gitparcel.server.commands.GitParcelBaseCommand;
@@ -100,18 +100,17 @@ public class CreateSubcommand extends GitParcelBaseCommand {
                   to.toShortString()),
           false);
 
-      GitParcelMod.LOGGER.info(
-          "Created new parcel: from={}, to={}, uuid={}", from, to, parcel.uuid());
+      GitParcel.LOGGER.info("Created new parcel: from={}, to={}, uuid={}", from, to, parcel.uuid());
 
       return 1;
 
     } catch (IllegalArgumentException e) {
-      GitParcelMod.LOGGER.error("Failed to create parcel: {}", e.getMessage(), e);
+      GitParcel.LOGGER.error("Failed to create parcel: {}", e.getMessage(), e);
       source.sendFailure(
           GitParcelTranslations.of("command.gitparcel.parcel.create.failure", e.getMessage()));
       return 0;
     } catch (Exception e) {
-      GitParcelMod.LOGGER.error("Unexpected error while creating parcel", e);
+      GitParcel.LOGGER.error("Unexpected error while creating parcel", e);
       source.sendFailure(
           GitParcelTranslations.of("command.gitparcel.parcel.unexpected_error", e.getMessage()));
       return 0;

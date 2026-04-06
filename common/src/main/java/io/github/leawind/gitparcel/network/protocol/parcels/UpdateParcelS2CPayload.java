@@ -1,8 +1,8 @@
 package io.github.leawind.gitparcel.network.protocol.parcels;
 
 import com.mojang.serialization.Codec;
-import io.github.leawind.gitparcel.GitParcelMod;
-import io.github.leawind.gitparcel.client.GitParcelModClient;
+import io.github.leawind.gitparcel.GitParcel;
+import io.github.leawind.gitparcel.client.GitParcelClient;
 import io.github.leawind.gitparcel.world.Parcel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -13,7 +13,7 @@ import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NonNull;
 
 public record UpdateParcelS2CPayload(Parcel parcel) implements CustomPacketPayload {
-  public static final Identifier ID = GitParcelMod.identifier("update_parcel");
+  public static final Identifier ID = GitParcel.identifier("update_parcel");
   public static final CustomPacketPayload.Type<UpdateParcelS2CPayload> TYPE =
       new CustomPacketPayload.Type<>(ID);
   public static final Codec<UpdateParcelS2CPayload> CODEC =
@@ -33,6 +33,6 @@ public record UpdateParcelS2CPayload(Parcel parcel) implements CustomPacketPaylo
 
   /** Client-Only */
   public static void handle(UpdateParcelS2CPayload payload, LocalPlayer localPlayer) {
-    GitParcelModClient.PARCELS.put(payload.parcel.uuid(), payload.parcel);
+    GitParcelClient.PARCELS.put(payload.parcel.uuid(), payload.parcel);
   }
 }

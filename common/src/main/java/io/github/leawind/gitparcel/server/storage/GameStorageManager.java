@@ -6,7 +6,7 @@ import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.leawind.gitparcel.GitParcelMod;
+import io.github.leawind.gitparcel.GitParcel;
 import io.github.leawind.gitparcel.server.storage.cached.CachedContent;
 import io.github.leawind.gitparcel.server.storage.shared.SharedContent;
 import java.io.IOException;
@@ -29,7 +29,7 @@ import org.jspecify.annotations.Nullable;
  */
 public class GameStorageManager {
   /** Subdirectory name within the game server directory. */
-  public static final String DIR_NAME = GitParcelMod.MOD_ID;
+  public static final String DIR_NAME = GitParcel.MOD_ID;
 
   /** Configuration file name. */
   public static final String CONFIG_FILE_NAME = "config.json";

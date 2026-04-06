@@ -1,9 +1,9 @@
 package io.github.leawind.gitparcel.network.protocol.parcelformat;
 
 import com.mojang.serialization.Codec;
-import io.github.leawind.gitparcel.GitParcelMod;
+import io.github.leawind.gitparcel.GitParcel;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
-import io.github.leawind.gitparcel.client.GitParcelModClient;
+import io.github.leawind.gitparcel.client.GitParcelClient;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -14,7 +14,7 @@ import org.jspecify.annotations.NonNull;
 
 public record UpdateParcelFormatInfosS2CPayload(ClientParcelFormatInfos infos)
     implements CustomPacketPayload {
-  public static final Identifier ID = GitParcelMod.identifier("update_parcel_formats");
+  public static final Identifier ID = GitParcel.identifier("update_parcel_formats");
   public static final Type<UpdateParcelFormatInfosS2CPayload> TYPE = new Type<>(ID);
 
   public static final Codec<UpdateParcelFormatInfosS2CPayload> CODEC =
@@ -36,7 +36,7 @@ public record UpdateParcelFormatInfosS2CPayload(ClientParcelFormatInfos infos)
 
   /** Client-Only */
   public static void handle(UpdateParcelFormatInfosS2CPayload payload, LocalPlayer localPlayer) {
-    GitParcelMod.LOGGER.debug("Update parcel format info: {}", payload.infos());
-    GitParcelModClient.PARCEL_FORMAT_INFOS = payload.infos();
+    GitParcel.LOGGER.debug("Update parcel format info: {}", payload.infos());
+    GitParcelClient.PARCEL_FORMAT_INFOS = payload.infos();
   }
 }

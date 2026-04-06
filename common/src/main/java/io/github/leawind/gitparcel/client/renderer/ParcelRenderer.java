@@ -2,7 +2,7 @@ package io.github.leawind.gitparcel.client.renderer;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import io.github.leawind.gitparcel.client.GitParcelModClient;
+import io.github.leawind.gitparcel.client.GitParcelClient;
 import io.github.leawind.gitparcel.world.Parcel;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +26,7 @@ public final class ParcelRenderer {
       Caffeine.newBuilder().weakKeys().build();
 
   void renderGizmos() {
-    for (var parcel : GitParcelModClient.PARCELS.values()) {
+    for (var parcel : GitParcelClient.PARCELS.values()) {
       var currentState = new ParcelRenderState(parcel);
       var cachedState = CACHE.getIfPresent(parcel);
 
