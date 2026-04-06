@@ -21,7 +21,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
 public class ParcellaD16Saver extends ParcellaD32Saver
-    implements ParcellaD16Format, ParcelFormat.Save<ParcellaD32Format.Config> {
+    implements ParcellaD16Format, ParcelFormat.Saver<ParcellaD32Format.Config> {
   @Override
   public void save(
       Level level,

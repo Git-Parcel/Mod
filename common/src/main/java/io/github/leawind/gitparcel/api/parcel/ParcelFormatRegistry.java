@@ -24,11 +24,12 @@ public final class ParcelFormatRegistry {
   /** The global singleton instance of {@code ParcelFormatRegistry}. */
   public static final ParcelFormatRegistry INSTANCE = new ParcelFormatRegistry();
 
-  private final Map<ParcelFormat.Info, ParcelFormat.Save<?>> savers = new Object2ObjectArrayMap<>();
-  private final Map<ParcelFormat.Info, ParcelFormat.Load<?>> loaders =
+  private final Map<ParcelFormat.Info, ParcelFormat.Saver<?>> savers =
+      new Object2ObjectArrayMap<>();
+  private final Map<ParcelFormat.Info, ParcelFormat.Loader<?>> loaders =
       new Object2ObjectArrayMap<>();
 
-  private ParcelFormat.@Nullable Save<?> defaultSaver;
+  private ParcelFormat.@Nullable Saver<?> defaultSaver;
 
   /**
    * Constructs a new, empty {@code ParcelFormatRegistry}.
@@ -48,8 +49,8 @@ public final class ParcelFormatRegistry {
   /**
    * Registers a format implementation as either a saver or a loader.
    *
-   * <p>The format must implement exactly one of {@link ParcelFormat.Save} or {@link
-   * ParcelFormat.Load}. Registering the same {@link ParcelFormat.Info} twice for the same role is
+   * <p>The format must implement exactly one of {@link ParcelFormat.Saver} or {@link
+   * ParcelFormat.Loader}. Registering the same {@link ParcelFormat.Info} twice for the same role is
    * not allowed.
    *
    * @param <C> the config type associated with the format
@@ -62,7 +63,7 @@ public final class ParcelFormatRegistry {
 
     boolean isSaverOrLoader = false;
 
-    if (format instanceof ParcelFormat.Save<?> saver) {
+    if (format instanceof ParcelFormat.Saver<?> saver) {
       if (savers.containsKey(saver.info())) {
         throw new IllegalArgumentException("duplicate saver: " + saver);
       }
@@ -70,7 +71,7 @@ public final class ParcelFormatRegistry {
       isSaverOrLoader = true;
     }
 
-    if (format instanceof ParcelFormat.Load<?> loader) {
+    if (format instanceof ParcelFormat.Loader<?> loader) {
       if (loaders.containsKey(loader.info())) {
         throw new IllegalArgumentException("duplicate loader: " + loader);
       }
@@ -93,7 +94,7 @@ public final class ParcelFormatRegistry {
    * @param format the saver to register as the default
    * @throws IllegalArgumentException if the format is already registered as a saver
    */
-  public <C extends ParcelFormatConfig<C>> void registerDefaultSaver(ParcelFormat.Save<C> format)
+  public <C extends ParcelFormatConfig<C>> void registerDefaultSaver(ParcelFormat.Saver<C> format)
       throws IllegalArgumentException {
     register(format);
     defaultSaver = format;
@@ -102,10 +103,10 @@ public final class ParcelFormatRegistry {
   /**
    * Returns the default saver.
    *
-   * @return the default {@link ParcelFormat.Save} instance
+   * @return the default {@link ParcelFormat.Saver} instance
    * @throws NullPointerException if no default saver has been set via {@link #registerDefaultSaver}
    */
-  public ParcelFormat.Save<?> defaultSaver() throws NullPointerException {
+  public ParcelFormat.Saver<?> defaultSaver() throws NullPointerException {
     return Objects.requireNonNull(defaultSaver);
   }
 
@@ -118,7 +119,7 @@ public final class ParcelFormatRegistry {
    * @param id the format id to look up
    * @return the latest-version saver for {@code id}, or {@code null} if none is registered
    */
-  public ParcelFormat.@Nullable Save<?> getSaver(String id) {
+  public ParcelFormat.@Nullable Saver<?> getSaver(String id) {
     return savers.values().stream()
         .filter(format -> format.id().equals(id))
         .max(Comparator.comparingInt(ParcelFormat.Impl::version))
@@ -131,7 +132,7 @@ public final class ParcelFormatRegistry {
    * @param info the exact info key (id + version) to look up
    * @return the matching saver, or {@code null} if none is registered for {@code info}
    */
-  public ParcelFormat.@Nullable Save<?> getSaver(ParcelFormat.Info info) {
+  public ParcelFormat.@Nullable Saver<?> getSaver(ParcelFormat.Info info) {
     return savers.get(info);
   }
 
@@ -144,7 +145,7 @@ public final class ParcelFormatRegistry {
    * @param id the format id to look up
    * @return the latest-version loader for {@code id}, or {@code null} if none is registered
    */
-  public ParcelFormat.@Nullable Load<?> getLoader(String id) {
+  public ParcelFormat.@Nullable Loader<?> getLoader(String id) {
     return loaders.values().stream()
         .filter(format -> format.id().equals(id))
         .max(Comparator.comparingInt(ParcelFormat.Impl::version))
@@ -157,7 +158,7 @@ public final class ParcelFormatRegistry {
    * @param info the exact info key (id + version) to look up
    * @return the matching loader, or {@code null} if none is registered for {@code info}
    */
-  public ParcelFormat.@Nullable Load<?> getLoader(ParcelFormat.Info info) {
+  public ParcelFormat.@Nullable Loader<?> getLoader(ParcelFormat.Info info) {
     return loaders.get(info);
   }
 

@@ -142,11 +142,11 @@ public final class ParcelMeta {
     return Optional.ofNullable(excludeEntities);
   }
 
-  public ParcelFormat.@Nullable Save<?> getFormatSaver() {
+  public ParcelFormat.@Nullable Saver<?> getFormatSaver() {
     return ParcelFormatRegistry.INSTANCE.getSaver(formatInfo);
   }
 
-  public ParcelFormat.@Nullable Load<?> getFormatLoader() {
+  public ParcelFormat.@Nullable Loader<?> getFormatLoader() {
     return ParcelFormatRegistry.INSTANCE.getLoader(formatInfo);
   }
 

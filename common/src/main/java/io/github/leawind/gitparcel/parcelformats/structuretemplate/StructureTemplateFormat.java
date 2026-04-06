@@ -24,8 +24,8 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import org.jspecify.annotations.Nullable;
 
 public class StructureTemplateFormat
-    implements ParcelFormat.Save<ParcelFormatConfig.None>,
-        ParcelFormat.Load<ParcelFormatConfig.None> {
+    implements ParcelFormat.Saver<ParcelFormatConfig.None>,
+        ParcelFormat.Loader<ParcelFormatConfig.None> {
   String NBT_FILE_NAME = "structure.nbt";
 
   private static final Info INFO = new Info("structure_template", 0);

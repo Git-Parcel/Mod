@@ -28,7 +28,7 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
 public class ParcellaD32Loader
-    implements ParcellaD32Format, ParcelFormat.Load<ParcellaD32Format.Config> {
+    implements ParcellaD32Format, ParcelFormat.Loader<ParcellaD32Format.Config> {
   private static final Logger LOGGER = LogUtils.getLogger();
 
   public static final class Context extends LoadContext<Config> {

@@ -38,7 +38,7 @@ public class AbstractGitParcelTest {
   }
 
   protected static class TestSaver extends TestFormat
-      implements ParcelFormat.Save<ParcelFormatConfig.None> {
+      implements ParcelFormat.Saver<ParcelFormatConfig.None> {
 
     protected TestSaver(String id, int version) {
       super(id, version);
@@ -59,7 +59,7 @@ public class AbstractGitParcelTest {
   }
 
   protected static class TestLoader extends TestFormat
-      implements ParcelFormat.Load<ParcelFormatConfig.None> {
+      implements ParcelFormat.Loader<ParcelFormatConfig.None> {
     protected TestLoader(String id, int version) {
       super(id, version);
     }

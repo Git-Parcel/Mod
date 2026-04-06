@@ -21,7 +21,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
-public class MvpFormat implements ParcelFormat.Save<ParcelFormatConfig.None> {
+public class MvpFormat implements ParcelFormat.Saver<ParcelFormatConfig.None> {
   private static final Info INFO = new Info("mvp", 0);
 
   @Override

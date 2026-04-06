@@ -11,7 +11,7 @@ import java.nio.file.Files;
 import net.minecraft.util.ProblemReporter;
 
 public class ParcellaD16Loader extends ParcellaD32Loader
-    implements ParcellaD16Format, ParcelFormat.Load<ParcellaD32Format.Config> {
+    implements ParcellaD16Format, ParcelFormat.Loader<ParcellaD32Format.Config> {
   @Override
   protected void loadBlocks(Context ctx, ProblemReporter problemReporter)
       throws IOException, ParcelException.CorruptedParcelException {

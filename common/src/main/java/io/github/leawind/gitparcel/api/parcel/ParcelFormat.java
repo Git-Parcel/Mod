@@ -29,8 +29,8 @@ import org.slf4j.LoggerFactory;
  * <ul>
  *   <li>{@link ParcelFormat} - Base interface with common utilities
  *   <li>{@link Impl} - Base interface for format implementations
- *   <li>{@link Save} - Interface for formats that support saving
- *   <li>{@link Load} - Interface for formats that support loading
+ *   <li>{@link Saver} - Interface for formats that support saving
+ *   <li>{@link Loader} - Interface for formats that support loading
  * </ul>
  *
  * <p>A format may implement just Save, just Load, or both interfaces. This allows for read-only or
@@ -116,7 +116,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
    *
    * <p>Provides configuration handling capabilities common to both saving and loading operations.
    * Format implementations should not directly implement this interface, but rather implement
-   * {@link Save} and/or {@link Load} interfaces as appropriate.
+   * {@link Saver} and/or {@link Loader} interfaces as appropriate.
    *
    * @param <C> The configuration type used by this format
    */
@@ -166,7 +166,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
    *
    * @param <C> The configuration type used by this format
    */
-  interface Save<C extends ParcelFormatConfig<C>> extends Impl<C> {
+  interface Saver<C extends ParcelFormatConfig<C>> extends Impl<C> {
 
     /**
      * Writes parcel content from the world into the specified data directory.
@@ -202,7 +202,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
    *
    * @param <C> The configuration type used by this format
    */
-  interface Load<C extends ParcelFormatConfig<C>> extends Impl<C> {
+  interface Loader<C extends ParcelFormatConfig<C>> extends Impl<C> {
 
     /**
      * Reads parcel content from disk and places it into the target game level.
@@ -373,7 +373,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
       throws IOException, ParcelException {
     meta.save(getMetaFile(parcelDir));
 
-    ParcelFormat.Save<C> format = (Save<C>) meta.getFormatSaver();
+    Saver<C> format = (Saver<C>) meta.getFormatSaver();
     if (format == null) {
       throw new ParcelException.UnsupportedFormat(meta.formatInfo());
     }
@@ -433,7 +433,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
       @Block.UpdateFlags int flags)
       throws IOException, ParcelException {
     var meta = ParcelMeta.load(parcelDir.resolve(META_FILE_NAME));
-    Load<C> loader = (Load<C>) meta.getFormatLoader();
+    Loader<C> loader = (Loader<C>) meta.getFormatLoader();
     if (loader == null) {
       throw new ParcelException.UnsupportedFormat(meta.formatInfo());
     }

@@ -248,7 +248,7 @@ public final class Parcel {
 
     C config = null;
     if (formatConfig != null) {
-      ParcelFormat.Save<C> format = (ParcelFormat.Save<C>) meta.getFormatSaver();
+      ParcelFormat.Saver<C> format = (ParcelFormat.Saver<C>) meta.getFormatSaver();
       if (format == null) {
         LOGGER.warn("Parcel {} has unsupported saving format {}", this, meta.formatInfo());
         throw new ParcelException.UnsupportedFormat(meta.formatInfo());

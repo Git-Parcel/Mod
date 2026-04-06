@@ -48,7 +48,7 @@ public class ParcelFormatRegistryTest {
     }
   }
 
-  static class TestSaver extends TestFormat implements ParcelFormat.Save<ParcelFormatConfig.None> {
+  static class TestSaver extends TestFormat implements ParcelFormat.Saver<ParcelFormatConfig.None> {
 
     protected TestSaver(String id, int version) {
       super(id, version);
@@ -68,7 +68,8 @@ public class ParcelFormatRegistryTest {
     }
   }
 
-  static class TestLoader extends TestFormat implements ParcelFormat.Load<ParcelFormatConfig.None> {
+  static class TestLoader extends TestFormat
+      implements ParcelFormat.Loader<ParcelFormatConfig.None> {
     protected TestLoader(String id, int version) {
       super(id, version);
     }

@@ -123,7 +123,7 @@ public class SaveSubcommand {
       BlockPos corner1,
       BlockPos corner2,
       Path parcelDir,
-      ParcelFormat.Save<?> format,
+      ParcelFormat.Saver<?> format,
       boolean ignoreEntities,
       Mirror mirror,
       Rotation rotation) {

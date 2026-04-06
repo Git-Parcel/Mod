@@ -30,20 +30,20 @@ public final class ParcelFormatArgument {
     return new Loader();
   }
 
-  public static ParcelFormat.Save<?> getSaver(
+  public static ParcelFormat.Saver<?> getSaver(
       CommandContext<CommandSourceStack> context, String name) {
-    return context.getArgument(name, ParcelFormat.Save.class);
+    return context.getArgument(name, ParcelFormat.Saver.class);
   }
 
-  public static ParcelFormat.Load<?> getLoader(
+  public static ParcelFormat.Loader<?> getLoader(
       CommandContext<CommandSourceStack> context, String name) {
-    return context.getArgument(name, ParcelFormat.Load.class);
+    return context.getArgument(name, ParcelFormat.Loader.class);
   }
 
-  public static class Saver implements ArgumentType<ParcelFormat.Save<?>> {
+  public static class Saver implements ArgumentType<ParcelFormat.Saver<?>> {
 
     @Override
-    public ParcelFormat.Save<?> parse(StringReader reader) throws CommandSyntaxException {
+    public ParcelFormat.Saver<?> parse(StringReader reader) throws CommandSyntaxException {
       var format = ParcelFormatRegistry.INSTANCE.getSaver(reader.readString());
       if (format == null) {
         throw ERROR_INVALID.createWithContext(reader);
@@ -65,10 +65,10 @@ public final class ParcelFormatArgument {
     }
   }
 
-  public static class Loader implements ArgumentType<ParcelFormat.Load<?>> {
+  public static class Loader implements ArgumentType<ParcelFormat.Loader<?>> {
 
     @Override
-    public ParcelFormat.Load<?> parse(StringReader reader) throws CommandSyntaxException {
+    public ParcelFormat.Loader<?> parse(StringReader reader) throws CommandSyntaxException {
       var format = ParcelFormatRegistry.INSTANCE.getLoader(reader.readString());
       if (format == null) {
         throw ERROR_INVALID.createWithContext(reader);

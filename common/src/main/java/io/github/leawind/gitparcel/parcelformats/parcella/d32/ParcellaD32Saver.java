@@ -36,7 +36,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 public class ParcellaD32Saver
-    implements ParcellaD32Format, ParcelFormat.Save<ParcellaD32Format.Config> {
+    implements ParcellaD32Format, ParcelFormat.Saver<ParcellaD32Format.Config> {
 
   public static final class Context extends SaveContext<Config> {
     public final Path blocksDir;
