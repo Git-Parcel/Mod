@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.world.gitparcel;
+package io.github.leawind.gitparcel.world;
 
 import com.google.gson.JsonElement;
 import com.mojang.logging.LogUtils;

@@ -3,7 +3,7 @@ package io.github.leawind.gitparcel.network.protocol.parcels;
 import com.mojang.serialization.Codec;
 import io.github.leawind.gitparcel.GitParcelMod;
 import io.github.leawind.gitparcel.client.GitParcelModClient;
-import io.github.leawind.gitparcel.world.gitparcel.Parcel;
+import io.github.leawind.gitparcel.world.Parcel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;

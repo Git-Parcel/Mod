@@ -3,7 +3,7 @@ package io.github.leawind.gitparcel.client.renderer;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.leawind.gitparcel.client.GitParcelModClient;
-import io.github.leawind.gitparcel.world.gitparcel.Parcel;
+import io.github.leawind.gitparcel.world.Parcel;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.Vec3i;

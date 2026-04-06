@@ -3,7 +3,6 @@ package io.github.leawind.gitparcel.world;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.github.leawind.gitparcel.testutils.AbstractGitParcelTest;
-import io.github.leawind.gitparcel.world.gitparcel.Parcel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;

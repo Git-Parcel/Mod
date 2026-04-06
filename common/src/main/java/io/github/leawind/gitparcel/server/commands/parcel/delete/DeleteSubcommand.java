@@ -7,8 +7,8 @@ import io.github.leawind.gitparcel.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.commands.synchronization.ParcelSuggestionProvider;
 import io.github.leawind.gitparcel.permission.WorldPermissions;
 import io.github.leawind.gitparcel.server.commands.GitParcelBaseCommand;
-import io.github.leawind.gitparcel.world.gitparcel.GitParcelLevelSavedData;
-import io.github.leawind.gitparcel.world.gitparcel.Parcel;
+import io.github.leawind.gitparcel.world.GitParcelLevelSavedData;
+import io.github.leawind.gitparcel.world.Parcel;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 

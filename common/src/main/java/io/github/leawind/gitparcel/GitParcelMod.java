@@ -21,7 +21,7 @@ import io.github.leawind.gitparcel.platform.Services;
 import io.github.leawind.gitparcel.server.GameServerApi;
 import io.github.leawind.gitparcel.server.commands.parcel.ParcelCommand;
 import io.github.leawind.gitparcel.server.commands.parcel_debug.ParcelDebugCommand;
-import io.github.leawind.gitparcel.world.gitparcel.GitParcelLevelSavedData;
+import io.github.leawind.gitparcel.world.GitParcelLevelSavedData;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;

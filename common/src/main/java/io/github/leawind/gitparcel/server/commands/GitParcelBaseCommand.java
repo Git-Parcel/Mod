@@ -4,7 +4,7 @@ import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.permission.WorldPermissions;
 import io.github.leawind.gitparcel.utils.permission.PermissionConfig;
 import io.github.leawind.gitparcel.utils.permission.PermissionType;
-import io.github.leawind.gitparcel.world.gitparcel.GitParcelWorldSavedData;
+import io.github.leawind.gitparcel.world.GitParcelWorldSavedData;
 import net.minecraft.commands.CommandSourceStack;
 
 public abstract class GitParcelBaseCommand {

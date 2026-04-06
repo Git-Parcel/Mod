@@ -3,7 +3,7 @@ package io.github.leawind.gitparcel.network.protocol.parcels;
 import com.mojang.serialization.Codec;
 import io.github.leawind.gitparcel.GitParcelMod;
 import io.github.leawind.gitparcel.client.GitParcelModClient;
-import io.github.leawind.gitparcel.world.gitparcel.Parcel;
+import io.github.leawind.gitparcel.world.Parcel;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import java.util.List;

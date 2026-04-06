@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.world.gitparcel;
+package io.github.leawind.gitparcel.world;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;

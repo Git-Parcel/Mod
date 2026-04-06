@@ -7,7 +7,7 @@ import io.github.leawind.gitparcel.network.protocol.parcelformat.ClientParcelFor
 import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatInfosS2CPayload;
 import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelS2CPayload;
 import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelsS2CPayload;
-import io.github.leawind.gitparcel.world.gitparcel.Parcel;
+import io.github.leawind.gitparcel.world.Parcel;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import java.util.UUID;
