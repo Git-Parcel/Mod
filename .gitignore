@@ -29,8 +29,12 @@ run
 runs
 
 # AI tools
-.trae/
+/.ai/
+.clinerules/
+.cursorrules/
+.marscode/
 .lingma/
+.trae/
 .codebuddy/
 
 # logs
