@@ -17,6 +17,7 @@ import io.github.leawind.gitparcel.server.storage.WorldStorageManager;
 import io.github.leawind.gitparcel.utils.permission.PermissionConfig;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -270,7 +271,7 @@ public final class Parcel {
       return;
     }
     levelSavedData.setDirty();
-    levelSavedData.emitParcelUpdate(this);
+    levelSavedData.emitParcelsUpdateIncremental(List.of(this));
   }
 
   public static Parcel create(BoundingBox boundingBox, Mirror mirror, Rotation rotation) {

@@ -2,14 +2,12 @@ package io.github.leawind.gitparcel;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
-import io.github.leawind.gitparcel.api.GitParcelApi;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.commands.arguments.ParcelFormatArgument;
 import io.github.leawind.gitparcel.mixin.InvokeArgumentTypeInfos;
 import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatInfosS2CPayload;
-import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelS2CPayload;
 import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelsS2CPayload;
 import io.github.leawind.gitparcel.parcelformats.mvp.MvpFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Loader;
@@ -120,35 +118,14 @@ public final class GitParcel {
     }
   }
 
-  @SuppressWarnings("resource")
   private static void registerGitParcelEvents() {
     // Notify when player join
     GameServerApi.ON_PLAYER_JOIN.on(
         e -> {
           var player = e.player();
           var list = GitParcelLevelSavedData.get(player.level()).listParcels();
-          var payload = UpdateParcelsS2CPayload.from(list);
+          var payload = UpdateParcelsS2CPayload.fullSync(list);
           player.connection.send(new ClientboundCustomPayloadPacket(payload));
         });
-    // Notify players when level parcels update
-    GitParcelApi.Events.ON_PARCELS_UPDATE.on(
-        e ->
-            e.level()
-                .players()
-                .forEach(
-                    player -> {
-                      var payload = UpdateParcelsS2CPayload.from(e.parcels());
-                      player.connection.send(new ClientboundCustomPayloadPacket(payload));
-                    }));
-
-    GitParcelApi.Events.ON_PARCEL_UPDATE.on(
-        e ->
-            e.level()
-                .players()
-                .forEach(
-                    player -> {
-                      var payload = UpdateParcelS2CPayload.from(e.parcel());
-                      player.connection.send(new ClientboundCustomPayloadPacket(payload));
-                    }));
   }
 }

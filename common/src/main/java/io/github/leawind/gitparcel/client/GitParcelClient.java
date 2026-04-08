@@ -5,7 +5,6 @@ import io.github.leawind.gitparcel.client.gui.screens.GitParcelDebugScreen;
 import io.github.leawind.gitparcel.client.renderer.GitParcelRenderer;
 import io.github.leawind.gitparcel.network.protocol.parcelformat.ClientParcelFormatInfos;
 import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatInfosS2CPayload;
-import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelS2CPayload;
 import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelsS2CPayload;
 import io.github.leawind.gitparcel.world.Parcel;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
@@ -57,10 +56,6 @@ public final class GitParcelClient {
       GameClientApi.Network.registerGlobalReceiver(
           UpdateParcelsS2CPayload.TYPE,
           (payload, minecraft) -> UpdateParcelsS2CPayload.handle(payload, minecraft.player));
-
-      GameClientApi.Network.registerGlobalReceiver(
-          UpdateParcelS2CPayload.TYPE,
-          (payload, minecraft) -> UpdateParcelS2CPayload.handle(payload, minecraft.player));
     }
 
     // Render

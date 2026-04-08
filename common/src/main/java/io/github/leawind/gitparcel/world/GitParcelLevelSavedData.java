@@ -2,7 +2,7 @@ package io.github.leawind.gitparcel.world;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.leawind.gitparcel.api.GitParcelApi;
+import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelsS2CPayload;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import java.util.ArrayList;
@@ -12,6 +12,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
@@ -56,7 +57,11 @@ public final class GitParcelLevelSavedData extends SavedData {
     parcels.clear();
 
     setDirty();
-    emitParcelsUpdate();
+    if (level != null) {
+      var payload = UpdateParcelsS2CPayload.fullSync(listParcels());
+      var packet = new ClientboundCustomPayloadPacket(payload);
+      level.players().forEach(player -> player.connection.send(packet));
+    }
   }
 
   public List<Parcel> listParcels() {
@@ -99,7 +104,7 @@ public final class GitParcelLevelSavedData extends SavedData {
     parcel.setLevelSavedData(this);
     parcels.put(parcel.uuid(), parcel);
     setDirty();
-    emitParcelsUpdate();
+    emitParcelsUpdateIncremental(List.of(parcel));
   }
 
   /**
@@ -113,7 +118,7 @@ public final class GitParcelLevelSavedData extends SavedData {
 
     if (result != null) {
       setDirty();
-      emitParcelsUpdate();
+      emitParcelsDeleted(uuid);
     }
     return result;
   }
@@ -131,17 +136,19 @@ public final class GitParcelLevelSavedData extends SavedData {
     return null;
   }
 
-  public void emitParcelsUpdate() {
+  public void emitParcelsUpdateIncremental(List<Parcel> parcels) {
     if (level != null) {
-      GitParcelApi.Events.ON_PARCELS_UPDATE.emit(
-          new GitParcelApi.Events.UpdateParcelsEvent(level, listParcels()));
+      var payload = UpdateParcelsS2CPayload.incremental(parcels);
+      var packet = new ClientboundCustomPayloadPacket(payload);
+      level.players().forEach(player -> player.connection.send(packet));
     }
   }
 
-  public void emitParcelUpdate(Parcel parcel) {
-    if (level != null && parcels.containsKey(parcel.uuid())) {
-      GitParcelApi.Events.ON_PARCEL_UPDATE.emit(
-          new GitParcelApi.Events.UpdateParcelEvent(level, parcel));
+  public void emitParcelsDeleted(UUID uuid) {
+    if (level != null) {
+      var payload = UpdateParcelsS2CPayload.removalsOnly(List.of(uuid));
+      var packet = new ClientboundCustomPayloadPacket(payload);
+      level.players().forEach(player -> player.connection.send(packet));
     }
   }
 
@@ -153,15 +160,5 @@ public final class GitParcelLevelSavedData extends SavedData {
     var savedData = level.getDataStorage().computeIfAbsent(TYPE);
     savedData.level = level;
     return savedData;
-  }
-
-  public static void moveParcel(ServerLevel fromLevel, ServerLevel toLevel, UUID uuid) {
-    var from = fromLevel.getDataStorage().get(TYPE);
-    if (from == null) {
-      return;
-    }
-    var parcel = from.getParcels().remove(uuid);
-    var to = toLevel.getDataStorage().computeIfAbsent(TYPE);
-    to.getParcels().put(uuid, parcel);
   }
 }
