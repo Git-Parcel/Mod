@@ -7,7 +7,6 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.commands.arguments.ParcelArgument;
-import io.github.leawind.gitparcel.commands.synchronization.ParcelSuggestionProvider;
 import io.github.leawind.gitparcel.world.Parcel;
 import java.io.IOException;
 import net.minecraft.commands.CommandSourceStack;
@@ -22,8 +21,7 @@ public class SaveSubcommand {
 
     return Commands.literal("save")
         .then(
-            Commands.argument("parcel", ParcelArgument.parcel())
-                .suggests(ParcelSuggestionProvider.INSTANCE)
+            Commands.argument("parcel", ParcelArgument.singleParcel())
                 .executes(SaveSubcommand::save)
                 .then(ignore_entities));
   }
@@ -39,7 +37,7 @@ public class SaveSubcommand {
 
   private static int save(CommandContext<CommandSourceStack> ctx, boolean ignoreEntities)
       throws CommandSyntaxException {
-    Parcel parcel = ParcelArgument.getParcel(ctx, "parcel");
+    Parcel parcel = ParcelArgument.getSingleParcel(ctx, "parcel");
 
     try {
       // TODO git

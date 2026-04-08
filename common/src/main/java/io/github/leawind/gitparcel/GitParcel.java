@@ -102,7 +102,7 @@ public final class GitParcel {
         registry,
         "gitparcel:parcel",
         ParcelArgument.class,
-        SingletonArgumentInfo.contextFree(ParcelArgument::parcel));
+        SingletonArgumentInfo.contextFree(ParcelArgument::singleParcel));
   }
 
   public static void registerCommands(

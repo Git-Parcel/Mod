@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 
+@Deprecated
 public class ParcelSuggestionProvider implements SuggestionProvider<CommandSourceStack> {
 
   public static final ParcelSuggestionProvider INSTANCE = new ParcelSuggestionProvider();

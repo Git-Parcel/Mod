@@ -8,7 +8,6 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.commands.arguments.ParcelFormatArgument;
-import io.github.leawind.gitparcel.commands.synchronization.ParcelSuggestionProvider;
 import io.github.leawind.gitparcel.permission.WorldPermissions;
 import io.github.leawind.gitparcel.server.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.world.Parcel;
@@ -28,10 +27,7 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
             .then(buildVisualShowWireframe())
             .then(buildVisualShowAnchor());
 
-    var parcel =
-        Commands.argument("parcel", ParcelArgument.parcel())
-            .suggests(ParcelSuggestionProvider.INSTANCE)
-            .then(set);
+    var parcel = Commands.argument("parcel", ParcelArgument.singleParcel()).then(set);
 
     return Commands.literal("config").then(parcel);
   }
@@ -51,7 +47,7 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
       return 0;
     }
 
-    var parcel = ParcelArgument.getParcel(ctx, "parcel");
+    var parcel = ParcelArgument.getSingleParcel(ctx, "parcel");
     var value = valueReader.read(ctx);
 
     setter.accept(parcel, value);

@@ -122,6 +122,10 @@ public final class ParcelMeta {
     return Optional.ofNullable(name);
   }
 
+  public @Nullable String name() {
+    return name;
+  }
+
   private Optional<String> getDescription() {
     return Optional.ofNullable(description);
   }
