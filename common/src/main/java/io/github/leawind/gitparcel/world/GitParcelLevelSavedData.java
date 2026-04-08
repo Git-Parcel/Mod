@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.world;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelsS2CPayload;
+import io.github.leawind.gitparcel.utils.NetworkUtils;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import java.util.ArrayList;
@@ -12,7 +13,6 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
-import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
@@ -59,8 +59,7 @@ public final class GitParcelLevelSavedData extends SavedData {
     setDirty();
     if (level != null) {
       var payload = UpdateParcelsS2CPayload.fullSync(listParcels());
-      var packet = new ClientboundCustomPayloadPacket(payload);
-      level.players().forEach(player -> player.connection.send(packet));
+      NetworkUtils.sendToAllPlayers(level, payload);
     }
   }
 
@@ -139,16 +138,14 @@ public final class GitParcelLevelSavedData extends SavedData {
   public void emitParcelsUpdateIncremental(List<Parcel> parcels) {
     if (level != null) {
       var payload = UpdateParcelsS2CPayload.incremental(parcels);
-      var packet = new ClientboundCustomPayloadPacket(payload);
-      level.players().forEach(player -> player.connection.send(packet));
+      NetworkUtils.sendToAllPlayers(level, payload);
     }
   }
 
   public void emitParcelsDeleted(UUID uuid) {
     if (level != null) {
       var payload = UpdateParcelsS2CPayload.removalsOnly(List.of(uuid));
-      var packet = new ClientboundCustomPayloadPacket(payload);
-      level.players().forEach(player -> player.connection.send(packet));
+      NetworkUtils.sendToAllPlayers(level, payload);
     }
   }
 
