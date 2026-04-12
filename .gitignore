@@ -31,11 +31,12 @@ runs
 # AI tools
 /.ai/
 .clinerules/
-.cursorrules/
-.marscode/
-.lingma/
-.trae/
 .codebuddy/
+.cursorrules/
+.kilo/
+.lingma/
+.marscode/
+.trae/
 
 # logs
 **/logs/*.log
