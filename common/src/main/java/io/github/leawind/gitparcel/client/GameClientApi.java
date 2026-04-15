@@ -1,7 +1,6 @@
 package io.github.leawind.gitparcel.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import io.github.leawind.inventory.event.EventEmitter;
 import io.github.leawind.inventory.event.SimpleEventEmitter;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import java.util.Map;
@@ -13,7 +12,8 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import org.jspecify.annotations.Nullable;
 
 public final class GameClientApi {
-  public static final EventEmitter<Minecraft> ON_CLIENT_TICK_START = new EventEmitter<>();
+  public static final SimpleEventEmitter<Minecraft> ON_CLIENT_TICK_START =
+      new SimpleEventEmitter<>();
 
   public static class Network {
     public static final Map<CustomPacketPayload.Type<?>, BiConsumer<CustomPacketPayload, Minecraft>>
