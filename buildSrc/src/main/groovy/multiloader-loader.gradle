@@ -16,6 +16,10 @@ configurations {
 	runtimeClasspath.extendsFrom(shadow)
 }
 
+repositories {
+	maven { url 'https://jitpack.io' }
+}
+
 dependencies {
 	compileOnly(project(':common')) {
 		capabilities {
