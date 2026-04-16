@@ -6,10 +6,7 @@ import io.github.leawind.gitparcel.client.renderer.GitParcelRenderer;
 import io.github.leawind.gitparcel.network.protocol.parcelformat.ClientParcelFormatInfos;
 import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatInfosS2CPayload;
 import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelsS2CPayload;
-import io.github.leawind.gitparcel.world.Parcel;
-import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
-import java.util.UUID;
+import io.github.leawind.gitparcel.world.Parcels;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -25,7 +22,7 @@ public final class GitParcelClient {
    */
   public static @Nullable volatile ClientParcelFormatInfos PARCEL_FORMAT_INFOS = null;
 
-  public static volatile Object2ObjectMap<UUID, Parcel> PARCELS = new Object2ObjectArrayMap<>();
+  public static volatile Parcels PARCELS = new Parcels();
 
   /**
    * Initializes the Git Parcel mod client.

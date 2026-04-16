@@ -82,8 +82,7 @@ public final class ParcelSelector {
 
   public List<Parcel> findParcels(CommandSourceStack source) throws CommandSyntaxException {
     checkPermissions(source);
-    return GitParcelLevelSavedData.get(source.getLevel())
-        .streamParcels()
+    return GitParcelLevelSavedData.get(source.getLevel()).parcels().values().stream()
         .filter(getPredicate())
         .toList();
   }

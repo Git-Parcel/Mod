@@ -7,7 +7,6 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import io.github.leawind.gitparcel.GitParcel;
 import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.client.GitParcelClient;
 import io.github.leawind.gitparcel.commands.arguments.parcelselector.ParcelSelector;
@@ -99,13 +98,10 @@ public class ParcelArgument implements ArgumentType<ParcelSelector> {
     // source: ClientSuggestionProvider
     var source = context.getSource();
     if (context.getSource() instanceof ClientSuggestionProvider provider) {
-      GitParcel.LOGGER.info("listSuggestions ClientSuggestionProvider");
       names = GitParcelClient.PARCELS.values().stream().map(parcel -> parcel.meta().name());
     } else if (context.getSource() instanceof CommandSourceStack stack) {
-      GitParcel.LOGGER.info("listSuggestions CommandSourceStack");
       names =
-          GitParcelLevelSavedData.get(stack.getLevel())
-              .streamParcels()
+          GitParcelLevelSavedData.get(stack.getLevel()).parcels().values().stream()
               .map(parcel -> parcel.meta().name());
     } else {
       names = Stream.empty();

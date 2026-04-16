@@ -7,8 +7,6 @@ import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.permission.WorldPermissions;
 import io.github.leawind.gitparcel.server.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.world.GitParcelLevelSavedData;
-import io.github.leawind.gitparcel.world.Parcel;
-import java.util.List;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.DimensionArgument;
@@ -42,13 +40,14 @@ public class ListSubcommand extends GitParcelBaseCommand {
     }
 
     var savedData = GitParcelLevelSavedData.get(serverLevel);
-    List<Parcel> parcels = savedData.listParcels();
 
     source.sendSuccess(
-        () -> GitParcelTranslations.of("command.gitparcel.parcel.list.header", parcels.size()),
+        () ->
+            GitParcelTranslations.of(
+                "command.gitparcel.parcel.list.header", savedData.parcels().size()),
         false);
 
-    for (var parcel : parcels) {
+    for (var parcel : savedData.parcels().values()) {
       source.sendSuccess(
           () ->
               Component.literal("  - UUID: ")

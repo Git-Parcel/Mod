@@ -123,8 +123,8 @@ public final class GitParcel {
     GameServerApi.ON_PLAYER_JOIN.on(
         e -> {
           var player = e.player();
-          var list = GitParcelLevelSavedData.get(player.level()).listParcels();
-          var payload = UpdateParcelsS2CPayload.fullSync(list);
+          var parcels = GitParcelLevelSavedData.get(player.level()).parcels();
+          var payload = UpdateParcelsS2CPayload.fullSync(parcels);
           player.connection.send(new ClientboundCustomPayloadPacket(payload));
         });
   }

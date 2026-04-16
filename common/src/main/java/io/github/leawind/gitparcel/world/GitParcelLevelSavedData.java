@@ -4,15 +4,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelsS2CPayload;
 import io.github.leawind.gitparcel.utils.NetworkUtils;
-import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Stream;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.UUIDUtil;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
@@ -23,9 +16,7 @@ public final class GitParcelLevelSavedData extends SavedData {
       RecordCodecBuilder.create(
           inst ->
               inst.group(
-                      Codec.unboundedMap(UUIDUtil.STRING_CODEC, Parcel.CODEC)
-                          .fieldOf("parcels")
-                          .forGetter(GitParcelLevelSavedData::getParcels))
+                      Parcels.CODEC.fieldOf("parcels").forGetter(GitParcelLevelSavedData::parcels))
                   .apply(inst, GitParcelLevelSavedData::new));
 
   public static final SavedDataType<GitParcelLevelSavedData> TYPE =
@@ -38,18 +29,18 @@ public final class GitParcelLevelSavedData extends SavedData {
    */
   private @Nullable ServerLevel level = null;
 
-  private final Map<UUID, Parcel> parcels;
+  private final Parcels parcels;
 
   private GitParcelLevelSavedData() {
-    this(new Object2ObjectArrayMap<>(4));
+    this(new Parcels());
   }
 
-  private GitParcelLevelSavedData(Map<UUID, Parcel> parcels) {
-    this.parcels = new Object2ObjectOpenHashMap<>(parcels);
-    this.parcels.values().forEach(parcel -> parcel.setLevelSavedData(this));
+  private GitParcelLevelSavedData(Parcels parcels) {
+    this.parcels = parcels;
+    parcels.values().forEach(parcel -> parcel.setLevelSavedData(this));
   }
 
-  public Map<UUID, Parcel> getParcels() {
+  public Parcels parcels() {
     return parcels;
   }
 
@@ -58,30 +49,19 @@ public final class GitParcelLevelSavedData extends SavedData {
 
     setDirty();
     if (level != null) {
-      var payload = UpdateParcelsS2CPayload.fullSync(listParcels());
+      var payload = UpdateParcelsS2CPayload.fullSync(parcels);
       NetworkUtils.sendToAllPlayers(level, payload);
     }
   }
 
-  public List<Parcel> listParcels() {
-    return new ArrayList<>(parcels.values());
-  }
-
-  public Stream<Parcel> streamParcels() {
-    return parcels.values().stream();
-  }
-
   /**
-   * Adds a new parcel to the saved data.
-   *
-   * <p>Validation:
+   * Validation:
    *
    * <ul>
    *   <li>UUID must be unique
    *   <li>Bounding box must not overlap with existing parcels
    * </ul>
    *
-   * @param parcel the parcel to add
    * @throws IllegalArgumentException if UUID or bounding box conflicts with existing parcels
    */
   public void addNewParcel(Parcel parcel) throws IllegalArgumentException {
@@ -101,9 +81,9 @@ public final class GitParcelLevelSavedData extends SavedData {
     }
 
     parcel.setLevelSavedData(this);
-    parcels.put(parcel.uuid(), parcel);
+    parcels.put(parcel);
     setDirty();
-    emitParcelsUpdateIncremental(List.of(parcel));
+    emitParcelUpdate(parcel);
   }
 
   /**
@@ -126,25 +106,16 @@ public final class GitParcelLevelSavedData extends SavedData {
     return parcels.get(uuid);
   }
 
-  public @Nullable Parcel getParcel(BlockPos pos) {
-    for (var parcel : parcels.values()) {
-      if (parcel.getBoundingBox().isInside(pos)) {
-        return parcel;
-      }
-    }
-    return null;
-  }
-
-  public void emitParcelsUpdateIncremental(List<Parcel> parcels) {
+  public void emitParcelUpdate(Parcel parcel) {
     if (level != null) {
-      var payload = UpdateParcelsS2CPayload.incremental(parcels);
+      var payload = UpdateParcelsS2CPayload.incremental(parcel);
       NetworkUtils.sendToAllPlayers(level, payload);
     }
   }
 
   public void emitParcelsDeleted(UUID uuid) {
     if (level != null) {
-      var payload = UpdateParcelsS2CPayload.removalsOnly(List.of(uuid));
+      var payload = UpdateParcelsS2CPayload.removals(List.of(uuid));
       NetworkUtils.sendToAllPlayers(level, payload);
     }
   }

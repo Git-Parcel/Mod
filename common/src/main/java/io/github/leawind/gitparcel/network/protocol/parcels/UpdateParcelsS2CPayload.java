@@ -5,6 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.GitParcel;
 import io.github.leawind.gitparcel.client.GitParcelClient;
 import io.github.leawind.gitparcel.world.Parcel;
+import io.github.leawind.gitparcel.world.Parcels;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.client.player.LocalPlayer;
@@ -16,8 +17,8 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NonNull;
 
-public record UpdateParcelsS2CPayload(
-    List<Parcel> parcels, List<UUID> removedUuids, boolean isFullSync)
+// TODO List<UUID> to Set<UUID>
+public record UpdateParcelsS2CPayload(Parcels parcels, List<UUID> removedUuids, boolean isFullSync)
     implements CustomPacketPayload {
   public static final Identifier ID = GitParcel.identifier("update_parcels");
   public static final CustomPacketPayload.Type<UpdateParcelsS2CPayload> TYPE =
@@ -27,10 +28,7 @@ public record UpdateParcelsS2CPayload(
           instance ->
               instance
                   .group(
-                      Parcel.CODEC
-                          .listOf()
-                          .fieldOf("parcels")
-                          .forGetter(UpdateParcelsS2CPayload::parcels),
+                      Parcels.CODEC.fieldOf("parcels").forGetter(UpdateParcelsS2CPayload::parcels),
                       UUIDUtil.CODEC
                           .listOf()
                           .fieldOf("removed_uuids")
@@ -48,25 +46,21 @@ public record UpdateParcelsS2CPayload(
     return TYPE;
   }
 
-  public static UpdateParcelsS2CPayload fullSync(List<Parcel> parcels) {
+  public static UpdateParcelsS2CPayload fullSync(Parcels parcels) {
     return new UpdateParcelsS2CPayload(parcels, List.of(), true);
   }
 
-  public static UpdateParcelsS2CPayload incremental(List<Parcel> parcels) {
-    return new UpdateParcelsS2CPayload(parcels, List.of(), false);
-  }
-
   public static UpdateParcelsS2CPayload incremental(Parcel parcel) {
-    return new UpdateParcelsS2CPayload(List.of(parcel), List.of(), false);
+    return new UpdateParcelsS2CPayload(Parcels.singleton(parcel), List.of(), false);
   }
 
   public static UpdateParcelsS2CPayload incrementalWithRemovals(
       List<Parcel> parcels, List<UUID> removedUuids) {
-    return new UpdateParcelsS2CPayload(parcels, removedUuids, false);
+    return new UpdateParcelsS2CPayload(new Parcels(parcels), removedUuids, false);
   }
 
-  public static UpdateParcelsS2CPayload removalsOnly(List<UUID> removedUuids) {
-    return new UpdateParcelsS2CPayload(List.of(), removedUuids, false);
+  public static UpdateParcelsS2CPayload removals(List<UUID> removedUuids) {
+    return new UpdateParcelsS2CPayload(new Parcels(), removedUuids, false);
   }
 
   /** Client-Only */
@@ -74,13 +68,9 @@ public record UpdateParcelsS2CPayload(
     if (payload.isFullSync) {
       GitParcelClient.PARCELS.clear();
     } else {
-      for (var uuid : payload.removedUuids) {
-        GitParcelClient.PARCELS.remove(uuid);
-      }
+      GitParcelClient.PARCELS.removeAll(payload.removedUuids);
     }
 
-    for (var parcel : payload.parcels) {
-      GitParcelClient.PARCELS.put(parcel.uuid(), parcel);
-    }
+    GitParcelClient.PARCELS.putAll(payload.parcels);
   }
 }
