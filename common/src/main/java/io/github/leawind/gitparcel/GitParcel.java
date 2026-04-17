@@ -99,10 +99,7 @@ public final class GitParcel {
         SingletonArgumentInfo.contextFree(ParcelFormatArgument::loader));
 
     InvokeArgumentTypeInfos.register(
-        registry,
-        "gitparcel:parcel",
-        ParcelArgument.class,
-        SingletonArgumentInfo.contextFree(ParcelArgument::singleParcel));
+        registry, "gitparcel:parcel", ParcelArgument.class, new ParcelArgument.Info());
   }
 
   public static void registerCommands(

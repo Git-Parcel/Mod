@@ -1,5 +1,6 @@
 package io.github.leawind.gitparcel.commands.arguments;
 
+import com.google.gson.JsonObject;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -19,9 +20,13 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import net.minecraft.client.multiplayer.ClientSuggestionProvider;
+import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.synchronization.ArgumentTypeInfo;
+import net.minecraft.network.FriendlyByteBuf;
+import org.jspecify.annotations.NonNull;
 
 /**
  * @see EntityArgument
@@ -134,5 +139,47 @@ public class ParcelArgument implements ArgumentType<ParcelSelector> {
   @Override
   public Collection<String> getExamples() {
     return EXAMPLES;
+  }
+
+  public static class Info implements ArgumentTypeInfo<ParcelArgument, Info.Template> {
+    private static final byte FLAG_SINGLE = 1;
+
+    public void serializeToNetwork(Info.Template template, @NonNull FriendlyByteBuf buf) {
+      int i = 0;
+      if (template.single) {
+        i |= FLAG_SINGLE;
+      }
+      buf.writeByte(i);
+    }
+
+    public Info.@NonNull Template deserializeFromNetwork(FriendlyByteBuf buf) {
+      byte b = buf.readByte();
+      return new Info.Template((b & FLAG_SINGLE) != 0);
+    }
+
+    public void serializeToJson(Info.Template template, JsonObject obj) {
+      obj.addProperty("isSingle", template.single);
+    }
+
+    public Info.@NonNull Template unpack(ParcelArgument arg) {
+      return new Info.Template(arg.isSingle);
+    }
+
+    public final class Template implements ArgumentTypeInfo.Template<ParcelArgument> {
+      final boolean single;
+
+      Template(boolean single) {
+        this.single = single;
+      }
+
+      public @NonNull ParcelArgument instantiate(@NonNull CommandBuildContext context) {
+        return new ParcelArgument(this.single);
+      }
+
+      @Override
+      public @NonNull ArgumentTypeInfo<ParcelArgument, ?> type() {
+        return ParcelArgument.Info.this;
+      }
+    }
   }
 }
