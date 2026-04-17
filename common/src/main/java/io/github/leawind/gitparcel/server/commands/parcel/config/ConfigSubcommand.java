@@ -91,7 +91,7 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
   private static ArgumentBuilder<CommandSourceStack, ?> buildMetaName() {
     return Commands.literal("meta.name")
         .then(
-            Commands.argument("name", StringArgumentType.word())
+            Commands.argument("name", StringArgumentType.string())
                 .executes(
                     ctx ->
                         handle(
