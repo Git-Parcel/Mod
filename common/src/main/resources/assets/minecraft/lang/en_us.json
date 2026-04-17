@@ -28,6 +28,7 @@
   "command.gitparcel.parcel_debug.save.success": "Save successful",
   "command.gitparcel.parcel_debug.unexpected_error": "Unexpected error: %s",
   "command.gitparcel.parcel.config.set.success": "Set parcel %s %s to '%s'",
+  "command.gitparcel.parcel.config.invalid_name": "Invalid name: '%s'",
   "command.gitparcel.parcel.create.failure": "Failed to create parcel: %s",
   "command.gitparcel.parcel.create.success": "Created parcel: from %s to %s",
   "command.gitparcel.parcel.delete.success": "Deleted %d parcels",

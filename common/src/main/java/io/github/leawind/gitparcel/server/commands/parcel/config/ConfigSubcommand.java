@@ -5,17 +5,22 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.commands.arguments.ParcelFormatArgument;
 import io.github.leawind.gitparcel.permission.WorldPermissions;
 import io.github.leawind.gitparcel.server.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.world.Parcel;
-import java.util.function.BiConsumer;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 
 public class ConfigSubcommand extends GitParcelBaseCommand {
+
+  public static final DynamicCommandExceptionType ERROR_INVALID_NAME =
+      new DynamicCommandExceptionType(
+          name -> GitParcelTranslations.of("command.gitparcel.parcel.config.invalid_name", name));
+
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
     var set =
         Commands.literal("set")
@@ -36,11 +41,15 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
   // Helpers
   // ////////////////////////////////////////////////////////////////
 
+  private interface Setter<T> {
+    void set(Parcel parcel, T value) throws CommandSyntaxException;
+  }
+
   private static <T> int handle(
       CommandContext<CommandSourceStack> ctx,
       String key,
       ParcelValueReader<T> valueReader,
-      BiConsumer<Parcel, T> setter)
+      Setter<T> setter)
       throws CommandSyntaxException {
     var source = ctx.getSource();
     if (!validateWorldPermission(source, WorldPermissions.CONFIG_PARCEL)) {
@@ -50,7 +59,7 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
     var parcel = ParcelArgument.getSingleParcel(ctx, "parcel");
     var value = valueReader.read(ctx);
 
-    setter.accept(parcel, value);
+    setter.set(parcel, value);
     parcel.emitUpdate();
 
     source.sendSuccess(
@@ -98,7 +107,13 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
                             ctx,
                             "meta.name",
                             c -> StringArgumentType.getString(c, "name"),
-                            (p, v) -> p.meta().setName(v))));
+                            (parcel, name) -> {
+                              try {
+                                parcel.meta().setName(name);
+                              } catch (IllegalArgumentException e) {
+                                throw ERROR_INVALID_NAME.create(name);
+                              }
+                            })));
   }
 
   private static ArgumentBuilder<CommandSourceStack, ?> buildMetaAuthor() {

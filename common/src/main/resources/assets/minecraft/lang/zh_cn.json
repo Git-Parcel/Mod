@@ -28,6 +28,7 @@
   "command.gitparcel.parcel_debug.save.success": "保存成功",
   "command.gitparcel.parcel_debug.unexpected_error": "意外错误: %s",
   "command.gitparcel.parcel.config.set.success": "已将 Parcel %s 的 %s 设为 '%s'",
+  "command.gitparcel.parcel.config.invalid_name": "无效的名称: '%s'",
   "command.gitparcel.parcel.create.failure": "创建 Parcel 失败: %s",
   "command.gitparcel.parcel.create.success": "已创建 Parcel：从 %s 到 %s",
   "command.gitparcel.parcel.delete.success": "已删除 %d 个 Parcel",

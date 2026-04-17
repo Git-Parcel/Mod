@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Rotation;
@@ -49,12 +50,24 @@ public final class ParcelMeta {
                           .forGetter(ParcelMeta::getExcludeEntities))
                   .apply(inst, ParcelMeta::new));
 
+  //  public static final Pattern NAME_PATTERN = Pattern.compile("^[\\p{L}\\p{N}\\p{P} ]{1,255}$");
+  public static final Pattern NAME_PATTERN =
+      Pattern.compile("^(?!.* {2,})[\\p{L}\\p{N}\\p{P} ]{1,255}$");
+
+  public static boolean isValidDisplayName(String name) {
+    return NAME_PATTERN.matcher(name).matches();
+  }
+
   private ParcelFormat.Info formatInfo;
   private int dataVersion;
   private Vec3i size;
   private Vec3i anchor;
 
+  /**
+   * @see #NAME_PATTERN
+   */
   private @Nullable String name = null;
+
   private @Nullable String description = null;
   private @Nullable String author = null;
   private @Nullable List<String> tags = null;
@@ -164,7 +177,10 @@ public final class ParcelMeta {
   }
 
   /** Sets the name. */
-  public void setName(@Nullable String name) {
+  public void setName(@Nullable String name) throws IllegalArgumentException {
+    if (!isValidDisplayName(name)) {
+      throw new IllegalArgumentException("Invalid name: " + name);
+    }
     this.name = name;
   }
 
