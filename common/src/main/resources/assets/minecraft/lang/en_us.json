@@ -30,6 +30,7 @@
   "command.gitparcel.parcel.config.set.success": "Set parcel %s %s to '%s'",
   "command.gitparcel.parcel.create.failure": "Failed to create parcel: %s",
   "command.gitparcel.parcel.create.success": "Created parcel: from %s to %s",
+  "command.gitparcel.parcel.delete.success": "Deleted %d parcels",
   "command.gitparcel.parcel.formats.list.header": "Supported parcel formats: {%d savers, %d loaders}",
   "command.gitparcel.parcel.formats.list.loaders_header": "Loaders:",
   "command.gitparcel.parcel.formats.list.savers_header": "Savers:",

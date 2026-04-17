@@ -30,6 +30,7 @@
   "command.gitparcel.parcel.config.set.success": "已将 Parcel %s 的 %s 设为 '%s'",
   "command.gitparcel.parcel.create.failure": "创建 Parcel 失败: %s",
   "command.gitparcel.parcel.create.success": "已创建 Parcel：从 %s 到 %s",
+  "command.gitparcel.parcel.delete.success": "已删除 %d 个 Parcel",
   "command.gitparcel.parcel.formats.list.header": "支持的 parcel 格式：{%d 个保存器，%d 个加载器}",
   "command.gitparcel.parcel.formats.list.loaders_header": "加载器:",
   "command.gitparcel.parcel.formats.list.savers_header": "保存器:",
