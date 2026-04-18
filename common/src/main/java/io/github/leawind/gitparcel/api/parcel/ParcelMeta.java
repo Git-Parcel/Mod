@@ -36,18 +36,25 @@ public final class ParcelMeta {
                       Codec.INT.fieldOf("dataVersion").forGetter(ParcelMeta::dataVersion),
                       Vec3i.CODEC.fieldOf("size").forGetter(ParcelMeta::size),
                       Vec3i.CODEC.fieldOf("anchor").forGetter(ParcelMeta::anchor),
-                      Codec.STRING.optionalFieldOf("key").forGetter(ParcelMeta::getName),
+                      Codec.STRING
+                          .optionalFieldOf("key")
+                          .forGetter(d -> Optional.ofNullable(d.name)),
                       Codec.STRING
                           .optionalFieldOf("description")
-                          .forGetter(ParcelMeta::getDescription),
-                      Codec.STRING.optionalFieldOf("author").forGetter(ParcelMeta::getAuthor),
-                      Codec.STRING.listOf().optionalFieldOf("tags").forGetter(ParcelMeta::getTags),
+                          .forGetter(d -> Optional.ofNullable(d.description)),
+                      Codec.STRING
+                          .optionalFieldOf("author")
+                          .forGetter(d -> Optional.ofNullable(d.author)),
+                      Codec.STRING
+                          .listOf()
+                          .optionalFieldOf("tags")
+                          .forGetter(d -> Optional.ofNullable(d.tags)),
                       Codec.unboundedMap(Codec.STRING, ModDependency.CODEC)
                           .optionalFieldOf("mods")
-                          .forGetter(ParcelMeta::getMods),
+                          .forGetter(d -> Optional.ofNullable(d.mods)),
                       Codec.BOOL
-                          .optionalFieldOf("excludeEntities")
-                          .forGetter(ParcelMeta::getExcludeEntities))
+                          .optionalFieldOf("exclude_entities")
+                          .forGetter(d -> Optional.ofNullable(d.excludeEntities)))
                   .apply(inst, ParcelMeta::new));
 
   //  public static final Pattern NAME_PATTERN = Pattern.compile("^[\\p{L}\\p{N}\\p{P} ]{1,255}$");
@@ -131,32 +138,28 @@ public final class ParcelMeta {
     return anchor;
   }
 
-  private Optional<String> getName() {
-    return Optional.ofNullable(name);
-  }
-
   public @Nullable String name() {
     return name;
   }
 
-  private Optional<String> getDescription() {
-    return Optional.ofNullable(description);
+  public @Nullable String description() {
+    return description;
   }
 
-  private Optional<String> getAuthor() {
-    return Optional.ofNullable(author);
+  public @Nullable String author() {
+    return author;
   }
 
-  public Optional<List<String>> getTags() {
-    return Optional.ofNullable(tags);
+  public @Nullable List<String> tags() {
+    return tags;
   }
 
-  public Optional<Map<String, ModDependency>> getMods() {
-    return Optional.ofNullable(mods);
+  public @Nullable Map<String, ModDependency> mods() {
+    return mods;
   }
 
-  public Optional<Boolean> getExcludeEntities() {
-    return Optional.ofNullable(excludeEntities);
+  public @Nullable Boolean excludeEntities() {
+    return excludeEntities;
   }
 
   public ParcelFormat.@Nullable Saver<?> getFormatSaver() {
@@ -165,10 +168,6 @@ public final class ParcelMeta {
 
   public ParcelFormat.@Nullable Loader<?> getFormatLoader() {
     return ParcelFormatRegistry.INSTANCE.getLoader(formatInfo);
-  }
-
-  public boolean excludeEntities() {
-    return excludeEntities == null || excludeEntities;
   }
 
   /** Sets the format info. */
@@ -219,12 +218,16 @@ public final class ParcelMeta {
         RecordCodecBuilder.create(
             inst ->
                 inst.group(
-                        Codec.STRING.optionalFieldOf("min").forGetter(ModDependency::getMin),
-                        Codec.STRING.optionalFieldOf("max").forGetter(ModDependency::getMax),
+                        Codec.STRING
+                            .optionalFieldOf("min")
+                            .forGetter(d -> Optional.ofNullable(d.min)),
+                        Codec.STRING
+                            .optionalFieldOf("max")
+                            .forGetter(d -> Optional.ofNullable(d.max)),
                         Codec.STRING
                             .listOf()
                             .optionalFieldOf("namespaces")
-                            .forGetter(ModDependency::getNamespaces))
+                            .forGetter(d -> Optional.ofNullable(d.namespaces)))
                     .apply(inst, ModDependency::new));
 
     public static final ModDependency ANY = new ModDependency((String) null, null, null);
@@ -235,16 +238,16 @@ public final class ParcelMeta {
       this(min.orElse(null), max.orElse(null), namespaces.orElse(null));
     }
 
-    public Optional<String> getMin() {
-      return Optional.ofNullable(min);
+    public @Nullable String min() {
+      return min;
     }
 
-    public Optional<String> getMax() {
-      return Optional.ofNullable(max);
+    public @Nullable String max() {
+      return max;
     }
 
-    public Optional<List<String>> getNamespaces() {
-      return Optional.ofNullable(namespaces);
+    public @Nullable List<String> namespaces() {
+      return namespaces;
     }
   }
 

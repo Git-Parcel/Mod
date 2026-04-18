@@ -19,13 +19,13 @@ public final class GitParcelWorldSavedData extends SavedData {
               inst.group(
                       WorldPermissions.CONFIG_CODEC
                           .fieldOf("permissions")
-                          .forGetter(GitParcelWorldSavedData::getPermissions),
+                          .forGetter(GitParcelWorldSavedData::permissions),
                       ParcelPermissions.CONFIG_CODEC
                           .fieldOf("parcel_default_permissions")
-                          .forGetter(GitParcelWorldSavedData::getParcelDefaultPermissions),
+                          .forGetter(GitParcelWorldSavedData::parcelDefaultPermissions),
                       Codec.LONG
                           .optionalFieldOf("max_parcel_volume", DEFAULT_MAX_PARCEL_VOLUME)
-                          .forGetter(GitParcelWorldSavedData::getMaxParcelVolume))
+                          .forGetter(GitParcelWorldSavedData::maxParcelVolume))
                   .apply(inst, GitParcelWorldSavedData::new));
 
   public static final SavedDataType<GitParcelWorldSavedData> TYPE =
@@ -37,19 +37,19 @@ public final class GitParcelWorldSavedData extends SavedData {
 
   private long maxParcelVolume;
 
-  public PermissionConfig<WorldPermissions> getPermissions() {
+  public PermissionConfig<WorldPermissions> permissions() {
     return permissions;
   }
 
-  public PermissionConfig<ParcelPermissions> getParcelDefaultPermissions() {
+  public PermissionConfig<ParcelPermissions> parcelDefaultPermissions() {
     return parcelDefaultPermissions;
   }
 
-  public long getMaxParcelVolume() {
+  public long maxParcelVolume() {
     return maxParcelVolume;
   }
 
-  public void setMaxParcelVolume(long maxParcelVolume) {
+  public void maxParcelVolume(long maxParcelVolume) {
     this.maxParcelVolume = maxParcelVolume;
     setDirty();
   }

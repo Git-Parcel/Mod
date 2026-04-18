@@ -160,8 +160,12 @@ public class SystemStorageManager {
         RecordCodecBuilder.create(
             inst ->
                 inst.group(
-                        Codec.STRING.optionalFieldOf("sharedDir").forGetter(Config::sharedPath),
-                        Codec.STRING.optionalFieldOf("cachedDir").forGetter(Config::cachedPath))
+                        Codec.STRING
+                            .optionalFieldOf("sharedDir")
+                            .forGetter(c -> Optional.ofNullable(c.sharedDir)),
+                        Codec.STRING
+                            .optionalFieldOf("cachedDir")
+                            .forGetter(c -> Optional.ofNullable(c.cachedDir)))
                     .apply(inst, Config::new));
 
     /**
@@ -194,14 +198,6 @@ public class SystemStorageManager {
     private Config(Optional<String> sharedDir, Optional<String> cachedDir) {
       this.sharedDir = sharedDir.orElse(null);
       this.cachedDir = cachedDir.orElse(null);
-    }
-
-    private Optional<String> sharedPath() {
-      return Optional.ofNullable(sharedDir);
-    }
-
-    private Optional<String> cachedPath() {
-      return Optional.ofNullable(cachedDir);
     }
 
     private @Nullable String getSharedDir() {

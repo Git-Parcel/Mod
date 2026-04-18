@@ -62,7 +62,7 @@ public final class ParcelSelector {
     if (!useSelector()) {
       return;
     }
-    var permissions = GitParcelWorldSavedData.get(source.getServer()).getPermissions();
+    var permissions = GitParcelWorldSavedData.get(source.getServer()).permissions();
     if (!permissions.permits(WorldPermissions.LIST_PARCELS, source.permissions())) {
       throw ParcelArgument.ERROR_SELECTOR_NOT_ALLOWED.create();
     }
