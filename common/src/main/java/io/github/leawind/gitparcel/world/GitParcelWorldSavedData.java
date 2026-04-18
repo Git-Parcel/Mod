@@ -11,6 +11,8 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
 public final class GitParcelWorldSavedData extends SavedData {
+  private static final long DEFAULT_MAX_PARCEL_VOLUME = 128 * 128 * 128;
+
   public static final Codec<GitParcelWorldSavedData> CODEC =
       RecordCodecBuilder.create(
           inst ->
@@ -20,7 +22,10 @@ public final class GitParcelWorldSavedData extends SavedData {
                           .forGetter(GitParcelWorldSavedData::getPermissions),
                       ParcelPermissions.CONFIG_CODEC
                           .fieldOf("parcel_default_permissions")
-                          .forGetter(GitParcelWorldSavedData::getParcelDefaultPermissions))
+                          .forGetter(GitParcelWorldSavedData::getParcelDefaultPermissions),
+                      Codec.LONG
+                          .optionalFieldOf("max_parcel_volume", DEFAULT_MAX_PARCEL_VOLUME)
+                          .forGetter(GitParcelWorldSavedData::getMaxParcelVolume))
                   .apply(inst, GitParcelWorldSavedData::new));
 
   public static final SavedDataType<GitParcelWorldSavedData> TYPE =
@@ -30,6 +35,8 @@ public final class GitParcelWorldSavedData extends SavedData {
   private final PermissionConfig<WorldPermissions> permissions;
   private final PermissionConfig<ParcelPermissions> parcelDefaultPermissions;
 
+  private long maxParcelVolume;
+
   public PermissionConfig<WorldPermissions> getPermissions() {
     return permissions;
   }
@@ -38,17 +45,29 @@ public final class GitParcelWorldSavedData extends SavedData {
     return parcelDefaultPermissions;
   }
 
+  public long getMaxParcelVolume() {
+    return maxParcelVolume;
+  }
+
+  public void setMaxParcelVolume(long maxParcelVolume) {
+    this.maxParcelVolume = maxParcelVolume;
+    setDirty();
+  }
+
   private GitParcelWorldSavedData() {
     this(
         new PermissionConfig<>(WorldPermissions.REGISTRY),
-        new PermissionConfig<>(ParcelPermissions.REGISTRY));
+        new PermissionConfig<>(ParcelPermissions.REGISTRY),
+        DEFAULT_MAX_PARCEL_VOLUME);
   }
 
   private GitParcelWorldSavedData(
       PermissionConfig<WorldPermissions> permissions,
-      PermissionConfig<ParcelPermissions> parcelDefaultPermissions) {
+      PermissionConfig<ParcelPermissions> parcelDefaultPermissions,
+      long maxParcelVolume) {
     this.permissions = permissions;
     this.parcelDefaultPermissions = parcelDefaultPermissions;
+    this.maxParcelVolume = maxParcelVolume;
   }
 
   public static GitParcelWorldSavedData get(MinecraftServer server) {
@@ -58,6 +77,7 @@ public final class GitParcelWorldSavedData extends SavedData {
   public void reset() {
     permissions.clearAll();
     parcelDefaultPermissions.clearAll();
+    maxParcelVolume = DEFAULT_MAX_PARCEL_VOLUME;
     setDirty();
   }
 }

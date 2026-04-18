@@ -60,11 +60,22 @@ public final class GitParcelLevelSavedData extends SavedData {
    * <ul>
    *   <li>UUID must be unique
    *   <li>Bounding box must not overlap with existing parcels
+   *   <li>Parcel volume is too big
    * </ul>
-   *
-   * @throws IllegalArgumentException if UUID or bounding box conflicts with existing parcels
    */
   public void addNewParcel(Parcel parcel) throws IllegalArgumentException {
+    {
+      assert level != null;
+      var worldSavedData = GitParcelWorldSavedData.get(level.getServer());
+      var size = parcel.meta().size();
+      var volume = size.getX() * size.getY() * size.getZ();
+      long limit = worldSavedData.getMaxParcelVolume();
+      if (volume >= limit) {
+        throw new IllegalArgumentException(
+            String.format("Parcel is too big: %d > %d", volume, limit));
+      }
+    }
+
     // Check: unique uuid
     if (parcels.containsKey(parcel.uuid())) {
       throw new IllegalArgumentException(
