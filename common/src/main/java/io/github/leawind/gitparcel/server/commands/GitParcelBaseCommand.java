@@ -18,7 +18,7 @@ public abstract class GitParcelBaseCommand {
       CommandSourceStack source,
       PermissionType<WorldPermissions> type,
       GitParcelWorldSavedData worldSavedData) {
-    PermissionConfig<WorldPermissions> permissions = worldSavedData.getPermissions();
+    PermissionConfig<WorldPermissions> permissions = worldSavedData.permissions();
     if (!permissions.permits(type, source.permissions())) {
       source.sendFailure(GitParcelTranslations.of("command.gitparcel.no_permission"));
       return false;

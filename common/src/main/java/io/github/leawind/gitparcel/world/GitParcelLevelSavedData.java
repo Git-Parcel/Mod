@@ -69,7 +69,7 @@ public final class GitParcelLevelSavedData extends SavedData {
       var worldSavedData = GitParcelWorldSavedData.get(level.getServer());
       var size = parcel.meta().size();
       var volume = size.getX() * size.getY() * size.getZ();
-      long limit = worldSavedData.getMaxParcelVolume();
+      long limit = worldSavedData.maxParcelVolume();
       if (volume >= limit) {
         throw new IllegalArgumentException(
             String.format("Parcel is too big: %d > %d", volume, limit));
