@@ -49,6 +49,9 @@ test {
 	useJUnitPlatform()
 }
 
+tasks.named('javadoc', Javadoc).configure {
+	options.addStringOption('Xdoclint:-missing', '-quiet')
+}
 configurations {
 	commonJava {
 		canBeResolved = false
