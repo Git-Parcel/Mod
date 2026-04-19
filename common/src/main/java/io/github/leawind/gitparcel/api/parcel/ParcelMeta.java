@@ -146,20 +146,8 @@ public final class ParcelMeta {
     return description;
   }
 
-  public @Nullable String author() {
-    return author;
-  }
-
-  public @Nullable List<String> tags() {
-    return tags;
-  }
-
-  public @Nullable Map<String, ModDependency> mods() {
-    return mods;
-  }
-
-  public @Nullable Boolean excludeEntities() {
-    return excludeEntities;
+  public boolean getExcludeEntities() {
+    return Boolean.TRUE.equals(excludeEntities);
   }
 
   public ParcelFormat.@Nullable Saver<?> getFormatSaver() {

@@ -405,7 +405,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
         meta.anchor(),
         transform,
         getDataDir(parcelDir),
-        ignoreEntities && meta.excludeEntities(),
+        ignoreEntities && meta.getExcludeEntities(),
         actualConfig);
   }
 
