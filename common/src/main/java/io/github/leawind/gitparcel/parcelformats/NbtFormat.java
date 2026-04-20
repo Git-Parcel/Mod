@@ -1,6 +1,7 @@
 package io.github.leawind.gitparcel.parcelformats;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.github.leawind.inventory.just.Result;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,7 +48,7 @@ public enum NbtFormat {
     }
   }
 
-  public CompoundTag read(Path path) throws IOException, CommandSyntaxException {
+  public Result<CompoundTag, String> read(Path path) {
     return switch (this) {
       case Binary -> readBinary(path);
       case Text -> readText(path);
@@ -58,26 +59,19 @@ public enum NbtFormat {
     this.suffix = suffix;
   }
 
-  /**
-   * Reads an NBT tag from the specified path in binary format.
-   *
-   * @param path the path to read the NBT tag from.
-   * @return the NBT tag read from the path.
-   * @throws IOException if an I/O error occurs while reading the NBT tag from the path.
-   */
-  public static CompoundTag readBinary(Path path) throws IOException {
-    return NbtIo.read(path);
+  public static Result<CompoundTag, String> readBinary(Path path) {
+    try {
+      return Result.ok(NbtIo.read(path));
+    } catch (IOException e) {
+      return Result.err(e.getMessage());
+    }
   }
 
-  /**
-   * Reads an NBT tag from the specified path in text format.
-   *
-   * @param path the path to read the NBT tag from. Must exist.
-   * @return the NBT tag read from the path.
-   * @throws IOException if an I/O error occurs while reading the NBT tag from the path.
-   * @throws CommandSyntaxException if the NBT tag in the path is not valid.
-   */
-  public static CompoundTag readText(Path path) throws IOException, CommandSyntaxException {
-    return TagParser.parseCompoundFully(Files.readString(path));
+  public static Result<CompoundTag, String> readText(Path path) {
+    try {
+      return Result.ok(TagParser.parseCompoundFully(Files.readString(path)));
+    } catch (IOException | CommandSyntaxException e) {
+      return Result.err(e.getMessage());
+    }
   }
 }
