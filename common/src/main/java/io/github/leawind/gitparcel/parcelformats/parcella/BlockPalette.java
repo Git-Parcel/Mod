@@ -8,6 +8,7 @@ import io.github.leawind.gitparcel.parcelformats.NbtFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.d32.ParcellaD32Format;
 import io.github.leawind.gitparcel.utils.IntIdPalette;
 import io.github.leawind.gitparcel.utils.numbase.HexUtils;
+import io.github.leawind.inventory.just.Result;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.io.BufferedReader;
@@ -161,11 +162,17 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
     return sb.toString();
   }
 
-  public static BlockState parseBlockState(
-      String blockStateString, LevelReader level, boolean allowNbt) throws CommandSyntaxException {
-    return BlockStateParser.parseForBlock(
-            level.holderLookup(Registries.BLOCK), blockStateString, allowNbt)
-        .blockState();
+  public static Result<BlockState, String> parseBlockState(
+      String blockStateString, LevelReader level, boolean allowNbt) {
+    try {
+      var blockState =
+          BlockStateParser.parseForBlock(
+                  level.holderLookup(Registries.BLOCK), blockStateString, allowNbt)
+              .blockState();
+      return Result.ok(blockState);
+    } catch (CommandSyntaxException e) {
+      return Result.err(e.getMessage());
+    }
   }
 
   public record Data(BlockState blockState, @Nullable CompoundTag nbt) {
@@ -255,16 +262,15 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
     }
 
     for (var entry : entries) {
-      BlockState blockState;
-      try {
-        blockState = parseBlockState(entry.blockStateString, level, false);
-      } catch (CommandSyntaxException e) {
-        ParcellaD32Format.LOGGER.error(
-            "Skip because failed to parse block state '{}': {}",
-            entry.blockStateString,
-            e.getMessage());
-        continue;
-      }
+      var blockState =
+          switch (parseBlockState(entry.blockStateString, level, false)) {
+            case Result.Ok(BlockState value) -> value;
+            case Result.Err(String msg) -> {
+              ParcellaD32Format.LOGGER.error(
+                  "Skip because failed to parse block state '{}': {}", entry.blockStateString, msg);
+              yield null;
+            }
+          };
 
       CompoundTag nbt = null;
       if (entry.hasNbt) {
