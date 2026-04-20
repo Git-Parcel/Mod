@@ -275,14 +275,15 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
       CompoundTag nbt = null;
       if (entry.hasNbt) {
         Path nbtFile = nbtDir.resolve(HexUtils.toHexUpperCase(entry.id) + nbtFormat.suffix);
-        try {
-          nbt = nbtFormat.read(nbtFile);
-        } catch (IOException e) {
-          ParcellaD32Format.LOGGER.error("Failed to read NBT file {}: {}", nbtFile, e.getMessage());
-        } catch (CommandSyntaxException e) {
-          ParcellaD32Format.LOGGER.error(
-              "Syntax error in NBT file {}: {}", nbtFile, e.getMessage());
-        }
+
+        nbt =
+            switch (nbtFormat.read(nbtFile)) {
+              case Result.Ok(CompoundTag value) -> value;
+              case Result.Err(String msg) -> {
+                ParcellaD32Format.LOGGER.error("Failed to read NBT file {}: {}", nbtFile, msg);
+                yield null;
+              }
+            };
       }
 
       palette.insert(entry.id, new Data(blockState, nbt));
