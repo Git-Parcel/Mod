@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.api.parcel;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
+import io.github.leawind.gitparcel.world.Parcel;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +14,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -192,6 +196,26 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
         boolean ignoreEntities,
         @Nullable C config)
         throws IOException;
+
+    default void save(
+        Level level,
+        BoundingBox boundingBox,
+        Rotation rotation,
+        Mirror mirror,
+        @Nullable C config,
+        Path parcelDir,
+        boolean ignoreEntities)
+        throws IOException, ParcelException {
+      var pivot = Parcel.getPivotBlockPos(mirror, rotation, boundingBox);
+      ParcelTransform transform = new ParcelTransform(mirror, rotation, pivot);
+
+      Vec3i sizeWorldSpace =
+          new Vec3i(boundingBox.getXSpan(), boundingBox.getYSpan(), boundingBox.getZSpan());
+      Vec3i sizeParcelSpace = ParcelTransform.rotateSize(rotation, sizeWorldSpace);
+      ParcelMeta meta = new ParcelMeta(info(), sizeParcelSpace, Vec3i.ZERO);
+
+      ParcelFormat.save(level, transform, meta, config, parcelDir, ignoreEntities);
+    }
   }
 
   /**
