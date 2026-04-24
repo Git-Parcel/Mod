@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}-gametest",
+  "version": "${version}",
+  "name": "${mod_name} Game Test",
+  "icon": "${mod_id}.png",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-gametest": ["io.github.leawind.gitparcel.platform.gametest.GitParcelGameTestFabric"],
+    "fabric-client-gametest": []
+  }
+}
