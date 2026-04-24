@@ -84,7 +84,8 @@ jar {
 	}
 }
 
-processResources {
+// Apply resource expansion for all source sets
+tasks.withType(ProcessResources).configureEach {
 	var expandProps = [
 			'version'                      : version,
 			'group'                        : project.group, //Else we target the task's group.
