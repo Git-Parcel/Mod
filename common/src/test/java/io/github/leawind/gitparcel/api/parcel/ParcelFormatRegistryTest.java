@@ -63,8 +63,8 @@ public class ParcelFormatRegistryTest {
         Path dataDir,
         boolean ignoreEntities,
         ParcelFormatConfig.@Nullable None config)
-        throws IOException {
-      throw new IOException("Unimplemented");
+        throws IOException, ParcelException.UnsupportedFeature {
+      throw new UnsupportedOperationException();
     }
   }
 
@@ -86,7 +86,7 @@ public class ParcelFormatRegistryTest {
         @Block.UpdateFlags int flags,
         ParcelFormatConfig.@Nullable None config)
         throws IOException, ParcelException.CorruptedParcelException {
-      throw new IOException("Unimplemented");
+      throw new UnsupportedOperationException();
     }
   }
 }

@@ -44,10 +44,9 @@ public class StructureTemplateFormat
       Path dataDir,
       boolean ignoreEntities,
       ParcelFormatConfig.@Nullable None config)
-      throws IOException {
+      throws IOException, ParcelException.UnsupportedFeature {
     if (transform.hasOrientation()) {
-      throw new UnsupportedOperationException(
-          "Mirror or rotation transform is not supported by this format");
+      throw new ParcelException.UnsupportedFeature(info(), Feature.ROTATE, Feature.MIRROR);
     }
 
     StructureTemplate template = new StructureTemplate();

@@ -40,7 +40,7 @@ public class AbstractGitParcelTest {
   protected static class TestSaver extends TestFormat
       implements ParcelFormat.Saver<ParcelFormatConfig.None> {
 
-    protected TestSaver(String id, int version) {
+    public TestSaver(String id, int version) {
       super(id, version);
     }
 
@@ -53,7 +53,7 @@ public class AbstractGitParcelTest {
         Path dataDir,
         boolean ignoreEntities,
         ParcelFormatConfig.@Nullable None config)
-        throws IOException {
+        throws IOException, ParcelException.UnsupportedFeature {
       throw new IOException("Unimplemented");
     }
   }

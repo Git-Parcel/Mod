@@ -7,6 +7,7 @@ import io.github.leawind.gitparcel.api.parcel.config.ConfigItemBuilder;
 import io.github.leawind.gitparcel.parcelformats.NbtFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.SubparcelFormat;
 import java.nio.file.Path;
+import java.util.EnumSet;
 import org.jspecify.annotations.NonNull;
 
 public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.Config> {
@@ -22,6 +23,11 @@ public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.C
   @Override
   default Info info() {
     return INFO;
+  }
+
+  @Override
+  default EnumSet<Feature> features() {
+    return EnumSet.of(Feature.ROTATE, Feature.MIRROR);
   }
 
   @Override
