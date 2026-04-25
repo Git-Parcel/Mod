@@ -1,6 +1,6 @@
-import { program } from 'npm:commander@15.0.0-0'
-import * as fs from 'npm:@leawind/inventory@0.18.6/fs'
-import log from 'npm:@leawind/inventory@0.18.6/log'
+import { program } from 'commander'
+import * as fs from '@leawind/inventory/fs'
+import log from '@leawind/inventory/log'
 import { LangsManager } from './lib/langs.ts'
 
 const LANGUAGES_DIR = fs.P`common/src/main/resources/assets/minecraft/lang`

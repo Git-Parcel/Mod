@@ -2,7 +2,8 @@
   "tasks": {
     "format": "deno fmt",
     "format-check": "deno fmt --check",
-    "i18n": "deno run -A scripts/i18n.ts --"
+    "i18n": "deno run -A scripts/i18n.ts --",
+    "gametest": "deno run -A scripts/gametest.ts --"
   },
   "lint": {
     "rules": {
@@ -36,5 +37,9 @@
       "scripts/**"
     ],
     "exclude": []
+  },
+  "imports": {
+    "@leawind/inventory": "npm:@leawind/inventory@^0.19.4",
+    "commander": "npm:commander@^14.0.3"
   }
 }
