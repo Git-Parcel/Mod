@@ -34,7 +34,7 @@ public class GitParcelGameTest {
         for (Mirror mirror : mirrors) {
           try (var tempDir = new TempDirectory(GitParcel.MOD_ID)) {
             LOGGER.info(
-                "Testing format {} with rotation={} mirror={}", format.info(), rotation, mirror);
+                "Testing format {} with rotation={} mirror={}", format.spec(), rotation, mirror);
 
             format.save(
                 helper.getLevel(),

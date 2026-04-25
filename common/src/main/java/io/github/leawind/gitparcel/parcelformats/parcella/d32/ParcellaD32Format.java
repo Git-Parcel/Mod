@@ -18,11 +18,11 @@ public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.C
   String SUBPARCELS_DIR_NAME = "subparcels";
   String SUBPARCEL_SUFFIX = ".txt";
 
-  Info INFO = new Info("parcella_d32", 0);
+  Spec SPEC = new Spec("parcella_d32", 0);
 
   @Override
-  default Info info() {
-    return INFO;
+  default Spec spec() {
+    return SPEC;
   }
 
   @Override

@@ -7,7 +7,7 @@ import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
 
 public class ParcelFormatTest {
-  Predicate<String> idValidator = ParcelFormat.Info.ID_PATTERN.asPredicate();
+  Predicate<String> idValidator = ParcelFormat.Spec.ID_PATTERN.asPredicate();
 
   @Test
   void testIdPattern() {

@@ -93,7 +93,7 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
                           ctx,
                           "meta.format",
                           c -> saver,
-                          (p, s) -> p.meta().setFormatInfo(s.info()));
+                          (p, s) -> p.meta().setFormatSpec(s.spec()));
                     }));
   }
 

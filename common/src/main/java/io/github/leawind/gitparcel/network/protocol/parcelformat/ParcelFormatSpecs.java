@@ -5,19 +5,18 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import java.util.List;
 
-public record ClientParcelFormatInfos(
-    List<ParcelFormat.Info> savers, List<ParcelFormat.Info> loaders) {
-  public static final Codec<ClientParcelFormatInfos> CODEC =
+public record ParcelFormatSpecs(List<ParcelFormat.Spec> savers, List<ParcelFormat.Spec> loaders) {
+  public static final Codec<ParcelFormatSpecs> CODEC =
       RecordCodecBuilder.create(
           inst ->
               inst.group(
-                      ParcelFormat.Info.CODEC
+                      ParcelFormat.Spec.CODEC
                           .listOf()
                           .fieldOf("savers")
-                          .forGetter(ClientParcelFormatInfos::savers),
-                      ParcelFormat.Info.CODEC
+                          .forGetter(ParcelFormatSpecs::savers),
+                      ParcelFormat.Spec.CODEC
                           .listOf()
                           .fieldOf("loaders")
-                          .forGetter(ClientParcelFormatInfos::loaders))
-                  .apply(inst, ClientParcelFormatInfos::new));
+                          .forGetter(ParcelFormatSpecs::loaders))
+                  .apply(inst, ParcelFormatSpecs::new));
 }

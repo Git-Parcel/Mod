@@ -15,23 +15,23 @@ public class ParcelException extends Exception {
 
   /** Exception thrown when a parcel format is not supported */
   public static class UnsupportedFormat extends ParcelException {
-    public final ParcelFormat.Info formatInfo;
+    public final ParcelFormat.Spec formatSpec;
 
-    public UnsupportedFormat(ParcelFormat.Info formatInfo) {
-      super(String.format("Unsupported format: %s", formatInfo));
-      this.formatInfo = formatInfo;
+    public UnsupportedFormat(ParcelFormat.Spec formatSpec) {
+      super(String.format("Unsupported format: %s", formatSpec));
+      this.formatSpec = formatSpec;
     }
   }
 
   public static class UnsupportedFeature extends ParcelException {
-    public final ParcelFormat.Info formatInfo;
+    public final ParcelFormat.Spec formatSpec;
     public final ParcelFormat.Feature[] features;
 
-    public UnsupportedFeature(ParcelFormat.Info formatInfo, ParcelFormat.Feature... features) {
+    public UnsupportedFeature(ParcelFormat.Spec formatSpec, ParcelFormat.Feature... features) {
       super(
           String.format(
-              "Unsupported features for format %s: %s", formatInfo, Arrays.toString(features)));
-      this.formatInfo = formatInfo;
+              "Unsupported features for format %s: %s", formatSpec, Arrays.toString(features)));
+      this.formatSpec = formatSpec;
       this.features = features;
     }
   }

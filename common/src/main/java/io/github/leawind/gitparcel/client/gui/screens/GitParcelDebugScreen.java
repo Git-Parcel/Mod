@@ -23,18 +23,18 @@ public class GitParcelDebugScreen extends Screen {
     this.lastScreen = lastScreen;
   }
 
-  private String getFormatInfos() {
+  private String getFormatSpecs() {
     var sb = new StringBuilder();
     sb.append("Supported Parcel Formats\n");
-    var infos = GitParcelClient.PARCEL_FORMAT_INFOS;
+    var specs = GitParcelClient.PARCEL_FORMAT_SPECS;
 
-    if (infos == null) {
+    if (specs == null) {
       sb.append("Unavailable\n");
     } else {
       sb.append("  Savers:\n");
-      infos.savers().forEach(info -> sb.append("    ").append(info).append('\n'));
+      specs.savers().forEach(spec -> sb.append("    ").append(spec).append('\n'));
       sb.append("  Loaders:\n");
-      infos.loaders().forEach(info -> sb.append("    ").append(info).append('\n'));
+      specs.loaders().forEach(spec -> sb.append("    ").append(spec).append('\n'));
     }
 
     return sb.toString();
@@ -44,7 +44,7 @@ public class GitParcelDebugScreen extends Screen {
   protected void init() {
     layout.addTitleHeader(TITLE, font);
 
-    layout.addToContents(new MultiLineTextWidget(Component.literal(getFormatInfos()), font));
+    layout.addToContents(new MultiLineTextWidget(Component.literal(getFormatSpecs()), font));
 
     layout.addToFooter(
         Button.builder(CommonComponents.GUI_BACK, button -> onClose()).width(80).build());

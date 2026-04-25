@@ -7,7 +7,7 @@ import io.github.leawind.gitparcel.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.commands.arguments.ParcelFormatArgument;
 import io.github.leawind.gitparcel.mixin.InvokeArgumentTypeInfos;
-import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatInfosS2CPayload;
+import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatSpecS2CPayload;
 import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelsS2CPayload;
 import io.github.leawind.gitparcel.parcelformats.mvp.MvpFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.d16.ParcellaD16Loader;
@@ -57,7 +57,7 @@ public final class GitParcel {
 
     GameServerApi.ON_PLAYER_JOIN.on(
         e -> {
-          var payload = UpdateParcelFormatInfosS2CPayload.from(ParcelFormatRegistry.INSTANCE);
+          var payload = UpdateParcelFormatSpecS2CPayload.from(ParcelFormatRegistry.INSTANCE);
           var serverPlayer = e.player();
           serverPlayer.connection.send(new ClientboundCustomPayloadPacket(payload));
         });

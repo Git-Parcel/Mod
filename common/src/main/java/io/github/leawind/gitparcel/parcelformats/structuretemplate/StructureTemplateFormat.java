@@ -28,11 +28,11 @@ public class StructureTemplateFormat
         ParcelFormat.Loader<ParcelFormatConfig.None> {
   String NBT_FILE_NAME = "structure.nbt";
 
-  private static final Info INFO = new Info("structure_template", 0);
+  private static final Spec SPEC = new Spec("structure_template", 0);
 
   @Override
-  public Info info() {
-    return INFO;
+  public Spec spec() {
+    return SPEC;
   }
 
   @Override
@@ -46,7 +46,7 @@ public class StructureTemplateFormat
       ParcelFormatConfig.@Nullable None config)
       throws IOException, ParcelException.UnsupportedFeature {
     if (transform.hasOrientation()) {
-      throw new ParcelException.UnsupportedFeature(info(), Feature.ROTATE, Feature.MIRROR);
+      throw new ParcelException.UnsupportedFeature(spec(), Feature.ROTATE, Feature.MIRROR);
     }
 
     StructureTemplate template = new StructureTemplate();
