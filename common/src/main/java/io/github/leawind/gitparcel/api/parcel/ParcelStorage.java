@@ -175,4 +175,19 @@ public class ParcelStorage {
         flags,
         config);
   }
+
+  public static void load(
+      ServerLevel level,
+      BoundingBox boundingBox,
+      Rotation rotation,
+      Mirror mirror,
+      Path parcelDir,
+      boolean ignoreBlocks,
+      boolean ignoreEntities,
+      @Block.UpdateFlags int flags)
+      throws IOException, ParcelException {
+    var pivot = Parcel.getPivotBlockPos(mirror, rotation, boundingBox);
+    ParcelTransform transform = new ParcelTransform(mirror, rotation, pivot);
+    load(level, transform, parcelDir, ignoreBlocks, ignoreEntities, flags);
+  }
 }
