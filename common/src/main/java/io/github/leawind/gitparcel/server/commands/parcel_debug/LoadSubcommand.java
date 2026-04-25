@@ -4,7 +4,7 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.GitParcelTranslations;
-import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.api.parcel.ParcelStorage;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.commands.arguments.FilePathArgument;
@@ -81,7 +81,7 @@ public class LoadSubcommand {
 
     try {
       // TODO load entities
-      ParcelFormat.load(source.getLevel(), transform, path, false, true, loadFlags);
+      ParcelStorage.load(source.getLevel(), transform, path, false, true, loadFlags);
 
       source.sendSuccess(
           () -> GitParcelTranslations.of("command.gitparcel.parcel_debug.load.success"), true);

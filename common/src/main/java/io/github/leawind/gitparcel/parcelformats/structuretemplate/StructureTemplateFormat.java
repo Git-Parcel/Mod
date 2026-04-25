@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.parcelformats.structuretemplate;
 import com.google.common.collect.ImmutableList;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatConfig;
+import io.github.leawind.gitparcel.api.parcel.ParcelStorage;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import java.io.IOException;
@@ -76,7 +77,8 @@ public class StructureTemplateFormat
       @Block.UpdateFlags int flags,
       ParcelFormatConfig.@Nullable None config)
       throws IOException, ParcelException.CorruptedParcelException {
-    LOGGER.info("Loading structure template with size {} and transform {}", size, transform);
+    ParcelStorage.LOGGER.info(
+        "Loading structure template with size {} and transform {}", size, transform);
 
     Path structureFile = dataDir.resolve(NBT_FILE_NAME);
 

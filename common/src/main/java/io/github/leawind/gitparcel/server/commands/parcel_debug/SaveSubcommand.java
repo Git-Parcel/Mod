@@ -8,6 +8,7 @@ import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.api.parcel.ParcelMeta;
+import io.github.leawind.gitparcel.api.parcel.ParcelStorage;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.commands.arguments.FilePathArgument;
@@ -138,7 +139,7 @@ public class SaveSubcommand {
 
       ParcelMeta meta = new ParcelMeta(format.spec(), sizeParcelSpace, Vec3i.ZERO);
 
-      ParcelFormat.save(source.getLevel(), transform, meta, null, parcelDir, ignoreEntities);
+      ParcelStorage.save(source.getLevel(), transform, meta, null, parcelDir, ignoreEntities);
 
       source.sendSuccess(
           () -> GitParcelTranslations.of("command.gitparcel.parcel_debug.save.success"),

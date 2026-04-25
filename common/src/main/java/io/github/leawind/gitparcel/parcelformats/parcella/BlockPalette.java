@@ -1,11 +1,10 @@
 package io.github.leawind.gitparcel.parcelformats.parcella;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.api.parcel.ParcelStorage;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.mixin.AccessStateHolder;
 import io.github.leawind.gitparcel.parcelformats.NbtFormat;
-import io.github.leawind.gitparcel.parcelformats.parcella.d32.ParcellaD32Format;
 import io.github.leawind.gitparcel.utils.IntIdPalette;
 import io.github.leawind.gitparcel.utils.numbase.HexUtils;
 import io.github.leawind.inventory.just.Result;
@@ -132,7 +131,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
         var nbtFile = NbtFilePath.resolve(nbtDir, nbtFormat, id);
         nbtFormat.write(nbtFile, data.nbt, false);
       } else {
-        ParcelFormat.LOGGER.error(
+        ParcelStorage.LOGGER.error(
             "Block {} was marked as block entity, but it has no NBT data", id);
       }
     }
@@ -266,7 +265,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
           switch (parseBlockState(entry.blockStateString, level, false)) {
             case Result.Ok(BlockState value) -> value;
             case Result.Err(String msg) -> {
-              ParcellaD32Format.LOGGER.error(
+              ParcelStorage.LOGGER.error(
                   "Skip because failed to parse block state '{}': {}", entry.blockStateString, msg);
               yield null;
             }
@@ -280,7 +279,7 @@ public class BlockPalette extends IntIdPalette<BlockPalette.Data> {
             switch (nbtFormat.read(nbtFile)) {
               case Result.Ok(CompoundTag value) -> value;
               case Result.Err(String msg) -> {
-                ParcellaD32Format.LOGGER.error("Failed to read NBT file {}: {}", nbtFile, msg);
+                ParcelStorage.LOGGER.error("Failed to read NBT file {}: {}", nbtFile, msg);
                 yield null;
               }
             };

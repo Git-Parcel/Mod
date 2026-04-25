@@ -9,6 +9,7 @@ import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.api.parcel.ParcelMeta;
+import io.github.leawind.gitparcel.api.parcel.ParcelStorage;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.permission.ParcelPermissions;
@@ -260,7 +261,7 @@ public final class Parcel {
       }
     }
 
-    ParcelFormat.save(getLevel(), transform, meta, config, getParcelDirectory(), ignoreEntities);
+    ParcelStorage.save(getLevel(), transform, meta, config, getParcelDirectory(), ignoreEntities);
   }
 
   /** Should be called when this parcel is updated. */
