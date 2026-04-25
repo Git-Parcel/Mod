@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
  * A registry for {@link ParcelFormat} savers and loaders.
  *
  * <p>Maintains separate maps for save and load format implementations, keyed by {@link
- * ParcelFormat.Info}. Also tracks an optional default saver used when no specific format is
+ * ParcelFormat.Spec}. Also tracks an optional default saver used when no specific format is
  * requested.
  *
  * <p>A singleton instance is available via {@link #INSTANCE}, though subclasses may create
@@ -22,9 +22,9 @@ import org.jspecify.annotations.Nullable;
 public final class ParcelFormatRegistry {
   public static final ParcelFormatRegistry INSTANCE = new ParcelFormatRegistry();
 
-  private final Map<ParcelFormat.Info, ParcelFormat.Saver<?>> savers =
+  private final Map<ParcelFormat.Spec, ParcelFormat.Saver<?>> savers =
       new Object2ObjectArrayMap<>();
-  private final Map<ParcelFormat.Info, ParcelFormat.Loader<?>> loaders =
+  private final Map<ParcelFormat.Spec, ParcelFormat.Loader<?>> loaders =
       new Object2ObjectArrayMap<>();
 
   private ParcelFormat.@Nullable Saver<?> defaultSaver;
@@ -39,7 +39,7 @@ public final class ParcelFormatRegistry {
 
   /**
    * @throws IllegalArgumentException if {@code format} is neither a saver nor a loader, or if a
-   *     saver or loader with the same {@link ParcelFormat.Info} is already registered
+   *     saver or loader with the same {@link ParcelFormat.Spec} is already registered
    */
   public <C extends ParcelFormatConfig<C>> void register(ParcelFormat.Impl<C> format)
       throws IllegalArgumentException {
@@ -47,18 +47,18 @@ public final class ParcelFormatRegistry {
     boolean isSaverOrLoader = false;
 
     if (format instanceof ParcelFormat.Saver<?> saver) {
-      if (savers.containsKey(saver.info())) {
+      if (savers.containsKey(saver.spec())) {
         throw new IllegalArgumentException("duplicate saver: " + saver);
       }
-      savers.put(format.info(), saver);
+      savers.put(format.spec(), saver);
       isSaverOrLoader = true;
     }
 
     if (format instanceof ParcelFormat.Loader<?> loader) {
-      if (loaders.containsKey(loader.info())) {
+      if (loaders.containsKey(loader.spec())) {
         throw new IllegalArgumentException("duplicate loader: " + loader);
       }
-      loaders.put(format.info(), loader);
+      loaders.put(format.spec(), loader);
       isSaverOrLoader = true;
     }
 
@@ -68,11 +68,6 @@ public final class ParcelFormatRegistry {
   }
 
   /**
-   * Registers a saver and designates it as the default saver.
-   *
-   * <p>The format is first registered via {@link #register}, then stored as the default saver
-   * returned by {@link #defaultSaver()}.
-   *
    * @throws IllegalArgumentException if the format is already registered as a saver
    */
   public <C extends ParcelFormatConfig<C>> void registerDefaultSaver(ParcelFormat.Saver<C> format)
@@ -92,12 +87,6 @@ public final class ParcelFormatRegistry {
   }
 
   /**
-   * Returns the highest-versioned registered saver for the given format id.
-   *
-   * <p>If multiple savers share the same id (differing by version), only the one with the greatest
-   * version number is returned.
-   *
-   * @param id the format id to look up
    * @return the latest-version saver for {@code id}, or {@code null} if none is registered
    */
   public ParcelFormat.@Nullable Saver<?> getSaver(String id) {
@@ -107,23 +96,11 @@ public final class ParcelFormatRegistry {
         .orElse(null);
   }
 
-  /**
-   * Returns the registered saver for the given {@link ParcelFormat.Info}.
-   *
-   * @param info the exact info key (id + version) to look up
-   * @return the matching saver, or {@code null} if none is registered for {@code info}
-   */
-  public ParcelFormat.@Nullable Saver<?> getSaver(ParcelFormat.Info info) {
-    return savers.get(info);
+  public ParcelFormat.@Nullable Saver<?> getSaver(ParcelFormat.Spec spec) {
+    return savers.get(spec);
   }
 
   /**
-   * Returns the highest-versioned registered loader for the given format id.
-   *
-   * <p>If multiple loaders share the same id (differing by version), only the one with the greatest
-   * version number is returned.
-   *
-   * @param id the format id to look up
    * @return the latest-version loader for {@code id}, or {@code null} if none is registered
    */
   public ParcelFormat.@Nullable Loader<?> getLoader(String id) {
@@ -133,14 +110,8 @@ public final class ParcelFormatRegistry {
         .orElse(null);
   }
 
-  /**
-   * Returns the registered loader for the given {@link ParcelFormat.Info}.
-   *
-   * @param info the exact info key (id + version) to look up
-   * @return the matching loader, or {@code null} if none is registered for {@code info}
-   */
-  public ParcelFormat.@Nullable Loader<?> getLoader(ParcelFormat.Info info) {
-    return loaders.get(info);
+  public ParcelFormat.@Nullable Loader<?> getLoader(ParcelFormat.Spec spec) {
+    return loaders.get(spec);
   }
 
   /**
@@ -149,7 +120,7 @@ public final class ParcelFormatRegistry {
    * @return an unordered {@link Set} of saver id strings; empty if no savers are registered
    */
   public Set<String> getSaverNames() {
-    return savers.keySet().stream().map(ParcelFormat.Info::id).collect(Collectors.toSet());
+    return savers.keySet().stream().map(ParcelFormat.Spec::id).collect(Collectors.toSet());
   }
 
   /**
@@ -158,7 +129,7 @@ public final class ParcelFormatRegistry {
    * @return an unordered {@link Set} of loader id strings; empty if no loaders are registered
    */
   public Set<String> getLoaderNames() {
-    return loaders.keySet().stream().map(ParcelFormat.Info::id).collect(Collectors.toSet());
+    return loaders.keySet().stream().map(ParcelFormat.Spec::id).collect(Collectors.toSet());
   }
 
   public Stream<ParcelFormat.Saver<?>> streamSavers() {

@@ -53,12 +53,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
   /** Directory name for storing format-specific parcel data */
   String DATA_DIR_NAME = "data";
 
-  /**
-   * Returns the identifying information for this format.
-   *
-   * @return format info containing id and version
-   */
-  Info info();
+  Spec spec();
 
   default EnumSet<Feature> features() {
     return EnumSet.noneOf(Feature.class);
@@ -70,7 +65,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
    * @return format id string
    */
   default String id() {
-    return info().id();
+    return spec().id();
   }
 
   /**
@@ -79,21 +74,21 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
    * @return format version integer
    */
   default int version() {
-    return info().version();
+    return spec().version();
   }
 
-  record Info(String id, int version) {
-    public static final Codec<Info> CODEC =
+  record Spec(String id, int version) {
+    public static final Codec<Spec> CODEC =
         RecordCodecBuilder.create(
             inst ->
                 inst.group(
-                        Codec.STRING.fieldOf("id").forGetter(Info::id),
-                        Codec.INT.fieldOf("version").forGetter(Info::version))
-                    .apply(inst, Info::new));
+                        Codec.STRING.fieldOf("id").forGetter(Spec::id),
+                        Codec.INT.fieldOf("version").forGetter(Spec::version))
+                    .apply(inst, Spec::new));
     public static final Pattern ID_PATTERN =
         Pattern.compile("^[a-zA-Z_\\-]([a-zA-Z_\\-0-9]+){0,63}$");
 
-    public Info {
+    public Spec {
       if (!ID_PATTERN.matcher(id).matches()) {
         throw new IllegalArgumentException("ID must match " + ID_PATTERN);
       }
@@ -198,7 +193,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
       Vec3i sizeWorldSpace =
           new Vec3i(boundingBox.getXSpan(), boundingBox.getYSpan(), boundingBox.getZSpan());
       Vec3i sizeParcelSpace = ParcelTransform.rotateSize(rotation, sizeWorldSpace);
-      ParcelMeta meta = new ParcelMeta(info(), sizeParcelSpace, Vec3i.ZERO);
+      ParcelMeta meta = new ParcelMeta(spec(), sizeParcelSpace, Vec3i.ZERO);
 
       ParcelFormat.save(level, transform, meta, config, parcelDir, ignoreEntities);
     }
@@ -378,14 +373,14 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
       throws IOException, ParcelException {
     Saver<C> format = (Saver<C>) meta.getFormatSaver();
     if (format == null) {
-      throw new ParcelException.UnsupportedFormat(meta.formatInfo());
+      throw new ParcelException.UnsupportedFormat(meta.formatSpec());
     }
 
     if (transform.rotation() != Rotation.NONE && !format.features().contains(Feature.ROTATE)) {
-      throw new ParcelException.UnsupportedFeature(meta.formatInfo(), Feature.ROTATE);
+      throw new ParcelException.UnsupportedFeature(meta.formatSpec(), Feature.ROTATE);
     }
     if (transform.mirror() != Mirror.NONE && !format.features().contains(Feature.MIRROR)) {
-      throw new ParcelException.UnsupportedFeature(meta.formatInfo(), Feature.MIRROR);
+      throw new ParcelException.UnsupportedFeature(meta.formatSpec(), Feature.MIRROR);
     }
 
     meta.save(getMetaFile(parcelDir));
@@ -447,7 +442,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
     var meta = ParcelMeta.load(parcelDir.resolve(META_FILE_NAME));
     Loader<C> loader = (Loader<C>) meta.getFormatLoader();
     if (loader == null) {
-      throw new ParcelException.UnsupportedFormat(meta.formatInfo());
+      throw new ParcelException.UnsupportedFormat(meta.formatSpec());
     }
 
     Path configFile = getConfigFile(parcelDir);

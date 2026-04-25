@@ -250,8 +250,8 @@ public final class Parcel {
     if (formatConfig != null) {
       ParcelFormat.Saver<C> format = (ParcelFormat.Saver<C>) meta.getFormatSaver();
       if (format == null) {
-        LOGGER.warn("Parcel {} has unsupported saving format {}", this, meta.formatInfo());
-        throw new ParcelException.UnsupportedFormat(meta.formatInfo());
+        LOGGER.warn("Parcel {} has unsupported saving format {}", this, meta.formatSpec());
+        throw new ParcelException.UnsupportedFormat(meta.formatSpec());
       }
 
       config = format.getDefaultConfig();
@@ -281,7 +281,7 @@ public final class Parcel {
             mirror, rotation, new Vec3i((int) pivot.x, (int) pivot.y, (int) pivot.z));
 
     var meta =
-        ParcelMeta.from(ParcelFormatRegistry.INSTANCE.defaultSaver().info(), boundingBox, rotation);
+        ParcelMeta.from(ParcelFormatRegistry.INSTANCE.defaultSaver().spec(), boundingBox, rotation);
 
     return new Parcel(
         UUID.randomUUID(),

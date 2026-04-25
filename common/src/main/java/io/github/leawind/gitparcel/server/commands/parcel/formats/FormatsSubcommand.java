@@ -45,7 +45,7 @@ public class FormatsSubcommand extends GitParcelBaseCommand {
                       source.sendSuccess(
                           () ->
                               Component.literal("  - ")
-                                  .append(Component.literal(saver.info().toString())),
+                                  .append(Component.literal(saver.spec().toString())),
                           false);
                     }
                   }
@@ -60,7 +60,7 @@ public class FormatsSubcommand extends GitParcelBaseCommand {
                       source.sendSuccess(
                           () ->
                               Component.literal("  - ")
-                                  .append(Component.literal(loader.info().toString())),
+                                  .append(Component.literal(loader.spec().toString())),
                           false);
                     }
                   }

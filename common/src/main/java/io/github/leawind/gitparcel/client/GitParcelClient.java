@@ -3,8 +3,8 @@ package io.github.leawind.gitparcel.client;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.client.gui.screens.GitParcelDebugScreen;
 import io.github.leawind.gitparcel.client.renderer.GitParcelRenderer;
-import io.github.leawind.gitparcel.network.protocol.parcelformat.ClientParcelFormatInfos;
-import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatInfosS2CPayload;
+import io.github.leawind.gitparcel.network.protocol.parcelformat.ParcelFormatSpecs;
+import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatSpecS2CPayload;
 import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelsS2CPayload;
 import io.github.leawind.gitparcel.world.Parcels;
 import org.jspecify.annotations.Nullable;
@@ -14,13 +14,13 @@ public final class GitParcelClient {
   private static final Logger LOGGER = LogUtils.getLogger();
 
   /**
-   * Cache of the parcel format infos received from the server.
+   * Cache of the parcel format specs received from the server.
    *
-   * <p>Updated when received {@link UpdateParcelFormatInfosS2CPayload}.
+   * <p>Updated when received {@link UpdateParcelFormatSpecS2CPayload}.
    *
    * <p>Better be set to null when the client disconnects from the server.
    */
-  public static @Nullable volatile ClientParcelFormatInfos PARCEL_FORMAT_INFOS = null;
+  public static @Nullable volatile ParcelFormatSpecs PARCEL_FORMAT_SPECS = null;
 
   public static volatile Parcels PARCELS = new Parcels();
 
@@ -46,9 +46,9 @@ public final class GitParcelClient {
     // Network
     {
       GameClientApi.Network.registerGlobalReceiver(
-          UpdateParcelFormatInfosS2CPayload.TYPE,
+          UpdateParcelFormatSpecS2CPayload.TYPE,
           (payload, minecraft) ->
-              UpdateParcelFormatInfosS2CPayload.handle(payload, minecraft.player));
+              UpdateParcelFormatSpecS2CPayload.handle(payload, minecraft.player));
 
       GameClientApi.Network.registerGlobalReceiver(
           UpdateParcelsS2CPayload.TYPE,

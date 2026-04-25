@@ -23,11 +23,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
 public class MvpFormat implements ParcelFormat.Saver<ParcelFormatConfig.None> {
-  private static final Info INFO = new Info("mvp", 0);
+  private static final Spec SPEC = new Spec("mvp", 0);
 
   @Override
-  public Info info() {
-    return INFO;
+  public Spec spec() {
+    return SPEC;
   }
 
   @Override
@@ -42,7 +42,7 @@ public class MvpFormat implements ParcelFormat.Saver<ParcelFormatConfig.None> {
       throws IOException, ParcelException.UnsupportedFeature {
 
     if (transform.hasOrientation()) {
-      throw new ParcelException.UnsupportedFeature(info(), Feature.ROTATE, Feature.MIRROR);
+      throw new ParcelException.UnsupportedFeature(spec(), Feature.ROTATE, Feature.MIRROR);
     }
 
     int sizeX = parcelSize.getX();

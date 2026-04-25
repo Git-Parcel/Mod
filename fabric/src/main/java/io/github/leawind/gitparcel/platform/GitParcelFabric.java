@@ -1,7 +1,7 @@
 package io.github.leawind.gitparcel.platform;
 
 import io.github.leawind.gitparcel.GitParcel;
-import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatInfosS2CPayload;
+import io.github.leawind.gitparcel.network.protocol.parcelformat.UpdateParcelFormatSpecS2CPayload;
 import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelsS2CPayload;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -25,7 +25,7 @@ public final class GitParcelFabric implements ModInitializer {
   private static void registerPayloads() {
     PayloadTypeRegistry.playS2C()
         .register(
-            UpdateParcelFormatInfosS2CPayload.TYPE, UpdateParcelFormatInfosS2CPayload.STREAM_CODEC);
+            UpdateParcelFormatSpecS2CPayload.TYPE, UpdateParcelFormatSpecS2CPayload.STREAM_CODEC);
 
     PayloadTypeRegistry.playS2C()
         .register(UpdateParcelsS2CPayload.TYPE, UpdateParcelsS2CPayload.STREAM_CODEC);

@@ -32,7 +32,7 @@ public final class ParcelMeta {
       RecordCodecBuilder.create(
           inst ->
               inst.group(
-                      ParcelFormat.Info.CODEC.fieldOf("format").forGetter(ParcelMeta::formatInfo),
+                      ParcelFormat.Spec.CODEC.fieldOf("format").forGetter(ParcelMeta::formatSpec),
                       Codec.INT.fieldOf("dataVersion").forGetter(ParcelMeta::dataVersion),
                       Vec3i.CODEC.fieldOf("size").forGetter(ParcelMeta::size),
                       Vec3i.CODEC.fieldOf("anchor").forGetter(ParcelMeta::anchor),
@@ -65,7 +65,7 @@ public final class ParcelMeta {
     return NAME_PATTERN.matcher(name).matches();
   }
 
-  private ParcelFormat.Info formatInfo;
+  private ParcelFormat.Spec formatSpec;
   private int dataVersion;
   private Vec3i size;
   private Vec3i anchor;
@@ -85,7 +85,7 @@ public final class ParcelMeta {
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   private ParcelMeta(
-      ParcelFormat.Info formatInfo,
+      ParcelFormat.Spec formatSpec,
       Integer dataVersion,
       Vec3i size,
       Vec3i anchor,
@@ -95,7 +95,7 @@ public final class ParcelMeta {
       Optional<List<String>> tgs,
       Optional<Map<String, ModDependency>> mods,
       Optional<Boolean> excludeEntities) {
-    this.formatInfo = formatInfo;
+    this.formatSpec = formatSpec;
     this.dataVersion = dataVersion;
     this.size = size;
     this.anchor = anchor;
@@ -107,23 +107,23 @@ public final class ParcelMeta {
     this.excludeEntities = excludeEntities.orElse(true);
   }
 
-  public ParcelMeta(ParcelFormat.Info formatInfo, Vec3i parcelSize, Vec3i anchor) {
+  public ParcelMeta(ParcelFormat.Spec formatSpec, Vec3i parcelSize, Vec3i anchor) {
     this(
-        formatInfo,
+        formatSpec,
         SharedConstants.getCurrentVersion().dataVersion().version(),
         parcelSize,
         anchor);
   }
 
-  public ParcelMeta(ParcelFormat.Info formatInfo, int dataVersion, Vec3i parcelSize, Vec3i anchor) {
-    this.formatInfo = formatInfo;
+  public ParcelMeta(ParcelFormat.Spec formatSpec, int dataVersion, Vec3i parcelSize, Vec3i anchor) {
+    this.formatSpec = formatSpec;
     this.dataVersion = dataVersion;
     this.size = parcelSize;
     this.anchor = anchor;
   }
 
-  public ParcelFormat.Info formatInfo() {
-    return formatInfo;
+  public ParcelFormat.Spec formatSpec() {
+    return formatSpec;
   }
 
   public int dataVersion() {
@@ -151,16 +151,15 @@ public final class ParcelMeta {
   }
 
   public ParcelFormat.@Nullable Saver<?> getFormatSaver() {
-    return ParcelFormatRegistry.INSTANCE.getSaver(formatInfo);
+    return ParcelFormatRegistry.INSTANCE.getSaver(formatSpec);
   }
 
   public ParcelFormat.@Nullable Loader<?> getFormatLoader() {
-    return ParcelFormatRegistry.INSTANCE.getLoader(formatInfo);
+    return ParcelFormatRegistry.INSTANCE.getLoader(formatSpec);
   }
 
-  /** Sets the format info. */
-  public void setFormatInfo(ParcelFormat.Info formatInfo) {
-    this.formatInfo = formatInfo;
+  public void setFormatSpec(ParcelFormat.Spec formatSpec) {
+    this.formatSpec = formatSpec;
   }
 
   /** Sets the name. */
@@ -240,7 +239,7 @@ public final class ParcelMeta {
   }
 
   public static ParcelMeta from(
-      ParcelFormat.Info format, BoundingBox boundingBox, Rotation rotation) {
+      ParcelFormat.Spec format, BoundingBox boundingBox, Rotation rotation) {
     Vec3i sizeWorldSpace =
         new Vec3i(boundingBox.getXSpan(), boundingBox.getYSpan(), boundingBox.getZSpan());
     Vec3i sizeParcelSpace = ParcelTransform.rotateSize(rotation, sizeWorldSpace);

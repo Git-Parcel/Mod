@@ -26,14 +26,14 @@ public class AbstractGitParcelTest {
   protected static class TestFormat implements ParcelFormat.Impl<ParcelFormatConfig.None> {
 
     @Override
-    public Info info() {
-      return info;
+    public Spec spec() {
+      return spec;
     }
 
-    private final Info info;
+    private final Spec spec;
 
     protected TestFormat(String id, int version) {
-      this.info = new Info(id, version);
+      this.spec = new Spec(id, version);
     }
   }
 
