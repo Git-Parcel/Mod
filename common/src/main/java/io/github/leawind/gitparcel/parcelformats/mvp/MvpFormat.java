@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.parcelformats.mvp;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
+import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -38,11 +39,10 @@ public class MvpFormat implements ParcelFormat.Saver<ParcelFormatConfig.None> {
       Path dataDir,
       boolean ignoreEntities,
       ParcelFormatConfig.@Nullable None config)
-      throws IOException {
+      throws IOException, ParcelException.UnsupportedFeature {
 
     if (transform.hasOrientation()) {
-      throw new UnsupportedOperationException(
-          "Mirror or rotation transform is not supported by this format");
+      throw new ParcelException.UnsupportedFeature(info(), Feature.ROTATE, Feature.MIRROR);
     }
 
     int sizeX = parcelSize.getX();

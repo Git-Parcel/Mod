@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.parcelformats.parcella.d32;
 import io.github.leawind.gitparcel.algorithms.VolumetricRLE;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
+import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.parcelformats.NbtFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.BlockPalette;
 import io.github.leawind.gitparcel.parcelformats.parcella.Subparcel;
@@ -71,7 +72,7 @@ public class ParcellaD32Saver
       Path dataDir,
       boolean ignoreEntities,
       @Nullable Config config)
-      throws IOException {
+      throws IOException, ParcelException.UnsupportedFeature {
     if (config == null) {
       config = new Config();
     }

@@ -7,6 +7,7 @@ import io.github.leawind.gitparcel.world.Parcel;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.EnumSet;
 import java.util.regex.Pattern;
 import net.minecraft.core.Vec3i;
 import net.minecraft.server.level.ServerLevel;
@@ -59,6 +60,10 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
    */
   Info info();
 
+  default EnumSet<Feature> features() {
+    return EnumSet.noneOf(Feature.class);
+  }
+
   /**
    * Returns the unique identifier of this format.
    *
@@ -77,16 +82,6 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
     return info().version();
   }
 
-  /**
-   * Immutable identifying information for a parcel format.
-   *
-   * <p>Combines a human-readable identifier with a version number to uniquely identify a specific
-   * format implementation. This is used for format registration and compatibility checking.
-   *
-   * @param id Unique string identifier for the format
-   * @param version Version number of the format implementation
-   * @see ParcelFormatRegistry
-   */
   record Info(String id, int version) {
     public static final Codec<Info> CODEC =
         RecordCodecBuilder.create(
@@ -98,10 +93,6 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
     public static final Pattern ID_PATTERN =
         Pattern.compile("^[a-zA-Z_\\-]([a-zA-Z_\\-0-9]+){0,63}$");
 
-    /**
-     * @param id The unique id of the format, must match {@link Info#ID_PATTERN}
-     * @param version The version of the format
-     */
     public Info {
       if (!ID_PATTERN.matcher(id).matches()) {
         throw new IllegalArgumentException("ID must match " + ID_PATTERN);
@@ -113,6 +104,11 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
     public String toString() {
       return String.format("%s:%d", id, version);
     }
+  }
+
+  enum Feature {
+    ROTATE,
+    MIRROR,
   }
 
   /**
@@ -173,19 +169,8 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
   interface Saver<C extends ParcelFormatConfig<C>> extends Impl<C> {
 
     /**
-     * Writes parcel content from the world into the specified data directory.
-     *
-     * <p>Implementation contract: All data must be written exclusively to the provided {@code
-     * dataDir} directory. Implementations must not modify any other files or directories.
-     *
-     * @param level Source game level to read blocks and entities from
-     * @param parcelSize Original dimensions of the parcel before transformation
-     * @param anchor Offset point that defines the parcel's origin relative to its bounds
-     * @param transform Transformation to apply to coordinates before reading from the world
-     * @param dataDir Directory where format-specific data should be written
-     * @param ignoreEntities When true, entities should not be included in the saved output
-     * @param config Format-specific configuration, may be null
-     * @throws IOException If any I/O error occurs during writing
+     * @apiNote If the format does not support features like rotation, mirror, but the given
+     *     transform does, {@link ParcelException.UnsupportedFeature} will be thrown.
      */
     void save(
         Level level,
@@ -195,7 +180,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
         Path dataDir,
         boolean ignoreEntities,
         @Nullable C config)
-        throws IOException;
+        throws IOException, ParcelException.UnsupportedFeature;
 
     default void save(
         Level level,
@@ -206,6 +191,7 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
         Path parcelDir,
         boolean ignoreEntities)
         throws IOException, ParcelException {
+
       var pivot = Parcel.getPivotBlockPos(mirror, rotation, boundingBox);
       ParcelTransform transform = new ParcelTransform(mirror, rotation, pivot);
 
@@ -373,15 +359,10 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
   }
 
   /**
-   * Saves a parcel to the specified directory.
+   * The position is specified in transform, and the size is specified in meta.
    *
-   * <p>The position is specified in transform, and the size is specified in meta.
-   *
-   * @param transform Parcel transformation
-   * @param meta The metadata of the parcel.
    * @param parcelDir The parcel directory, which contains the {@value #META_FILE_NAME} file and
    *     {@value #DATA_DIR_NAME} directory. Will be created if not exists.
-   * @param ignoreEntities Whether to ignore entities when saving the parcel
    * @throws IOException If an I/O error occurs while saving the parcel
    * @throws ParcelException If other error occurs while saving the parcel
    * @throws ParcelException.UnsupportedFormat If the format is not supported
@@ -395,12 +376,19 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
       Path parcelDir,
       boolean ignoreEntities)
       throws IOException, ParcelException {
-    meta.save(getMetaFile(parcelDir));
-
     Saver<C> format = (Saver<C>) meta.getFormatSaver();
     if (format == null) {
       throw new ParcelException.UnsupportedFormat(meta.formatInfo());
     }
+
+    if (transform.rotation() != Rotation.NONE && !format.features().contains(Feature.ROTATE)) {
+      throw new ParcelException.UnsupportedFeature(meta.formatInfo(), Feature.ROTATE);
+    }
+    if (transform.mirror() != Mirror.NONE && !format.features().contains(Feature.MIRROR)) {
+      throw new ParcelException.UnsupportedFeature(meta.formatInfo(), Feature.MIRROR);
+    }
+
+    meta.save(getMetaFile(parcelDir));
 
     C actualConfig = config;
     if (actualConfig == null) {
