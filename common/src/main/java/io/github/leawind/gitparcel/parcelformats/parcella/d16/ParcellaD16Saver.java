@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.parcelformats.parcella.d16;
 
 import io.github.leawind.gitparcel.algorithms.VolumetricRLE;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.api.parcel.ParcelStorage;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.parcelformats.parcella.Subparcel;
@@ -39,7 +40,7 @@ public class ParcellaD16Saver extends ParcellaD32Saver
 
     var ctx = new Context(level, parcelSize, anchor, transform, dataDir, ignoreEntities, config);
 
-    try (var problemReporter = new ProblemReporter.ScopedCollector(LOGGER)) {
+    try (var problemReporter = new ProblemReporter.ScopedCollector(ParcelStorage.LOGGER)) {
 
       saveBlocks(ctx, 16);
 

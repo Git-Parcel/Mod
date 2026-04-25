@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.parcelformats.parcella.d32;
 
 import io.github.leawind.gitparcel.algorithms.VolumetricRLE;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.api.parcel.ParcelStorage;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.parcelformats.NbtFormat;
@@ -79,7 +80,7 @@ public class ParcellaD32Saver
 
     var ctx = new Context(level, parcelSize, anchor, transform, dataDir, ignoreEntities, config);
 
-    try (var problemReporter = new ProblemReporter.ScopedCollector(LOGGER)) {
+    try (var problemReporter = new ProblemReporter.ScopedCollector(ParcelStorage.LOGGER)) {
       saveBlocks(ctx, 32);
 
       if (!ignoreEntities) {
@@ -136,7 +137,7 @@ public class ParcellaD32Saver
             ctx.blocksNbtDir,
             ctx.config.blockEntityDataFormat.get());
       } catch (Exception e) {
-        LOGGER.error("Error loading block palette: {}", e.getMessage(), e);
+        ParcelStorage.LOGGER.error("Error loading block palette: {}", e.getMessage(), e);
         return new BlockPalette();
       }
     } else {
@@ -278,7 +279,7 @@ public class ParcellaD32Saver
       if (file.isFile()) {
         var path = file.toPath();
         if (EntityNbtFilePath.fromPath(path, nbtFormat) >= idThreshold) {
-          LOGGER.info("Removing redundant entity file: {}", path);
+          ParcelStorage.LOGGER.info("Removing redundant entity file: {}", path);
           Files.delete(path);
         }
       }

@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.gametest;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.GitParcel;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
+import io.github.leawind.gitparcel.api.parcel.ParcelStorage;
 import io.github.leawind.gitparcel.gametest.utils.GameTestHelpMore;
 import io.github.leawind.gitparcel.gametest.utils.GitParcelTestUtils;
 import io.github.leawind.inventory.misc.TempDirectory;
@@ -19,7 +20,8 @@ public class GitParcelGameTest {
             LOGGER.info(
                 "Testing format {} with rotation={} mirror={}", format.spec(), rotation, mirror);
 
-            format.save(
+            ParcelStorage.save(
+                format,
                 helper.getLevel(),
                 helper.getBoundingBox(),
                 rotation,
