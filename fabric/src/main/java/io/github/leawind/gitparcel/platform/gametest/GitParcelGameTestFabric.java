@@ -15,26 +15,8 @@ public class GitParcelGameTestFabric extends GitParcelGameTest implements Custom
     method.invoke(this, helper);
   }
 
-  @Override
-  @GameTest()
-  public void testBlockPlacement(GameTestHelper helper) {
-    super.testBlockPlacement(helper);
-  }
-
-  @Override
-  @GameTest()
-  public void testAirBlock(GameTestHelper helper) {
-    super.testAirBlock(helper);
-  }
-
-  @Override
-  @GameTest()
-  public void testMultipleBlocks(GameTestHelper helper) {
-    super.testMultipleBlocks(helper);
-  }
-
   @GameTest(structure = "gitparcel:swamp_hut")
-  public void testSave(GameTestHelper helper) throws Exception {
-    Tester.test(helper, super::testSave);
+  public void testAllFormatsWithTransformations(GameTestHelper helper) throws Exception {
+    Tester.test(helper, super::testSavers);
   }
 }
