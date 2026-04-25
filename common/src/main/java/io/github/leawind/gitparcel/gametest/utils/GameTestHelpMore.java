@@ -30,6 +30,8 @@ public class GameTestHelpMore extends GameTestHelper {
   }
 
   /**
+   * Get absolute bounding box.
+   *
    * @see #getBounds
    */
   public BoundingBox getBoundingBox() {
@@ -58,6 +60,15 @@ public class GameTestHelpMore extends GameTestHelper {
   }
 
   /**
+   * @see #absolutePos
+   */
+  public BoundingBox absoluteBoundingBox(BoundingBox box) {
+    var from = new BlockPos(box.minX(), box.minY(), box.minZ());
+    var to = new BlockPos(box.maxX(), box.maxY(), box.maxZ());
+    return BoundingBox.fromCorners(absolutePos(from), absolutePos(to));
+  }
+
+  /**
    * @see #getBlockState
    */
   public @Nullable BlockEntity getBlockEntity(BlockPos pos) {
@@ -81,13 +92,7 @@ public class GameTestHelpMore extends GameTestHelper {
     }
   }
 
-  public void assertSame(BoundingBox boxA, BoundingBox boxB) {
-    assertSame(boxA, boxB, ChannelFlags.BLOCKS);
-  }
-
   public void assertSame(BoundingBox boxA, BoundingBox boxB, @ChannelFlags int flags) {
-    var level = getLevel();
-
     int sizeX = boxA.getXSpan();
     int sizeY = boxA.getYSpan();
     int sizeZ = boxA.getZSpan();
