@@ -1,13 +1,12 @@
 package io.github.leawind.gitparcel.api.parcel;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -21,7 +20,6 @@ import org.jspecify.annotations.Nullable;
  * additional registries as needed.
  */
 public final class ParcelFormatRegistry {
-  /** The global singleton instance of {@code ParcelFormatRegistry}. */
   public static final ParcelFormatRegistry INSTANCE = new ParcelFormatRegistry();
 
   private final Map<ParcelFormat.Info, ParcelFormat.Saver<?>> savers =
@@ -31,15 +29,8 @@ public final class ParcelFormatRegistry {
 
   private ParcelFormat.@Nullable Saver<?> defaultSaver;
 
-  /**
-   * Constructs a new, empty {@code ParcelFormatRegistry}.
-   *
-   * <p>Protected to allow subclassing while discouraging direct instantiation in favor of {@link
-   * #INSTANCE}.
-   */
   private ParcelFormatRegistry() {}
 
-  /** Clears all registered formats. */
   public void clear() {
     savers.clear();
     loaders.clear();
@@ -47,14 +38,6 @@ public final class ParcelFormatRegistry {
   }
 
   /**
-   * Registers a format implementation as either a saver or a loader.
-   *
-   * <p>The format must implement exactly one of {@link ParcelFormat.Saver} or {@link
-   * ParcelFormat.Loader}. Registering the same {@link ParcelFormat.Info} twice for the same role is
-   * not allowed.
-   *
-   * @param <C> the config type associated with the format
-   * @param format the format implementation to register
    * @throws IllegalArgumentException if {@code format} is neither a saver nor a loader, or if a
    *     saver or loader with the same {@link ParcelFormat.Info} is already registered
    */
@@ -90,8 +73,6 @@ public final class ParcelFormatRegistry {
    * <p>The format is first registered via {@link #register}, then stored as the default saver
    * returned by {@link #defaultSaver()}.
    *
-   * @param <C> the config type associated with the format
-   * @param format the saver to register as the default
    * @throws IllegalArgumentException if the format is already registered as a saver
    */
   public <C extends ParcelFormatConfig<C>> void registerDefaultSaver(ParcelFormat.Saver<C> format)
@@ -180,11 +161,11 @@ public final class ParcelFormatRegistry {
     return loaders.keySet().stream().map(ParcelFormat.Info::id).collect(Collectors.toSet());
   }
 
-  public List<ParcelFormat.Info> getSaverInfos() {
-    return new ArrayList<>(savers.keySet());
+  public Stream<ParcelFormat.Saver<?>> streamSavers() {
+    return savers.values().stream();
   }
 
-  public List<ParcelFormat.Info> getLoaderInfos() {
-    return new ArrayList<>(loaders.keySet());
+  public Stream<ParcelFormat.Loader<?>> streamLoaders() {
+    return loaders.values().stream();
   }
 }

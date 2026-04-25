@@ -6,7 +6,6 @@ import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.permission.WorldPermissions;
 import io.github.leawind.gitparcel.server.commands.GitParcelBaseCommand;
-import java.util.List;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -25,41 +24,43 @@ public class FormatsSubcommand extends GitParcelBaseCommand {
 
                   var registry = ParcelFormatRegistry.INSTANCE;
 
-                  List<ParcelFormat.Info> saverInfos = registry.getSaverInfos();
-                  List<ParcelFormat.Info> loaderInfos = registry.getLoaderInfos();
+                  var savers = registry.streamSavers().toArray(ParcelFormat.Saver[]::new);
+                  var loaders = registry.streamLoaders().toArray(ParcelFormat.Loader[]::new);
 
                   source.sendSuccess(
                       () ->
                           GitParcelTranslations.of(
                               "command.gitparcel.parcel.formats.list.header",
-                              saverInfos.size(),
-                              loaderInfos.size()),
+                              savers.length,
+                              loaders.length),
                       false);
 
-                  if (!saverInfos.isEmpty()) {
+                  if (savers.length > 0) {
                     source.sendSuccess(
                         () ->
                             GitParcelTranslations.of(
                                 "command.gitparcel.parcel.formats.list.savers_header"),
                         false);
-                    for (var info : saverInfos) {
+                    for (var saver : savers) {
                       source.sendSuccess(
                           () ->
-                              Component.literal("  - ").append(Component.literal(info.toString())),
+                              Component.literal("  - ")
+                                  .append(Component.literal(saver.info().toString())),
                           false);
                     }
                   }
 
-                  if (!loaderInfos.isEmpty()) {
+                  if (loaders.length > 0) {
                     source.sendSuccess(
                         () ->
                             GitParcelTranslations.of(
                                 "command.gitparcel.parcel.formats.list.loaders_header"),
                         false);
-                    for (var info : loaderInfos) {
+                    for (var loader : loaders) {
                       source.sendSuccess(
                           () ->
-                              Component.literal("  - ").append(Component.literal(info.toString())),
+                              Component.literal("  - ")
+                                  .append(Component.literal(loader.info().toString())),
                           false);
                     }
                   }
