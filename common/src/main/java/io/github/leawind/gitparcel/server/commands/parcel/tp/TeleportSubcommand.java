@@ -4,6 +4,7 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.commands.arguments.ParcelArgument;
+import io.github.leawind.gitparcel.server.commands.parcel.ParcelCommand;
 import io.github.leawind.gitparcel.world.Parcel;
 import java.util.Locale;
 import net.minecraft.commands.CommandSourceStack;
@@ -28,7 +29,7 @@ public class TeleportSubcommand {
   private static int teleportSelf(CommandContext<CommandSourceStack> ctx)
       throws CommandSyntaxException {
     var source = ctx.getSource();
-    var parcel = ParcelArgument.getSingleParcel(ctx, "parcel");
+    var parcel = ParcelArgument.getSingleParcel(ctx, ParcelCommand.ARG_PARCELS);
     var player = source.getPlayerOrException();
 
     var pos = getTeleportPos(parcel);
@@ -51,7 +52,7 @@ public class TeleportSubcommand {
   private static int teleportPlayers(CommandContext<CommandSourceStack> ctx)
       throws CommandSyntaxException {
     var source = ctx.getSource();
-    var parcel = ParcelArgument.getSingleParcel(ctx, "parcel");
+    var parcel = ParcelArgument.getSingleParcel(ctx, ParcelCommand.ARG_PARCELS);
     var players = EntityArgument.getPlayers(ctx, "players");
 
     var pos = getTeleportPos(parcel);

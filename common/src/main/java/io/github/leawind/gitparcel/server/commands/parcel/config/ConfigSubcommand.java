@@ -11,6 +11,7 @@ import io.github.leawind.gitparcel.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.commands.arguments.ParcelFormatArgument;
 import io.github.leawind.gitparcel.permission.WorldPermissions;
 import io.github.leawind.gitparcel.server.commands.GitParcelBaseCommand;
+import io.github.leawind.gitparcel.server.commands.parcel.ParcelCommand;
 import io.github.leawind.gitparcel.world.Parcel;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -51,7 +52,7 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
       return 0;
     }
 
-    for (var parcel : ParcelArgument.getParcels(ctx, "parcel")) {
+    for (var parcel : ParcelArgument.getParcels(ctx, ParcelCommand.ARG_PARCELS)) {
       var value = valueReader.read(ctx);
 
       setter.set(parcel, value);

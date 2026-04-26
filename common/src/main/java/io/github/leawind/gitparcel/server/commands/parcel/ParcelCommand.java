@@ -17,6 +17,8 @@ import net.minecraft.commands.Commands;
 
 public class ParcelCommand extends GitParcelBaseCommand {
 
+  public static final String ARG_PARCELS = "parcels";
+
   public static void register(
       CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext context) {
 
@@ -24,7 +26,7 @@ public class ParcelCommand extends GitParcelBaseCommand {
         Commands.literal("parcel")
             .requires(Commands.hasPermission(Commands.LEVEL_ALL))
             .then(
-                Commands.argument("parcel", ParcelArgument.parcels())
+                Commands.argument(ARG_PARCELS, ParcelArgument.parcels())
                     .executes(ParcelCommand::showInfo)
                     .then(ConfigSubcommand.build())
                     .then(DeleteSubcommand.build())
@@ -42,7 +44,7 @@ public class ParcelCommand extends GitParcelBaseCommand {
       return 0;
     }
 
-    var parcel = ParcelArgument.getSingleParcel(ctx, "parcel");
+    var parcel = ParcelArgument.getSingleParcel(ctx, ARG_PARCELS);
 
     source.sendSuccess(() -> ParcelFormatter.formatParcelInfo(parcel), false);
     return 1;

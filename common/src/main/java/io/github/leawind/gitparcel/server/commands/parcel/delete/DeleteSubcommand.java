@@ -7,6 +7,7 @@ import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.permission.WorldPermissions;
 import io.github.leawind.gitparcel.server.commands.GitParcelBaseCommand;
+import io.github.leawind.gitparcel.server.commands.parcel.ParcelCommand;
 import io.github.leawind.gitparcel.world.GitParcelLevelSavedData;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -26,7 +27,7 @@ public class DeleteSubcommand extends GitParcelBaseCommand {
     var serverLevel = source.getLevel();
     var levelSavedData = GitParcelLevelSavedData.get(serverLevel);
 
-    var parcel = ParcelArgument.getSingleParcel(ctx, "parcel");
+    var parcel = ParcelArgument.getSingleParcel(ctx, ParcelCommand.ARG_PARCELS);
     levelSavedData.deleteParcel(parcel.uuid());
 
     source.sendSuccess(
