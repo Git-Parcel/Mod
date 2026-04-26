@@ -3,7 +3,6 @@ package io.github.leawind.gitparcel.server.commands.parcels;
 import com.mojang.brigadier.CommandDispatcher;
 import io.github.leawind.gitparcel.server.commands.parcels.create.CreateSubcommand;
 import io.github.leawind.gitparcel.server.commands.parcels.formats.FormatsSubcommand;
-import io.github.leawind.gitparcel.server.commands.parcels.list.ListSubcommand;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -16,7 +15,6 @@ public class ParcelsCommand {
         Commands.literal("parcels")
             .requires(Commands.hasPermission(Commands.LEVEL_ALL))
             .then(CreateSubcommand.build())
-            .then(ListSubcommand.build())
             .then(FormatsSubcommand.build());
 
     dispatcher.register(parcels);
