@@ -6,11 +6,11 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.permission.WorldPermissions;
 import io.github.leawind.gitparcel.server.commands.GitParcelBaseCommand;
+import io.github.leawind.gitparcel.server.commands.ParcelFormatter;
 import io.github.leawind.gitparcel.world.GitParcelLevelSavedData;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.DimensionArgument;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 
 public class ListSubcommand extends GitParcelBaseCommand {
@@ -48,15 +48,7 @@ public class ListSubcommand extends GitParcelBaseCommand {
         false);
 
     for (var parcel : savedData.parcels().values()) {
-      source.sendSuccess(
-          () ->
-              Component.literal("  - UUID: ")
-                  .append(Component.literal(parcel.uuid().toString()))
-                  .append(Component.literal(", BoundingBox: "))
-                  .append(Component.literal(parcel.getBoundingBox().toString()))
-                  .append(Component.literal(", Transform: "))
-                  .append(Component.literal(parcel.transform().toString())),
-          false);
+      source.sendSuccess(() -> ParcelFormatter.formatParcelInfo(parcel, "  - ", "    "), false);
     }
 
     return 1;
