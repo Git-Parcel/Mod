@@ -7,6 +7,7 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import io.github.leawind.gitparcel.GitParcelTranslations;
+import io.github.leawind.gitparcel.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.world.Parcel;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -215,8 +216,7 @@ public final class ParcelSelectorParser {
     try {
       uuid = UUID.fromString(str);
     } catch (IllegalArgumentException ignored) {
-      // TODO 16?
-      if (str.isEmpty() || str.length() > 16) {
+      if (!ParcelMeta.isValidDisplayName(str)) {
         reader.setCursor(cursor);
         throw ERROR_INVALID_NAME_OR_UUID.createWithContext(reader);
       }
