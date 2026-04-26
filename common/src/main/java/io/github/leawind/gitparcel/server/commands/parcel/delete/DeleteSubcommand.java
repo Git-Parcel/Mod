@@ -13,9 +13,7 @@ import net.minecraft.commands.Commands;
 
 public class DeleteSubcommand extends GitParcelBaseCommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
-    var parcel = Commands.argument("parcel", ParcelArgument.parcels());
-
-    return Commands.literal("delete").then(parcel.executes(DeleteSubcommand::delete));
+    return Commands.literal("delete").executes(DeleteSubcommand::delete);
   }
 
   private static int delete(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -28,16 +26,12 @@ public class DeleteSubcommand extends GitParcelBaseCommand {
     var serverLevel = source.getLevel();
     var levelSavedData = GitParcelLevelSavedData.get(serverLevel);
 
-    var parcels = ParcelArgument.getParcels(ctx, "parcel");
-
-    for (var parcel : parcels) {
-      levelSavedData.deleteParcel(parcel.uuid());
-    }
+    var parcel = ParcelArgument.getSingleParcel(ctx, "parcel");
+    levelSavedData.deleteParcel(parcel.uuid());
 
     source.sendSuccess(
-        () -> GitParcelTranslations.of("command.gitparcel.parcel.delete.success", parcels.size()),
-        true);
+        () -> GitParcelTranslations.of("command.gitparcel.parcel.delete.success", 1), true);
 
-    return parcels.size();
+    return 1;
   }
 }

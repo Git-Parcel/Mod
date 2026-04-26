@@ -19,11 +19,7 @@ public class SaveSubcommand {
         Commands.argument("ignore_entities", BoolArgumentType.bool())
             .executes(SaveSubcommand::saveWithIgnoreEntities);
 
-    return Commands.literal("save")
-        .then(
-            Commands.argument("parcel", ParcelArgument.singleParcel())
-                .executes(SaveSubcommand::save)
-                .then(ignore_entities));
+    return Commands.literal("save").executes(SaveSubcommand::save).then(ignore_entities);
   }
 
   private static int save(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -40,7 +36,6 @@ public class SaveSubcommand {
     Parcel parcel = ParcelArgument.getSingleParcel(ctx, "parcel");
 
     try {
-      // TODO git
       parcel.save(ignoreEntities);
       ctx.getSource()
           .sendSuccess(

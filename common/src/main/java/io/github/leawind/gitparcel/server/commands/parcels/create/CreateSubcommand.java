@@ -1,5 +1,6 @@
-package io.github.leawind.gitparcel.server.commands.parcel.create;
+package io.github.leawind.gitparcel.server.commands.parcels.create;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -31,22 +32,25 @@ public class CreateSubcommand extends GitParcelBaseCommand {
             .executes(CreateSubcommand::createAtMirror)
             .then(rotation);
 
-    var to =
-        Commands.argument("to", BlockPosArgument.blockPos())
-            .executes(CreateSubcommand::createAtTo)
+    var name =
+        Commands.argument("name", StringArgumentType.string())
+            .executes(CreateSubcommand::createAtName)
             .then(mirror);
+
+    var to = Commands.argument("to", BlockPosArgument.blockPos()).then(name);
 
     var from = Commands.argument("from", BlockPosArgument.blockPos()).then(to);
 
     return Commands.literal("create").then(from);
   }
 
-  private static int createAtTo(CommandContext<CommandSourceStack> ctx)
+  private static int createAtName(CommandContext<CommandSourceStack> ctx)
       throws CommandSyntaxException {
     return create(
         ctx,
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
+        StringArgumentType.getString(ctx, "name"),
         Mirror.NONE,
         Rotation.NONE);
   }
@@ -57,6 +61,7 @@ public class CreateSubcommand extends GitParcelBaseCommand {
         ctx,
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
+        StringArgumentType.getString(ctx, "name"),
         TemplateMirrorArgument.getMirror(ctx, "mirror"),
         Rotation.NONE);
   }
@@ -67,6 +72,7 @@ public class CreateSubcommand extends GitParcelBaseCommand {
         ctx,
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
+        StringArgumentType.getString(ctx, "name"),
         TemplateMirrorArgument.getMirror(ctx, "mirror"),
         TemplateRotationArgument.getRotation(ctx, "rotation"));
   }
@@ -75,13 +81,13 @@ public class CreateSubcommand extends GitParcelBaseCommand {
       CommandContext<CommandSourceStack> ctx,
       BlockPos from,
       BlockPos to,
+      String name,
       Mirror mirror,
       Rotation rotation) {
     var source = ctx.getSource();
     var level = source.getLevel();
     var savedData = GitParcelLevelSavedData.get(level);
 
-    // Check permission
     if (!validateWorldPermission(source, WorldPermissions.CREATE_PARCEL)) {
       return 0;
     }
@@ -89,6 +95,7 @@ public class CreateSubcommand extends GitParcelBaseCommand {
     try {
       BoundingBox boundingBox = BoundingBox.fromCorners(from, to);
       Parcel parcel = Parcel.create(boundingBox, mirror, rotation);
+      parcel.meta().setName(name);
 
       savedData.addNewParcel(parcel);
 

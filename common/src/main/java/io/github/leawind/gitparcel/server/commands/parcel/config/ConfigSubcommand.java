@@ -32,14 +32,8 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
             .then(buildVisualShowWireframe())
             .then(buildVisualShowAnchor());
 
-    var parcel = Commands.argument("parcel", ParcelArgument.singleParcel()).then(set);
-
-    return Commands.literal("config").then(parcel);
+    return Commands.literal("config").then(set);
   }
-
-  // ////////////////////////////////////////////////////////////////
-  // Helpers
-  // ////////////////////////////////////////////////////////////////
 
   private interface Setter<T> {
     void set(Parcel parcel, T value) throws CommandSyntaxException;
@@ -77,10 +71,6 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
   private interface ParcelValueReader<T> {
     T read(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException;
   }
-
-  // ////////////////////////////////////////////////////////////////
-  // meta
-  // ////////////////////////////////////////////////////////////////
 
   private static ArgumentBuilder<CommandSourceStack, ?> buildMetaFormat() {
     return Commands.literal("meta.format")
@@ -154,10 +144,6 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
                             c -> BoolArgumentType.getBool(c, "bool"),
                             (p, v) -> p.meta().setExcludeEntities(v))));
   }
-
-  // ////////////////////////////////////////////////////////////////
-  // visual
-  // ////////////////////////////////////////////////////////////////
 
   private static ArgumentBuilder<CommandSourceStack, ?> buildVisualShowWireframe() {
     return Commands.literal("visual.showWireframe")

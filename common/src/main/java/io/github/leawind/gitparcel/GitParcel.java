@@ -19,6 +19,7 @@ import io.github.leawind.gitparcel.platform.Services;
 import io.github.leawind.gitparcel.server.GameServerApi;
 import io.github.leawind.gitparcel.server.commands.parcel.ParcelCommand;
 import io.github.leawind.gitparcel.server.commands.parcel_debug.ParcelDebugCommand;
+import io.github.leawind.gitparcel.server.commands.parcels.ParcelsCommand;
 import io.github.leawind.gitparcel.world.GitParcelLevelSavedData;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -108,6 +109,7 @@ public final class GitParcel {
       Commands.CommandSelection commandSelection) {
     LOGGER.debug("Registering commands");
 
+    ParcelsCommand.register(dispatcher, context);
     ParcelCommand.register(dispatcher, context);
 
     if (Services.PLATFORM.isDevelopmentEnvironment()) {
