@@ -7,7 +7,6 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.GitParcelTranslations;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.commands.arguments.ParcelArgument;
-import io.github.leawind.gitparcel.world.Parcel;
 import java.io.IOException;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -33,31 +32,28 @@ public class SaveSubcommand {
 
   private static int save(CommandContext<CommandSourceStack> ctx, boolean ignoreEntities)
       throws CommandSyntaxException {
-    Parcel parcel = ParcelArgument.getSingleParcel(ctx, "parcel");
+    var source = ctx.getSource();
+    var parcels = ParcelArgument.getParcels(ctx, "parcel");
 
-    try {
-      parcel.save(ignoreEntities);
-      ctx.getSource()
-          .sendSuccess(
-              () ->
-                  GitParcelTranslations.of(
-                      "command.gitparcel.parcel.save.success", parcel.uuid().toString()),
-              true);
-      return 1;
+    for (var parcel : parcels) {
+      try {
+        parcel.save(ignoreEntities);
+        source.sendSystemMessage(
+            GitParcelTranslations.of(
+                "command.gitparcel.parcel.save.success", parcel.uuid().toString()));
 
-    } catch (IOException | ParcelException e) {
-      ctx.getSource()
-          .sendFailure(
-              GitParcelTranslations.of(
-                  "command.gitparcel.parcel.save.failure",
-                  e.getClass().getSimpleName() + ": " + e.getMessage()));
-      return 0;
-    } catch (Exception e) {
-      ctx.getSource()
-          .sendFailure(
-              GitParcelTranslations.of(
-                  "command.gitparcel.parcel.unexpected_error", e.getMessage()));
-      return 0;
+      } catch (IOException | ParcelException e) {
+        source.sendFailure(
+            GitParcelTranslations.of(
+                "command.gitparcel.parcel.save.failure",
+                e.getClass().getSimpleName() + ": " + e.getMessage()));
+        return 0;
+      } catch (Exception e) {
+        source.sendFailure(
+            GitParcelTranslations.of("command.gitparcel.parcel.unexpected_error", e.getMessage()));
+        return 0;
+      }
     }
+    return 1;
   }
 }

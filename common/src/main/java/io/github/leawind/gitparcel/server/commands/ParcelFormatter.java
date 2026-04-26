@@ -2,13 +2,16 @@ package io.github.leawind.gitparcel.server.commands;
 
 import io.github.leawind.gitparcel.world.Parcel;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
 public final class ParcelFormatter {
 
   private ParcelFormatter() {}
 
-  public static Component formatParcelInfo(Parcel parcel) {
-    return formatParcelInfo(parcel, "", "");
+  public static Component formatBoundingBox(BoundingBox bb) {
+    return Component.literal(
+        "(" + bb.minX() + ", " + bb.minY() + ", " + bb.minZ() + ") -> (" + bb.maxX() + ", "
+            + bb.maxY() + ", " + bb.maxZ() + ")");
   }
 
   public static Component formatParcelInfo(
@@ -49,22 +52,8 @@ public final class ParcelFormatter {
                     + center.getZ()
                     + ")"))
         .append(Component.literal("\n"))
-        .append(
-            Component.literal(
-                linePrefix
-                    + "Bounds: ("
-                    + bb.minX()
-                    + ", "
-                    + bb.minY()
-                    + ", "
-                    + bb.minZ()
-                    + ") -> ("
-                    + bb.maxX()
-                    + ", "
-                    + bb.maxY()
-                    + ", "
-                    + bb.maxZ()
-                    + ")"))
+        .append(linePrefix + "Bounds: ")
+        .append(formatBoundingBox(bb))
         .append(Component.literal("\n"))
         .append(Component.literal(linePrefix + "Transform:"))
         .append(Component.literal("\n"))

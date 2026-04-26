@@ -14,6 +14,7 @@ import io.github.leawind.gitparcel.server.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.world.Parcel;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
 
 public class ConfigSubcommand extends GitParcelBaseCommand {
 
@@ -50,20 +51,21 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
       return 0;
     }
 
-    var parcel = ParcelArgument.getSingleParcel(ctx, "parcel");
-    var value = valueReader.read(ctx);
+    for (var parcel : ParcelArgument.getParcels(ctx, "parcel")) {
+      var value = valueReader.read(ctx);
 
-    setter.set(parcel, value);
-    parcel.emitUpdate();
+      setter.set(parcel, value);
+      parcel.emitUpdate();
 
-    source.sendSuccess(
-        () ->
-            GitParcelTranslations.of(
-                "command.gitparcel.parcel.config.set.success",
-                parcel.uuid().toString(),
-                key,
-                value.toString()),
-        false);
+      source.sendSystemMessage(
+          GitParcelTranslations.of(
+              "command.gitparcel.parcel.config.set.success",
+              parcel.uuid().toString(),
+              key,
+              value.toString()));
+    }
+
+    source.sendSuccess(() -> Component.literal("success"), false);
     return 1;
   }
 

@@ -24,7 +24,7 @@ public class ParcelCommand extends GitParcelBaseCommand {
         Commands.literal("parcel")
             .requires(Commands.hasPermission(Commands.LEVEL_ALL))
             .then(
-                Commands.argument("parcel", ParcelArgument.singleParcel())
+                Commands.argument("parcel", ParcelArgument.parcels())
                     .executes(ParcelCommand::showInfo)
                     .then(ConfigSubcommand.build())
                     .then(DeleteSubcommand.build())
