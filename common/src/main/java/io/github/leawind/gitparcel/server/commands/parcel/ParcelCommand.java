@@ -44,9 +44,11 @@ public class ParcelCommand extends GitParcelBaseCommand {
       return 0;
     }
 
-    var parcel = ParcelArgument.getSingleParcel(ctx, ARG_PARCELS);
+    var parcels = ParcelArgument.getParcels(ctx, ARG_PARCELS);
+    for (var parcel : parcels) {
+      source.sendSuccess(() -> ParcelFormatter.formatParcelInfo(parcel, "- ", "  "), false);
+    }
 
-    source.sendSuccess(() -> ParcelFormatter.formatParcelInfo(parcel), false);
     return 1;
   }
 }

@@ -27,12 +27,15 @@ public class DeleteSubcommand extends GitParcelBaseCommand {
     var serverLevel = source.getLevel();
     var levelSavedData = GitParcelLevelSavedData.get(serverLevel);
 
-    var parcel = ParcelArgument.getSingleParcel(ctx, ParcelCommand.ARG_PARCELS);
-    levelSavedData.deleteParcel(parcel.uuid());
+    var parcels = ParcelArgument.getParcels(ctx, ParcelCommand.ARG_PARCELS);
+    for (var parcel : parcels) {
+      levelSavedData.deleteParcel(parcel.uuid());
+    }
 
     source.sendSuccess(
-        () -> GitParcelTranslations.of("command.gitparcel.parcel.delete.success", 1), true);
+        () -> GitParcelTranslations.of("command.gitparcel.parcel.delete.success", parcels.size()),
+        true);
 
-    return 1;
+    return parcels.size();
   }
 }
