@@ -4,6 +4,8 @@ import io.github.leawind.gitparcel.mixin.AccessGameTestHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestInfo;
+import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import org.jspecify.annotations.Nullable;
@@ -75,21 +77,27 @@ public class GameTestHelpMore extends GameTestHelper {
     return this.getLevel().getBlockEntity(this.absolutePos(pos));
   }
 
-  /**
-   * @see #assertSameBlockEntity
-   */
-  public void assertSameBlockEntity(BlockPos testPos, BlockPos comparisonPos) {
-    var a = this.getBlockEntity(testPos);
-    var b = this.getBlockEntity(comparisonPos);
-    if (a != null) {
-      if (b == null) {
-        throw this.assertionException(testPos, "test.error.entity_not_equal", a, "null");
-      }
-
-      if (!a.equals(b)) {
-        throw this.assertionException(testPos, "test.error.entity_not_equal", a, b);
-      }
+  public void assertSameNbtStructure(@Nullable Tag a, @Nullable Tag b, boolean compareListTag) {
+    if (!GitParcelTestUtils.compareNbtStructure(a, b, compareListTag)) {
+      String msg = String.format("NBT structure is not equal:\n  %s\n  %s", a, b);
+      throw assertionException(Component.literal(msg));
     }
+  }
+
+  public void assertSimilarBlockEntityData(BlockPos testPos, BlockPos comparisonPos) {
+    var blockEntityA = this.getBlockEntity(testPos);
+    var blockEntityB = this.getBlockEntity(comparisonPos);
+
+    var a =
+        blockEntityA == null
+            ? null
+            : blockEntityA.saveWithFullMetadata(getLevel().registryAccess());
+    var b =
+        blockEntityB == null
+            ? null
+            : blockEntityB.saveWithFullMetadata(getLevel().registryAccess());
+
+    assertSameNbtStructure(a, b, true);
   }
 
   public void assertSame(BoundingBox boxA, BoundingBox boxB, @ChannelFlags int flags) {
@@ -118,7 +126,7 @@ public class GameTestHelpMore extends GameTestHelper {
           }
 
           if ((flags & ChannelFlags.BLOCK_ENTITIY) != 0) {
-            assertSameBlockEntity(posA, posB);
+            assertSimilarBlockEntityData(posA, posB);
           }
         }
       }

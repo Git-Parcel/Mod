@@ -15,8 +15,13 @@ public class GitParcelGameTestFabric extends GitParcelGameTest implements Custom
     method.invoke(this, helper);
   }
 
-  @GameTest(structure = "gitparcel:swamp_hut")
+  @GameTest(structure = "gitparcel:swamp_hut-7x8x9")
   public void testSaveAndLoad(GameTestHelper helper) throws Exception {
+    Tester.test(helper, super::testSaveAndLoad);
+  }
+
+  @GameTest(structure = "gitparcel:copy_up-70x210x74")
+  public void testSaveAndLoad2(GameTestHelper helper) throws Exception {
     Tester.test(helper, super::testSaveAndLoad);
   }
 }
