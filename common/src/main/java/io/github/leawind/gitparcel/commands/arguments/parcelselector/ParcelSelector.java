@@ -12,6 +12,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.util.Util;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,6 +26,7 @@ public final class ParcelSelector {
   private final int maxResults;
   private final List<Predicate<Parcel>> predicates;
   private final BiConsumer<Vec3, List<Parcel>> order;
+  private final boolean isSighted;
   private final boolean isWorldLimited;
 
   private final @Nullable String name;
@@ -34,12 +36,14 @@ public final class ParcelSelector {
       int maxResults,
       List<Predicate<Parcel>> predicates,
       BiConsumer<Vec3, List<Parcel>> order,
+      boolean isSighted,
       boolean isWorldLimited,
       @Nullable String name,
       @Nullable UUID uuid) {
     this.maxResults = maxResults;
     this.predicates = predicates;
     this.order = order;
+    this.isSighted = isSighted;
     this.isWorldLimited = isWorldLimited;
     this.name = name;
     this.uuid = uuid;
@@ -49,8 +53,12 @@ public final class ParcelSelector {
     return maxResults;
   }
 
+  public boolean isSighted() {
+    return isSighted;
+  }
+
   public boolean isWorldLimited() {
-    return this.isWorldLimited;
+    return isWorldLimited;
   }
 
   public boolean useSelector() {
@@ -70,6 +78,7 @@ public final class ParcelSelector {
 
   public Parcel findSingleParcel(CommandSourceStack source) throws CommandSyntaxException {
     checkPermissions(source);
+
     var list = findParcels(source);
     if (list.isEmpty()) {
       throw ParcelArgument.ERROR_NO_PARCEL_FOUND.create();
@@ -80,28 +89,69 @@ public final class ParcelSelector {
     }
   }
 
-  // NOW stream
   public List<Parcel> findParcels(CommandSourceStack source) throws CommandSyntaxException {
+
     checkPermissions(source);
-    return GitParcelLevelSavedData.get(source.getLevel()).parcels().values().stream()
-        .filter(getPredicate())
-        .toList();
-  }
 
-  private Predicate<Parcel> getPredicate() {
+    var parcels = GitParcelLevelSavedData.get(source.getLevel()).parcels().values().stream();
+
     if (name != null) {
-      return parcel -> name.equals(parcel.meta().name());
-    } else if (uuid != null) {
-      return parcel -> parcel.uuid().equals(uuid);
-    } else {
-      return Util.allOf(predicates);
-    }
-  }
+      return parcels.filter(parcel -> name.equals(parcel.meta().name())).toList();
 
-  private List<Parcel> sortAndLimit(Vec3 pos, List<Parcel> list) {
-    if (list.size() > 1) {
-      order.accept(pos, list);
+    } else if (uuid != null) {
+      return parcels.filter(parcel -> uuid.equals(parcel.uuid())).toList();
+
+    } else if (isSighted()) {
+
+      Vec3 rayFrom;
+      Vec3 rayTo;
+      {
+        var entity = source.getEntity();
+        if (entity == null) {
+          rayFrom = source.getPosition();
+          rayTo = null;
+        } else {
+          rayFrom = entity.getEyePosition();
+          rayTo = rayFrom.add(entity.getViewVector(1).scale(1024));
+        }
+      }
+
+      Parcel result = null;
+      double minDistance = Double.MAX_VALUE;
+
+      for (Parcel parcel : parcels.toList()) {
+        AABB aabb = AABB.of(parcel.getBoundingBox());
+
+        if (aabb.contains(rayFrom)) {
+          if (minDistance == 0) {
+            // The executor is in the intersection of multiple parcels
+            return List.of();
+          }
+          result = parcel;
+          minDistance = 0;
+        } else if (rayTo != null) {
+          var clipResult = aabb.clip(rayFrom, rayTo);
+          if (clipResult.isPresent()) {
+            double distance = clipResult.get().distanceTo(rayFrom);
+            if (distance < minDistance) {
+              minDistance = distance;
+              result = parcel;
+            }
+          }
+        }
+      }
+
+      return result == null ? List.of() : List.of(result);
     }
-    return list.subList(0, Math.min(maxResults, list.size()));
+
+    var list = parcels.filter(Util.allOf(predicates)).toList();
+
+    if (list.size() > 1) {
+      order.accept(source.getPosition(), list);
+    }
+
+    list = list.subList(0, Math.min(maxResults, list.size()));
+
+    return list;
   }
 }

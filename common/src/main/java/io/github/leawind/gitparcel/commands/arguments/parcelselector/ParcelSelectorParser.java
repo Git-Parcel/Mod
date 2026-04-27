@@ -82,9 +82,13 @@ public final class ParcelSelectorParser {
       suggestions = SUGGEST_NOTHING;
 
   private int maxResults;
+
+  /** Added by options */
   private final List<Predicate<Parcel>> predicates = new ArrayList<>();
+
   private final java.util.HashSet<String> usedOptions = new java.util.HashSet<>();
   private BiConsumer<Vec3, List<Parcel>> order = ORDER_ARBITRARY;
+  private boolean isSighted = false;
   private boolean isWorldLimited = true;
   private @Nullable String name;
   private @Nullable UUID uuid;
@@ -95,7 +99,7 @@ public final class ParcelSelectorParser {
 
   public ParcelSelector getSelector() {
     return new ParcelSelector(
-        maxResults, List.copyOf(predicates), order, isWorldLimited, name, uuid);
+        maxResults, List.copyOf(predicates), order, isSighted, isWorldLimited, name, uuid);
   }
 
   public ParcelSelector parse() throws CommandSyntaxException {
@@ -117,6 +121,7 @@ public final class ParcelSelectorParser {
 
   private void parseSelector() throws CommandSyntaxException {
     this.suggestions = this::suggestSelector;
+
     if (!reader.canRead()) {
       throw ERROR_MISSING_SELECTOR_TYPE.createWithContext(reader);
     } else {
@@ -124,12 +129,17 @@ public final class ParcelSelectorParser {
       char ch = reader.read();
 
       switch (ch) {
-        case SELECTOR_ARBITRARY -> maxResults = Integer.MAX_VALUE;
+        case SELECTOR_ARBITRARY -> {
+          maxResults = Integer.MAX_VALUE;
+        }
         case SELECTOR_NEAREST -> {
           maxResults = 1;
           order = ORDER_NEAREST;
         }
-        case SELECTOR_SIGHTED -> maxResults = 1;
+        case SELECTOR_SIGHTED -> {
+          maxResults = 1;
+          isSighted = true;
+        }
         default -> {
           reader.setCursor(cursor);
           throw ERROR_UNKNOWN_SELECTOR_TYPE.createWithContext(
@@ -138,6 +148,7 @@ public final class ParcelSelectorParser {
       }
 
       this.suggestions = this::suggestOpenOptions;
+
       if (reader.canRead() && reader.peek() == SYNTAX_OPTIONS_START) {
         reader.skip();
         suggestions = this::suggestOptionsKeyOrClose;
@@ -324,6 +335,10 @@ public final class ParcelSelectorParser {
 
   public void setMaxResults(int maxResults) {
     this.maxResults = maxResults;
+  }
+
+  public boolean isSighted() {
+    return isSighted;
   }
 
   public BiConsumer<Vec3, List<Parcel>> getOrder() {
