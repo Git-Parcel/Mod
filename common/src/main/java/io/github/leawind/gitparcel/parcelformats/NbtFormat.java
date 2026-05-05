@@ -5,11 +5,15 @@ import io.github.leawind.inventory.just.Result;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.SnbtPrinterTagVisitor;
+import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
 
 public enum NbtFormat {
+  // TODO rename to uppercase
   Binary(".nbt"),
   Text(".snbt");
 
@@ -18,7 +22,7 @@ public enum NbtFormat {
   /**
    * Writes the given NBT tag to the specified path in the format of this NBT format.
    *
-   * @param path the path to write the NBT tag to. Must exist.
+   * @param path the path to write the NBT tag to.
    * @param tag the NBT tag to write.
    * @throws IOException if an I/O error occurs while writing the NBT tag to the path.
    */
@@ -29,7 +33,7 @@ public enum NbtFormat {
   /**
    * Writes the given NBT tag to the specified path in the format of this NBT format.
    *
-   * @param path the path to write the NBT tag to. Must exist.
+   * @param path the path to write the NBT tag to.
    * @param tag the NBT tag to write.
    * @param format whether to format the NBT tag in a readable way.
    * @throws IOException if an I/O error occurs while writing the NBT tag to the path.
@@ -40,12 +44,15 @@ public enum NbtFormat {
         NbtIo.write(tag, path);
         break;
       case Text:
-        if (format) {
-          // TODO format snbt
-        }
-        Files.writeString(path, tag.toString());
+        Files.writeString(path, format ? formatSnbt(tag) : tag.toString());
         break;
     }
+  }
+
+  /** Format a NBT tag as pretty-printed SNBT with tab indentation. */
+  public static String formatSnbt(Tag tag) {
+    var visitor = new SnbtPrinterTagVisitor("\t", 0, new ArrayList<>());
+    return visitor.visit(tag);
   }
 
   public Result<CompoundTag, String> read(Path path) {

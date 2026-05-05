@@ -25,7 +25,7 @@ public class ParcellaD16Loader extends ParcellaD32Loader
   }
 
   @Override
-  protected int[][][] loadSubparcelRLE3D(
+  protected int[][][] loadSubparcelBlockStatesRLE3D(
       Subparcel localSubparcel, byte[] bytes, ProblemReporter problemReporter) {
 
     int sizeX = localSubparcel.sizeX;

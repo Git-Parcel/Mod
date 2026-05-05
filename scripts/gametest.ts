@@ -1,14 +1,21 @@
 /**
- * 1. 使用 Gradle 任务 `fabric:runClient` 运行客户端，手动保存结构
- * 2. 使用此脚本将结构同步到用于 gametest 的结构目录中
+ * GameTest structure file management CLI.
+ *
+ * Provides commands for managing Minecraft GameTest structure files used
+ * by the Git Parcel mod during testing:
+ *
+ * - `list` / `ls` — List all saved parcels that are structure templates.
+ * - `sync`        — Copy structure NBT files from saved parcel directories
+ *                    into the GameTest structure resource directory so they
+ *                    can be loaded by the game.
  *
  * @module gametest
  */
 
-import { program } from 'commander'
+import {program} from 'commander'
 import * as fs from '@leawind/inventory/fs'
 import log from '@leawind/inventory/log'
-import { FABRIC_GAMETEST_SAVED_PARCELS_DIR, FABRIC_GAMETEST_STRUCTURE_DIR } from './lib/constants.ts'
+import {FABRIC_GAMETEST_SAVED_PARCELS_DIR, FABRIC_GAMETEST_STRUCTURE_DIR} from './lib/constants.ts'
 
 const FORMAT_NAME = 'structure_template'
 

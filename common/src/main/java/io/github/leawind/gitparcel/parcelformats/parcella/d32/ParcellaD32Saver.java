@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
@@ -24,6 +26,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.DoubleTag;
 import net.minecraft.nbt.IntTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.painting.Painting;
@@ -43,7 +46,6 @@ public class ParcellaD32Saver
   public static final class Context extends SaveContext<Config> {
     public final Path blocksDir;
     public final Path blocksPaletteFile;
-    public final Path blocksNbtDir;
     public final Path entitiesDir;
 
     public BlockPalette blockPalette;
@@ -59,8 +61,30 @@ public class ParcellaD32Saver
       super(level, parcelSize, transform, anchor, dataDir, ignoreEntities, config);
       blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
       blocksPaletteFile = blocksDir.resolve(PALETTE_FILE_NAME);
-      blocksNbtDir = blocksDir.resolve(NBT_DIR_NAME);
       entitiesDir = dataDir.resolve(ENTITIES_DIR_NAME);
+    }
+  }
+
+  /**
+   * @param pos Local position
+   */
+  public record BlockEntityEntry(BlockPos pos, CompoundTag data) {
+    /** Compare by (y, x, z) for deterministic ordering. */
+    static final Comparator<BlockEntityEntry> COMPARATOR =
+        Comparator.comparingInt(BlockEntityEntry::y)
+            .thenComparingInt(BlockEntityEntry::x)
+            .thenComparingInt(BlockEntityEntry::z);
+
+    int x() {
+      return pos.getX();
+    }
+
+    int y() {
+      return pos.getY();
+    }
+
+    int z() {
+      return pos.getZ();
     }
   }
 
@@ -113,29 +137,57 @@ public class ParcellaD32Saver
 
       long index = ZOrder3D.coordToIndexSigned(coord);
 
-      Path subparcelFile =
-          subParcelsDir.resolve(IndexPathCodec.indexToPath(index, SUBPARCEL_SUFFIX));
-      Files.createDirectories(subparcelFile.getParent());
+      Path blockStateFile =
+          subParcelsDir.resolve(IndexPathCodec.indexToPath(index, SUBPARCEL_BLOCK_STATE_SUFFIX));
+      Path blockEntityFile =
+          subParcelsDir.resolve(IndexPathCodec.indexToPath(index, SUBPARCEL_BLOCK_ENTITY_SUFFIX));
+      Files.createDirectories(blockStateFile.getParent());
+
+      List<BlockEntityEntry> blockEntities = new ArrayList<>();
 
       switch (ctx.config.subparcelFormat.get()) {
-        case FLAT -> writeSubparcelFLAT(ctx, subparcelFile, localSubparcel);
-        case RLE3D -> writeSubparcelRLE3D(ctx, subparcelFile, localSubparcel);
+        case FLAT -> writeSubparcelFLAT(ctx, blockStateFile, localSubparcel, blockEntities);
+        case RLE3D -> writeSubparcelRLE3D(ctx, blockStateFile, localSubparcel, blockEntities);
+      }
+
+      if (!blockEntities.isEmpty()) {
+        writeBlockEntitySnbt(blockEntityFile, blockEntities);
+      } else {
+        Files.deleteIfExists(blockEntityFile);
       }
     }
 
-    ctx.blockPalette.save(
-        ctx.blocksPaletteFile, ctx.blocksNbtDir, ctx.config.blockEntityDataFormat.get());
+    ctx.blockPalette.save(ctx.blocksPaletteFile);
     ctx.blockPalette = null;
+  }
+
+  /** Write block entity data as formatted SNBT for a subparcel. */
+  protected void writeBlockEntitySnbt(Path blockEntityFile, List<BlockEntityEntry> blockEntities)
+      throws IOException {
+    // Sort by (y, x, z) for deterministic ordering
+    blockEntities.sort(BlockEntityEntry.COMPARATOR);
+
+    ListTag listTag = new ListTag();
+    for (var entry : blockEntities) {
+      CompoundTag entryTag = new CompoundTag();
+
+      // Encode position as [x, y, z] using BlockPos.CODEC
+      Tag posTag =
+          BlockPos.CODEC.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, entry.pos).getOrThrow();
+      entryTag.put("pos", posTag);
+
+      entryTag.put("data", entry.data);
+      listTag.add(entryTag);
+    }
+
+    String snbt = ParcellaD32Format.formatSnbt(listTag);
+    Files.writeString(blockEntityFile, snbt, StandardCharsets.UTF_8);
   }
 
   protected BlockPalette loadBlockPaletteIfExistElseCreate(Context ctx) {
     if (Files.exists(ctx.blocksPaletteFile)) {
       try {
-        return BlockPalette.load(
-            ctx.level,
-            ctx.blocksPaletteFile,
-            ctx.blocksNbtDir,
-            ctx.config.blockEntityDataFormat.get());
+        return BlockPalette.load(ctx.level, ctx.blocksPaletteFile);
       } catch (Exception e) {
         ParcelStorage.LOGGER.error("Error loading block palette: {}", e.getMessage(), e);
         return new BlockPalette();
@@ -145,7 +197,8 @@ public class ParcellaD32Saver
     }
   }
 
-  protected void writeSubparcelRLE3D(Context ctx, Path file, Subparcel subparcel)
+  protected void writeSubparcelRLE3D(
+      Context ctx, Path file, Subparcel subparcel, List<BlockEntityEntry> blockEntities)
       throws IOException {
     var sb = new StringBuilder(8192);
     char[] base32Chars = Base32Utils.CHARS;
@@ -169,13 +222,14 @@ public class ParcellaD32Saver
               // blockState: world space
               blockState = transform.applyInverted(blockState);
               // blockState: local space
+
               BlockEntity blockEntity = level.getBlockEntity(pos);
-              CompoundTag nbt = null;
               if (blockEntity != null) {
-                nbt = blockEntity.saveWithFullMetadata(level.registryAccess());
+                CompoundTag nbt = blockEntity.saveWithFullMetadata(level.registryAccess());
+                blockEntities.add(new BlockEntityEntry(new BlockPos(x, y, z), nbt));
               }
 
-              return palette.collect(blockState, nbt);
+              return palette.collect(blockState);
             });
 
     for (var run : runs) {
@@ -197,7 +251,8 @@ public class ParcellaD32Saver
     Files.writeString(file, sb, StandardCharsets.UTF_8);
   }
 
-  protected void writeSubparcelFLAT(Context ctx, Path path, Subparcel subparcel)
+  protected void writeSubparcelFLAT(
+      Context ctx, Path path, Subparcel subparcel, List<BlockEntityEntry> blockEntities)
       throws IOException {
     StringBuilder sb = new StringBuilder(8192);
 
@@ -221,13 +276,14 @@ public class ParcellaD32Saver
           // blockState: world space
           blockState = ctx.transform.applyInverted(blockState);
           // blockState: local space
+
           BlockEntity blockEntity = level.getBlockEntity(pos);
-          CompoundTag nbt = null;
           if (blockEntity != null) {
-            nbt = blockEntity.saveWithFullMetadata(level.registryAccess());
+            CompoundTag nbt = blockEntity.saveWithFullMetadata(level.registryAccess());
+            blockEntities.add(new BlockEntityEntry(new BlockPos(x, y, z), nbt));
           }
 
-          int id = palette.collect(blockState, nbt);
+          int id = palette.collect(blockState);
 
           sb.append(HexUtils.toHexUpperCase(id)).append('\n');
         }

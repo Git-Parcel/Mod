@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
@@ -51,7 +52,8 @@ public class ParcellaD16Saver extends ParcellaD32Saver
   }
 
   @Override
-  protected void writeSubparcelRLE3D(Context ctx, Path file, Subparcel subparcel)
+  protected void writeSubparcelRLE3D(
+      Context ctx, Path file, Subparcel subparcel, List<BlockEntityEntry> blockEntities)
       throws IOException {
     var sb = new StringBuilder(8192);
     char[] hexChars = HexUtils.UPPERS;
@@ -71,17 +73,18 @@ public class ParcellaD16Saver extends ParcellaD32Saver
               pos = ctx.transform.apply(pos);
               // pos: world space
 
+              // get blockState in world space
               BlockState blockState = level.getBlockState(pos);
-              // blockState: world space
+              // convert blockState to local space
               blockState = transform.applyInverted(blockState);
-              // blockState: local space
+
               BlockEntity blockEntity = level.getBlockEntity(pos);
-              CompoundTag nbt = null;
               if (blockEntity != null) {
-                nbt = blockEntity.saveWithFullMetadata(level.registryAccess());
+                CompoundTag nbt = blockEntity.saveWithFullMetadata(level.registryAccess());
+                blockEntities.add(new BlockEntityEntry(new BlockPos(x, y, z), nbt));
               }
 
-              return palette.collect(blockState, nbt);
+              return palette.collect(blockState);
             });
 
     for (var run : runs) {

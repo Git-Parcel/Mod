@@ -33,7 +33,7 @@ public class ParcellaTest {
     byte[] data = "000=000\n1\n001=001\n2\n".getBytes();
 
     int[][][] result =
-        new ParcellaD32Loader().loadSubparcelRLE3D(TEST_SUBPARCEL, data, DUMMY_REPORTER);
+        new ParcellaD32Loader().loadSubparcelBlockStatesRLE3D(TEST_SUBPARCEL, data, DUMMY_REPORTER);
 
     assertEquals(1, result[0][0][0]);
     assertEquals(2, result[0][0][1]);
@@ -44,7 +44,7 @@ public class ParcellaTest {
     byte[] data = "000111=3\n".getBytes();
 
     int[][][] result =
-        new ParcellaD32Loader().loadSubparcelRLE3D(TEST_SUBPARCEL, data, DUMMY_REPORTER);
+        new ParcellaD32Loader().loadSubparcelBlockStatesRLE3D(TEST_SUBPARCEL, data, DUMMY_REPORTER);
 
     for (int x = 0; x < 2; x++) {
       for (int y = 0; y < 2; y++) {
@@ -60,7 +60,7 @@ public class ParcellaTest {
     byte[] data = "1\n2\n3\n4\n5\n6\n7\n8\n".getBytes();
 
     int[][][] result =
-        new ParcellaD32Loader().loadSubparcelFLAT(TEST_SUBPARCEL, data, DUMMY_REPORTER);
+        new ParcellaD32Loader().loadSubparcelBlockStatesFLAT(TEST_SUBPARCEL, data, DUMMY_REPORTER);
 
     int index = 0;
     for (int z = 0; z < 2; z++) {
@@ -78,7 +78,7 @@ public class ParcellaTest {
     byte[] data = "000=000\ninvalid\n".getBytes(); // Invalid format
 
     int[][][] result =
-        new ParcellaD32Loader().loadSubparcelRLE3D(TEST_SUBPARCEL, data, DUMMY_REPORTER);
+        new ParcellaD32Loader().loadSubparcelBlockStatesRLE3D(TEST_SUBPARCEL, data, DUMMY_REPORTER);
     assertNotNull(result);
   }
 
@@ -87,7 +87,7 @@ public class ParcellaTest {
     byte[] data = "1\ninvalid\n3\n".getBytes(); // Invalid format
 
     int[][][] result =
-        new ParcellaD32Loader().loadSubparcelFLAT(TEST_SUBPARCEL, data, DUMMY_REPORTER);
+        new ParcellaD32Loader().loadSubparcelBlockStatesFLAT(TEST_SUBPARCEL, data, DUMMY_REPORTER);
     assertNotNull(result);
   }
 }

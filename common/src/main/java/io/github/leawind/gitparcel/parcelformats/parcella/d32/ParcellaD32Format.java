@@ -7,16 +7,19 @@ import io.github.leawind.gitparcel.api.parcel.config.ConfigItemBuilder;
 import io.github.leawind.gitparcel.parcelformats.NbtFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.SubparcelFormat;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.EnumSet;
+import net.minecraft.nbt.SnbtPrinterTagVisitor;
+import net.minecraft.nbt.Tag;
 import org.jspecify.annotations.NonNull;
 
 public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.Config> {
   String BLOCKS_DIR_NAME = "blocks";
   String ENTITIES_DIR_NAME = "entities";
-  String NBT_DIR_NAME = "nbt";
   String PALETTE_FILE_NAME = "palette.txt";
   String SUBPARCELS_DIR_NAME = "subparcels";
-  String SUBPARCEL_SUFFIX = ".txt";
+  String SUBPARCEL_BLOCK_STATE_SUFFIX = ".txt";
+  String SUBPARCEL_BLOCK_ENTITY_SUFFIX = ".be.snbt";
 
   Spec SPEC = new Spec("parcella_d32", 0);
 
@@ -44,16 +47,20 @@ public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.C
     private static final String SCHEMA_URL =
         "https://git-parcel.github.io/schemas/ParcellaFormatConfig.json";
 
-    public ConfigItem<NbtFormat> blockEntityDataFormat =
-        ConfigItemBuilder.ofEnum("blockEntityDataFormat", NbtFormat.Text).storeLocally().build();
     public ConfigItem<NbtFormat> entityDataFormat =
         ConfigItemBuilder.ofEnum("entityDataFormat", NbtFormat.Text).storeLocally().build();
     public ConfigItem<SubparcelFormat> subparcelFormat =
         ConfigItemBuilder.ofEnum("subparcelFormat", SubparcelFormat.RLE3D).storeLocally().build();
 
     public Config() {
-      register(blockEntityDataFormat).register(entityDataFormat).register(subparcelFormat);
+      register(entityDataFormat).register(subparcelFormat);
     }
+  }
+
+  /** Format a NBT tag as pretty-printed SNBT with tab indentation. */
+  static String formatSnbt(Tag tag) {
+    var visitor = new SnbtPrinterTagVisitor("\t", 0, new ArrayList<>());
+    return visitor.visit(tag);
   }
 
   interface EntityNbtFilePath {
