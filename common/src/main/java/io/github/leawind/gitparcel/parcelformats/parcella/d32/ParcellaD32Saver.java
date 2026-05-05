@@ -8,8 +8,8 @@ import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.parcelformats.NbtFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.BlockPalette;
 import io.github.leawind.gitparcel.parcelformats.parcella.Subparcel;
-import io.github.leawind.gitparcel.parcelformats.parcella.utils.IndexPathCodec;
 import io.github.leawind.gitparcel.parcelformats.parcella.utils.ParcelUtils;
+import io.github.leawind.gitparcel.parcelformats.parcella.utils.RadixTreePathGenerator;
 import io.github.leawind.gitparcel.parcelformats.parcella.utils.ZOrder3D;
 import io.github.leawind.gitparcel.utils.numbase.Base32Utils;
 import io.github.leawind.gitparcel.utils.numbase.HexUtils;
@@ -138,9 +138,10 @@ public class ParcellaD32Saver
       long index = ZOrder3D.coordToIndexSigned(coord);
 
       Path blockStateFile =
-          subParcelsDir.resolve(IndexPathCodec.indexToPath(index, SUBPARCEL_BLOCK_STATE_SUFFIX));
+          subParcelsDir.resolve(RadixTreePathGenerator.toPath(index, SUBPARCEL_BLOCK_STATE_SUFFIX));
       Path blockEntityFile =
-          subParcelsDir.resolve(IndexPathCodec.indexToPath(index, SUBPARCEL_BLOCK_ENTITY_SUFFIX));
+          subParcelsDir.resolve(
+              RadixTreePathGenerator.toPath(index, SUBPARCEL_BLOCK_ENTITY_SUFFIX));
       Files.createDirectories(blockStateFile.getParent());
 
       List<BlockEntityEntry> blockEntities = new ArrayList<>();

@@ -8,8 +8,8 @@ import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.parcelformats.parcella.BlockPalette;
 import io.github.leawind.gitparcel.parcelformats.parcella.Subparcel;
 import io.github.leawind.gitparcel.parcelformats.parcella.SubparcelFormat;
-import io.github.leawind.gitparcel.parcelformats.parcella.utils.IndexPathCodec;
 import io.github.leawind.gitparcel.parcelformats.parcella.utils.ParcelUtils;
+import io.github.leawind.gitparcel.parcelformats.parcella.utils.RadixTreePathGenerator;
 import io.github.leawind.gitparcel.parcelformats.parcella.utils.ZOrder3D;
 import io.github.leawind.gitparcel.utils.numbase.Base32Utils;
 import io.github.leawind.gitparcel.utils.numbase.HexUtils;
@@ -139,14 +139,14 @@ public class ParcellaD32Loader
       long index = ZOrder3D.coordToIndexSigned(coord);
       Path blockStateFile =
           ctx.subparcelsDir.resolve(
-              IndexPathCodec.indexToPath(index, SUBPARCEL_BLOCK_STATE_SUFFIX));
+              RadixTreePathGenerator.toPath(index, SUBPARCEL_BLOCK_STATE_SUFFIX));
       if (Files.exists(blockStateFile)) {
         loadBlockStates(ctx, blockStateFile, localSubparcel, problemReporter);
       }
 
       Path blockEntityFile =
           ctx.subparcelsDir.resolve(
-              IndexPathCodec.indexToPath(index, SUBPARCEL_BLOCK_ENTITY_SUFFIX));
+              RadixTreePathGenerator.toPath(index, SUBPARCEL_BLOCK_ENTITY_SUFFIX));
       if (Files.exists(blockEntityFile)) {
         loadBlockEntities(ctx, blockEntityFile, localSubparcel, problemReporter);
       }
