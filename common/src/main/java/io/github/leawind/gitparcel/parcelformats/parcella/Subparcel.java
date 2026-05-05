@@ -15,13 +15,8 @@ public class Subparcel {
   /** Minimum Z coordinate (inclusive). */
   public final int originZ;
 
-  /** Size along the X axis in blocks. */
   public final int sizeX;
-
-  /** Size along the Y axis in blocks. */
   public final int sizeY;
-
-  /** Size along the Z axis in blocks. */
   public final int sizeZ;
 
   public Subparcel(int originX, int originY, int originZ, int sizeX, int sizeY, int sizeZ) {
@@ -83,40 +78,18 @@ public class Subparcel {
     return Objects.hash(originX, originY, originZ, sizeX, sizeY, sizeZ);
   }
 
-  /**
-   * Returns the maximum inclusive X coordinate.
-   *
-   * @return max X (inclusive)
-   */
   public int getMaxX() {
     return originX + sizeX - 1;
   }
 
-  /**
-   * Returns the maximum inclusive Y coordinate.
-   *
-   * @return max Y (inclusive)
-   */
   public int getMaxY() {
     return originY + sizeY - 1;
   }
 
-  /**
-   * Returns the maximum inclusive Z coordinate.
-   *
-   * @return max Z (inclusive)
-   */
   public int getMaxZ() {
     return originZ + sizeZ - 1;
   }
 
-  /**
-   * Converts this parcel to a {@link BoundingBox}.
-   *
-   * <p>The resulting bounding box uses inclusive minimum and maximum coordinates.
-   *
-   * @return a bounding box representing this parcel
-   */
   public BoundingBox getBoundingBox() {
     return new BoundingBox(originX, originY, originZ, getMaxX(), getMaxY(), getMaxZ());
   }

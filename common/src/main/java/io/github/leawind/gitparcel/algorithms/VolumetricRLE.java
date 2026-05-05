@@ -9,14 +9,6 @@ public interface VolumetricRLE {
     List<Run> encode(int sizeX, int sizeY, int sizeZ, ValueGetter values);
   }
 
-  /**
-   * Represents a run of blocks with the same value.
-   *
-   * <ul>
-   *   <li>(minX, minY, minZ) is the inclusive minimum position of the run.
-   *   <li>(endX, endY, endZ) is the exclusive maximum position of the run.
-   * </ul>
-   */
   record Run(int value, int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
     public int endX() {
       return maxX + 1;
@@ -32,13 +24,6 @@ public interface VolumetricRLE {
   }
 
   interface ValueGetter {
-    /**
-     * Get the value at the given position.
-     *
-     * <p>The (x, y, z) position is relative to the origin of the untransformed subparcel.
-     *
-     * @return The value at the given position.
-     */
     int get(int x, int y, int z);
   }
 

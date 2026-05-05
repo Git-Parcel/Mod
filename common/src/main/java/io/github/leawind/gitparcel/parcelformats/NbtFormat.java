@@ -19,25 +19,10 @@ public enum NbtFormat {
 
   public final String suffix;
 
-  /**
-   * Writes the given NBT tag to the specified path in the format of this NBT format.
-   *
-   * @param path the path to write the NBT tag to.
-   * @param tag the NBT tag to write.
-   * @throws IOException if an I/O error occurs while writing the NBT tag to the path.
-   */
   public void write(Path path, CompoundTag tag) throws IOException {
     write(path, tag, false);
   }
 
-  /**
-   * Writes the given NBT tag to the specified path in the format of this NBT format.
-   *
-   * @param path the path to write the NBT tag to.
-   * @param tag the NBT tag to write.
-   * @param format whether to format the NBT tag in a readable way.
-   * @throws IOException if an I/O error occurs while writing the NBT tag to the path.
-   */
   public void write(Path path, CompoundTag tag, boolean format) throws IOException {
     switch (this) {
       case Binary:

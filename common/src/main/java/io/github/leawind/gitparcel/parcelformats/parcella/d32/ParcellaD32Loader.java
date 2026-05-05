@@ -419,16 +419,7 @@ public class ParcellaD32Loader
     return states;
   }
 
-  /**
-   * Detect the subparcel format from the first 7 bytes of the file
-   *
-   * <p>Note: If the file is invalid, the returned value is undefined.
-   *
-   * <p>This method never throws exception.
-   *
-   * @param bytes The content of the subparcel file
-   * @return The detected subparcel format
-   */
+  /** Note: If the file is invalid, the returned value is undefined. */
   protected static SubparcelFormat detectSubparcelFormat(byte[] bytes) {
     do {
       if (bytes.length < 8) {
