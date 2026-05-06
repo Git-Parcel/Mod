@@ -1,7 +1,6 @@
 package io.github.leawind.gitparcel.parcelformats.parcella.d32;
 
 import com.mojang.logging.LogUtils;
-import com.mojang.serialization.DataResult;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
@@ -13,20 +12,17 @@ import io.github.leawind.gitparcel.parcelformats.parcella.utils.RadixTreePathGen
 import io.github.leawind.gitparcel.parcelformats.parcella.utils.ZOrder3D;
 import io.github.leawind.gitparcel.utils.numbase.Base32Utils;
 import io.github.leawind.gitparcel.utils.numbase.HexUtils;
+import io.github.leawind.inventory.just.Result;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.nbt.Tag;
-import net.minecraft.nbt.TagParser;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.storage.TagValueInput;
@@ -200,97 +196,61 @@ public class ParcellaD32Loader
       Subparcel localSubparcel,
       ProblemReporter problemReporter) {
 
-    try {
+    BlockEntities blockEntities =
+        switch (ctx.config.blockEntityDataFormat.get().read(blockEntityFile)) {
+          case Result.Err(String err) -> {
+            problemReporter.report(() -> "Invalid file: " + blockEntityFile + " " + err);
+            yield null;
+          }
+          case Result.Ok(CompoundTag tag) -> {
+            var parseResult = BlockEntities.CODEC.parse(NbtOps.INSTANCE, tag);
+            if (parseResult.isError()) {
+              problemReporter.report(() -> "Invalid block entities tag in " + blockEntityFile);
+              yield null;
+            }
+            yield parseResult.getOrThrow();
+          }
+        };
 
-      String fileContent = Files.readString(blockEntityFile);
-      Tag rootTag = TagParser.create(NbtOps.INSTANCE).parseFully(fileContent);
+    if (blockEntities == null) {
+      return;
+    }
 
-      if (!(rootTag instanceof ListTag listTag)) {
+    var list = blockEntities.blockEntities();
+
+    for (var entry : list) {
+      var localPos = entry.pos();
+      int lx = localPos.getX();
+      int ly = localPos.getY();
+      int lz = localPos.getZ();
+
+      // Check coordinates are within subparcel range
+      if (lx < 0
+          || lx >= localSubparcel.sizeX
+          || ly < 0
+          || ly >= localSubparcel.sizeY
+          || lz < 0
+          || lz >= localSubparcel.sizeZ) {
         problemReporter.report(
-            () -> "Block entity SNBT file root is not a list: " + blockEntityFile);
-        return;
+            () ->
+                String.format(
+                    "Block entity entry at (%d, %d, %d) is out of subparcel range in %s",
+                    lx, ly, lz, blockEntityFile));
+        continue;
       }
 
-      for (int i = 0; i < listTag.size(); i++) {
-        Tag element = listTag.get(i);
-        if (!(element instanceof CompoundTag entryTag)) {
-          final int fi = i;
-          problemReporter.report(
-              () ->
-                  String.format(
-                      "Block entity entry [%d] is not a compound tag in %s", fi, blockEntityFile));
-          continue;
-        }
+      var worldPos =
+          ctx.transform.apply(
+              new BlockPos(
+                  localSubparcel.originX + lx,
+                  localSubparcel.originY + ly,
+                  localSubparcel.originZ + lz));
 
-        Tag posTag = entryTag.get("pos");
-        if (posTag == null) {
-          final int fi = i;
-          problemReporter.report(
-              () ->
-                  String.format("Block entity entry %d missing 'pos' in %s", fi, blockEntityFile));
-          continue;
-        }
-
-        // Decode position from [x, y, z] using BlockPos.CODEC
-        DataResult<BlockPos> posResult = BlockPos.CODEC.parse(NbtOps.INSTANCE, posTag);
-        var posResultOrError = posResult.error();
-        if (posResultOrError.isPresent()) {
-          final int fi = i;
-          String errorMsg = posResultOrError.get().message();
-          problemReporter.report(
-              () ->
-                  String.format(
-                      "Block entity entry %d invalid 'pos' in %s: %s",
-                      fi, blockEntityFile, errorMsg));
-          continue;
-        }
-        BlockPos localPos = posResult.getOrThrow();
-
-        int lx = localPos.getX();
-        int ly = localPos.getY();
-        int lz = localPos.getZ();
-
-        // Check coordinates are within subparcel range
-        if (lx < 0
-            || lx >= localSubparcel.sizeX
-            || ly < 0
-            || ly >= localSubparcel.sizeY
-            || lz < 0
-            || lz >= localSubparcel.sizeZ) {
-          final int fi = i;
-          problemReporter.report(
-              () ->
-                  String.format(
-                      "Block entity entry %d pos [%d, %d, %d] out of subparcel range in %s",
-                      fi, lx, ly, lz, blockEntityFile));
-          continue;
-        }
-
-        var dataOpt = entryTag.getCompound("data");
-        if (dataOpt.isEmpty()) {
-          continue;
-        }
-        CompoundTag data = dataOpt.get();
-
-        BlockPos worldPos =
-            ctx.transform.apply(
-                new BlockPos(
-                    localSubparcel.originX + lx,
-                    localSubparcel.originY + ly,
-                    localSubparcel.originZ + lz));
-
-        BlockEntity blockEntity = ctx.level.getBlockEntity(worldPos);
-        if (blockEntity != null) {
-          blockEntity.loadWithComponents(
-              TagValueInput.create(problemReporter, ctx.level.registryAccess(), data));
-        }
+      var blockEntity = ctx.level.getBlockEntity(worldPos);
+      if (blockEntity != null) {
+        blockEntity.loadWithComponents(
+            TagValueInput.create(problemReporter, ctx.level.registryAccess(), entry.data()));
       }
-
-    } catch (Exception e) {
-      problemReporter.report(
-          () ->
-              String.format(
-                  "Error reading block entity SNBT file %s: %s", blockEntityFile, e.getMessage()));
     }
   }
 

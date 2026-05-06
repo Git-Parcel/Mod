@@ -18,7 +18,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
@@ -26,7 +25,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.DoubleTag;
 import net.minecraft.nbt.IntTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.painting.Painting;
@@ -62,29 +61,6 @@ public class ParcellaD32Saver
       blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
       blocksPaletteFile = blocksDir.resolve(PALETTE_FILE_NAME);
       entitiesDir = dataDir.resolve(ENTITIES_DIR_NAME);
-    }
-  }
-
-  /**
-   * @param pos Local position
-   */
-  public record BlockEntityEntry(BlockPos pos, CompoundTag data) {
-    /** Compare by (y, x, z) for deterministic ordering. */
-    static final Comparator<BlockEntityEntry> COMPARATOR =
-        Comparator.comparingInt(BlockEntityEntry::y)
-            .thenComparingInt(BlockEntityEntry::x)
-            .thenComparingInt(BlockEntityEntry::z);
-
-    int x() {
-      return pos.getX();
-    }
-
-    int y() {
-      return pos.getY();
-    }
-
-    int z() {
-      return pos.getZ();
     }
   }
 
@@ -144,45 +120,29 @@ public class ParcellaD32Saver
               RadixTreePathGenerator.toPath(index, SUBPARCEL_BLOCK_ENTITY_SUFFIX));
       Files.createDirectories(blockStateFile.getParent());
 
-      List<BlockEntityEntry> blockEntities = new ArrayList<>();
+      BlockEntities blockEntities = new BlockEntities(new ArrayList<>());
 
       switch (ctx.config.subparcelFormat.get()) {
-        case FLAT -> writeSubparcelFLAT(ctx, blockStateFile, localSubparcel, blockEntities);
-        case RLE3D -> writeSubparcelRLE3D(ctx, blockStateFile, localSubparcel, blockEntities);
+        case FLAT ->
+            writeSubparcelFLAT(ctx, blockStateFile, localSubparcel, blockEntities.blockEntities());
+        case RLE3D ->
+            writeSubparcelRLE3D(ctx, blockStateFile, localSubparcel, blockEntities.blockEntities());
       }
 
-      if (!blockEntities.isEmpty()) {
-        writeBlockEntitySnbt(blockEntityFile, blockEntities);
-      } else {
+      if (blockEntities.blockEntities().isEmpty()) {
         Files.deleteIfExists(blockEntityFile);
+      } else {
+        blockEntities.blockEntities().sort(BlockEntityEntry.COMPARATOR);
+
+        CompoundTag tag =
+            (CompoundTag)
+                BlockEntities.CODEC.encodeStart(NbtOps.INSTANCE, blockEntities).getOrThrow();
+        ctx.config.blockEntityDataFormat.get().write(blockEntityFile, tag);
       }
     }
 
     ctx.blockPalette.save(ctx.blocksPaletteFile);
     ctx.blockPalette = null;
-  }
-
-  /** Write block entity data as formatted SNBT for a subparcel. */
-  protected void writeBlockEntitySnbt(Path blockEntityFile, List<BlockEntityEntry> blockEntities)
-      throws IOException {
-    // Sort by (y, x, z) for deterministic ordering
-    blockEntities.sort(BlockEntityEntry.COMPARATOR);
-
-    ListTag listTag = new ListTag();
-    for (var entry : blockEntities) {
-      CompoundTag entryTag = new CompoundTag();
-
-      // Encode position as [x, y, z] using BlockPos.CODEC
-      Tag posTag =
-          BlockPos.CODEC.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, entry.pos).getOrThrow();
-      entryTag.put("pos", posTag);
-
-      entryTag.put("data", entry.data);
-      listTag.add(entryTag);
-    }
-
-    String snbt = ParcellaD32Format.formatSnbt(listTag);
-    Files.writeString(blockEntityFile, snbt, StandardCharsets.UTF_8);
   }
 
   protected BlockPalette loadBlockPaletteIfExistElseCreate(Context ctx) {

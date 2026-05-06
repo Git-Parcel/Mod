@@ -1,5 +1,7 @@
 package io.github.leawind.gitparcel.parcelformats.parcella.d32;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.api.parcel.config.ConfigItem;
@@ -7,10 +9,11 @@ import io.github.leawind.gitparcel.api.parcel.config.ConfigItemBuilder;
 import io.github.leawind.gitparcel.parcelformats.NbtFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.SubparcelFormat;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumSet;
-import net.minecraft.nbt.SnbtPrinterTagVisitor;
-import net.minecraft.nbt.Tag;
+import java.util.List;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import org.jspecify.annotations.NonNull;
 
 public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.Config> {
@@ -47,20 +50,18 @@ public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.C
     private static final String SCHEMA_URL =
         "https://git-parcel.github.io/schemas/ParcellaFormatConfig.json";
 
+    public ConfigItem<NbtFormat> blockEntityDataFormat =
+        ConfigItemBuilder.ofEnum("blockEntityDataFormat", NbtFormat.Text).storeLocally().build();
     public ConfigItem<NbtFormat> entityDataFormat =
         ConfigItemBuilder.ofEnum("entityDataFormat", NbtFormat.Text).storeLocally().build();
     public ConfigItem<SubparcelFormat> subparcelFormat =
         ConfigItemBuilder.ofEnum("subparcelFormat", SubparcelFormat.RLE3D).storeLocally().build();
 
     public Config() {
-      register(entityDataFormat).register(subparcelFormat);
+      register(blockEntityDataFormat);
+      register(entityDataFormat);
+      register(subparcelFormat);
     }
-  }
-
-  /** Format a NBT tag as pretty-printed SNBT with tab indentation. */
-  static String formatSnbt(Tag tag) {
-    var visitor = new SnbtPrinterTagVisitor("\t", 0, new ArrayList<>());
-    return visitor.visit(tag);
   }
 
   interface EntityNbtFilePath {
@@ -86,5 +87,48 @@ public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.C
         return -1;
       }
     }
+  }
+
+  /**
+   * @param pos Local position
+   */
+  record BlockEntityEntry(BlockPos pos, CompoundTag data) {
+    public static Codec<BlockEntityEntry> CODEC =
+        RecordCodecBuilder.create(
+            inst ->
+                inst.group(
+                        BlockPos.CODEC.fieldOf("pos").forGetter(BlockEntityEntry::pos),
+                        CompoundTag.CODEC.fieldOf("data").forGetter(BlockEntityEntry::data))
+                    .apply(inst, BlockEntityEntry::new));
+
+    /** Compare by (y, x, z) for deterministic ordering. */
+    public static final Comparator<BlockEntityEntry> COMPARATOR =
+        Comparator.comparingInt(BlockEntityEntry::y)
+            .thenComparingInt(BlockEntityEntry::x)
+            .thenComparingInt(BlockEntityEntry::z);
+
+    int x() {
+      return pos.getX();
+    }
+
+    int y() {
+      return pos.getY();
+    }
+
+    int z() {
+      return pos.getZ();
+    }
+  }
+
+  record BlockEntities(List<BlockEntityEntry> blockEntities) {
+    public static Codec<BlockEntities> CODEC =
+        RecordCodecBuilder.create(
+            inst ->
+                inst.group(
+                        BlockEntityEntry.CODEC
+                            .listOf()
+                            .fieldOf("blockEntities")
+                            .forGetter(BlockEntities::blockEntities))
+                    .apply(inst, BlockEntities::new));
   }
 }
