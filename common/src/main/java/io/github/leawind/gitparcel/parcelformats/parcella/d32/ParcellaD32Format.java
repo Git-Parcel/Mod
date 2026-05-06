@@ -42,6 +42,11 @@ public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.C
   }
 
   @Override
+  default Class<Config> configClass() {
+    return Config.class;
+  }
+
+  @Override
   default Config getDefaultConfig() {
     return new Config();
   }
