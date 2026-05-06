@@ -13,9 +13,8 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
 
 public enum NbtFormat {
-  // TODO rename to uppercase
-  Binary(".nbt"),
-  Text(".snbt");
+  BINARY(".nbt"),
+  TEXT(".snbt");
 
   public final String suffix;
 
@@ -25,10 +24,10 @@ public enum NbtFormat {
 
   public void write(Path path, CompoundTag tag, boolean format) throws IOException {
     switch (this) {
-      case Binary:
+      case BINARY:
         NbtIo.write(tag, path);
         break;
-      case Text:
+      case TEXT:
         Files.writeString(path, format ? formatSnbt(tag) : tag.toString());
         break;
     }
@@ -42,8 +41,8 @@ public enum NbtFormat {
 
   public Result<CompoundTag, String> read(Path path) {
     return switch (this) {
-      case Binary -> readBinary(path);
-      case Text -> readText(path);
+      case BINARY -> readBinary(path);
+      case TEXT -> readText(path);
     };
   }
 

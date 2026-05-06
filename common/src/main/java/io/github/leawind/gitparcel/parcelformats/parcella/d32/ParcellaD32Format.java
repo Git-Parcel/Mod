@@ -51,9 +51,9 @@ public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.C
         "https://git-parcel.github.io/schemas/ParcellaFormatConfig.json";
 
     public ConfigItem<NbtFormat> blockEntityDataFormat =
-        ConfigItemBuilder.ofEnum("blockEntityDataFormat", NbtFormat.Text).storeLocally().build();
+        ConfigItemBuilder.ofEnum("blockEntityDataFormat", NbtFormat.TEXT).storeLocally().build();
     public ConfigItem<NbtFormat> entityDataFormat =
-        ConfigItemBuilder.ofEnum("entityDataFormat", NbtFormat.Text).storeLocally().build();
+        ConfigItemBuilder.ofEnum("entityDataFormat", NbtFormat.TEXT).storeLocally().build();
     public ConfigItem<SubparcelFormat> subparcelFormat =
         ConfigItemBuilder.ofEnum("subparcelFormat", SubparcelFormat.RLE3D).storeLocally().build();
 
