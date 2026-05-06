@@ -42,9 +42,9 @@ public class GameTestHelpMore extends GameTestHelper {
         (int) aabb.minX,
         (int) aabb.minY,
         (int) aabb.minZ,
-        (int) aabb.maxX,
-        (int) aabb.maxY,
-        (int) aabb.maxZ);
+        (int) Math.ceil(aabb.maxX) - 1,
+        (int) Math.ceil(aabb.maxY) - 1,
+        (int) Math.ceil(aabb.maxZ) - 1);
   }
 
   /**
@@ -56,9 +56,9 @@ public class GameTestHelpMore extends GameTestHelper {
         (int) aabb.minX,
         (int) aabb.minY,
         (int) aabb.minZ,
-        (int) aabb.maxX,
-        (int) aabb.maxY,
-        (int) aabb.maxZ);
+        (int) Math.ceil(aabb.maxX) - 1,
+        (int) Math.ceil(aabb.maxY) - 1,
+        (int) Math.ceil(aabb.maxZ) - 1);
   }
 
   /**
