@@ -354,9 +354,9 @@ public class ParcellaD32Loader
     for (byte b : bytes) {
       switch (b) {
         case '\n' -> {
-          int x = blockIndex % localSubparcel.sizeX;
-          int y = (blockIndex / localSubparcel.sizeX) % localSubparcel.sizeY;
-          int z = blockIndex / (localSubparcel.sizeX * localSubparcel.sizeY);
+          int x = blockIndex / (localSubparcel.sizeY * localSubparcel.sizeZ);
+          int y = (blockIndex / localSubparcel.sizeZ) % localSubparcel.sizeY;
+          int z = blockIndex % localSubparcel.sizeZ;
 
           try {
             states[x][y][z] = HexUtils.parsePositive(buff, 0, len);

@@ -63,9 +63,9 @@ public class ParcellaTest {
         new ParcellaD32Loader().loadSubparcelBlockStatesFLAT(TEST_SUBPARCEL, data, DUMMY_REPORTER);
 
     int index = 0;
-    for (int z = 0; z < 2; z++) {
+    for (int x = 0; x < 2; x++) {
       for (int y = 0; y < 2; y++) {
-        for (int x = 0; x < 2; x++) {
+        for (int z = 0; z < 2; z++) {
           assertEquals(index + 1, result[x][y][z]);
           index++;
         }
