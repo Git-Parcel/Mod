@@ -148,7 +148,7 @@ public class ParcellaD32Saver
   protected BlockPalette loadBlockPaletteIfExistElseCreate(Context ctx) {
     if (Files.exists(ctx.blocksPaletteFile)) {
       try {
-        return BlockPalette.load(ctx.level, ctx.blocksPaletteFile);
+        return BlockPalette.load(ctx.blocksPaletteFile);
       } catch (Exception e) {
         ParcelStorage.LOGGER.error("Error loading block palette: {}", e.getMessage(), e);
         return new BlockPalette();

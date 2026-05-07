@@ -20,9 +20,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import net.minecraft.commands.arguments.blocks.BlockStateParser;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateHolder;
 import org.jspecify.annotations.Nullable;
@@ -108,12 +105,10 @@ public class BlockPalette extends IntIdPalette<BlockState> {
     return sb.toString();
   }
 
-  public static Result<BlockState, String> parseBlockState(
-      String blockStateString, LevelReader level) {
+  public static Result<BlockState, String> parseBlockState(String blockStateString) {
     try {
       var blockState =
-          BlockStateParser.parseForBlock(
-                  level.holderLookup(Registries.BLOCK), blockStateString, false)
+          BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK, blockStateString, false)
               .blockState();
       return Result.ok(blockState);
     } catch (CommandSyntaxException e) {
@@ -131,8 +126,7 @@ public class BlockPalette extends IntIdPalette<BlockState> {
    * @throws IOException if an I/O error occurs
    * @throws InvalidPaletteException if the palette file is malformed
    */
-  public static BlockPalette load(LevelAccessor level, Path paletteFile)
-      throws IOException, InvalidPaletteException {
+  public static BlockPalette load(Path paletteFile) throws IOException, InvalidPaletteException {
 
     record ManifestEntry(int row, int id, String blockStateString) {
       static List<ManifestEntry> parse(BufferedReader reader)
@@ -173,7 +167,7 @@ public class BlockPalette extends IntIdPalette<BlockState> {
 
     for (var entry : entries) {
       var blockState =
-          switch (parseBlockState(entry.blockStateString, level)) {
+          switch (parseBlockState(entry.blockStateString)) {
             case Result.Ok(BlockState value) -> value;
             case Result.Err(String msg) -> {
               ParcelStorage.LOGGER.error(

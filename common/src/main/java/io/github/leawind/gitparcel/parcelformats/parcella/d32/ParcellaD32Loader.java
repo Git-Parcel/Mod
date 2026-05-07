@@ -126,7 +126,7 @@ public class ParcellaD32Loader
           "Subparcels directory not found: " + ctx.subparcelsDir);
     }
 
-    ctx.blockPalette = BlockPalette.load(ctx.level, ctx.blocksPaletteFile);
+    ctx.blockPalette = BlockPalette.load(ctx.blocksPaletteFile);
 
     // Split the parcel into subparcels
     BlockPos anchorPos = new BlockPos(ctx.anchor);
