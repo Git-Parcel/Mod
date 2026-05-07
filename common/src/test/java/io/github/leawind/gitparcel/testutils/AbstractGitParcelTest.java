@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import net.minecraft.DetectedVersion;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.Vec3i;
+import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Block;
@@ -104,6 +105,7 @@ public class AbstractGitParcelTest {
   @BeforeAll
   static void beforeAll() {
     SharedConstants.setVersion(DetectedVersion.BUILT_IN);
+    Bootstrap.bootStrap();
     ParcelFormatRegistry.INSTANCE.clear();
     ParcelFormatRegistry.INSTANCE.registerDefaultSaver(new TestSaver("alpha", 0));
     ParcelFormatRegistry.INSTANCE.register(new TestSaver("beta", 0));
