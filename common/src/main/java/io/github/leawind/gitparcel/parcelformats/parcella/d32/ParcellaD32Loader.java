@@ -14,6 +14,7 @@ import io.github.leawind.gitparcel.utils.numbase.Base32Utils;
 import io.github.leawind.gitparcel.utils.numbase.HexUtils;
 import io.github.leawind.inventory.just.Result;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
@@ -39,7 +40,7 @@ public class ParcellaD32Loader
     public final Path subparcelsDir;
     public final Path entitiesDir;
 
-    public BlockPalette blockPalette;
+    public @Nullable BlockPalette blockPalette = null;
 
     public Context(
         ServerLevelAccessor level,
@@ -126,7 +127,9 @@ public class ParcellaD32Loader
           "Subparcels directory not found: " + ctx.subparcelsDir);
     }
 
-    ctx.blockPalette = BlockPalette.load(ctx.blocksPaletteFile);
+    if (ctx.config.usePalette.get()) {
+      ctx.blockPalette = BlockPalette.load(ctx.blocksPaletteFile);
+    }
 
     // Split the parcel into subparcels
     BlockPos anchorPos = new BlockPos(ctx.anchor);
@@ -137,6 +140,7 @@ public class ParcellaD32Loader
           ctx.subparcelsDir.resolve(
               RadixTreePathGenerator.toPath(index, SUBPARCEL_BLOCK_STATE_SUFFIX));
       if (Files.exists(blockStateFile)) {
+        // TODO if file not exist
         loadBlockStates(ctx, blockStateFile, localSubparcel, problemReporter);
       }
 
@@ -149,45 +153,254 @@ public class ParcellaD32Loader
     }
   }
 
+  protected interface BlockStateLoader {
+    void load(int localX, int localY, int localZ, BlockState localBlockState);
+  }
+
   protected void loadBlockStates(
       Context ctx, Path blockStateFile, Subparcel localSubparcel, ProblemReporter problemReporter) {
     try {
       byte[] bytes = Files.readAllBytes(blockStateFile);
       SubparcelFormat subparcelFormat = detectSubparcelFormat(bytes);
-      int[][][] blockStates =
-          switch (subparcelFormat) {
-            case RLE3D -> loadSubparcelBlockStatesRLE3D(localSubparcel, bytes, problemReporter);
-            case FLAT -> loadSubparcelBlockStatesFLAT(localSubparcel, bytes, problemReporter);
-          };
       var localPos = new BlockPos.MutableBlockPos();
 
-      // Set blocks
-      for (int x = 0; x < localSubparcel.sizeX; x++) {
-        for (int y = 0; y < localSubparcel.sizeY; y++) {
-          for (int z = 0; z < localSubparcel.sizeZ; z++) {
-            int paletteId = blockStates[x][y][z];
-            BlockState blockState = ctx.blockPalette.get(paletteId);
-            if (blockState == null) {
-              problemReporter.report(() -> String.format("Unknown block palette id %d", paletteId));
-              continue;
-            }
-            BlockState worldBlockState = ctx.transform.apply(blockState);
-
+      BlockStateLoader blockStateLoader =
+          (localX, localY, localZ, localBlockState) -> {
+            BlockState worldBlockState = ctx.transform.apply(localBlockState);
             localPos.set(
-                localSubparcel.originX + x, localSubparcel.originY + y, localSubparcel.originZ + z);
+                localSubparcel.originX + localX,
+                localSubparcel.originY + localY,
+                localSubparcel.originZ + localZ);
             BlockPos worldPos = ctx.transform.apply(localPos);
 
             ctx.level.setBlock(worldPos, worldBlockState, ctx.flags);
-
-            // Reset block entity
             ctx.level.getChunk(worldPos).removeBlockEntity(worldPos);
-          }
-        }
+          };
+
+      switch (subparcelFormat) {
+        case RLE3D -> loadSubparcelBlockStatesRLE3D(ctx, bytes, blockStateLoader, problemReporter);
+        case FLAT ->
+            loadSubparcelBlockStatesFLAT(
+                ctx, localSubparcel, bytes, blockStateLoader, problemReporter);
       }
 
     } catch (IOException e) {
       problemReporter.report(() -> "Error reading subparcel block state file: " + blockStateFile);
     }
+  }
+
+  protected void loadSubparcelBlockStatesRLE3D(
+      Context ctx,
+      byte[] bytes,
+      BlockStateLoader blockStateLoader,
+      ProblemReporter problemReporter) {
+
+    byte x0 = 0, y0 = 0, z0 = 0;
+    byte x1 = 0, y1 = 0, z1 = 0;
+
+    // Buffer to store the current line content after separator
+    byte[] buff = new byte[512];
+    byte buffLen = 0;
+
+    boolean skipThisLine = false;
+    byte sepChar = 0; // 0 = not seen yet, '~' = palette ID, '=' = inline block state
+
+    for_each_byte:
+    for (byte b : bytes) {
+      if (skipThisLine && b == '\n') {
+        skipThisLine = false;
+        continue;
+      }
+
+      to_report_invalid_line:
+      do {
+
+        switch (sepChar) {
+          case 0 -> {
+            switch (b) {
+              case '~', '=' -> {
+
+                // Parse coordinates from buff
+                x0 = Base32Utils.parseChar(buff[0]);
+                y0 = Base32Utils.parseChar(buff[1]);
+                z0 = Base32Utils.parseChar(buff[2]);
+                if (x0 == -1 || y0 == -1 || z0 == -1) {
+                  break to_report_invalid_line;
+                }
+
+                if (buffLen == 3) {
+                  x1 = x0;
+                  y1 = y0;
+                  z1 = z0;
+                } else {
+                  if (buffLen != 6) {
+                    break to_report_invalid_line;
+                  }
+                  x1 = Base32Utils.parseChar(buff[3]);
+                  y1 = Base32Utils.parseChar(buff[4]);
+                  z1 = Base32Utils.parseChar(buff[5]);
+                  if (x1 == -1 || y1 == -1 || z1 == -1) {
+                    break to_report_invalid_line;
+                  }
+                }
+
+                sepChar = b;
+                buffLen = 0;
+              }
+              default -> buff[buffLen++] = b;
+            }
+          }
+          case '~', '=' -> {
+            if (b == '\n') {
+              if (buffLen == 0) {
+                break to_report_invalid_line;
+              }
+
+              switch (sepChar) {
+                case '~' -> {
+                  // <coordinate>~<palette_id>
+
+                  if (ctx.blockPalette == null) {
+                    byte finalLen = buffLen;
+                    problemReporter.report(
+                        () ->
+                            String.format(
+                                "Palette ID found ('~') but no palette is loaded. "
+                                    + "Cannot resolve palette ID '%s'",
+                                new String(buff, 0, finalLen)));
+                    skipThisLine = true;
+                    continue for_each_byte;
+                  }
+
+                  int paletteId = HexUtils.parsePositive(buff, 0, buffLen);
+                  if (paletteId == -1) {
+                    break to_report_invalid_line;
+                  }
+                  for (int y = y0; y <= y1; y++) {
+                    for (int x = x0; x <= x1; x++) {
+                      for (int z = z0; z <= z1; z++) {
+                        BlockState blockState = ctx.blockPalette.get(paletteId);
+                        if (blockState == null) {
+                          problemReporter.report(
+                              () -> String.format("Unknown block palette id %d", paletteId));
+                          continue;
+                        }
+                        blockStateLoader.load(x, y, z, blockState);
+                      }
+                    }
+                  }
+                }
+                case '=' -> {
+                  // <coordinate>=<block_state>
+
+                  String stateStr = new String(buff, 0, buffLen, StandardCharsets.UTF_8);
+
+                  var parseResult = BlockPalette.parseBlockState(stateStr);
+                  if (parseResult.isErr()) {
+                    problemReporter.report(
+                        () ->
+                            String.format(
+                                "Failed to parse block state '%s': %s",
+                                stateStr, parseResult.unwrapErr()));
+                    break to_report_invalid_line;
+                  }
+                  BlockState blockState = parseResult.unwrap();
+
+                  for (int y = y0; y <= y1; y++) {
+                    for (int x = x0; x <= x1; x++) {
+                      for (int z = z0; z <= z1; z++) {
+                        blockStateLoader.load(x, y, z, blockState);
+                      }
+                    }
+                  }
+
+                }
+              }
+
+              sepChar = 0;
+              buffLen = 0;
+            } else {
+              buff[buffLen++] = b;
+            }
+          }
+        }
+        continue for_each_byte;
+      } while (false);
+
+      // Report invalid line and skip the rest of the line
+      skipThisLine = true;
+      byte finalLen = buffLen;
+      sepChar = 0;
+      buffLen = 0;
+      problemReporter.report(
+          () -> String.format("Invalid line: %s", new String(buff, 0, finalLen)));
+    }
+  }
+
+  protected void loadSubparcelBlockStatesFLAT(
+      Context ctx,
+      Subparcel localSubparcel,
+      byte[] bytes,
+      BlockStateLoader blockStateLoader,
+      ProblemReporter problemReporter) {
+    int sizeX = localSubparcel.sizeX;
+    int sizeY = localSubparcel.sizeY;
+    int sizeZ = localSubparcel.sizeZ;
+
+    byte[] buff = new byte[256];
+    byte buffLen = 0;
+
+    boolean usePalette = ctx.blockPalette != null;
+    int blockIndex = 0;
+    for (byte b : bytes) {
+      switch (b) {
+        case '\n' -> {
+          int x = blockIndex / (sizeY * sizeZ);
+          int y = (blockIndex / sizeZ) % sizeY;
+          int z = blockIndex % sizeZ;
+
+          if (usePalette) {
+            var paletteId = HexUtils.parsePositive(buff, 0, buffLen);
+            BlockState blockState = ctx.blockPalette.get(paletteId);
+            if (blockState == null) {
+              problemReporter.report(() -> String.format("Unknown block palette id %d", paletteId));
+              continue;
+            }
+            blockStateLoader.load(x, y, z, blockState);
+          } else {
+            String stateStr = new String(buff, 0, buffLen, StandardCharsets.UTF_8);
+
+            switch (BlockPalette.parseBlockState(stateStr)) {
+              case Result.Ok(BlockState blockState) -> {
+                blockStateLoader.load(x, y, z, blockState);
+              }
+              case Result.Err(String msg) ->
+                  problemReporter.report(
+                      () -> String.format("Failed to parse block state '%s': %s", stateStr, msg));
+            }
+          }
+
+          buffLen = 0;
+          blockIndex++;
+        }
+        case '\r', ' ', '\t', '\0' -> {}
+        default -> buff[buffLen++] = b;
+      }
+    }
+  }
+
+  /** Note: If the file is invalid, the returned value is undefined. */
+  protected static SubparcelFormat detectSubparcelFormat(byte[] bytes) {
+    do {
+      if (bytes.length < 8) {
+        break;
+      }
+      if (bytes[3] == '=' || bytes[6] == '=' || bytes[3] == '~' || bytes[6] == '~') {
+        return SubparcelFormat.RLE3D;
+      }
+    } while (false);
+
+    return SubparcelFormat.FLAT;
   }
 
   protected void loadBlockEntities(
@@ -252,144 +465,5 @@ public class ParcellaD32Loader
             TagValueInput.create(problemReporter, ctx.level.registryAccess(), entry.data()));
       }
     }
-  }
-
-  protected int[][][] loadSubparcelBlockStatesRLE3D(
-      Subparcel localSubparcel, byte[] bytes, ProblemReporter problemReporter) {
-
-    int sizeX = localSubparcel.sizeX;
-    int sizeY = localSubparcel.sizeY;
-    int sizeZ = localSubparcel.sizeZ;
-
-    int[][][] blockStates = new int[sizeX][sizeY][sizeZ];
-
-    byte x0 = 0, y0 = 0, z0 = 0;
-    byte x1 = 0, y1 = 0, z1 = 0;
-
-    // Buffer to store the current line
-    byte[] buff = new byte[16];
-    byte len = 0;
-
-    boolean skipThisLine = false;
-
-    for_each_byte:
-    for (byte b : bytes) {
-      if (skipThisLine && b == '\n') {
-        skipThisLine = false;
-        continue;
-      }
-
-      to_report_invalid_line:
-      do {
-        switch (b) {
-          case '=' -> {
-            x0 = Base32Utils.parseChar(buff[0]);
-            y0 = Base32Utils.parseChar(buff[1]);
-            z0 = Base32Utils.parseChar(buff[2]);
-            if (x0 == -1 || y0 == -1 || z0 == -1) {
-              break to_report_invalid_line;
-            }
-            if (len == 3) {
-              x1 = x0;
-              y1 = y0;
-              z1 = z0;
-            } else {
-              if (len != 6) {
-                break to_report_invalid_line;
-              }
-              x1 = Base32Utils.parseChar(buff[3]);
-              y1 = Base32Utils.parseChar(buff[4]);
-              z1 = Base32Utils.parseChar(buff[5]);
-              if (x1 == -1 || y1 == -1 || z1 == -1) {
-                break to_report_invalid_line;
-              }
-            }
-
-            len = 0;
-          }
-          case '\n' -> {
-            int paletteId = HexUtils.parsePositive(buff, 0, len);
-            if (paletteId == -1) {
-              break to_report_invalid_line;
-            }
-            len = 0;
-
-            for (int x = x0; x <= x1; x++) {
-              for (int y = y0; y <= y1; y++) {
-                for (int z = z0; z <= z1; z++) {
-                  blockStates[x][y][z] = paletteId;
-                }
-              }
-            }
-          }
-          case '\r', ' ', '\t', '\0' -> {}
-          default -> {
-            if (len >= buff.length) {
-              break to_report_invalid_line;
-            }
-            buff[len++] = b;
-          }
-        }
-        continue for_each_byte;
-      } while (false);
-
-      // Report invalid line and skip the rest of the line
-      skipThisLine = true;
-      byte finalLen = len;
-      problemReporter.report(
-          () -> String.format("Invalid line: %s", new String(buff, 0, finalLen)));
-    }
-
-    return blockStates;
-  }
-
-  protected int[][][] loadSubparcelBlockStatesFLAT(
-      Subparcel localSubparcel, byte[] bytes, ProblemReporter problemReporter) {
-    int[][][] states = new int[localSubparcel.sizeX][localSubparcel.sizeY][localSubparcel.sizeZ];
-
-    byte[] buff = new byte[8];
-    byte len = 0;
-
-    int blockIndex = 0;
-    for (byte b : bytes) {
-      switch (b) {
-        case '\n' -> {
-          int x = blockIndex / (localSubparcel.sizeY * localSubparcel.sizeZ);
-          int y = (blockIndex / localSubparcel.sizeZ) % localSubparcel.sizeY;
-          int z = blockIndex % localSubparcel.sizeZ;
-
-          try {
-            states[x][y][z] = HexUtils.parsePositive(buff, 0, len);
-          } catch (NumberFormatException e) {
-            byte finalLen = len;
-            problemReporter.report(
-                () ->
-                    String.format(
-                        "Error parsing palette id '%s' at (%d, %d, %d)",
-                        new String(buff, 0, finalLen), x, y, z));
-          }
-
-          len = 0;
-          blockIndex++;
-        }
-        case '\r', ' ', '\t', '\0' -> {}
-        default -> buff[len++] = b;
-      }
-    }
-    return states;
-  }
-
-  /** Note: If the file is invalid, the returned value is undefined. */
-  protected static SubparcelFormat detectSubparcelFormat(byte[] bytes) {
-    do {
-      if (bytes.length < 8) {
-        break;
-      }
-      if (bytes[3] == '=' || bytes[6] == '=') {
-        return SubparcelFormat.RLE3D;
-      }
-    } while (false);
-
-    return SubparcelFormat.FLAT;
   }
 }

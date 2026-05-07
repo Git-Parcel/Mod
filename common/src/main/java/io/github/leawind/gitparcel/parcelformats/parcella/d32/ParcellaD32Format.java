@@ -62,10 +62,19 @@ public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.C
     public ConfigItem<SubparcelFormat> subparcelFormat =
         ConfigItemBuilder.ofEnum("subparcelFormat", SubparcelFormat.RLE3D).storeLocally().build();
 
+    /**
+     * Whether to use a block palette. When enabled, block states are stored in a shared palette
+     * file and referenced by short IDs. When disabled, full block state strings are written inline
+     * in each subparcel file.
+     */
+    public ConfigItem<Boolean> usePalette =
+        ConfigItemBuilder.ofBoolean("usePalette").defaultValue(true).storeLocally().build();
+
     public Config() {
       register(blockEntityDataFormat);
       register(entityDataFormat);
       register(subparcelFormat);
+      register(usePalette);
     }
   }
 

@@ -5,6 +5,7 @@ import io.github.leawind.gitparcel.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.api.parcel.ParcelStorage;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
+import io.github.leawind.gitparcel.parcelformats.parcella.BlockPalette;
 import io.github.leawind.gitparcel.parcelformats.parcella.Subparcel;
 import io.github.leawind.gitparcel.parcelformats.parcella.d32.ParcellaD32Format;
 import io.github.leawind.gitparcel.parcelformats.parcella.d32.ParcellaD32Saver;
@@ -13,6 +14,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
@@ -58,9 +61,13 @@ public class ParcellaD16Saver extends ParcellaD32Saver
     var sb = new StringBuilder(8192);
     char[] hexChars = HexUtils.UPPERS;
 
+    BlockPalette palette = ctx.blockPalette;
     var level = ctx.level;
-    var palette = ctx.blockPalette;
     var transform = ctx.transform;
+
+    // When no palette, use a temporary identity map for VolumetricRLE int IDs
+    var stateToTempId = new IdentityHashMap<BlockState, Integer>();
+    var tempIdToState = new ArrayList<BlockState>();
 
     var runs =
         VolumetricRLE.IMPL.encode(
@@ -84,7 +91,17 @@ public class ParcellaD16Saver extends ParcellaD32Saver
                 blockEntities.add(new BlockEntityEntry(new BlockPos(x, y, z), nbt));
               }
 
-              return palette.collect(blockState);
+              if (palette != null) {
+                return palette.collect(blockState);
+              }
+
+              return stateToTempId.computeIfAbsent(
+                  blockState,
+                  k -> {
+                    int id = tempIdToState.size();
+                    tempIdToState.add(k);
+                    return id;
+                  });
             });
 
     for (var run : runs) {
@@ -98,7 +115,13 @@ public class ParcellaD16Saver extends ParcellaD32Saver
         sb.append(hexChars[maxX]).append(hexChars[maxY]).append(hexChars[maxZ]);
       }
 
-      sb.append('=').append(HexUtils.toHexUpperCase(run.value())).append('\n');
+      sb.append(palette != null ? '~' : '=');
+      if (palette != null) {
+        sb.append(HexUtils.toHexUpperCase(run.value()));
+      } else {
+        sb.append(BlockPalette.stringifyBlockState(tempIdToState.get(run.value())));
+      }
+      sb.append('\n');
     }
 
     Files.writeString(file, sb, StandardCharsets.UTF_8);

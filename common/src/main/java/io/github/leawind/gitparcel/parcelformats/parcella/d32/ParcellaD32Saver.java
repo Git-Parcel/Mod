@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
@@ -47,7 +48,7 @@ public class ParcellaD32Saver
     public final Path blocksPaletteFile;
     public final Path entitiesDir;
 
-    public BlockPalette blockPalette;
+    public @Nullable BlockPalette blockPalette;
 
     public Context(
         Level level,
@@ -101,7 +102,12 @@ public class ParcellaD32Saver
     Files.createDirectories(ctx.blocksDir);
 
     // Load or create block palette
-    ctx.blockPalette = loadBlockPaletteIfExistElseCreate(ctx);
+    boolean usePalette = ctx.config.usePalette.get();
+    if (usePalette) {
+      ctx.blockPalette = loadBlockPaletteIfExistElseCreate(ctx);
+    } else {
+      ctx.blockPalette = null;
+    }
 
     Path subParcelsDir = ctx.blocksDir.resolve(SUBPARCELS_DIR_NAME);
     Files.createDirectories(subParcelsDir);
@@ -141,7 +147,9 @@ public class ParcellaD32Saver
       }
     }
 
-    ctx.blockPalette.save(ctx.blocksPaletteFile);
+    if (usePalette) {
+      ctx.blockPalette.save(ctx.blocksPaletteFile);
+    }
     ctx.blockPalette = null;
   }
 
@@ -165,8 +173,13 @@ public class ParcellaD32Saver
     char[] base32Chars = Base32Utils.CHARS;
 
     var level = ctx.level;
-    var palette = ctx.blockPalette;
     var transform = ctx.transform;
+    boolean usePalette = ctx.config.usePalette.get();
+    var palette = ctx.blockPalette;
+
+    // When no palette, use a temporary identity map for VolumetricRLE int IDs
+    var stateToTempId = new IdentityHashMap<BlockState, Integer>();
+    var tempIdToState = new ArrayList<BlockState>();
 
     var runs =
         VolumetricRLE.IMPL.encode(
@@ -190,7 +203,16 @@ public class ParcellaD32Saver
                 blockEntities.add(new BlockEntityEntry(new BlockPos(x, y, z), nbt));
               }
 
-              return palette.collect(blockState);
+              if (usePalette) {
+                return palette.collect(blockState);
+              }
+              return stateToTempId.computeIfAbsent(
+                  blockState,
+                  k -> {
+                    int id = tempIdToState.size();
+                    tempIdToState.add(k);
+                    return id;
+                  });
             });
 
     for (var run : runs) {
@@ -205,8 +227,13 @@ public class ParcellaD32Saver
         sb.append(base32Chars[maxX]).append(base32Chars[maxY]).append(base32Chars[maxZ]);
       }
 
-      // Palette ID use hex format
-      sb.append('=').append(HexUtils.toHexUpperCase(run.value())).append('\n');
+      sb.append(usePalette ? '~' : '=');
+      if (usePalette) {
+        sb.append(HexUtils.toHexUpperCase(run.value()));
+      } else {
+        sb.append(BlockPalette.stringifyBlockState(tempIdToState.get(run.value())));
+      }
+      sb.append('\n');
     }
 
     Files.writeString(file, sb, StandardCharsets.UTF_8);
@@ -226,6 +253,7 @@ public class ParcellaD32Saver
 
     var level = ctx.level;
     var palette = ctx.blockPalette;
+    boolean usePalette = ctx.config.usePalette.get();
 
     for (int i = 0, x = 0; i < sizeX; i++, x++) {
       for (int j = 0, y = 0; j < sizeY; j++, y++) {
@@ -244,9 +272,12 @@ public class ParcellaD32Saver
             blockEntities.add(new BlockEntityEntry(new BlockPos(x, y, z), nbt));
           }
 
-          int id = palette.collect(blockState);
-
-          sb.append(HexUtils.toHexUpperCase(id)).append('\n');
+          if (usePalette) {
+            sb.append(HexUtils.toHexUpperCase(palette.collect(blockState)));
+          } else {
+            sb.append(BlockPalette.stringifyBlockState(blockState));
+          }
+          sb.append('\n');
         }
       }
     }
