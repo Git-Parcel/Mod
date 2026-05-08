@@ -16,8 +16,10 @@ import io.github.leawind.gitparcel.world.GitParcelLevelSavedData;
 import io.github.leawind.gitparcel.world.Parcel;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.minecraft.client.multiplayer.ClientSuggestionProvider;
 import net.minecraft.commands.CommandBuildContext;
@@ -112,9 +114,8 @@ public class ParcelArgument implements ArgumentType<ParcelSelector> {
       names = Stream.empty();
     }
 
-    names = names.filter(Objects::nonNull);
-
     if (source instanceof SharedSuggestionProvider provider) {
+      names = names.filter(Objects::nonNull);
       StringReader reader = new StringReader(builder.getInput());
       reader.setCursor(builder.getStart());
 
@@ -125,12 +126,15 @@ public class ParcelArgument implements ArgumentType<ParcelSelector> {
       } catch (CommandSyntaxException ignored) {
       }
 
-      final Stream<String> finalNames = names;
+      var frequency = names.collect(Collectors.groupingBy(n -> n, Collectors.counting()));
+
+      final var finalNames =
+          frequency.entrySet().stream()
+              .filter(entry -> entry.getValue() == 1)
+              .map(Map.Entry::getKey);
+
       return parser.fillSuggestions(
-          builder,
-          builder1 ->
-              // TODO get unique parcel names
-              SharedSuggestionProvider.suggest(finalNames, builder1));
+          builder, builder1 -> SharedSuggestionProvider.suggest(finalNames, builder1));
     } else {
       return Suggestions.empty();
     }
