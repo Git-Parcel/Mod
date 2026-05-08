@@ -6,7 +6,10 @@ import io.github.leawind.gitparcel.GitParcel;
 import io.github.leawind.gitparcel.client.GitParcelClient;
 import io.github.leawind.gitparcel.world.Parcel;
 import io.github.leawind.gitparcel.world.Parcels;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.UUIDUtil;
@@ -17,12 +20,12 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NonNull;
 
-// TODO List<UUID> to Set<UUID>
-public record UpdateParcelsS2CPayload(Parcels parcels, List<UUID> removedUuids, boolean isFullSync)
+public record UpdateParcelsS2CPayload(Parcels parcels, Set<UUID> removedUuids, boolean isFullSync)
     implements CustomPacketPayload {
   public static final Identifier ID = GitParcel.identifier("update_parcels");
   public static final CustomPacketPayload.Type<UpdateParcelsS2CPayload> TYPE =
       new CustomPacketPayload.Type<>(ID);
+
   public static final Codec<UpdateParcelsS2CPayload> CODEC =
       RecordCodecBuilder.create(
           instance ->
@@ -31,6 +34,7 @@ public record UpdateParcelsS2CPayload(Parcels parcels, List<UUID> removedUuids, 
                       Parcels.CODEC.fieldOf("parcels").forGetter(UpdateParcelsS2CPayload::parcels),
                       UUIDUtil.CODEC
                           .listOf()
+                          .<Set<UUID>>xmap(HashSet::new, List::copyOf)
                           .fieldOf("removed_uuids")
                           .forGetter(UpdateParcelsS2CPayload::removedUuids),
                       Codec.BOOL
@@ -47,20 +51,20 @@ public record UpdateParcelsS2CPayload(Parcels parcels, List<UUID> removedUuids, 
   }
 
   public static UpdateParcelsS2CPayload fullSync(Parcels parcels) {
-    return new UpdateParcelsS2CPayload(parcels, List.of(), true);
+    return new UpdateParcelsS2CPayload(parcels, Set.of(), true);
   }
 
   public static UpdateParcelsS2CPayload incremental(Parcel parcel) {
-    return new UpdateParcelsS2CPayload(Parcels.singleton(parcel), List.of(), false);
+    return new UpdateParcelsS2CPayload(Parcels.singleton(parcel), Set.of(), false);
   }
 
   public static UpdateParcelsS2CPayload incrementalWithRemovals(
-      List<Parcel> parcels, List<UUID> removedUuids) {
-    return new UpdateParcelsS2CPayload(new Parcels(parcels), removedUuids, false);
+      List<Parcel> parcels, Collection<UUID> removedUuids) {
+    return new UpdateParcelsS2CPayload(new Parcels(parcels), Set.copyOf(removedUuids), false);
   }
 
-  public static UpdateParcelsS2CPayload removals(List<UUID> removedUuids) {
-    return new UpdateParcelsS2CPayload(new Parcels(), removedUuids, false);
+  public static UpdateParcelsS2CPayload removals(Collection<UUID> removedUuids) {
+    return new UpdateParcelsS2CPayload(new Parcels(), Set.copyOf(removedUuids), false);
   }
 
   /** Client-Only */

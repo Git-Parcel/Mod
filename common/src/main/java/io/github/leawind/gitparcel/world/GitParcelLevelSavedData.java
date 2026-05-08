@@ -4,7 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.network.protocol.parcels.UpdateParcelsS2CPayload;
 import io.github.leawind.gitparcel.utils.NetworkUtils;
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
@@ -126,7 +126,7 @@ public final class GitParcelLevelSavedData extends SavedData {
 
   public void emitParcelsDeleted(UUID uuid) {
     if (level != null) {
-      var payload = UpdateParcelsS2CPayload.removals(List.of(uuid));
+      var payload = UpdateParcelsS2CPayload.removals(Set.of(uuid));
       NetworkUtils.sendToAllPlayers(level, payload);
     }
   }
