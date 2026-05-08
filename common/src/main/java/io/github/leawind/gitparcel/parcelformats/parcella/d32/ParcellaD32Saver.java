@@ -53,7 +53,7 @@ public class ParcellaD32Saver
     public final Path blocksPaletteFile;
     public final Path entitiesDir;
 
-    public @Nullable BlockPalette blockPalette;
+    public @Nullable BlockPalette blockPalette = null;
 
     public Context(
         Level level,
@@ -106,12 +106,8 @@ public class ParcellaD32Saver
 
     Files.createDirectories(ctx.blocksDir);
 
-    // Load or create block palette
-    boolean usePalette = ctx.config.usePalette.get();
-    if (usePalette) {
+    if (ctx.config.usePalette.get()) {
       ctx.blockPalette = loadBlockPaletteIfExistElseCreate(ctx);
-    } else {
-      ctx.blockPalette = null;
     }
 
     Path subParcelsDir = ctx.blocksDir.resolve(SUBPARCELS_DIR_NAME);
@@ -152,10 +148,9 @@ public class ParcellaD32Saver
       }
     }
 
-    if (usePalette) {
+    if (ctx.blockPalette != null) {
       ctx.blockPalette.save(ctx.blocksPaletteFile);
     }
-    ctx.blockPalette = null;
   }
 
   protected BlockPalette loadBlockPaletteIfExistElseCreate(Context ctx) {
