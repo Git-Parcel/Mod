@@ -8,7 +8,6 @@ import io.github.leawind.gitparcel.api.parcel.config.ConfigItem;
 import io.github.leawind.gitparcel.api.parcel.config.ConfigItemBuilder;
 import io.github.leawind.gitparcel.parcelformats.NbtFormat;
 import io.github.leawind.gitparcel.parcelformats.parcella.SubparcelFormat;
-import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
@@ -75,31 +74,6 @@ public interface ParcellaD32Format extends ParcelFormat.Impl<ParcellaD32Format.C
       register(entityDataFormat);
       register(subparcelFormat);
       register(usePalette);
-    }
-  }
-
-  interface EntityNbtFilePath {
-    static Path resolve(Path nbtDir, NbtFormat nbtFormat, int entityId) {
-      return nbtDir.resolve(entityId + nbtFormat.suffix);
-    }
-
-    /**
-     * Parse entity ID from NBT file path.
-     *
-     * @return Entity ID parsed from file key, or -1 if not valid
-     */
-    static int fromPath(Path nbtFile, NbtFormat nbtFormat) {
-      String fileName = nbtFile.getFileName().toString();
-      String suffix = nbtFormat.suffix;
-      if (!fileName.endsWith(suffix)) {
-        return -1;
-      }
-      String idPart = fileName.substring(0, fileName.length() - suffix.length());
-      try {
-        return Integer.parseInt(idPart);
-      } catch (NumberFormatException e) {
-        return -1;
-      }
     }
   }
 

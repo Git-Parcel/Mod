@@ -80,8 +80,8 @@ public class LoadSubcommand {
             | Block.UPDATE_SKIP_ALL_SIDEEFFECTS;
 
     try {
-      // TODO load entities
-      ParcelStorage.load(source.getLevel(), transform, path, false, true, loadFlags);
+      // Entities are loaded by the format loader when ignoreEntities is false
+      ParcelStorage.load(source.getLevel(), transform, path, false, false, loadFlags);
 
       source.sendSuccess(
           () -> GitParcelTranslations.of("command.gitparcel.parcel_debug.load.success"), true);

@@ -18,15 +18,20 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.DoubleTag;
 import net.minecraft.nbt.IntTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.painting.Painting;
@@ -285,8 +290,19 @@ public class ParcellaD32Saver
     Files.writeString(path, sb, StandardCharsets.UTF_8);
   }
 
+  /**
+   * @see ParcellaD32Loader#loadEntity
+   */
   protected void saveEntities(Context ctx, ProblemReporter problemReporter) throws IOException {
-    Files.createDirectories(ctx.entitiesDir);
+    // Delete all existing entity files
+    if (Files.exists(ctx.entitiesDir)) {
+      try (var paths = Files.walk(ctx.entitiesDir)) {
+        for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
+          Files.delete(path);
+        }
+      }
+    }
+
     var origin = ctx.transform.getTranslatedOrigin();
     var worldSize = ctx.transform.applyToSize(ctx.parcelSize);
 
@@ -295,41 +311,33 @@ public class ParcellaD32Saver
             origin.getX(),
             origin.getY(),
             origin.getZ(),
-            worldSize.getX(),
-            worldSize.getY(),
-            worldSize.getZ());
+            origin.getX() + worldSize.getX(),
+            origin.getY() + worldSize.getY(),
+            origin.getZ() + worldSize.getZ());
 
     List<Entity> entities =
         ctx.level.getEntities((Entity) null, aabb, entity -> !(entity instanceof Player));
 
     NbtFormat nbtFormat = ctx.config.entityDataFormat.get();
 
-    int entityId = 0;
+    Map<Identifier, List<Entity>> byType = new LinkedHashMap<>();
     for (Entity entity : entities) {
-      CompoundTag tag = getEntityNbt(ctx, problemReporter, entity);
-      Path filePath = EntityNbtFilePath.resolve(ctx.entitiesDir, nbtFormat, entityId);
-      nbtFormat.write(filePath, tag);
-
-      entityId++;
-    }
-    removeRedundantEntityFiles(ctx.entitiesDir, nbtFormat, entityId);
-  }
-
-  protected void removeRedundantEntityFiles(Path entitiesDir, NbtFormat nbtFormat, int idThreshold)
-      throws IOException {
-    var files = entitiesDir.toFile().listFiles((dir, name) -> name.endsWith(nbtFormat.suffix));
-
-    if (files == null) {
-      return;
+      var key = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
+      byType.computeIfAbsent(key, k -> new ArrayList<>()).add(entity);
     }
 
-    for (var file : files) {
-      if (file.isFile()) {
-        var path = file.toPath();
-        if (EntityNbtFilePath.fromPath(path, nbtFormat) >= idThreshold) {
-          ParcelStorage.LOGGER.info("Removing redundant entity file: {}", path);
-          Files.delete(path);
-        }
+    for (Map.Entry<Identifier, List<Entity>> entry : byType.entrySet()) {
+      var key = entry.getKey();
+      Path dir = ctx.entitiesDir.resolve(key.getNamespace()).resolve(key.getPath());
+      Files.createDirectories(dir);
+
+      int index = 0;
+      for (Entity entity : entry.getValue()) {
+        nbtFormat.write(
+            dir.resolve(index + nbtFormat.suffix),
+            getEntityNbt(ctx, problemReporter, entity),
+            true);
+        index++;
       }
     }
   }

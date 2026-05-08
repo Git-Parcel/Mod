@@ -20,13 +20,21 @@ import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.DoubleTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityProcessor;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -102,8 +110,7 @@ public class ParcellaD32Loader
       }
 
       if (!ignoreEntities) {
-        // TODO load entities
-        // loadEntities(ctx, problemReporter);
+        loadEntities(ctx, problemReporter);
       }
     }
   }
@@ -313,7 +320,6 @@ public class ParcellaD32Loader
                       }
                     }
                   }
-
                 }
               }
 
@@ -464,6 +470,83 @@ public class ParcellaD32Loader
         blockEntity.loadWithComponents(
             TagValueInput.create(problemReporter, ctx.level.registryAccess(), entry.data()));
       }
+    }
+  }
+
+  protected void loadEntities(Context ctx, ProblemReporter problemReporter) throws IOException {
+    if (!Files.exists(ctx.entitiesDir)) {
+      return;
+    }
+
+    try (var stream = Files.list(ctx.entitiesDir)) {
+      for (var namespaceDir : stream.toList()) {
+        var entityNamespace = namespaceDir.getFileName().toString();
+        try (var stream2 =
+            Files.list(namespaceDir)
+                .filter(path -> path.endsWith(ctx.config.entityDataFormat.get().suffix))) {
+          for (var entityFile : stream2.toList()) {
+            var entityKeyPath = entityFile.getFileName().toString();
+            loadEntity(
+                ctx,
+                Identifier.fromNamespaceAndPath(entityNamespace, entityKeyPath),
+                entityFile,
+                problemReporter);
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * @see ParcellaD32Saver#saveEntities
+   */
+  protected void loadEntity(
+      Context ctx, Identifier identifier, Path path, ProblemReporter problemReporter) {
+    try {
+      var parseResult = ctx.config.entityDataFormat.get().read(path);
+      if (parseResult.isErr()) {
+        problemReporter.report(
+            () -> "Failed to read entity file: " + path + " " + parseResult.unwrapErr());
+        return;
+      }
+
+      CompoundTag wrapperTag = parseResult.unwrap();
+
+      CompoundTag entityNbt =
+          wrapperTag
+              .getCompound("nbt")
+              .orElseThrow(() -> new IllegalStateException("Missing 'nbt' field in entity data"));
+
+      ListTag localPosList =
+          wrapperTag
+              .getList("pos")
+              .orElseThrow(() -> new IllegalStateException("Missing 'pos' field in entity data"));
+
+      Vec3 localPos =
+          new Vec3(
+              localPosList.getDouble(0).orElse(0.0),
+              localPosList.getDouble(1).orElse(0.0),
+              localPosList.getDouble(2).orElse(0.0));
+
+      // Transform position from local space to world space
+      Vec3 worldPos = ctx.transform.apply(localPos);
+
+      // Override position in entity NBT
+      ListTag worldPosList = new ListTag();
+      worldPosList.add(DoubleTag.valueOf(worldPos.x));
+      worldPosList.add(DoubleTag.valueOf(worldPos.y));
+      worldPosList.add(DoubleTag.valueOf(worldPos.z));
+      entityNbt.put("Pos", worldPosList);
+
+      Entity entity =
+          EntityType.loadEntityRecursive(
+              entityNbt, ctx.level.getLevel(), EntitySpawnReason.LOAD, EntityProcessor.NOP);
+      if (entity != null) {
+        ctx.level.addFreshEntity(entity);
+      }
+    } catch (Exception e) {
+      LOGGER.error("Error loading entity from {}: {}", path, e.getMessage(), e);
+      problemReporter.report(() -> "Error loading entity from " + path + ": " + e.getMessage());
     }
   }
 }
