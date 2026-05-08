@@ -19,7 +19,7 @@ public enum NbtFormat {
   public final String suffix;
 
   public void write(Path path, CompoundTag tag) throws IOException {
-    write(path, tag, false);
+    write(path, tag, true);
   }
 
   public void write(Path path, CompoundTag tag, boolean format) throws IOException {
