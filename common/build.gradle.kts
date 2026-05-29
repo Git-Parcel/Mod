@@ -36,13 +36,18 @@ dependencies {
 
     implementation("com.github.Leawind:inventory-java:${project.property("leawind_inventory_version")}")
     implementation("org.eclipse.jgit:org.eclipse.jgit:${project.property("jgit_version")}") {
-        // Exclude transitive dependencies that are already provided by the Minecraft environment
-        exclude(group = "commons-codec", module = "commons-codec") // conflicts with NeoForm's strictly 1.19.0
-        exclude(group = "org.slf4j", module = "slf4j-api") // already provided by Minecraft
+        // conflicts with NeoForm's strictly 1.19.0
+        exclude(group = "commons-codec", module = "commons-codec")
+        // already provided by Minecraft
+        exclude(group = "org.slf4j", module = "slf4j-api")
     }
     implementation("dev.dirs:directories:${project.property("directories_version")}")
 
-    implementation("com.github.ben-manes.caffeine:caffeine:${project.property("caffeine_version")}")
+    implementation("com.github.ben-manes.caffeine:caffeine:${project.property("caffeine_version")}") {
+        // annotations
+        exclude(group = "com.google.errorprone")
+        exclude(group = "org.jspecify", module = "jspecify")
+    }
 }
 
 tasks.test {
