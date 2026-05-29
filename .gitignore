@@ -23,6 +23,7 @@ out
 # gradle
 build/
 .gradle/
+.kotlin/
 
 # other
 run
@@ -30,12 +31,15 @@ runs
 
 # AI tools
 /.ai/
+.claude/
 .clinerules/
 .codebuddy/
 .cursorrules/
+.kilo/
 .kilocode/
 .lingma/
 .marscode/
+.opencode/
 .trae/
 
 # logs
