@@ -11,30 +11,20 @@ import net.minecraft.network.chat.Component;
 public class StorageSubcommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
     return Commands.literal("storage")
-        .executes(StorageSubcommand::execute)
         .then(Commands.literal("world").executes(StorageSubcommand::world))
         .then(Commands.literal("game").executes(StorageSubcommand::game))
         .then(Commands.literal("system").executes(StorageSubcommand::system));
   }
 
-  private static int execute(CommandContext<CommandSourceStack> context) {
-    var source = context.getSource();
-    var storage = StorageManager.getInstance(source.getServer());
-
-    Message.sendSystemMessage(source, () -> "Resolved cache dir: " + storage.resolveCachedDir());
-    Message.sendSystemMessage(source, () -> "Resolved shared dir: " + storage.resolveSharedDir());
-
-    return 1;
-  }
-
   private static int system(CommandContext<CommandSourceStack> context) {
     var source = context.getSource();
-    var storage = SystemStorageManager.getInstance();
 
-    source.sendSystemMessage(Component.literal("System config file: " + storage.getConfigFile()));
-    source.sendSystemMessage(Component.literal("System secret dir: " + storage.getSecretDir()));
-    Message.sendSystemMessage(source, () -> "System shared dir: " + storage.getSharedDir());
-    Message.sendSystemMessage(source, () -> "System cached dir: " + storage.getCachedDir());
+    source.sendSystemMessage(
+        Component.literal("Data: " + SystemStorageManager.getDataDir().toString()));
+    source.sendSystemMessage(
+        Component.literal("Cache: " + SystemStorageManager.getCacheDir().toString()));
+    source.sendSystemMessage(
+        Component.literal("Secrets: " + SystemStorageManager.getSecrets().getDirPath().toString()));
 
     return 1;
   }

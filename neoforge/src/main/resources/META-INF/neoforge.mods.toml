@@ -27,3 +27,9 @@ type = "required"
 versionRange = "${mod.minecraft_version_range}"
 ordering = "NONE"
 side = "BOTH"
+[[dependencies.${ mod.id }]]
+modId = "system_storage_lib"
+mandatory = true
+versionRange = "[${dep.system_storage_lib_version},)"
+ordering = "NONE"
+side = "SERVER"

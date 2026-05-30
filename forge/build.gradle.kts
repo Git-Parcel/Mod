@@ -88,6 +88,7 @@ sourceSets["main"].resources.srcDir(layout.projectDirectory.dir("src/generated/r
 dependencies {
     minecraft("net.minecraftforge:forge:${props["mod.minecraft_version"]}-${props["dep.forge_version"]}")
     annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT:processor")
+    implementation("com.github.Leawind:SystemStorageLib:${project.property("dep.system_storage_lib_version")}")
 }
 
 sourceSets.configureEach {

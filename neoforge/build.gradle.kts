@@ -5,6 +5,11 @@ plugins {
 
 val props = project.properties;
 
+
+dependencies {
+    implementation("com.github.Leawind:SystemStorageLib:${project.property("dep.system_storage_lib_version")}")
+}
+
 neoForge {
     version = props["dep.neoforge_version"] as String
     val at = project(":common").file("src/main/resources/META-INF/accesstransformer.cfg")

@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar;
+
 plugins {
     id("multiloader-common")
     id("com.gradleup.shadow")
@@ -66,7 +68,7 @@ tasks.named<Javadoc>("javadoc") {
     dependsOn(configurations.getByName("commonJava"))
     source(configurations.getByName("commonJava"))
 
-    (options as? org.gradle.external.javadoc.StandardJavadocDocletOptions)?.addStringOption(
+    (options as? StandardJavadocDocletOptions)?.addStringOption(
         "Xdoclint:-missing",
         "-quiet"
     )
@@ -79,9 +81,10 @@ tasks.named<Jar>("sourcesJar") {
     from(configurations.getByName("commonResources"))
 }
 
-tasks.named("shadowJar", com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class.java) {
-    archiveClassifier = ""
+tasks.named("shadowJar", ShadowJar::class.java) {
     configurations = listOf(project.configurations.getByName("shadow"))
+    archiveClassifier = ""
+
     minimize()
 
     // com.github.Leawind:inventory-java

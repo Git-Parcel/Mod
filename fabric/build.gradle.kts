@@ -15,6 +15,8 @@ dependencies {
     })
     modImplementation("net.fabricmc:fabric-loader:${props["dep.fabric_loader_version"]}")
     modImplementation("net.fabricmc.fabric-api:fabric-api:${props["dep.fabric_version"]}")
+
+    modImplementation("com.github.Leawind:SystemStorageLib:${project.property("dep.system_storage_lib_version")}")
 }
 
 loom {

@@ -33,7 +33,8 @@
     "fabricloader": ">=${dep.fabric_loader_version}",
     "fabric-api": "*",
     "minecraft": "~${mod.minecraft_version}",
-    "java": ">=${dep.java_version}"
+    "java": ">=${dep.java_version}",
+    "system_storage_lib": ">=${dep.system_storage_lib_version}"
   },
   "suggests": {
     "another-mod": "*"

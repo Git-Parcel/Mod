@@ -10,17 +10,6 @@
  *       instance-specific storage
  *   <li>{@link io.github.leawind.gitparcel.server.storage.SystemStorageManager} - System-wide
  *       storage following XDG specification
- *   <li>{@link io.github.leawind.gitparcel.server.storage.SecretManager} - Secure storage for
- *       sensitive credentials
- * </ul>
- *
- * <p>Storage locations can be customized via environment variables:
- *
- * <ul>
- *   <li>{@value io.github.leawind.gitparcel.server.storage.StorageManager#ENV_SHARE_DIR} - Override
- *       shared content directory
- *   <li>{@value io.github.leawind.gitparcel.server.storage.StorageManager#ENV_CACHE_DIR} - Override
- *       cache directory
  * </ul>
  */
 package io.github.leawind.gitparcel.server.storage;

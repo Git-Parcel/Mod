@@ -49,6 +49,7 @@ dependencies {
         exclude(group = "com.google.errorprone")
         exclude(group = "org.jspecify", module = "jspecify")
     }
+    implementation("com.github.Leawind:SystemStorageLib:${project.property("dep.system_storage_lib_version")}")
 }
 
 tasks.test {
