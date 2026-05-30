@@ -5,23 +5,25 @@ plugins {
     id("fabric-loom")
 }
 
+val props = project.properties
+
 dependencies {
-    minecraft("com.mojang:minecraft:${project.property("minecraft_version")}")
+    minecraft("com.mojang:minecraft:${props["minecraft_version"]}")
     mappings(loom.layered {
         officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-${project.property("parchment_minecraft")}:${project.property("parchment_version")}@zip")
+        parchment("org.parchmentmc.data:parchment-${props["parchment_minecraft"]}:${props["parchment_version"]}@zip")
     })
-    modImplementation("net.fabricmc:fabric-loader:${project.property("fabric_loader_version")}")
-    modImplementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_version")}")
+    modImplementation("net.fabricmc:fabric-loader:${props["fabric_loader_version"]}")
+    modImplementation("net.fabricmc.fabric-api:fabric-api:${props["fabric_version"]}")
 }
 
 loom {
-    val aw = project(":common").file("src/main/resources/${project.property("mod_id")}.accesswidener")
+    val aw = project(":common").file("src/main/resources/${props["mod_id"]}.accesswidener")
     if (aw.exists()) {
         accessWidenerPath.set(aw)
     }
     mixin {
-        defaultRefmapName.set("${project.property("mod_id")}.refmap.json")
+        defaultRefmapName.set("${props["mod_id"]}.refmap.json")
     }
     runs {
         named("client") {
@@ -44,7 +46,7 @@ loom {
 fabricApi {
     configureTests {
         createSourceSet = true
-        modId = project.property("mod_id") as String
+        modId = props["mod_id"] as String
         enableGameTests = true
         enableClientGameTests = false
         eula = true

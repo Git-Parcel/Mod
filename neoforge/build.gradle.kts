@@ -3,33 +3,35 @@ plugins {
     id("net.neoforged.moddev")
 }
 
+val props = project.properties;
+
 neoForge {
-    version = project.property("neoforge_version") as String
+    version = props["neoforge_version"] as String
     val at = project(":common").file("src/main/resources/META-INF/accesstransformer.cfg")
     if (at.exists()) {
         accessTransformers.from(at.absolutePath)
     }
     parchment {
-        minecraftVersion = project.property("parchment_minecraft") as String
-        mappingsVersion = project.property("parchment_version") as String
+        minecraftVersion = props["parchment_minecraft"] as String
+        mappingsVersion = props["parchment_version"] as String
     }
     runs {
         register("client") {
             type.set("client")
-            systemProperty("neoforge.enabledGameTestNamespaces", project.property("mod_id") as String)
+            systemProperty("neoforge.enabledGameTestNamespaces", props["mod_id"] as String)
             ideName.set("NeoForge Client (${project.path})")
         }
         register("server") {
             type.set("server")
-            systemProperty("neoforge.enabledGameTestNamespaces", project.property("mod_id") as String)
+            systemProperty("neoforge.enabledGameTestNamespaces", props["mod_id"] as String)
             ideName.set("NeoForge Server (${project.path})")
         }
         register("data") {
             type.set("clientData")
-            systemProperty("neoforge.enabledGameTestNamespaces", project.property("mod_id") as String)
+            systemProperty("neoforge.enabledGameTestNamespaces", props["mod_id"] as String)
             ideName.set("NeoForge Data (${project.path})")
             programArguments.addAll(
-                "--mod", project.property("mod_id") as String,
+                "--mod", props["mod_id"] as String,
                 "--all",
                 "--output", file("src/generated/resources/").absolutePath,
                 "--existing", file("src/main/resources/").absolutePath
@@ -37,7 +39,7 @@ neoForge {
         }
     }
     mods {
-        create(project.property("mod_id") as String) {
+        create(props["mod_id"] as String) {
             sourceSet(sourceSets["main"])
         }
     }

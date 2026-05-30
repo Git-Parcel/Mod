@@ -2,12 +2,7 @@ plugins {
     id("multiloader-common")
     id("com.gradleup.shadow")
 }
-
-val mod_id: String by project
-val leawind_inventory_version: String by project
-val jgit_version: String by project
-val directories_version: String by project
-val caffeine_version: String by project
+val props = project.properties
 
 configurations {
     register("commonJava") {
@@ -21,27 +16,28 @@ configurations {
 dependencies {
     compileOnly(project(":common")) {
         capabilities {
-            requireCapability("$group:$mod_id")
+            requireCapability("${props["group"]}:${props["mod_id"]}")
         }
         val loaderAttribute = Attribute.of("io.github.mcgradleconventions.loader", String::class.java)
         attributes {
             attribute(loaderAttribute, "common")
         }
     }
-    compileOnly("org.jspecify:jspecify:1.0.0")
 
     add("commonJava", project(":common", configuration = "commonJava"))
     add("commonResources", project(":common", configuration = "commonResources"))
 
-    add("shadow", "com.github.Leawind:inventory-java:${leawind_inventory_version}")
-    add("shadow", "org.eclipse.jgit:org.eclipse.jgit:${jgit_version}") {
+    compileOnly("org.jspecify:jspecify:1.0.0")
+
+    shadow("com.github.Leawind:inventory-java:${props["leawind_inventory_version"]}")
+    shadow("org.eclipse.jgit:org.eclipse.jgit:${props["jgit_version"]}") {
         // conflicts with NeoForm's strictly 1.19.0
         exclude(group = "commons-codec", module = "commons-codec")
         // already provided by Minecraft
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
-    add("shadow", "dev.dirs:directories:${directories_version}")
-    add("shadow", "com.github.ben-manes.caffeine:caffeine:${caffeine_version}") {
+    shadow("dev.dirs:directories:${props["directories_version"]}")
+    shadow("com.github.ben-manes.caffeine:caffeine:${props["caffeine_version"]}") {
         // annotations
         exclude(group = "com.google.errorprone")
         exclude(group = "org.jspecify", module = "jspecify")

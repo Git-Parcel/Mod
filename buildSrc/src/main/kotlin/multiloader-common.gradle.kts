@@ -3,27 +3,14 @@ plugins {
     id("maven-publish")
 }
 
-val mod_id: String by project
-val minecraft_version: String by project
-val minecraft_version_range: String by project
-val java_version: String by project
-val mod_name: String by project
-val mod_author: String by project
-val license: String by project
-val credits: String by project
-val fabric_version: String by project
-val fabric_loader_version: String by project
-val neoforge_version: String by project
-val neoforge_loader_version_range: String by project
-val forge_version: String by project
-val forge_loader_version_range: String by project
+val props = project.properties
 
 base {
-    archivesName = "${mod_id}-${project.name}-${minecraft_version}"
+    archivesName = "${props["mod_id"]}-${project.name}-${props["minecraft_version"]}"
 }
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(java_version)
+    toolchain.languageVersion = JavaLanguageVersion.of(props["java_version"].toString().toInt())
     withSourcesJar()
     withJavadocJar()
 }
@@ -65,10 +52,16 @@ repositories {
 // Read more about capabilities here: https://docs.gradle.org/current/userguide/component_capabilities.html#sec:declaring-additional-capabilities-for-a-local-component
 listOf("apiElements", "runtimeElements", "sourcesElements", "javadocElements").forEach { variant ->
     configurations.getByName(variant).outgoing {
-        capability("$group:${project.name}:$version")
-        capability("$group:${base.archivesName.get()}:$version")
-        capability("$group:$mod_id-${project.name}-${minecraft_version}:$version")
-        capability("$group:$mod_id:$version")
+        capability("${props["group"]}:${project.name}:${props["version"]}")
+        capability("${props["group"]}:${base.archivesName.get()}:${props["version"]}")
+        capability(
+            "${props["group"]}:${props["mod_id"]}-${project.name}-${props["minecraft_version"]}:${
+                project.property(
+                    "version"
+                )
+            }"
+        )
+        capability("${props["group"]}:${props["mod_id"]}:${props["version"]}")
     }
     publishing.publications.withType<MavenPublication>().configureEach {
         suppressPomMetadataWarningsFor(variant)
@@ -78,25 +71,25 @@ listOf("apiElements", "runtimeElements", "sourcesElements", "javadocElements").f
 tasks.named<Jar>("sourcesJar") {
     from(rootProject.file("LICENSE"))
     filesMatching(listOf("LICENSE")) {
-        rename { original -> "${original}_${mod_name}" }
+        rename { original -> "${original}_${props["mod_name"]}" }
     }
 }
 
 tasks.jar {
     from(rootProject.file("LICENSE"))
     filesMatching(listOf("LICENSE")) {
-        rename { original -> "${original}_${mod_name}" }
+        rename { original -> "${original}_${props["mod_name"]}" }
     }
 
     manifest {
         attributes(
-            "Specification-Title" to mod_name,
-            "Specification-Vendor" to mod_author,
-            "Specification-Version" to version.toString(),
+            "Specification-Title" to props["mod_name"],
+            "Specification-Vendor" to props["mod_author"],
+            "Specification-Version" to props["version"],
             "Implementation-Title" to project.name,
-            "Implementation-Version" to version.toString(),
-            "Implementation-Vendor" to mod_author,
-            "Built-On-Minecraft" to minecraft_version
+            "Implementation-Version" to props["version"],
+            "Implementation-Vendor" to props["mod_author"],
+            "Built-On-Minecraft" to props["minecraft_version"]
         )
     }
 }
@@ -104,23 +97,23 @@ tasks.jar {
 // Apply resource expansion for all source sets
 tasks.withType<ProcessResources>().configureEach {
     val expandProps = mapOf(
-        "version" to version,
-        "group" to project.group, //Else we target the task's group.
-        "minecraft_version" to minecraft_version,
-        "minecraft_version_range" to minecraft_version_range,
-        "fabric_version" to fabric_version,
-        "fabric_loader_version" to fabric_loader_version,
-        "mod_name" to mod_name,
-        "mod_author" to mod_author,
-        "mod_id" to mod_id,
-        "license" to license,
-        "description" to project.description,
-        "neoforge_version" to neoforge_version,
-        "neoforge_loader_version_range" to neoforge_loader_version_range,
-        "forge_version" to forge_version,
-        "forge_loader_version_range" to forge_loader_version_range,
-        "credits" to credits,
-        "java_version" to java_version
+        "version" to props["version"],
+        "group" to props["group"], //Else we target the task's group.
+        "minecraft_version" to props["minecraft_version"],
+        "minecraft_version_range" to props["minecraft_version_range"],
+        "fabric_version" to props["fabric_version"],
+        "fabric_loader_version" to props["fabric_loader_version"],
+        "mod_name" to props["mod_name"],
+        "mod_author" to props["mod_author"],
+        "mod_id" to props["mod_id"],
+        "license" to props["license"],
+        "description" to props["description"],
+        "neoforge_version" to props["neoforge_version"],
+        "neoforge_loader_version_range" to props["neoforge_loader_version_range"],
+        "forge_version" to props["forge_version"],
+        "forge_loader_version_range" to props["forge_loader_version_range"],
+        "credits" to props["credits"],
+        "java_version" to props["java_version"]
     )
 
     val jsonExpandProps = expandProps.mapValues { (_, value) ->

@@ -3,17 +3,18 @@ plugins {
     id("net.neoforged.moddev")
     id("me.champeau.jmh") version "0.7.2"
 }
+val props = project.properties
 
 neoForge {
-    neoFormVersion = project.property("neo_form_version") as String
+    neoFormVersion = props["neo_form_version"] as String
     // Automatically enable AccessTransformers if the file exists
     val at = file("src/main/resources/META-INF/accesstransformer.cfg")
     if (at.exists()) {
         accessTransformers.from(at.absolutePath)
     }
     parchment {
-        minecraftVersion = project.property("parchment_minecraft") as String
-        mappingsVersion = project.property("parchment_version") as String
+        minecraftVersion = props["parchment_minecraft"] as String
+        mappingsVersion = props["parchment_version"] as String
     }
 
     // So we can access vanilla classes in test
@@ -34,16 +35,16 @@ dependencies {
     testImplementation("org.openjdk.jmh:jmh-core:1.37")
     testAnnotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:1.37")
 
-    implementation("com.github.Leawind:inventory-java:${project.property("leawind_inventory_version")}")
-    implementation("org.eclipse.jgit:org.eclipse.jgit:${project.property("jgit_version")}") {
+    implementation("com.github.Leawind:inventory-java:${props["leawind_inventory_version"]}")
+    implementation("org.eclipse.jgit:org.eclipse.jgit:${props["jgit_version"]}") {
         // conflicts with NeoForm's strictly 1.19.0
         exclude(group = "commons-codec", module = "commons-codec")
         // already provided by Minecraft
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
-    implementation("dev.dirs:directories:${project.property("directories_version")}")
+    implementation("dev.dirs:directories:${props["directories_version"]}")
 
-    implementation("com.github.ben-manes.caffeine:caffeine:${project.property("caffeine_version")}") {
+    implementation("com.github.ben-manes.caffeine:caffeine:${props["caffeine_version"]}") {
         // annotations
         exclude(group = "com.google.errorprone")
         exclude(group = "org.jspecify", module = "jspecify")
