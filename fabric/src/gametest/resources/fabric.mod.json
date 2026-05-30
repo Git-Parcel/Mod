@@ -3,7 +3,7 @@
   "id": "${mod.id}-gametest",
   "version": "${mod.version}",
   "name": "${mod.name} Game Test",
-  "icon": "${mod.id}.png",
+  "icon": "${mod.logo_file}",
   "environment": "*",
   "entrypoints": {
     "fabric-gametest": ["io.github.leawind.gitparcel.platform.gametest.GitParcelGameTestFabric"],

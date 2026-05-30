@@ -1,15 +1,14 @@
 modLoader = "javafml"
 loaderVersion = "${dep.forge_loader_version_range}"
 license = "${mod.license}"
-# issueTrackerURL="https://github.com/Git-Parcel/Mod/issues"
+issueTrackerURL = "${mod.issues_url}"
 #clientSideOnly=false
 [[mods]]
 modId = "${mod.id}"
 version = "${mod.version}"
 displayName = "${mod.name}"
-#updateJSONURL="https://change.me.example.invalid/updates.json" #optional (see https://mcforge.readthedocs.io/en/latest/gettingstarted/autoupdate/)
-# displayURL="https://github.com/Git-Parcel/Mod" # displayed in the mod UI
-logoFile = "${mod.id}.png"
+displayURL = "${mod.home_url}"
+logoFile = "${mod.logo_file}"
 credits = "${mod.credits}"
 authors = "${mod.author}"
 description = '''${mod.description}'''
