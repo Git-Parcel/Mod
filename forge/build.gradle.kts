@@ -8,26 +8,26 @@ plugins {
 val props = project.properties
 
 base {
-    archivesName.set("${props["mod_id"]}-forge-${props["minecraft_version"]}")
+    archivesName.set("${props["mod.id"]}-forge-${props["mod.minecraft_version"]}")
 }
 
 mixin {
-    config("${props["mod_id"]}.mixins.json")
-    config("${props["mod_id"]}.forge.mixins.json")
+    config("${props["mod.id"]}.mixins.json")
+    config("${props["mod.id"]}.forge.mixins.json")
 }
 
 tasks.jar {
     manifest {
         attributes(
             mapOf(
-                "MixinConfigs" to "${props["mod_id"]}.mixins.json,${props["mod_id"]}.forge.mixins.json"
+                "MixinConfigs" to "${props["mod.id"]}.mixins.json,${props["mod.id"]}.forge.mixins.json"
             )
         )
     }
 }
 
 minecraft {
-    mappings("official", props["minecraft_version"] as String)
+    mappings("official", props["mod.minecraft_version"] as String)
 
     copyIdeResources = true
     reobf = false
@@ -68,7 +68,7 @@ minecraft {
             workingDirectory(file("runs/data"))
             ideaModule("${rootProject.name}.${project.name}.main")
             args(
-                "--mod", props["mod_id"] as String,
+                "--mod", props["mod.id"] as String,
                 "--all",
                 "--output", file("src/generated/resources/"),
                 "--existing", file("src/main/resources/")
@@ -86,7 +86,7 @@ minecraft {
 sourceSets["main"].resources.srcDir(layout.projectDirectory.dir("src/generated/resources"))
 
 dependencies {
-    minecraft("net.minecraftforge:forge:${props["minecraft_version"]}-${props["forge_version"]}")
+    minecraft("net.minecraftforge:forge:${props["mod.minecraft_version"]}-${props["dep.forge_version"]}")
     annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT:processor")
 }
 

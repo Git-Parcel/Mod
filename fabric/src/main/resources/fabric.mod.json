@@ -1,39 +1,39 @@
 {
   "schemaVersion": 1,
-  "id": "${mod_id}",
-  "version": "${version}",
-  "name": "${mod_name}",
-  "description": "${description}",
+  "id": "${mod.id}",
+  "version": "${mod.version}",
+  "name": "${mod.name}",
+  "description": "${mod.description}",
   "authors": [
-    "${mod_author}"
+    "${mod.author}"
   ],
   "contact": {
-    "homepage": "https://fabricmc.net/",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "homepage": "${mod.home_url}",
+    "sources": "${mod.source_url}"
   },
-  "license": "${license}",
-  "icon": "${mod_id}.png",
+  "license": "${mod.license}",
+  "icon": "${mod.id}.png",
   "environment": "*",
   "entrypoints": {
     "main": [
-      "io.github.leawind.gitparcel.platform.GitParcelFabric"
+      "${mod.group}.platform.GitParcelFabric"
     ],
     "client": [
-      "io.github.leawind.gitparcel.platform.client.GitParcelFabricClient"
+      "${mod.group}.platform.client.GitParcelFabricClient"
     ],
     "server": [
-      "io.github.leawind.gitparcel.platform.server.GitParcelFabricDedicatedServer"
+      "${mod.group}.platform.server.GitParcelFabricDedicatedServer"
     ]
   },
   "mixins": [
-    "${mod_id}.mixins.json",
-    "${mod_id}.fabric.mixins.json"
+    "${mod.id}.mixins.json",
+    "${mod.id}.fabric.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=${fabric_loader_version}",
+    "fabricloader": ">=${dep.fabric_loader_version}",
     "fabric-api": "*",
-    "minecraft": "~${minecraft_version}",
-    "java": ">=${java_version}"
+    "minecraft": "~${mod.minecraft_version}",
+    "java": ">=${dep.java_version}"
   },
   "suggests": {
     "another-mod": "*"

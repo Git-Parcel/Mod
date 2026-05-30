@@ -2,7 +2,7 @@
   "required": true,
   "minVersion": "0.8",
   "package": "io.github.leawind.gitparcel.platform.mixin",
-  "refmap": "${mod_id}.refmap.json",
+  "refmap": "${mod.id}.refmap.json",
   "compatibilityLevel": "JAVA_18",
   "mixins": [],
   "client": [

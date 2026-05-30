@@ -6,11 +6,11 @@ plugins {
 val props = project.properties
 
 base {
-    archivesName = "${props["mod_id"]}-${project.name}-${props["minecraft_version"]}"
+    archivesName = "${props["mod.id"]}-${project.name}-${props["mod.minecraft_version"]}"
 }
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(props["java_version"].toString().toInt())
+    toolchain.languageVersion = JavaLanguageVersion.of(props["dep.java_version"].toString().toInt())
     withSourcesJar()
     withJavadocJar()
 }
@@ -52,16 +52,14 @@ repositories {
 // Read more about capabilities here: https://docs.gradle.org/current/userguide/component_capabilities.html#sec:declaring-additional-capabilities-for-a-local-component
 listOf("apiElements", "runtimeElements", "sourcesElements", "javadocElements").forEach { variant ->
     configurations.getByName(variant).outgoing {
-        capability("${props["group"]}:${project.name}:${props["version"]}")
-        capability("${props["group"]}:${base.archivesName.get()}:${props["version"]}")
+        capability("${props["mod.group"]}:${project.name}:${props["mod.version"]}")
+        capability("${props["mod.group"]}:${base.archivesName.get()}:${props["mod.version"]}")
         capability(
-            "${props["group"]}:${props["mod_id"]}-${project.name}-${props["minecraft_version"]}:${
-                project.property(
-                    "version"
-                )
+            "${props["mod.group"]}:${props["mod.id"]}-${project.name}-${props["mod.minecraft_version"]}:${
+                props["mod.version"]
             }"
         )
-        capability("${props["group"]}:${props["mod_id"]}:${props["version"]}")
+        capability("${props["mod.group"]}:${props["mod.id"]}:${props["mod.version"]}")
     }
     publishing.publications.withType<MavenPublication>().configureEach {
         suppressPomMetadataWarningsFor(variant)
@@ -71,64 +69,63 @@ listOf("apiElements", "runtimeElements", "sourcesElements", "javadocElements").f
 tasks.named<Jar>("sourcesJar") {
     from(rootProject.file("LICENSE"))
     filesMatching(listOf("LICENSE")) {
-        rename { original -> "${original}_${props["mod_name"]}" }
+        rename { original -> "${original}_${props["mod.name"]}" }
     }
 }
 
 tasks.jar {
     from(rootProject.file("LICENSE"))
     filesMatching(listOf("LICENSE")) {
-        rename { original -> "${original}_${props["mod_name"]}" }
+        rename { original -> "${original}_${props["mod.name"]}" }
     }
 
     manifest {
         attributes(
-            "Specification-Title" to props["mod_name"],
-            "Specification-Vendor" to props["mod_author"],
-            "Specification-Version" to props["version"],
+            "Specification-Title" to props["mod.name"],
+            "Specification-Vendor" to props["mod.author"],
+            "Specification-Version" to props["mod.version"],
             "Implementation-Title" to project.name,
-            "Implementation-Version" to props["version"],
-            "Implementation-Vendor" to props["mod_author"],
-            "Built-On-Minecraft" to props["minecraft_version"]
+            "Implementation-Version" to props["mod.version"],
+            "Implementation-Vendor" to props["mod.author"],
+            "Built-On-Minecraft" to props["mod.minecraft_version"]
         )
     }
 }
 
 // Apply resource expansion for all source sets
 tasks.withType<ProcessResources>().configureEach {
-    val expandProps = mapOf(
-        "version" to props["version"],
-        "group" to props["group"], //Else we target the task's group.
-        "minecraft_version" to props["minecraft_version"],
-        "minecraft_version_range" to props["minecraft_version_range"],
-        "fabric_version" to props["fabric_version"],
-        "fabric_loader_version" to props["fabric_loader_version"],
-        "mod_name" to props["mod_name"],
-        "mod_author" to props["mod_author"],
-        "mod_id" to props["mod_id"],
-        "license" to props["license"],
-        "description" to props["description"],
-        "neoforge_version" to props["neoforge_version"],
-        "neoforge_loader_version_range" to props["neoforge_loader_version_range"],
-        "forge_version" to props["forge_version"],
-        "forge_loader_version_range" to props["forge_loader_version_range"],
-        "credits" to props["credits"],
-        "java_version" to props["java_version"]
-    )
+    val rawExpandProps: Map<String, Any?> = project.properties
+        .filterKeys { it.startsWith("mod.") || it.startsWith("dep.") }
 
-    val jsonExpandProps = expandProps.mapValues { (_, value) ->
+    // Convert flat dotted keys ("mod.id", "dep.java_version") into nested maps
+    // so Groovy SimpleTemplateEngine can resolve "${mod.id}" etc.
+    fun Map<String, Any?>.toNested(): Map<String, Any?> {
+        val result = linkedMapOf<String, Any?>()
+        for ((key, value) in this) {
+            val parts = key.split(".", limit = 2)
+            if (parts.size == 2 && value != null) {
+                @Suppress("UNCHECKED_CAST")
+                val nested =
+                    result.computeIfAbsent(parts[0]) { linkedMapOf<String, Any?>() } as MutableMap<String, Any?>
+                nested[parts[1]] = value
+            }
+        }
+        return result
+    }
+
+    val jsonRawExpandProps: Map<String, Any?> = rawExpandProps.mapValues { (_, value) ->
         if (value is String) value.replace("\n", "\\\\n") else value
     }
 
     filesMatching(listOf("META-INF/mods.toml", "META-INF/neoforge.mods.toml")) {
-        expand(expandProps)
+        expand(rawExpandProps.toNested())
     }
 
     filesMatching(listOf("pack.mcmeta", "fabric.mod.json", "*.mixins.json")) {
-        expand(jsonExpandProps)
+        expand(jsonRawExpandProps.toNested())
     }
 
-    inputs.properties(expandProps)
+    inputs.properties(rawExpandProps)
 }
 
 publishing {

@@ -16,7 +16,7 @@ configurations {
 dependencies {
     compileOnly(project(":common")) {
         capabilities {
-            requireCapability("${props["group"]}:${props["mod_id"]}")
+            requireCapability("${props["mod.group"]}:${props["mod.id"]}")
         }
         val loaderAttribute = Attribute.of("io.github.mcgradleconventions.loader", String::class.java)
         attributes {
@@ -29,15 +29,15 @@ dependencies {
 
     compileOnly("org.jspecify:jspecify:1.0.0")
 
-    shadow("com.github.Leawind:inventory-java:${props["leawind_inventory_version"]}")
-    shadow("org.eclipse.jgit:org.eclipse.jgit:${props["jgit_version"]}") {
+    shadow("com.github.Leawind:inventory-java:${props["dep.leawind_inventory_version"]}")
+    shadow("org.eclipse.jgit:org.eclipse.jgit:${props["dep.jgit_version"]}") {
         // conflicts with NeoForm's strictly 1.19.0
         exclude(group = "commons-codec", module = "commons-codec")
         // already provided by Minecraft
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
-    shadow("dev.dirs:directories:${props["directories_version"]}")
-    shadow("com.github.ben-manes.caffeine:caffeine:${props["caffeine_version"]}") {
+    shadow("dev.dirs:directories:${props["dep.directories_version"]}")
+    shadow("com.github.ben-manes.caffeine:caffeine:${props["dep.caffeine_version"]}") {
         // annotations
         exclude(group = "com.google.errorprone")
         exclude(group = "org.jspecify", module = "jspecify")

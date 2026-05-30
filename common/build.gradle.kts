@@ -6,15 +6,15 @@ plugins {
 val props = project.properties
 
 neoForge {
-    neoFormVersion = props["neo_form_version"] as String
+    neoFormVersion = props["dep.neo_form_version"] as String
     // Automatically enable AccessTransformers if the file exists
     val at = file("src/main/resources/META-INF/accesstransformer.cfg")
     if (at.exists()) {
         accessTransformers.from(at.absolutePath)
     }
     parchment {
-        minecraftVersion = props["parchment_minecraft"] as String
-        mappingsVersion = props["parchment_version"] as String
+        minecraftVersion = props["dep.parchment_minecraft"] as String
+        mappingsVersion = props["dep.parchment_version"] as String
     }
 
     // So we can access vanilla classes in test
@@ -35,16 +35,16 @@ dependencies {
     testImplementation("org.openjdk.jmh:jmh-core:1.37")
     testAnnotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:1.37")
 
-    implementation("com.github.Leawind:inventory-java:${props["leawind_inventory_version"]}")
-    implementation("org.eclipse.jgit:org.eclipse.jgit:${props["jgit_version"]}") {
+    implementation("com.github.Leawind:inventory-java:${props["dep.leawind_inventory_version"]}")
+    implementation("org.eclipse.jgit:org.eclipse.jgit:${props["dep.jgit_version"]}") {
         // conflicts with NeoForm's strictly 1.19.0
         exclude(group = "commons-codec", module = "commons-codec")
         // already provided by Minecraft
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
-    implementation("dev.dirs:directories:${props["directories_version"]}")
+    implementation("dev.dirs:directories:${props["dep.directories_version"]}")
 
-    implementation("com.github.ben-manes.caffeine:caffeine:${props["caffeine_version"]}") {
+    implementation("com.github.ben-manes.caffeine:caffeine:${props["dep.caffeine_version"]}") {
         // annotations
         exclude(group = "com.google.errorprone")
         exclude(group = "org.jspecify", module = "jspecify")

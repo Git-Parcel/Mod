@@ -12,10 +12,10 @@
  * @module gametest
  */
 
-import {program} from 'commander'
+import { program } from 'commander'
 import * as fs from '@leawind/inventory/fs'
 import log from '@leawind/inventory/log'
-import {FABRIC_GAMETEST_SAVED_PARCELS_DIR, FABRIC_GAMETEST_STRUCTURE_DIR} from './lib/constants.ts'
+import { FABRIC_GAMETEST_SAVED_PARCELS_DIR, FABRIC_GAMETEST_STRUCTURE_DIR } from './lib/constants.ts'
 
 const FORMAT_NAME = 'structure_template'
 
