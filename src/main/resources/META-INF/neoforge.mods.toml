@@ -1,0 +1,20 @@
+modLoader = "javafml"
+loaderVersion = "*"
+license = "${license}"
+issueTrackerURL = "${issues_url}"
+
+[[mods]]
+modId = "${id}"
+version = "${version}"
+displayName = "${name}"
+authors = "${author}"
+description = '''${description}'''
+logoFile = "${logo_file}"
+logoBlur = false
+
+[[dependencies.${ id }]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[${minecraftVersion},)"
+ordering = "NONE"
+side = "BOTH"

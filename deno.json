@@ -2,8 +2,7 @@
   "tasks": {
     "format": "deno fmt",
     "format-check": "deno fmt --check",
-    "i18n": "deno run -A scripts/i18n.ts --",
-    "gametest": "deno run -A scripts/gametest.ts --"
+    "i18n": "deno run -A scripts/i18n.ts --"
   },
   "lint": {
     "rules": {
@@ -33,13 +32,9 @@
     "typeLiteral.separatorKind": "semiColon",
     "include": [
       "deno.json",
-      "**/src/main/resources/**/*.json",
+      "src/main/resources/**/*.json",
       "scripts/**"
     ],
     "exclude": []
-  },
-  "imports": {
-    "@leawind/inventory": "npm:@leawind/inventory@^0.19.4",
-    "commander": "npm:commander@^14.0.3"
   }
 }

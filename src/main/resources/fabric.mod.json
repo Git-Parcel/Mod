@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "${id}",
+  "version": "${version}",
+  "name": "${name}",
+  "description": "${description}",
+  "authors": ["${author}"],
+  "contact": {
+    "homepage": "${home_url}",
+    "sources": "${source_url}"
+  },
+  "license": "${license}",
+  "icon": "${logo_file}",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "${group}.platform.fabric.Entrypoint"
+    ],
+    "client": [
+      "${group}.platform.fabric.ClientEntrypoint"
+    ],
+    "server": [
+      "${group}.platform.fabric.ServerEntrypoint"
+    ]
+  },
+  "depends": {
+    "fabricloader": "*",
+    "minecraft": ">=${minecraftVersion}",
+    "system_storage_lib": ">=${system_storage_lib_version}"
+  }
+}

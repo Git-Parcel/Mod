@@ -1,52 +1,39 @@
 pluginManagement {
     repositories {
-        gradlePluginPortal()
         mavenCentral()
-        exclusiveContent {
-            forRepository {
-                maven {
-                    name = "Fabric"
-                    url = uri("https://maven.fabricmc.net")
-                }
-            }
-            filter {
-                includeGroup("net.fabricmc")
-                includeGroup("net.fabricmc.unpick")
-                includeGroup("fabric-loom")
-            }
-        }
-        exclusiveContent {
-            forRepository {
-                maven {
-                    name = "Sponge"
-                    url = uri("https://repo.spongepowered.org/repository/maven-public")
-                }
-            }
-            filter {
-                includeGroupAndSubgroups("org.spongepowered")
-            }
-        }
-        exclusiveContent {
-            forRepository {
-                maven {
-                    name = "Forge"
-                    url = uri("https://maven.minecraftforge.net")
-                }
-            }
-            filter {
-                includeGroupAndSubgroups("net.minecraftforge")
-            }
-        }
+        gradlePluginPortal()
+        maven("https://maven.kikugie.dev/releases")
+        maven("https://maven.kikugie.dev/snapshots")
+        maven("https://maven.fabricmc.net/")
+        maven("https://maven.architectury.dev")
+        maven("https://maven.minecraftforge.net")
+        maven("https://maven.neoforged.net/releases/")
     }
 }
-
 plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
+    id("gg.meza.stonecraft") version "1.10.+"
+    id("dev.kikugie.stonecutter") version "0.9.+"
 }
 
-// This should match the folder name of the project, or else IDEA may complain (see https://youtrack.jetbrains.com/issue/IDEA-317606)
-rootProject.name = "Git-Parcel"
-include("common")
-include("fabric")
-include("neoforge")
-include("forge")
+stonecutter {
+    centralScript = "build.gradle.kts"
+    kotlinController = true
+    shared {
+        fun mc(version: String, vararg loaders: String) {
+            for (loader in loaders) {
+                version("$version-$loader", version)
+            }
+        }
+
+        // mc("1.16.5", "fabric", "forge")
+        mc("1.19.4", "fabric", "forge")
+        mc("1.20.1", "fabric", "forge")
+        mc("1.21.11", "fabric", "neoforge")
+        mc("26.1", "fabric", "neoforge")
+
+        vcsVersion = "26.1-fabric"
+    }
+    create(rootProject)
+}
+
+rootProject.name = "gitparcel"
