@@ -2,7 +2,7 @@ package io.github.leawind.gitparcel.server.commands.parcel_debug;
 
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import io.github.leawind.gitparcel.server.storage.StorageManager;
+import io.github.leawind.gitparcel.server.storage.StorageUtils;
 import io.github.leawind.gitparcel.server.storage.SystemStorageManager;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -31,7 +31,7 @@ public class StorageSubcommand {
 
   private static int game(CommandContext<CommandSourceStack> context) {
     var source = context.getSource();
-    var storage = StorageManager.getInstance(source.getServer()).gameStorage();
+    var storage = StorageUtils.gameStorage(source.getServer());
 
     source.sendSystemMessage(Component.literal("Game root: " + storage.getRoot()));
     source.sendSystemMessage(Component.literal("Game config file: " + storage.getConfigFile()));
@@ -43,7 +43,7 @@ public class StorageSubcommand {
 
   private static int world(CommandContext<CommandSourceStack> context) {
     var source = context.getSource();
-    var storage = StorageManager.getInstance(source.getServer()).worldStorage();
+    var storage = StorageUtils.worldStorage(source.getServer());
 
     source.sendSystemMessage(Component.literal("World root: " + storage.getRoot()));
 

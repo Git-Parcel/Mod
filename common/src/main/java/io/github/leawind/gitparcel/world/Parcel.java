@@ -13,7 +13,7 @@ import io.github.leawind.gitparcel.api.parcel.ParcelStorage;
 import io.github.leawind.gitparcel.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.permission.ParcelPermissions;
-import io.github.leawind.gitparcel.server.storage.StorageManager;
+import io.github.leawind.gitparcel.server.storage.StorageUtils;
 import io.github.leawind.gitparcel.server.storage.WorldStorageManager;
 import io.github.leawind.gitparcel.utils.permission.PermissionConfig;
 import java.io.IOException;
@@ -235,8 +235,10 @@ public final class Parcel {
    */
   public Path getParcelDirectory() throws NullPointerException {
     if (location == null) {
-      var storage = StorageManager.getInstance((Objects.requireNonNull(getLevel())).getServer());
-      var repoPath = storage.worldStorage().getInternalParcelsDir().resolve(uuid.toString());
+      // TODO move default path resolve logic else where
+      var server = (Objects.requireNonNull(getLevel())).getServer();
+      var repoPath =
+          StorageUtils.worldStorage(server).getInternalParcelsDir().resolve(uuid.toString());
       return repoPath.resolve("parcel");
     } else {
       return location.getParcelPath();

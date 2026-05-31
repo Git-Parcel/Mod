@@ -2,6 +2,8 @@ package io.github.leawind.gitparcel.server.storage;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
@@ -33,6 +35,9 @@ public class GameStorageManager {
 
   /** Configuration file name. */
   public static final String CONFIG_FILE_NAME = "config.json";
+
+  /** Gson instance configured for pretty-printed JSON output. */
+  public static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
   private static final LoadingCache<Path, GameStorageManager> CACHE =
       Caffeine.newBuilder()
@@ -135,14 +140,14 @@ public class GameStorageManager {
      * @throws IOException if the file not exist or cannot be read
      */
     private static Config load(Path file) throws IOException {
-      var json = StorageManager.GSON.fromJson(Files.readString(file), JsonObject.class);
+      var json = GSON.fromJson(Files.readString(file), JsonObject.class);
       return Config.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
     }
 
     private void save(Path file) throws IOException {
       Files.createDirectories(file.getParent());
       var result = CODEC.encodeStart(JsonOps.INSTANCE, this);
-      Files.writeString(file, StorageManager.GSON.toJson((JsonObject) result.getOrThrow()));
+      Files.writeString(file, GSON.toJson((JsonObject) result.getOrThrow()));
     }
 
     private boolean useSystemStorage = false;
