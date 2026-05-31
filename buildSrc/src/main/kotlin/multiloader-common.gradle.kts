@@ -5,8 +5,10 @@ plugins {
 
 val props = project.properties
 
-base {
-    archivesName = "${props["mod.id"]}-${project.name}-${props["mod.minecraft_version"]}"
+tasks.withType<AbstractArchiveTask> {
+    val loaderName = archiveBaseName.get();
+    archiveBaseName = "${project.property("mod.id")}"
+    archiveVersion = "${project.property("mod.version")}+${loaderName}+mc${project.property("mod.minecraft_version")}"
 }
 
 java {
