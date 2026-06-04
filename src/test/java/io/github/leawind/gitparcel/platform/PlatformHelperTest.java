@@ -13,7 +13,8 @@ public class PlatformHelperTest extends TestWithMinecraft {
   }
 
   @Test
-  void test() {
-    PlatformHelper.INSTANCE.getDataVersion();
+  void testGetDataVersion() {
+    var dataVersion = PlatformHelper.INSTANCE.getDataVersion();
+    System.out.println("Data version: " + dataVersion);
   }
 }
