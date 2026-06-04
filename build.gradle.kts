@@ -1,17 +1,19 @@
 import gg.meza.stonecraft.mod
 import net.fabricmc.loom.task.RemapJarTask
-import org.gradle.util.internal.VersionNumber
 
 plugins {
     id("com.gradleup.shadow") version "8.3.10"
     id("gg.meza.stonecraft")
 }
 
+val props: Map<String, Any> = project.properties.mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
+
 modSettings {
+    // https://stonecraft.meza.gg/docs/configuration
+
     clientOptions {
         // https://minecraft.wiki/w/Options.txt
-        fov = 90
-        guiScale = 2
+        fov = 88
         narrator = false
         musicVolume = 0.0
         guiScale = 3
@@ -24,13 +26,12 @@ modSettings {
         )
     }
 
-    val props: Map<String, Any> = project.properties
+    //runDirectory = rootProject.layout.projectDirectory.dir("run-temp")
+
+    val vars = props
         .filterKeys { it.startsWith("mod.") }
         .mapKeys { it.key.removePrefix("mod.") }
-        .mapNotNull { (key, value) -> value?.let { key to it } }
-        .toMap()
-
-    variableReplacements.putAll(props)
+    variableReplacements.putAll(vars)
 }
 
 repositories {
@@ -38,43 +39,40 @@ repositories {
     maven("https://jitpack.io")
 }
 
-val shadowBundle: Configuration by configurations.creating
-
-fun DependencyHandlerScope.shadow(dependencyNotation: String) {
-    implementation(dependencyNotation)
-    add("shadowBundle", dependencyNotation)
-}
-
 configurations.all {
     exclude(group = "net.fabricmc.fabric-api", module = "fabric-gametest-api-v1")
 }
 
-if (VersionNumber.parse(mod.minecraftVersion) <= VersionNumber.parse("1.16.5")) {
-    java {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
+val shadowBundle: Configuration by configurations.creating
+fun DependencyHandlerScope.shadowBundle(dependencyNotation: String) {
+    implementation(dependencyNotation)
+    add("shadowBundle", dependencyNotation)
 }
-
 dependencies {
-    shadow("com.github.Leawind:inventory-java:46400162ee")
-    shadow("dev.dirs:directories:26")
+    shadowBundle("com.github.Leawind:inventory-java:0.2.0")
+    shadowBundle("com.github.ben-manes.caffeine:caffeine:3.2.3");
+
+    shadowBundle("org.eclipse.jgit:org.eclipse.jgit:7.6.0.202603022253-r") {
+        // already provided by Minecraft
+        exclude(group = "org.slf4j", module = "slf4j-api")
+    }
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-
     testImplementation("com.google.jimfs:jimfs:1.3.0") {
-        exclude(group = "com.google.guava", module = "guava") // conflict with 1.20.1-forge `guava:32.1.1-jre`
+        // conflict with 1.20.1-forge `guava:32.1.1-jre`
+        exclude(group = "com.google.guava", module = "guava")
     }
 
     compileOnly("org.jspecify:jspecify:1.0.0")
+    compileOnly("org.jetbrains:annotations:24.0.1")
 }
 
 tasks.shadowJar {
+    configurations = listOf(shadowBundle)
+
     dependsOn(tasks.processResources)
     tasks.findByName("generatePackMCMetaJson")?.let { dependsOn(it) }
-
-    configurations = listOf(shadowBundle)
 
     println("remapJar: ${tasks.findByName("remapJar")}, project.name=${project.name}, project.version=${project.version}")
     if (tasks.findByName("remapJar") == null) {
@@ -85,11 +83,40 @@ tasks.shadowJar {
 
     minimize()
 
-    relocate("io.github.leawind.inventory", "io.github.leawind.systemstoragelib.lib.inventory")
+    // :core
+    dependencies {
+        exclude(dependency("org.slf4j:.*"))
+        exclude(dependency("com.google.errorprone:.*"))
+        exclude(dependency("javax.annotation:.*"))
+        exclude(dependency("org.checkerframework:.*"))
+    }
 
-    // directories
-    relocate("dev.dirs", "io.github.leawind.systemstoragelib.lib.dirs")
-    exclude("META-INF/native-image/**")
+
+    val dest = "${project.property("mod.group")}.lib"
+    // com.github.Leawind:inventory-java
+    relocate("io.github.leawind.inventory", "${dest}.inventory")
+
+    // com.github.ben-manes.caffeine:caffeine
+    dependencies {
+        exclude(dependency("com.google.errorprone:.*"))
+        exclude(dependency("org.jspecify:.*"))
+    }
+    relocate("com.github.benmanes.caffeine", "${dest}.caffeine")
+    exclude("META-INF/LICENSE")
+
+    // org.eclipse.jgit:org.eclipse.jgit
+    dependencies {
+        exclude(dependency("org.slf4j:.*"))
+    }
+    relocate("org.eclipse.jgit", "${dest}.jgit")
+    relocate("org.apache.commons", "${dest}.apache.commons")
+    relocate("com.googlecode.javaewah", "${dest}.javaewah")
+    exclude("about.html")
+    exclude("OSGI-INF/**")
+    exclude("META-INF/maven/**")
+    exclude("versions/**")
+    exclude("LICENSE.txt")
+    exclude("NOTICE.txt")
 }
 
 tasks.withType<RemapJarTask>().matching { it.name == "remapJar" }.configureEach {
@@ -117,13 +144,14 @@ if (mod.isForge) {
         dependsOn("generatePackMCMetaJson")
     }
 }
-
 tasks.test {
     useJUnitPlatform()
 }
 
+
 publishMods {
     modrinth {
+        requires("system_storage_lib")
         if (mod.isFabric) {
             requires("fabric-api")
             optional("modmenu")
@@ -131,6 +159,7 @@ publishMods {
     }
 
     curseforge {
+        requires("system_storage_lib")
         clientRequired = false
         serverRequired = false
         if (mod.isFabric) requires("fabric-api")

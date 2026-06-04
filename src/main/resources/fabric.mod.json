@@ -14,13 +14,13 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "${group}.platform.fabric.Entrypoint"
+      "${group}.platform.entrypoint.fabric.Entrypoint"
     ],
     "client": [
-      "${group}.platform.fabric.ClientEntrypoint"
+      "${group}.platform.entrypoint.fabric.ClientEntrypoint"
     ],
     "server": [
-      "${group}.platform.fabric.ServerEntrypoint"
+      "${group}.platform.entrypoint.fabric.ServerEntrypoint"
     ]
   },
   "depends": {

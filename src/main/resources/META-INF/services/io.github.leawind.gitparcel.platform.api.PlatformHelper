@@ -1,0 +1,3 @@
+io.github.leawind.gitparcel.platform.fabric.PlatformHelperImpl
+io.github.leawind.gitparcel.platform.neoforge.PlatformHelperImpl
+io.github.leawind.gitparcel.platform.forge.PlatformHelperImpl
