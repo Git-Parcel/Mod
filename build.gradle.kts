@@ -39,10 +39,6 @@ repositories {
     maven("https://jitpack.io")
 }
 
-configurations.all {
-    exclude(group = "net.fabricmc.fabric-api", module = "fabric-gametest-api-v1")
-}
-
 val shadowBundle: Configuration by configurations.creating
 fun DependencyHandlerScope.shadowBundle(dependencyNotation: String) {
     implementation(dependencyNotation)
@@ -80,6 +76,26 @@ if (mod.loader == "neoforge") {
     }
 }
 
+if (mod.isFabric) {
+    fabricApi {
+        configureTests {
+            createSourceSet = true
+            modId = project.property("mod.id") as String
+            enableGameTests = true
+            enableClientGameTests = false
+            eula = true
+            clearRunDirectory = true
+            username = "Player0"
+        }
+    }
+
+    dependencies {
+        "gametestImplementation"("com.google.jimfs:jimfs:1.3.0") {
+            exclude(group = "com.google.guava", module = "guava")
+        }
+    }
+}
+
 tasks.shadowJar {
     configurations = listOf(shadowBundle)
 
@@ -101,6 +117,8 @@ tasks.shadowJar {
         exclude(dependency("com.google.errorprone:.*"))
         exclude(dependency("javax.annotation:.*"))
         exclude(dependency("org.checkerframework:.*"))
+        // Must not bundle gametest API into the mod jar
+        exclude(dependency("net.fabricmc.fabric-api:fabric-gametest-api-v1"))
     }
 
 
