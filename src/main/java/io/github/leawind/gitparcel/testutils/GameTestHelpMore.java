@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.core.utils;
+package io.github.leawind.gitparcel.testutils;
 
 import io.github.leawind.gitparcel.core.mixin.AccessGameTestHelper;
 import net.minecraft.core.BlockPos;
@@ -78,7 +78,7 @@ public class GameTestHelpMore extends GameTestHelper {
   }
 
   public void assertSameNbtStructure(@Nullable Tag a, @Nullable Tag b, boolean compareListTag) {
-    if (!GitParcelTestUtils.compareNbtStructure(a, b, compareListTag)) {
+    if (!TestUtils.compareNbtStructure(a, b, compareListTag)) {
       String msg = String.format("NBT structure is not equal:\n  %s\n  %s", a, b);
       throw assertionException(Component.literal(msg));
     }

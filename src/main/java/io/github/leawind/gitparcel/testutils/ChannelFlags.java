@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.core.utils;
+package io.github.leawind.gitparcel.testutils;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -1,0 +1,92 @@
+package io.github.leawind.gitparcel.core.api.parcel;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+import io.github.leawind.gitparcel.core.api.parcel.exceptions.ParcelException;
+import java.io.IOException;
+import java.nio.file.Path;
+import net.minecraft.core.Vec3i;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.block.Block;
+import org.jspecify.annotations.Nullable;
+import org.junit.jupiter.api.Test;
+
+public class ParcelFormatRegistryTest {
+  @Test
+  void test() {
+    var regsitry = ParcelFormatRegistry.INSTANCE;
+    regsitry.clear();
+    regsitry.registerDefaultSaver(new TestSaver("alpha", 0));
+    regsitry.register(new TestSaver("beta", 0));
+    regsitry.register(new TestLoader("charlie", 0));
+
+    assertEquals(regsitry.defaultSaver(), regsitry.getSaver("alpha"));
+
+    assertNotNull(regsitry.getSaver("beta"));
+    assertNull(regsitry.getLoader("beta"));
+
+    assertNull(regsitry.getSaver("charlie"));
+    assertNotNull(regsitry.getLoader("charlie"));
+
+    assertNull(regsitry.getSaver("non-existent"));
+  }
+
+  static class TestFormat implements ParcelFormat.Impl<ParcelFormatConfig.None> {
+
+    @Override
+    public Spec spec() {
+      return spec;
+    }
+
+    private final Spec spec;
+
+    protected TestFormat(String id, int version) {
+      this.spec = new Spec(id, version);
+    }
+  }
+
+  static class TestSaver extends TestFormat implements ParcelFormat.Saver<ParcelFormatConfig.None> {
+
+    protected TestSaver(String id, int version) {
+      super(id, version);
+    }
+
+    @Override
+    public void save(
+        Level level,
+        Vec3i parcelSize,
+        Vec3i anchor,
+        ParcelTransform transform,
+        Path dataDir,
+        boolean ignoreEntities,
+        ParcelFormatConfig.@Nullable None config)
+        throws IOException, ParcelException.UnsupportedFeature {
+      throw new UnsupportedOperationException();
+    }
+  }
+
+  static class TestLoader extends TestFormat
+      implements ParcelFormat.Loader<ParcelFormatConfig.None> {
+    protected TestLoader(String id, int version) {
+      super(id, version);
+    }
+
+    @Override
+    public void load(
+        ServerLevelAccessor level,
+        Vec3i size,
+        Vec3i anchor,
+        ParcelTransform transform,
+        Path dataDir,
+        boolean ignoreBlocks,
+        boolean ignoreEntities,
+        @Block.UpdateFlags int flags,
+        ParcelFormatConfig.@Nullable None config)
+        throws IOException, ParcelException.CorruptedParcelException {
+      throw new UnsupportedOperationException();
+    }
+  }
+}

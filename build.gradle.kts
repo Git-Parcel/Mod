@@ -72,6 +72,13 @@ dependencies {
     compileOnly("com.google.auto.service:auto-service-annotations:1.1.1")
     annotationProcessor("com.google.auto.service:auto-service:1.1.1")
 }
+if (mod.loader == "neoforge") {
+    dependencies {
+        // NeoForge official test framework - provides proper FMLLoader
+        // initialization for unit tests that need Minecraft classes
+        testImplementation("net.neoforged:testframework:${props["neoforge_version"]}")
+    }
+}
 
 tasks.shadowJar {
     configurations = listOf(shadowBundle)

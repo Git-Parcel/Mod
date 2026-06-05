@@ -1,16 +1,11 @@
 package io.github.leawind.gitparcel.platform;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.github.leawind.gitparcel.TestWithMinecraft;
 import io.github.leawind.gitparcel.platform.api.Services;
+import io.github.leawind.gitparcel.testutils.AbstractMinecraftTest;
 import org.junit.jupiter.api.Test;
 
-public class PlatformHelperTest extends TestWithMinecraft {
-  @Test
-  void testSimple() {
-    assertTrue(true);
-  }
+public class PlatformHelperTest extends AbstractMinecraftTest {
 
   @Test
   void testGetDataVersion() {
