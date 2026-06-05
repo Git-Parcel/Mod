@@ -1,7 +1,7 @@
 /*? if neoforge {*/
 /*package io.github.leawind.gitparcel.platform.neoforge.entrypoint;
 
-import io.github.leawind.gitparcel.core.api.GitParcel;
+import io.github.leawind.gitparcel.core.GitParcel;
 import io.github.leawind.gitparcel.entrypoint.ModServerEntrypoint;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;

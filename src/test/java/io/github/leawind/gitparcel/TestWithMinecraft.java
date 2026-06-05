@@ -13,8 +13,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import net.neoforged.fml.loading.FMLLoader;
 import sun.misc.Unsafe;
 
-*/
-/*?}*/
+
+*//*?}*/
 
 public abstract class TestWithMinecraft {
   private static final Logger LOGGER = LoggerFactory.getLogger(TestWithMinecraft.class);
@@ -42,8 +42,8 @@ public abstract class TestWithMinecraft {
     } catch (Exception e) {
       LOGGER.warn("Failed to initialize NeoForge FML Loader", e);
     }
-    */
-    /*?}*/
+    
+    *//*?}*/
 
     SharedConstants.setVersion(DetectedVersion.BUILT_IN);
     try {

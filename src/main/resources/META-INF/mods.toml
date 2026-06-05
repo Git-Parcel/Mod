@@ -25,3 +25,10 @@ mandatory = true
 versionRange = "*"
 ordering = "NONE"
 side = "BOTH"
+
+[[dependencies.${ id }]]
+modId = "system_storage_lib"
+mandatory = true
+versionRange = "[${system_storage_lib_version},)"
+ordering = "NONE"
+side = "SERVER"

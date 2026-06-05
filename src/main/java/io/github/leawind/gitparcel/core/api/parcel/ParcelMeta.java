@@ -5,9 +5,7 @@ import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.leawind.gitparcel.core.api.ParcelFormatRegistry;
-import io.github.leawind.gitparcel.core.api.error.InvalidParcelMetaException;
-import io.github.leawind.gitparcel.platform.api.PlatformHelper;
+import io.github.leawind.gitparcel.core.api.parcel.exceptions.InvalidParcelMetaException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,7 +13,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import net.minecraft.SharedConstants;
 import net.minecraft.core.Vec3i;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -107,7 +108,11 @@ public final class ParcelMeta {
   }
 
   public ParcelMeta(ParcelFormat.Spec formatSpec, Vec3i parcelSize, Vec3i anchor) {
-    this(formatSpec, PlatformHelper.INSTANCE.getDataVersion(), parcelSize, anchor);
+    this(
+        formatSpec,
+        SharedConstants.getCurrentVersion().dataVersion().version(),
+        parcelSize,
+        anchor);
   }
 
   public ParcelMeta(ParcelFormat.Spec formatSpec, int dataVersion, Vec3i parcelSize, Vec3i anchor) {
@@ -191,7 +196,7 @@ public final class ParcelMeta {
   public void save(Path file) throws IOException, IllegalStateException {
     Files.createDirectories(file.getParent());
     var result = CODEC.encodeStart(JsonOps.INSTANCE, this);
-    Files.writeString(file, GSON.toJson((JsonObject) result.result().orElseThrow()));
+    Files.writeString(file, GSON.toJson((JsonObject) result.getOrThrow()));
   }
 
   public record ModDependency(
@@ -233,13 +238,13 @@ public final class ParcelMeta {
     }
   }
 
-  //  public static ParcelMeta from(
-  //      ParcelFormat.Spec format, BoundingBox boundingBox, Rotation rotation) {
-  //    Vec3i sizeWorldSpace =
-  //        new Vec3i(boundingBox.getXSpan(), boundingBox.getYSpan(), boundingBox.getZSpan());
-  //    Vec3i sizeParcelSpace = ParcelTransform.rotateSize(rotation, sizeWorldSpace);
-  //    return new ParcelMeta(format, sizeParcelSpace, Vec3i.ZERO);
-  //  }
+  public static ParcelMeta from(
+      ParcelFormat.Spec format, BoundingBox boundingBox, Rotation rotation) {
+    Vec3i sizeWorldSpace =
+        new Vec3i(boundingBox.getXSpan(), boundingBox.getYSpan(), boundingBox.getZSpan());
+    Vec3i sizeParcelSpace = ParcelTransform.rotateSize(rotation, sizeWorldSpace);
+    return new ParcelMeta(format, sizeParcelSpace, Vec3i.ZERO);
+  }
 
   /**
    * @param metaFile File path to the file
@@ -250,7 +255,8 @@ public final class ParcelMeta {
   public static ParcelMeta load(Path metaFile) throws IOException, InvalidParcelMetaException {
     try {
       var json = GSON.fromJson(Files.readString(metaFile), JsonObject.class);
-      return CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
+      var result = CODEC.parse(JsonOps.INSTANCE, json);
+      return result.getOrThrow();
     } catch (IllegalStateException e) {
       throw new InvalidParcelMetaException("Invalid parcel metadata at " + metaFile, e);
     }

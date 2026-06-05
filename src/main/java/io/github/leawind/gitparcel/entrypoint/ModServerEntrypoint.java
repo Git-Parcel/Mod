@@ -1,5 +1,12 @@
 package io.github.leawind.gitparcel.entrypoint;
 
+import com.mojang.logging.LogUtils;
+import org.slf4j.Logger;
+
 public class ModServerEntrypoint {
-  public static void initialize() {}
+  private static final Logger LOGGER = LogUtils.getLogger();
+
+  public static void initialize() {
+    LOGGER.debug("Initializing Git Parcel mod dedicated server");
+  }
 }

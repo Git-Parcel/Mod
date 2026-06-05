@@ -1,7 +1,7 @@
 /*? if forge {*/
 /*package io.github.leawind.gitparcel.platform.forge.entrypoint;
 
-import io.github.leawind.gitparcel.core.api.GitParcel;
+import io.github.leawind.gitparcel.core.GitParcel;
 import io.github.leawind.gitparcel.entrypoint.ModClientEntrypoint;
 import io.github.leawind.gitparcel.entrypoint.ModEntrypoint;
 import io.github.leawind.gitparcel.entrypoint.ModServerEntrypoint;

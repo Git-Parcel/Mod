@@ -3,7 +3,7 @@ package io.github.leawind.gitparcel.platform;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.leawind.gitparcel.TestWithMinecraft;
-import io.github.leawind.gitparcel.platform.api.PlatformHelper;
+import io.github.leawind.gitparcel.platform.api.Services;
 import org.junit.jupiter.api.Test;
 
 public class PlatformHelperTest extends TestWithMinecraft {
@@ -14,7 +14,7 @@ public class PlatformHelperTest extends TestWithMinecraft {
 
   @Test
   void testGetDataVersion() {
-    var dataVersion = PlatformHelper.INSTANCE.getDataVersion();
+    var dataVersion = Services.PLATFORM_HELPER.getDataVersion();
     System.out.println("Data version: " + dataVersion);
   }
 }

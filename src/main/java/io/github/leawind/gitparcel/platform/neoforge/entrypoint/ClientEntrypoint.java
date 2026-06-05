@@ -1,7 +1,8 @@
 /*? if neoforge {*/
 /*package io.github.leawind.gitparcel.platform.neoforge.entrypoint;
 
-import io.github.leawind.gitparcel.core.api.GitParcel;
+import io.github.leawind.gitparcel.core.GitParcel;
+import io.github.leawind.gitparcel.core.client.GitParcelOptions;
 import io.github.leawind.gitparcel.entrypoint.ModClientEntrypoint;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -24,7 +25,7 @@ public class ClientEntrypoint {
 
     @SubscribeEvent
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
-      // register key mappings
+      GitParcelOptions.registerKeyMappings(event::register);
     }
   }
 }

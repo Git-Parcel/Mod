@@ -1,7 +1,7 @@
 package io.github.leawind.gitparcel.core.api;
 
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
-import io.github.leawind.gitparcel.core.api.parcel.config.ParcelFormatConfig;
+import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatConfig;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import java.util.Comparator;
 import java.util.Map;

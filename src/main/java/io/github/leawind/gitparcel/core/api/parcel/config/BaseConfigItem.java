@@ -1,10 +1,12 @@
 package io.github.leawind.gitparcel.core.api.parcel.config;
 
+import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
 
 /**
  * Base implementation of {@link ConfigItem}.
@@ -15,6 +17,8 @@ import org.jspecify.annotations.Nullable;
  * @param <T> The type of the configuration value
  */
 public class BaseConfigItem<T> implements ConfigItem<T> {
+
+  private static final Logger LOGGER = LogUtils.getLogger();
 
   private final Codec<T> codec;
   private final String name;
@@ -92,7 +96,14 @@ public class BaseConfigItem<T> implements ConfigItem<T> {
     if (validator == null) {
       return ConfigItem.super.validate(value);
     }
-    return validator.apply(value);
+    try {
+      return validator.apply(value);
+    } catch (Exception e) {
+      LOGGER.error(
+          "Validator threw an exception while validating value {}: {}", value, e.getMessage(), e);
+      LOGGER.error("The error message will be used as the validation result");
+      return "Validator error: " + e.getMessage();
+    }
   }
 
   /**

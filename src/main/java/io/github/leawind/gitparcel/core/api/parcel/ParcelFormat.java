@@ -2,15 +2,16 @@ package io.github.leawind.gitparcel.core.api.parcel;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.leawind.gitparcel.core.api.error.ParcelException;
-import io.github.leawind.gitparcel.core.api.parcel.config.ParcelFormatConfig;
-import io.github.leawind.gitparcel.core.bridge.level.VoxelSource;
-import io.github.leawind.gitparcel.core.bridge.level.VoxelTarget;
-import io.github.leawind.gitparcel.core.bridge.math.MathBridge;
+import io.github.leawind.gitparcel.core.api.parcel.exceptions.ParcelException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.regex.Pattern;
+import net.minecraft.core.Vec3i;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.block.Block;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -24,7 +25,6 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
                         Codec.STRING.fieldOf("id").forGetter(Spec::id),
                         Codec.INT.fieldOf("version").forGetter(Spec::version))
                     .apply(inst, Spec::new));
-
     public static final Pattern ID_PATTERN =
         Pattern.compile("^[a-zA-Z_\\-]([a-zA-Z_\\-0-9]+){0,63}$");
 
@@ -34,8 +34,9 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
       }
     }
 
+    @NonNull
     @Override
-    public @NonNull String toString() {
+    public String toString() {
       return String.format("%s:%d", id, version);
     }
   }
@@ -44,12 +45,24 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
 
   enum Feature {
     ROTATE,
-    MIRROR
+    MIRROR,
   }
 
-  EnumSet<Feature> features();
+  default EnumSet<Feature> features() {
+    return EnumSet.noneOf(Feature.class);
+  }
 
   non-sealed interface Impl<C extends ParcelFormatConfig<C>> extends ParcelFormat {
+
+    default @NonNull <T> C castConfig(@NonNull T config) throws ClassCastException {
+      var clazz = configClass();
+      if (clazz == null) {
+        throw new ClassCastException(
+            String.format("Expected null, got %s: %s", config.getClass().getSimpleName(), config));
+      }
+      return clazz.cast(config);
+    }
+
     default @Nullable Class<C> configClass() {
       return null;
     }
@@ -66,9 +79,9 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
      *     transform does, {@link ParcelException.UnsupportedFeature} will be thrown.
      */
     void save(
-        VoxelSource level,
-        MathBridge.Vec3i parcelSize,
-        MathBridge.Vec3i anchor,
+        Level level,
+        Vec3i parcelSize,
+        Vec3i anchor,
         ParcelTransform transform,
         Path dataDir,
         boolean ignoreEntities,
@@ -87,16 +100,80 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
      *     supported by all formats.
      * @param ignoreEntities When true, entities will not be spawned into the world. Guaranteed to
      *     be supported by all formats.
+     * @param flags Block update flags to use when placing blocks. Usually {@code
+     *     Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE | Block.UPDATE_KNOWN_SHAPE |
+     *     Block.UPDATE_SKIP_ALL_SIDEEFFECTS}
      */
     void load(
-        VoxelTarget level,
-        MathBridge.Vec3i size,
-        MathBridge.Vec3i anchor,
+        ServerLevelAccessor level,
+        Vec3i size,
+        Vec3i anchor,
         ParcelTransform transform,
         Path dataDir,
         boolean ignoreBlocks,
         boolean ignoreEntities,
+        @Block.UpdateFlags int flags,
         @Nullable C config)
         throws IOException, ParcelException.CorruptedParcelException;
+  }
+
+  class BaseContext {
+    public final Vec3i parcelSize;
+    public final ParcelTransform transform;
+    public final Path dataDir;
+    public final Vec3i anchor;
+
+    public BaseContext(Vec3i parcelSize, ParcelTransform transform, Path dataDir, Vec3i anchor) {
+      this.parcelSize = parcelSize;
+      this.transform = transform;
+      this.dataDir = dataDir;
+      this.anchor = anchor;
+    }
+  }
+
+  class SaveContext<C extends ParcelFormatConfig<C>> extends BaseContext {
+    public final LevelAccessor level;
+    public final boolean ignoreEntities;
+    public final C config;
+
+    public SaveContext(
+        Level level,
+        Vec3i parcelSize,
+        ParcelTransform transform,
+        Vec3i anchor,
+        Path dataDir,
+        boolean ignoreEntities,
+        C config) {
+      super(parcelSize, transform, dataDir, anchor);
+      this.level = level;
+      this.ignoreEntities = ignoreEntities;
+      this.config = config;
+    }
+  }
+
+  class LoadContext<C extends ParcelFormatConfig<C>> extends BaseContext {
+    public final ServerLevelAccessor level;
+    public final boolean ignoreBlocks;
+    public final boolean ignoreEntities;
+    public final @Block.UpdateFlags int flags;
+    public final C config;
+
+    public LoadContext(
+        ServerLevelAccessor level,
+        Vec3i parcelSize,
+        ParcelTransform transform,
+        Vec3i anchor,
+        Path dataDir,
+        boolean ignoreBlocks,
+        boolean ignoreEntities,
+        @Block.UpdateFlags int flags,
+        C config) {
+      super(parcelSize, transform, dataDir, anchor);
+      this.level = level;
+      this.ignoreBlocks = ignoreBlocks;
+      this.ignoreEntities = ignoreEntities;
+      this.flags = flags;
+      this.config = config;
+    }
   }
 }

@@ -49,10 +49,12 @@ fun DependencyHandlerScope.shadowBundle(dependencyNotation: String) {
     add("shadowBundle", dependencyNotation)
 }
 dependencies {
+    modImplementation("com.github.Leawind:SystemStorageLib:0.2.0-beta.1")
+
     shadowBundle("com.github.Leawind:inventory-java:0.2.0")
     shadowBundle("com.github.ben-manes.caffeine:caffeine:3.2.3");
 
-    shadowBundle("org.eclipse.jgit:org.eclipse.jgit:7.6.0.202603022253-r") {
+    implementation("org.eclipse.jgit:org.eclipse.jgit:7.6.0.202603022253-r") {
         // already provided by Minecraft
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
@@ -66,6 +68,9 @@ dependencies {
 
     compileOnly("org.jspecify:jspecify:1.0.0")
     compileOnly("org.jetbrains:annotations:24.0.1")
+
+    compileOnly("com.google.auto.service:auto-service-annotations:1.1.1")
+    annotationProcessor("com.google.auto.service:auto-service:1.1.1")
 }
 
 tasks.shadowJar {

@@ -7,22 +7,27 @@
   "authors": ["${author}"],
   "contact": {
     "homepage": "${home_url}",
-    "sources": "${source_url}"
+    "sources": "${source_url}",
+    "issues": "${issues_url}"
   },
   "license": "${license}",
   "icon": "${logo_file}",
   "environment": "*",
   "entrypoints": {
     "main": [
-      "${group}.platform.entrypoint.fabric.Entrypoint"
+      "${group}.platform.fabric.entrypoint.Entrypoint"
     ],
     "client": [
-      "${group}.platform.entrypoint.fabric.ClientEntrypoint"
+      "${group}.platform.fabric.entrypoint.ClientEntrypoint"
     ],
     "server": [
-      "${group}.platform.entrypoint.fabric.ServerEntrypoint"
+      "${group}.platform.fabric.entrypoint.ServerEntrypoint"
     ]
   },
+  "mixins": [
+    "${id}.mixins.json",
+    "${id}.fabric.mixins.json"
+  ],
   "depends": {
     "fabricloader": "*",
     "minecraft": ">=${minecraftVersion}",
