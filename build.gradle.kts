@@ -111,17 +111,6 @@ tasks.shadowJar {
 
     minimize()
 
-    // :core
-    dependencies {
-        exclude(dependency("org.slf4j:.*"))
-        exclude(dependency("com.google.errorprone:.*"))
-        exclude(dependency("javax.annotation:.*"))
-        exclude(dependency("org.checkerframework:.*"))
-        // Must not bundle gametest API into the mod jar
-        exclude(dependency("net.fabricmc.fabric-api:fabric-gametest-api-v1"))
-    }
-
-
     val dest = "${project.property("mod.group")}.lib"
     // com.github.Leawind:inventory-java
     relocate("io.github.leawind.inventory", "${dest}.inventory")
@@ -131,8 +120,8 @@ tasks.shadowJar {
         exclude(dependency("com.google.errorprone:.*"))
         exclude(dependency("org.jspecify:.*"))
     }
-    relocate("com.github.benmanes.caffeine", "${dest}.caffeine")
     exclude("META-INF/LICENSE")
+    relocate("com.github.benmanes.caffeine", "${dest}.caffeine")
 
     // org.eclipse.jgit:org.eclipse.jgit
     dependencies {
