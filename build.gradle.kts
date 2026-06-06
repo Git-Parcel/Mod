@@ -4,6 +4,7 @@ import net.fabricmc.loom.task.RemapJarTask
 plugins {
     id("com.gradleup.shadow") version "8.3.10"
     id("gg.meza.stonecraft")
+    id("me.champeau.jmh") version "0.7.2"
 }
 
 val props: Map<String, Any> = project.properties.mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
@@ -54,6 +55,10 @@ dependencies {
         // already provided by Minecraft
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
+
+    // JMH for performance testing
+    testImplementation("org.openjdk.jmh:jmh-core:1.37")
+    testAnnotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:1.37")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -167,6 +172,9 @@ tasks.test {
     useJUnitPlatform()
 }
 
+tasks.named<Jar>("jmhJar") {
+    isZip64 = true
+}
 
 publishMods {
     modrinth {
