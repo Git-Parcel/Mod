@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.testutils;
+package io.github.leawind.gitparcel.gametest.utils;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.gametest.framework.GameTestHelper;

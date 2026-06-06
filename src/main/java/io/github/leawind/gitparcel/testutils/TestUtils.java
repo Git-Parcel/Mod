@@ -3,14 +3,13 @@ package io.github.leawind.gitparcel.testutils;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.core.api.parcel.config.ConfigItem;
+import it.unimi.dsi.fastutil.ints.IntIterable;
+import it.unimi.dsi.fastutil.ints.IntIterator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import it.unimi.dsi.fastutil.ints.IntIterable;
-import it.unimi.dsi.fastutil.ints.IntIterator;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -40,7 +39,7 @@ public class TestUtils {
       }
     };
   }
-  
+
   public interface ParcelFormatCombinationConsumer<F extends ParcelFormat> {
     void accept(F format, Rotation rotation, Mirror mirror) throws Exception;
   }
