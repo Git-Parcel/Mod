@@ -1,0 +1,48 @@
+/*? if neoforge {*/
+/*package io.github.leawind.gitparcel.mc.platform.neoforge.entrypoint;
+
+import io.github.leawind.gitparcel.core.GitParcel;
+import io.github.leawind.gitparcel.mc.network.protocol.parcelformat.UpdateParcelFormatSpecS2CPayload;
+import io.github.leawind.gitparcel.mc.network.protocol.parcels.UpdateParcelsS2CPayload;
+import io.github.leawind.gitparcel.mc.entrypoint.ModEntrypoint;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+
+@Mod(GitParcel.MOD_ID)
+public class Entrypoint {
+  public Entrypoint(IEventBus modEventBus, ModContainer modContainer) {
+    ModEntrypoint.initialize();
+    Entrypoint.initialize();
+  }
+
+  private static void initialize() {}
+
+  @EventBusSubscriber(modid = GitParcel.MOD_ID)
+  public static class EventHandler {
+    @SubscribeEvent
+    public static void onRegisterCommands(RegisterCommandsEvent event) {
+      ModEntrypoint.registerCommands(
+          event.getDispatcher(), event.getBuildContext(), event.getCommandSelection());
+    }
+
+    @SubscribeEvent
+    public static void onRegisterPayloadHandlers(RegisterPayloadHandlersEvent event) {
+      ModEntrypoint.LOGGER.debug("Register payload handlers");
+      var registrar = event.registrar(GitParcel.MOD_ID).versioned(GitParcel.PROTOCOL_VERSION);
+
+      registrar.playToClient(
+          UpdateParcelFormatSpecS2CPayload.TYPE,
+          UpdateParcelFormatSpecS2CPayload.STREAM_CODEC,
+          (a, b) -> {});
+
+      registrar.playToClient(
+          UpdateParcelsS2CPayload.TYPE, UpdateParcelsS2CPayload.STREAM_CODEC, (a, b) -> {});
+    }
+  }
+}
+*//*?}*/

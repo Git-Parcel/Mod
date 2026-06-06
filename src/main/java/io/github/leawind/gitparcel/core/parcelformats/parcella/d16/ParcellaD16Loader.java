@@ -5,7 +5,7 @@ import io.github.leawind.gitparcel.core.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.core.parcelformats.parcella.BlockPalette;
 import io.github.leawind.gitparcel.core.parcelformats.parcella.d32.ParcellaD32Format;
 import io.github.leawind.gitparcel.core.parcelformats.parcella.d32.ParcellaD32Loader;
-import io.github.leawind.gitparcel.core.utils.numbase.HexUtils;
+import io.github.leawind.gitparcel.util.numbase.HexUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

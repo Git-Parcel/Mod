@@ -1,7 +1,6 @@
 package io.github.leawind.gitparcel.platform;
 
-
-import io.github.leawind.gitparcel.platform.api.Services;
+import io.github.leawind.gitparcel.mc.platform.api.Services;
 import io.github.leawind.gitparcel.testutils.AbstractMinecraftTest;
 import org.junit.jupiter.api.Test;
 

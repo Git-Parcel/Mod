@@ -15,13 +15,13 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "${group}.platform.fabric.entrypoint.Entrypoint"
+      "${group}.mc.platform.fabric.entrypoint.Entrypoint"
     ],
     "client": [
-      "${group}.platform.fabric.entrypoint.ClientEntrypoint"
+      "${group}.mc.platform.fabric.entrypoint.ClientEntrypoint"
     ],
     "server": [
-      "${group}.platform.fabric.entrypoint.ServerEntrypoint"
+      "${group}.mc.platform.fabric.entrypoint.ServerEntrypoint"
     ]
   },
   "mixins": [

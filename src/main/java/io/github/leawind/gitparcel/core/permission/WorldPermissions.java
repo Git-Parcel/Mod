@@ -1,9 +1,6 @@
 package io.github.leawind.gitparcel.core.permission;
 
 import com.mojang.serialization.Codec;
-import io.github.leawind.gitparcel.core.utils.permission.PermissionConfig;
-import io.github.leawind.gitparcel.core.utils.permission.PermissionType;
-import io.github.leawind.gitparcel.core.utils.permission.PermissionTypeRegistry;
 import net.minecraft.server.permissions.PermissionLevel;
 
 public class WorldPermissions {

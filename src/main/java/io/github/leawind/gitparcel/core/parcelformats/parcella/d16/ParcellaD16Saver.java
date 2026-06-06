@@ -2,14 +2,14 @@ package io.github.leawind.gitparcel.core.parcelformats.parcella.d16;
 
 import io.github.leawind.gitparcel.core.algorithms.VolumetricRLE;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
-import io.github.leawind.gitparcel.core.api.parcel.ParcelStorage;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.core.api.parcel.exceptions.ParcelException;
 import io.github.leawind.gitparcel.core.parcelformats.parcella.BlockPalette;
 import io.github.leawind.gitparcel.core.parcelformats.parcella.Subparcel;
 import io.github.leawind.gitparcel.core.parcelformats.parcella.d32.ParcellaD32Format;
 import io.github.leawind.gitparcel.core.parcelformats.parcella.d32.ParcellaD32Saver;
-import io.github.leawind.gitparcel.core.utils.numbase.HexUtils;
+import io.github.leawind.gitparcel.mc.storage.ParcelStorage;
+import io.github.leawind.gitparcel.util.numbase.HexUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

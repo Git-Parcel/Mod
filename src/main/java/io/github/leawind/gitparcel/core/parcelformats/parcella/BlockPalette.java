@@ -1,11 +1,11 @@
 package io.github.leawind.gitparcel.core.parcelformats.parcella;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import io.github.leawind.gitparcel.core.api.parcel.ParcelStorage;
 import io.github.leawind.gitparcel.core.api.parcel.exceptions.ParcelException;
-import io.github.leawind.gitparcel.core.mixin.AccessStateHolder;
-import io.github.leawind.gitparcel.core.utils.IntIdPalette;
-import io.github.leawind.gitparcel.core.utils.numbase.HexUtils;
+import io.github.leawind.gitparcel.mc.mixin.AccessStateHolder;
+import io.github.leawind.gitparcel.mc.storage.ParcelStorage;
+import io.github.leawind.gitparcel.util.IntIdPalette;
+import io.github.leawind.gitparcel.util.numbase.HexUtils;
 import io.github.leawind.inventory.just.Result;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
