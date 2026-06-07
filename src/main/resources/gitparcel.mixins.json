@@ -7,7 +7,6 @@
 	"mixins": [
 		"AccessGameTestHelper",
 		"AccessMinecraftServer",
-		"AccessStateHolder",
 		"InvokeArgumentTypeInfos",
 		"MixinArgumentTypeInfos",
 		"MixinPlayerList"

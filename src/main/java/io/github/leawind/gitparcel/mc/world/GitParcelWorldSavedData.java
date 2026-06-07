@@ -2,11 +2,11 @@ package io.github.leawind.gitparcel.mc.world;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.leawind.gitparcel.core.GitParcel;
 import io.github.leawind.gitparcel.core.permission.ParcelPermissions;
 import io.github.leawind.gitparcel.core.permission.PermissionConfig;
 import io.github.leawind.gitparcel.core.permission.WorldPermissions;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
@@ -29,9 +29,7 @@ public final class GitParcelWorldSavedData extends SavedData {
                   .apply(inst, GitParcelWorldSavedData::new));
 
   public static final SavedDataType<GitParcelWorldSavedData> TYPE =
-      new SavedDataType<>(
-          "gitparcel_world", GitParcelWorldSavedData::new, CODEC, DataFixTypes.LEVEL);
-
+      new SavedDataType<>(GitParcel.identifier("world"), GitParcelWorldSavedData::new, CODEC, null);
   private final PermissionConfig<WorldPermissions> permissions;
   private final PermissionConfig<ParcelPermissions> parcelDefaultPermissions;
 

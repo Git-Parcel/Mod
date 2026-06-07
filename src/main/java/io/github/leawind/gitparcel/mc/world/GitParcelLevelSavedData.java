@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.mc.world;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.leawind.gitparcel.core.GitParcel;
 import io.github.leawind.gitparcel.core.world.Parcel;
 import io.github.leawind.gitparcel.core.world.Parcels;
 import io.github.leawind.gitparcel.mc.network.protocol.parcels.UpdateParcelsS2CPayload;
@@ -22,7 +23,7 @@ public final class GitParcelLevelSavedData extends SavedData {
                   .apply(inst, GitParcelLevelSavedData::new));
 
   public static final SavedDataType<GitParcelLevelSavedData> TYPE =
-      new SavedDataType<>("gitparcel_level", GitParcelLevelSavedData::new, CODEC, null);
+      new SavedDataType<>(GitParcel.identifier("level"), GitParcelLevelSavedData::new, CODEC, null);
 
   /**
    * Set when the saved data is loaded from the level.
