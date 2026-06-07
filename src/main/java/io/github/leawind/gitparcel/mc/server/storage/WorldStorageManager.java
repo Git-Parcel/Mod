@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.server.MinecraftServer;
 
 public final class WorldStorageManager {
+
   private static final String DIR_NAME = GitParcel.MOD_ID;
   private static final String PARCELS_DIR_NAME = "parcels";
 
@@ -38,4 +39,5 @@ public final class WorldStorageManager {
         .path()
         .resolve(DIR_NAME);
   }
+
 }

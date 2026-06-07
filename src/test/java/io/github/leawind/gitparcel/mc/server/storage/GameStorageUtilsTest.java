@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.mc.server.storage;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.google.common.jimfs.Jimfs;
+import com.google.gson.JsonObject;
 import io.github.leawind.gitparcel.mc.server.storage.cached.CachedContent;
 import io.github.leawind.gitparcel.mc.server.storage.shared.SharedContent;
 import java.io.IOException;
@@ -61,5 +62,51 @@ public class GameStorageUtilsTest {
     var config = gameStorageManager.getConfig();
     assertNotNull(config);
     assertFalse(config.useSystemStorage());
+  }
+
+  @Test
+  void testSaveConfigRoundTrip() throws IOException {
+    var config = gameStorageManager.getConfig();
+    config.useSystemStorage(true);
+    gameStorageManager.saveConfig();
+
+    // Verify the saved file can be parsed back with the expected value
+    var configFile = tempDir.resolve(GameStorageManager.CONFIG_FILE_NAME);
+    assertTrue(Files.exists(configFile));
+    var json = GameStorageManager.GSON.fromJson(Files.readString(configFile), JsonObject.class);
+    assertTrue(json.get("useSystemStorage").getAsBoolean());
+  }
+
+  @Test
+  void testGetConfigWithoutFileReturnsDefaultsAndDoesNotCreateFile() throws IOException {
+    // No config file exists — getConfig should return defaults without creating the file
+    var configFile = tempDir.resolve(GameStorageManager.CONFIG_FILE_NAME);
+    assertFalse(Files.exists(configFile), "config file should not exist before getConfig");
+
+    var config = gameStorageManager.getConfig();
+    assertNotNull(config);
+    assertFalse(config.useSystemStorage());
+
+    // getConfig must be read-only — it should not create the config file on disk
+    assertFalse(Files.exists(configFile), "getConfig should not create the config file");
+  }
+
+  @Test
+  void testConfigSerializeDeserializeRoundTrip() throws IOException {
+    var configFile = tempDir.resolve(GameStorageManager.CONFIG_FILE_NAME);
+    var json = "{\"useSystemStorage\": true}";
+    Files.writeString(configFile, json);
+
+    var config = gameStorageManager.getConfig();
+    assertTrue(config.useSystemStorage());
+
+    // Modify and save
+    config.useSystemStorage(false);
+    gameStorageManager.saveConfig();
+
+    // Load again via a new manager — the config singleton cache is per-instance
+    var newManager = new GameStorageManager(tempDir);
+    var reloaded = newManager.getConfig();
+    assertFalse(reloaded.useSystemStorage());
   }
 }

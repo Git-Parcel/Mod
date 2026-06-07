@@ -37,10 +37,12 @@ public class GameStorageManager {
   /** Gson instance configured for pretty-printed JSON output. */
   public static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-  private static final ConcurrentHashMap<Path, GameStorageManager> CACHE = new ConcurrentHashMap<>();
+  private static final ConcurrentHashMap<Path, GameStorageManager> CACHE =
+      new ConcurrentHashMap<>();
 
   public static GameStorageManager getInstance(MinecraftServer server) {
-    return CACHE.computeIfAbsent(server.getServerDirectory().resolve(DIR_NAME).normalize(), GameStorageManager::new);
+    return CACHE.computeIfAbsent(
+        server.getServerDirectory().resolve(DIR_NAME).normalize(), GameStorageManager::new);
   }
 
   private final Path root;
@@ -90,6 +92,19 @@ public class GameStorageManager {
       }
     }
     return config;
+  }
+
+  /**
+   * Saves the current game configuration to disk.
+   *
+   * @throws IOException if an I/O error occurs
+   * @throws IllegalStateException if the config has not been loaded yet
+   */
+  public void saveConfig() throws IOException {
+    if (config == null) {
+      throw new IllegalStateException("Config has not been loaded yet");
+    }
+    config.save(configFile);
   }
 
   /**

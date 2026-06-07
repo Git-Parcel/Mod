@@ -1,5 +1,7 @@
 package io.github.leawind.gitparcel.mc.server.storage.cached;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 /** Manages the download cache for packaged parcels. */
@@ -25,5 +27,18 @@ public final class CachedContent {
    */
   public Path getRoot() {
     return root;
+  }
+
+  /**
+   * Gets or creates the directory for a download source.
+   *
+   * @param sourceId the download source identifier (e.g. "github")
+   * @return the source directory path
+   * @throws IOException if the directory cannot be created
+   */
+  public Path getSourceDir(String sourceId) throws IOException {
+    var dir = root.resolve(sourceId);
+    Files.createDirectories(dir);
+    return dir;
   }
 }
