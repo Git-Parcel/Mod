@@ -48,7 +48,7 @@ fun DependencyHandlerScope.shadowBundle(dependencyNotation: String) {
 dependencies {
     modImplementation("com.github.Leawind:SystemStorageLib:0.2.0-beta.1")
 
-    shadowBundle("com.github.Leawind:inventory-java:0.2.0")
+    shadowBundle("com.github.Leawind:inventory-java:0.2.1")
     shadowBundle("com.github.ben-manes.caffeine:caffeine:3.2.3");
 
     implementation("org.eclipse.jgit:org.eclipse.jgit:7.6.0.202603022253-r") {
