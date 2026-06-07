@@ -46,7 +46,8 @@ fun DependencyHandlerScope.shadowBundle(dependencyNotation: String) {
     add("shadowBundle", dependencyNotation)
 }
 dependencies {
-    modImplementation("com.github.Leawind:SystemStorageLib:0.2.0-beta.1")
+    // TODO why can't use modImplementation? it worked in 1.21.11
+    implementation("com.github.Leawind:SystemStorageLib:0.2.0-beta.1")
 
     shadowBundle("com.github.Leawind:inventory-java:0.2.1")
     shadowBundle("com.github.ben-manes.caffeine:caffeine:3.2.3");

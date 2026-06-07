@@ -4,6 +4,7 @@ package io.github.leawind.gitparcel.mc.platform.fabric.entrypoint;
 import io.github.leawind.gitparcel.mc.entrypoint.ModEntrypoint;
 import io.github.leawind.gitparcel.mc.network.protocol.parcelformat.UpdateParcelFormatSpecS2CPayload;
 import io.github.leawind.gitparcel.mc.network.protocol.parcels.UpdateParcelsS2CPayload;
+import io.github.leawind.gitparcel.util.anno.VersionSensitive;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -22,13 +23,22 @@ public class Entrypoint implements ModInitializer {
     CommandRegistrationCallback.EVENT.register(ModEntrypoint::registerCommands);
   }
 
+  @VersionSensitive("fabric playS2C -> clientboundPlay, since mc26.1")
   private static void registerPayloads() {
-    PayloadTypeRegistry.playS2C()
+    /*? if >= 26.1 {*/
+    PayloadTypeRegistry.clientboundPlay()
         .register(
             UpdateParcelFormatSpecS2CPayload.TYPE, UpdateParcelFormatSpecS2CPayload.STREAM_CODEC);
-
-    PayloadTypeRegistry.playS2C()
+    PayloadTypeRegistry.clientboundPlay()
         .register(UpdateParcelsS2CPayload.TYPE, UpdateParcelsS2CPayload.STREAM_CODEC);
+    /*?} else {*/
+    /*PayloadTypeRegistry.playS2C()
+                       .register(
+                         UpdateParcelFormatSpecS2CPayload.TYPE, UpdateParcelFormatSpecS2CPayload.STREAM_CODEC);
+    PayloadTypeRegistry.playS2C()
+                       .register(UpdateParcelsS2CPayload.TYPE, UpdateParcelsS2CPayload.STREAM_CODEC);
+    */
+    /*?}*/
   }
 }
 /*?}*/

@@ -2,9 +2,9 @@ package io.github.leawind.gitparcel.core.parcelformats.parcella;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.core.api.parcel.exceptions.ParcelException;
-import io.github.leawind.gitparcel.mc.mixin.AccessStateHolder;
 import io.github.leawind.gitparcel.mc.storage.ParcelStorage;
 import io.github.leawind.gitparcel.util.IntIdPalette;
+import io.github.leawind.gitparcel.util.anno.VersionSensitive;
 import io.github.leawind.gitparcel.util.numbase.HexUtils;
 import io.github.leawind.inventory.just.Result;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 import net.minecraft.commands.arguments.blocks.BlockStateParser;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateHolder;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -88,17 +87,18 @@ public class BlockPalette extends IntIdPalette<BlockState> {
   }
 
   /**
-   * @see StateHolder#toString
    * @see BlockStateParser#parseForBlock
    */
+  @VersionSensitive
   public static String stringifyBlockState(BlockState blockState) {
     var sb = new StringBuilder();
     sb.append(BuiltInRegistries.BLOCK.wrapAsHolder(blockState.getBlock()).getRegisteredName());
-    if (!blockState.getValues().isEmpty()) {
+    var values = blockState.getValues().toList();
+    if (!values.isEmpty()) {
       sb.append('[');
       sb.append(
-          blockState.getValues().entrySet().stream()
-              .map(AccessStateHolder.getPropertyEntryToStringFunction())
+          values.stream()
+              .map(v -> v.property().getName() + "=" + v.valueName())
               .collect(Collectors.joining(",")));
       sb.append(']');
     }
