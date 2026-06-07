@@ -2,12 +2,7 @@ package io.github.leawind.gitparcel.mc.server.storage.cached;
 
 import java.nio.file.Path;
 
-/**
- * Manages the download cache for packaged parcels.
- *
- * <p>Environment variable {@code GITPARCEL_CACHE_DIR} has the highest priority and overrides the
- * default cache directory.
- */
+/** Manages the download cache for packaged parcels. */
 public final class CachedContent {
   /** Directory name for cached content. */
   public static final String CACHED_DIR_NAME = "cached";

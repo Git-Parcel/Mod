@@ -2,12 +2,7 @@ package io.github.leawind.gitparcel.mc.server.storage.shared;
 
 import java.nio.file.Path;
 
-/**
- * Manages shareable content that can be distributed across game instances.
- *
- * <p>Environment variable {@code GITPARCEL_SHARE_DIR} has the highest priority and overrides the
- * default shared directory.
- */
+/** Manages shareable content that can be distributed across game instances. */
 public final class SharedContent {
   /** Directory name for shared content. */
   public static final String SHARED_DIR_NAME = "shared";
