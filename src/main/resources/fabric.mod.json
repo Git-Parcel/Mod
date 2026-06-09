@@ -31,6 +31,7 @@
   "depends": {
     "fabricloader": "*",
     "minecraft": ">=${minecraftVersion}",
+    "modernui": ">=${modernui_version}",
     "system_storage_lib": ">=${system_storage_lib_version}"
   }
 }

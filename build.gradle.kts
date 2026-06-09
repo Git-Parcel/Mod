@@ -38,6 +38,17 @@ modSettings {
 repositories {
     mavenCentral()
     maven("https://jitpack.io")
+
+    maven {
+        name = "IzzelAliz Maven"
+        url = uri("https://maven.izzel.io/releases/")
+    }
+    maven {
+        url = uri("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/")
+        content {
+            includeGroup("fuzs.forgeconfigapiport")
+        }
+    }
 }
 
 val shadowBundle: Configuration by configurations.creating
@@ -46,8 +57,21 @@ fun DependencyHandlerScope.shadowBundle(dependencyNotation: String) {
     add("shadowBundle", dependencyNotation)
 }
 dependencies {
+
     // TODO why can't use modImplementation? it worked in 1.21.11
     implementation("com.github.Leawind:SystemStorageLib:0.2.0-beta.1")
+
+    // Modern UI - core framework (>= 3.13.0 uses new coordinates)
+    implementation("dev.icyllis:modernui-core:${project.property("mod.modernui_version")}")
+    // Modern UI - Markflow (required)
+    implementation("icyllis.modernui:ModernUI-Markflow:${project.property("mod.modernui_version")}")
+    if (mod.isFabric) {
+        // compatible with Minecraft 26.1~26.1.2
+        implementation("icyllis.modernui:ModernUI-Fabric:26.1.2-3.13.0.4")
+    } else if (mod.isNeoforge) {
+        // compatible with Minecraft 26.1~26.1.2
+        implementation("icyllis.modernui:ModernUI-NeoForge:26.1.2-3.13.0.4")
+    }
 
     shadowBundle("com.github.Leawind:inventory-java:0.2.1")
     shadowBundle("com.github.ben-manes.caffeine:caffeine:3.2.3");
