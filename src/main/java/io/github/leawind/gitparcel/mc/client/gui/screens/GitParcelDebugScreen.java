@@ -1,29 +1,33 @@
 package io.github.leawind.gitparcel.mc.client.gui.screens;
 
+import icyllis.modernui.core.Context;
+import icyllis.modernui.fragment.Fragment;
+import icyllis.modernui.mc.ScreenCallback;
+import icyllis.modernui.mc.SimpleScreen;
+import icyllis.modernui.util.DataSet;
+import icyllis.modernui.view.LayoutInflater;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.widget.Button;
+import icyllis.modernui.widget.LinearLayout;
+import icyllis.modernui.widget.TextView;
 import io.github.leawind.gitparcel.core.GitParcelTranslations;
 import io.github.leawind.gitparcel.mc.client.GitParcelClient;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.MultiLineTextWidget;
-import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-public class GitParcelDebugScreen extends Screen {
+public class GitParcelDebugScreen extends SimpleScreen {
+
   private static final Component TITLE = GitParcelTranslations.of("gui.gitparcel.debug");
 
-  private @Nullable final Screen lastScreen;
-  final HeaderAndFooterLayout layout = new HeaderAndFooterLayout(this);
-
   public GitParcelDebugScreen(@Nullable Screen lastScreen) {
-    super(TITLE);
-    this.lastScreen = lastScreen;
+    super(new DebugFragment(lastScreen), null, lastScreen, TITLE);
   }
 
-  private String getFormatSpecs() {
+  private static String getFormatSpecs() {
     var sb = new StringBuilder();
     sb.append("Supported Parcel Formats\n");
     var specs = GitParcelClient.PARCEL_FORMAT_SPECS;
@@ -40,37 +44,44 @@ public class GitParcelDebugScreen extends Screen {
     return sb.toString();
   }
 
-  @Override
-  protected void init() {
-    layout.addTitleHeader(TITLE, font);
+  public static class DebugFragment extends Fragment implements ScreenCallback {
 
-    layout.addToContents(new MultiLineTextWidget(Component.literal(getFormatSpecs()), font));
+    private final @Nullable Screen lastScreen;
 
-    layout.addToFooter(
-        Button.builder(CommonComponents.GUI_BACK, button -> onClose()).width(80).build());
+    DebugFragment(@Nullable Screen lastScreen) {
+      this.lastScreen = lastScreen;
+    }
 
-    layout.visitWidgets(this::addRenderableWidget);
+    @Override
+    public View onCreateView(
+        @NonNull LayoutInflater inflater, ViewGroup container, DataSet savedInstanceState) {
+      Context context = requireContext();
 
-    repositionElements();
-  }
+      LinearLayout root = new LinearLayout(context);
+      root.setOrientation(LinearLayout.VERTICAL);
 
-  @Override
-  protected void repositionElements() {
-    layout.setHeaderHeight(60);
-    layout.arrangeElements();
-  }
+      TextView textView = new TextView(context);
+      textView.setText(getFormatSpecs());
+      textView.setTextSize(16);
+      root.addView(
+          textView,
+          new LinearLayout.LayoutParams(
+              ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-  @Override
-  public void extractRenderState(
-      final @NonNull GuiGraphicsExtractor guiGraphicsExtractor,
-      final int mouseX,
-      final int mouseY,
-      final float delta) {
-    super.extractRenderState(guiGraphicsExtractor, mouseX, mouseY, delta);
-  }
+      Button backButton = new Button(context, null);
+      backButton.setText("返回");
+      backButton.setOnClickListener(v -> Minecraft.getInstance().setScreen(lastScreen));
+      root.addView(
+          backButton,
+          new LinearLayout.LayoutParams(
+              ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-  @Override
-  public void onClose() {
-    minecraft.setScreen(lastScreen);
+      return root;
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+      return false;
+    }
   }
 }
