@@ -7,6 +7,7 @@ import io.github.leawind.gitparcel.mc.client.gui.screens.GitParcelDebugScreen;
 import io.github.leawind.gitparcel.mc.client.renderer.GitParcelRenderer;
 import io.github.leawind.gitparcel.mc.network.protocol.parcelformat.UpdateParcelFormatSpecS2CPayload;
 import io.github.leawind.gitparcel.mc.network.protocol.parcels.UpdateParcelsS2CPayload;
+import io.github.leawind.gitparcel.mc.platform.api.Services;
 import org.slf4j.Logger;
 
 public class ModClientEntrypoint {
@@ -17,12 +18,17 @@ public class ModClientEntrypoint {
 
     GameClientApi.ON_CLIENT_TICK_START.on(
         minecraft -> {
-          if (!(minecraft.screen instanceof GitParcelDebugScreen)) {
-            while (GitParcelOptions.keyDebugScreen.consumeClick()) {
-              if (minecraft.player != null) {
-                minecraft.setScreen(new GitParcelDebugScreen(minecraft.screen));
-              }
+          if (minecraft.screen instanceof GitParcelDebugScreen) {
+            return;
+          }
+          if (!Services.PLATFORM_HELPER.isDevelopmentEnvironment()) {
+            return;
+          }
+          while (GitParcelOptions.keyDebugScreen.consumeClick()) {
+            if (minecraft.player == null) {
+              continue;
             }
+            minecraft.setScreen(new GitParcelDebugScreen(minecraft.screen));
           }
         });
 
