@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtAccounterException;
@@ -93,7 +94,9 @@ public class StructureTemplateFormat
     if (server == null) {
       throw new RuntimeException("Failed to get MinecraftServer from level " + level);
     }
-    StructureTemplate template = server.getStructureManager().readStructure(tag);
+
+    StructureTemplate template = new StructureTemplate();
+    template.load(level.registryAccess().lookupOrThrow(Registries.BLOCK), tag);
 
     boolean isStrict = true;
     BlockPos pivotPos = transform.getTranslatedOrigin();

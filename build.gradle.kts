@@ -27,12 +27,22 @@ modSettings {
         )
     }
 
-    //runDirectory = rootProject.layout.projectDirectory.dir("run-temp")
+    runDirectory = layout.projectDirectory.dir("run")
 
     val vars = props
         .filterKeys { it.startsWith("mod.") }
         .mapKeys { it.key.removePrefix("mod.") }
     variableReplacements.putAll(vars)
+}
+
+stonecutter {
+    replacements.string(current.parsed >= "26.1") {
+        replace(
+            "net.minecraft.client.renderer.state.LevelRenderState",
+            "net.minecraft.client.renderer.state.level.LevelRenderState"
+        )
+        replace("GuiGraphics", "GuiGraphicsExtractor")
+    }
 }
 
 repositories {

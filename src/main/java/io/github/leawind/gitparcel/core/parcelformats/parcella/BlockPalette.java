@@ -23,6 +23,12 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
+/*? if <26.1 {*/
+/*import io.github.leawind.gitparcel.mc.mixin.AccessStateHolder;
+import net.minecraft.world.level.block.state.StateHolder;
+*/
+/*? }*/
+
 /**
  * Block palette containing block states
  *
@@ -93,6 +99,7 @@ public class BlockPalette extends IntIdPalette<BlockState> {
   public static String stringifyBlockState(BlockState blockState) {
     var sb = new StringBuilder();
     sb.append(BuiltInRegistries.BLOCK.wrapAsHolder(blockState.getBlock()).getRegisteredName());
+    /*? if >=26.1 {*/
     var values = blockState.getValues().toList();
     if (!values.isEmpty()) {
       sb.append('[');
@@ -102,6 +109,18 @@ public class BlockPalette extends IntIdPalette<BlockState> {
               .collect(Collectors.joining(",")));
       sb.append(']');
     }
+    /*? } else {*/
+    /*if (!blockState.getValues().isEmpty()) {
+      sb.append('[');
+      sb.append(
+        blockState.getValues().entrySet().stream()
+                  .map(AccessStateHolder.getPropertyEntryToStringFunction())
+                  .collect(Collectors.joining(",")));
+      sb.append(']');
+    }
+    */
+    /*? }*/
+
     return sb.toString();
   }
 

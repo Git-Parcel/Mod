@@ -2,7 +2,7 @@ package io.github.leawind.gitparcel.mc.client.gui.screens;
 
 import io.github.leawind.gitparcel.core.GitParcelTranslations;
 import io.github.leawind.gitparcel.mc.client.GitParcelClient;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
@@ -60,10 +60,23 @@ public class GitParcelDebugScreen extends Screen {
     layout.arrangeElements();
   }
 
+  /*? if >=26.1 {*/
   @Override
+  public void extractRenderState(
+      final @NonNull GuiGraphicsExtractor guiGraphicsExtractor,
+      final int mouseX,
+      final int mouseY,
+      final float delta) {
+    super.extractRenderState(guiGraphicsExtractor, mouseX, mouseY, delta);
+  }
+
+  /*?} else {*/
+  /*@Override
   public void render(@NonNull GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
     super.render(guiGraphics, mouseX, mouseY, delta);
   }
+  */
+  /*?}*/
 
   @Override
   public void onClose() {
