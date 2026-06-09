@@ -39,6 +39,7 @@ repositories {
     mavenCentral()
     maven("https://jitpack.io")
 
+    // required by Modern UI
     maven {
         name = "IzzelAliz Maven"
         url = uri("https://maven.izzel.io/releases/")
@@ -49,6 +50,12 @@ repositories {
             includeGroup("fuzs.forgeconfigapiport")
         }
     }
+
+    // required by ModMenu
+    maven {
+        name = "Terraformers"
+        url = uri("https://maven.terraformersmc.com/")
+    }
 }
 
 val shadowBundle: Configuration by configurations.creating
@@ -57,9 +64,12 @@ fun DependencyHandlerScope.shadowBundle(dependencyNotation: String) {
     add("shadowBundle", dependencyNotation)
 }
 dependencies {
+    // region mods
 
     // TODO why can't use modImplementation? it worked in 1.21.11
     implementation("com.github.Leawind:SystemStorageLib:0.2.0-beta.1")
+
+    // region Modern UI
 
     // Modern UI - core framework (>= 3.13.0 uses new coordinates)
     implementation("dev.icyllis:modernui-core:${project.property("mod.modernui_version")}")
@@ -72,6 +82,25 @@ dependencies {
         // compatible with Minecraft 26.1~26.1.2
         implementation("icyllis.modernui:ModernUI-NeoForge:26.1.2-3.13.0.4")
     }
+    // endregion
+
+    // region forge config api port
+    // it's required by Modern UI
+    if (mod.isFabric) {
+        // https://github.com/Fuzss/ForgeConfigApiPort
+        implementation("fuzs.forgeconfigapiport:forgeconfigapiport-fabric:26.1.3")
+    }
+    // endregion
+
+    // region mod menu
+    if (mod.isFabric) {
+        implementation("com.terraformersmc:modmenu:18.0.0-beta.1")
+    }
+    // endregion
+
+    // endregion
+
+    // region bundled
 
     shadowBundle("com.github.Leawind:inventory-java:0.2.1")
     shadowBundle("com.github.ben-manes.caffeine:caffeine:3.2.3");
@@ -80,6 +109,7 @@ dependencies {
         // already provided by Minecraft
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
+    // endregion
 
     // JMH for performance testing
     testImplementation("org.openjdk.jmh:jmh-core:1.37")
