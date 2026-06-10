@@ -4,7 +4,7 @@ import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelTransform;
-import io.github.leawind.gitparcel.core.api.parcel.exceptions.ParcelException;
+import io.github.leawind.gitparcel.core.api.exceptions.ParcelException;
 import java.io.IOException;
 import java.nio.file.Path;
 import net.minecraft.core.Vec3i;

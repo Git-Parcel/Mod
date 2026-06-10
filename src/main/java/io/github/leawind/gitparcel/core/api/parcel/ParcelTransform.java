@@ -2,13 +2,12 @@ package io.github.leawind.gitparcel.core.api.parcel;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.leawind.gitparcel.core.utils.TransformUtils;
+import io.github.leawind.gitparcel.core.util.TransformUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
@@ -26,7 +25,7 @@ import org.joml.Matrix4f;
  *
  * <p>The pivot point for mirroring and rotation is (0, 0, 0).
  *
- * @see StructurePlaceSettings
+ * @see net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings
  */
 public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translation) {
   public static final Codec<ParcelTransform> CODEC =

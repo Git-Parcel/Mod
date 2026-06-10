@@ -5,7 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.mojang.serialization.JsonOps;
-import io.github.leawind.gitparcel.core.api.parcel.config.ConfigItem;
+import io.github.leawind.gitparcel.core.api.config.ConfigItem;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

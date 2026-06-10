@@ -5,7 +5,8 @@ import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.leawind.gitparcel.core.api.parcel.exceptions.InvalidParcelMetaException;
+import io.github.leawind.gitparcel.core.api.exceptions.InvalidParcelMetaException;
+import io.github.leawind.gitparcel.core.mc.platform.api.Services;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
-import net.minecraft.SharedConstants;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
@@ -108,11 +108,7 @@ public final class ParcelMeta {
   }
 
   public ParcelMeta(ParcelFormat.Spec formatSpec, Vec3i parcelSize, Vec3i anchor) {
-    this(
-        formatSpec,
-        SharedConstants.getCurrentVersion().dataVersion().version(),
-        parcelSize,
-        anchor);
+    this(formatSpec, Services.PLATFORM_HELPER.getDataVersion(), parcelSize, anchor);
   }
 
   public ParcelMeta(ParcelFormat.Spec formatSpec, int dataVersion, Vec3i parcelSize, Vec3i anchor) {

@@ -20,6 +20,8 @@ import org.jspecify.annotations.Nullable;
  * additional registries as needed.
  */
 public final class ParcelFormatRegistry {
+  private ParcelFormatRegistry() {}
+
   public static final ParcelFormatRegistry INSTANCE = new ParcelFormatRegistry();
 
   private final Map<ParcelFormat.Spec, ParcelFormat.Saver<?>> savers =
@@ -28,8 +30,6 @@ public final class ParcelFormatRegistry {
       new Object2ObjectArrayMap<>();
 
   private ParcelFormat.@Nullable Saver<?> defaultSaver;
-
-  private ParcelFormatRegistry() {}
 
   public void clear() {
     savers.clear();

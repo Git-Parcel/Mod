@@ -2,7 +2,7 @@ package io.github.leawind.gitparcel.core.api.parcel;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.leawind.gitparcel.core.api.parcel.exceptions.ParcelException;
+import io.github.leawind.gitparcel.core.api.exceptions.ParcelException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.EnumSet;
