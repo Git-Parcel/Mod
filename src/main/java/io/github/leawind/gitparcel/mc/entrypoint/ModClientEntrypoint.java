@@ -1,9 +1,10 @@
 package io.github.leawind.gitparcel.mc.entrypoint;
 
 import com.mojang.logging.LogUtils;
+import icyllis.modernui.mc.MuiModApi;
 import io.github.leawind.gitparcel.mc.client.GameClientApi;
 import io.github.leawind.gitparcel.mc.client.GitParcelOptions;
-import io.github.leawind.gitparcel.mc.client.gui.screens.GitParcelDebugScreen;
+import io.github.leawind.gitparcel.mc.client.mui.GitParcelDebugFragment;
 import io.github.leawind.gitparcel.mc.client.renderer.GitParcelRenderer;
 import io.github.leawind.gitparcel.mc.network.protocol.parcelformat.UpdateParcelFormatSpecS2CPayload;
 import io.github.leawind.gitparcel.mc.network.protocol.parcels.UpdateParcelsS2CPayload;
@@ -18,9 +19,6 @@ public class ModClientEntrypoint {
 
     GameClientApi.ON_CLIENT_TICK_START.on(
         minecraft -> {
-          if (minecraft.screen instanceof GitParcelDebugScreen) {
-            return;
-          }
           if (!Services.PLATFORM_HELPER.isDevelopmentEnvironment()) {
             return;
           }
@@ -28,7 +26,8 @@ public class ModClientEntrypoint {
             if (minecraft.player == null) {
               continue;
             }
-            minecraft.setScreen(new GitParcelDebugScreen(minecraft.screen));
+            minecraft.setScreen(
+                MuiModApi.get().createScreen(new GitParcelDebugFragment(), null, minecraft.screen));
           }
         });
 
