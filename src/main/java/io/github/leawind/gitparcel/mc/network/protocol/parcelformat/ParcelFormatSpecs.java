@@ -36,4 +36,8 @@ public record ParcelFormatSpecs(List<ParcelFormat.Spec> savers, List<ParcelForma
   public boolean hasLoader(ParcelFormat.Spec spec) {
     return loaders().contains(spec);
   }
+
+  public static ParcelFormatSpecs empty() {
+    return new ParcelFormatSpecs(List.of(), List.of());
+  }
 }
