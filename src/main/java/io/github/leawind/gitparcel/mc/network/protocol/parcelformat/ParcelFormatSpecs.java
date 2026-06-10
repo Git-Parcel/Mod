@@ -3,7 +3,9 @@ package io.github.leawind.gitparcel.mc.network.protocol.parcelformat;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public record ParcelFormatSpecs(List<ParcelFormat.Spec> savers, List<ParcelFormat.Spec> loaders) {
   public static final Codec<ParcelFormatSpecs> CODEC =
@@ -19,4 +21,19 @@ public record ParcelFormatSpecs(List<ParcelFormat.Spec> savers, List<ParcelForma
                           .fieldOf("loaders")
                           .forGetter(ParcelFormatSpecs::loaders))
                   .apply(inst, ParcelFormatSpecs::new));
+
+  public Set<ParcelFormat.Spec> toSet() {
+    Set<ParcelFormat.Spec> set = new HashSet<>();
+    set.addAll(savers());
+    set.addAll(loaders());
+    return set;
+  }
+
+  public boolean hasSaver(ParcelFormat.Spec spec) {
+    return savers().contains(spec);
+  }
+
+  public boolean hasLoader(ParcelFormat.Spec spec) {
+    return loaders().contains(spec);
+  }
 }
