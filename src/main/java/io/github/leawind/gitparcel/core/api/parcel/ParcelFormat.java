@@ -17,7 +17,7 @@ import org.jspecify.annotations.Nullable;
 
 public sealed interface ParcelFormat permits ParcelFormat.Impl {
 
-  record Spec(String id, int version) {
+  record Spec(String id, int version) implements Comparable<Spec> {
     public static final Codec<Spec> CODEC =
         RecordCodecBuilder.create(
             inst ->
@@ -38,6 +38,15 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
     @Override
     public String toString() {
       return String.format("%s:%d", id, version);
+    }
+
+    @Override
+    public int compareTo(ParcelFormat.@NonNull Spec o) {
+      int idComparison = this.id.compareTo(o.id);
+      if (idComparison != 0) {
+        return idComparison;
+      }
+      return Integer.compare(this.version, o.version);
     }
   }
 
