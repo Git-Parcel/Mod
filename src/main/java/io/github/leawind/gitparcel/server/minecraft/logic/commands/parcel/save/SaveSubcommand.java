@@ -39,18 +39,17 @@ public class SaveSubcommand {
       try {
         parcel.save(ignoreEntities);
         source.sendSystemMessage(
-          Translations.of(
-                "command.gitparcel.parcel.save.success", parcel.uuid().toString()));
+            Translations.of("command.gitparcel.parcel.save.success", parcel.uuid().toString()));
 
       } catch (IOException | ParcelException e) {
         source.sendFailure(
-          Translations.of(
+            Translations.of(
                 "command.gitparcel.parcel.save.failure",
                 e.getClass().getSimpleName() + ": " + e.getMessage()));
         return 0;
       } catch (Exception e) {
         source.sendFailure(
-          Translations.of("command.gitparcel.parcel.unexpected_error", e.getMessage()));
+            Translations.of("command.gitparcel.parcel.unexpected_error", e.getMessage()));
         return 0;
       }
     }

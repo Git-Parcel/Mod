@@ -27,20 +27,16 @@ public class FilePathArgument implements ArgumentType<Path> {
           "\"including space\"",
           "'quoted'");
   public static final SimpleCommandExceptionType ERROR_INVALID_PATH =
-      new SimpleCommandExceptionType(
-        Translations.of("argument.gitparcel.filepath.invalid_path"));
+      new SimpleCommandExceptionType(Translations.of("argument.gitparcel.filepath.invalid_path"));
 
   public static final SimpleCommandExceptionType ERROR_CANNOT_BE_DIR =
-      new SimpleCommandExceptionType(
-        Translations.of("argument.gitparcel.filepath.cannot_be_dir"));
+      new SimpleCommandExceptionType(Translations.of("argument.gitparcel.filepath.cannot_be_dir"));
 
   public static final SimpleCommandExceptionType ERROR_CANNOT_BE_FILE =
-      new SimpleCommandExceptionType(
-        Translations.of("argument.gitparcel.filepath.cannot_be_file"));
+      new SimpleCommandExceptionType(Translations.of("argument.gitparcel.filepath.cannot_be_file"));
 
   public static final SimpleCommandExceptionType ERROR_NOT_EXIST =
-      new SimpleCommandExceptionType(
-        Translations.of("argument.gitparcel.filepath.not_exist"));
+      new SimpleCommandExceptionType(Translations.of("argument.gitparcel.filepath.not_exist"));
 
   public static RequiredArgumentBuilder<CommandSourceStack, Path> argOfFile(
       String name, boolean allowUnexist) {

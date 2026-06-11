@@ -1,8 +1,8 @@
 package io.github.leawind.gitparcel.common.testutils;
 
+import io.github.leawind.gitparcel.common.api.config.ConfigItem;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
-import io.github.leawind.gitparcel.common.api.config.ConfigItem;
 import it.unimi.dsi.fastutil.ints.IntIterable;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import java.util.ArrayList;

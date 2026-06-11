@@ -3,9 +3,9 @@ package io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parc
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.client.impl.GitParcelClientImpl;
-import io.github.leawind.gitparcel.common.impl.GitParcelUtils;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.api.world.Parcels;
+import io.github.leawind.gitparcel.common.impl.GitParcelUtils;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;

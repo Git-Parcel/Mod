@@ -47,12 +47,11 @@ public final class ParcelSelectorParser {
           name -> Translations.esc("argument.gitparcel.parcel.selector.unknown", name));
 
   public static final SimpleCommandExceptionType ERROR_MISSING_SELECTOR_TYPE =
-      new SimpleCommandExceptionType(
-        Translations.of("argument.gitparcel.parcel.selector.missing"));
+      new SimpleCommandExceptionType(Translations.of("argument.gitparcel.parcel.selector.missing"));
 
   public static final SimpleCommandExceptionType ERROR_EXPECTED_END_OF_OPTIONS =
       new SimpleCommandExceptionType(
-        Translations.of("argument.gitparcel.parcel.options.expect_end"));
+          Translations.of("argument.gitparcel.parcel.options.expect_end"));
 
   public static final DynamicCommandExceptionType ERROR_EXPECTED_OPTION_VALUE =
       new DynamicCommandExceptionType(

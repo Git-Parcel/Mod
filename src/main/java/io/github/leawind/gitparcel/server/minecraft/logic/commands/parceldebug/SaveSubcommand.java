@@ -61,14 +61,14 @@ public class SaveSubcommand {
 
   private static int save1(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
     return save(
-      ctx.getSource(),
-      BlockPosArgument.getLoadedBlockPos(ctx, "from"),
-      BlockPosArgument.getLoadedBlockPos(ctx, "to"),
-      FilePathArgument.getPath(ctx, "path"),
-      ParcelFormatRegistry.get().defaultSaver(),
-      true,
-      Mirror.NONE,
-      Rotation.NONE);
+        ctx.getSource(),
+        BlockPosArgument.getLoadedBlockPos(ctx, "from"),
+        BlockPosArgument.getLoadedBlockPos(ctx, "to"),
+        FilePathArgument.getPath(ctx, "path"),
+        ParcelFormatRegistry.get().defaultSaver(),
+        true,
+        Mirror.NONE,
+        Rotation.NONE);
   }
 
   private static int save2(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {

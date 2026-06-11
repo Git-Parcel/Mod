@@ -33,8 +33,7 @@ public class DeleteSubcommand extends GitParcelBaseCommand {
     }
 
     source.sendSuccess(
-        () -> Translations.of("command.gitparcel.parcel.delete.success", parcels.size()),
-        true);
+        () -> Translations.of("command.gitparcel.parcel.delete.success", parcels.size()), true);
 
     return parcels.size();
   }

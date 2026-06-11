@@ -1,6 +1,4 @@
-/**
- * Built-in parcel format implementations.
- */
+/** Built-in parcel format implementations. */
 @ApiStatus.Internal
 package io.github.leawind.gitparcel.common.minecraft.logic.builtin;
 

@@ -114,12 +114,12 @@ public class CreateSubcommand extends GitParcelBaseCommand {
     } catch (IllegalArgumentException e) {
       LOGGER.error("Failed to create parcel: {}", e.getMessage(), e);
       source.sendFailure(
-        Translations.of("command.gitparcel.parcel.create.failure", e.getMessage()));
+          Translations.of("command.gitparcel.parcel.create.failure", e.getMessage()));
       return 0;
     } catch (Exception e) {
       LOGGER.error("Unexpected error while creating parcel", e);
       source.sendFailure(
-        Translations.of("command.gitparcel.parcel.unexpected_error", e.getMessage()));
+          Translations.of("command.gitparcel.parcel.unexpected_error", e.getMessage()));
       return 0;
     }
   }

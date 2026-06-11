@@ -44,16 +44,14 @@ public class ParcelArgument implements ArgumentType<ParcelSelector> {
           "dd12be42-52a9-4a91-a8a1-11c01849e498");
 
   public static final SimpleCommandExceptionType ERROR_NOT_SINGLE_PARCEL =
-      new SimpleCommandExceptionType(
-        Translations.of("argument.gitparcel.parcel.too_many"));
+      new SimpleCommandExceptionType(Translations.of("argument.gitparcel.parcel.too_many"));
 
   public static final SimpleCommandExceptionType ERROR_NO_PARCEL_FOUND =
-      new SimpleCommandExceptionType(
-        Translations.of("argument.gitparcel.parcel.not_found"));
+      new SimpleCommandExceptionType(Translations.of("argument.gitparcel.parcel.not_found"));
 
   public static final SimpleCommandExceptionType ERROR_SELECTOR_NOT_ALLOWED =
       new SimpleCommandExceptionType(
-        Translations.of("argument.gitparcel.parcel.selector.not_allowed"));
+          Translations.of("argument.gitparcel.parcel.selector.not_allowed"));
 
   protected final boolean isSingle;
 
@@ -105,7 +103,8 @@ public class ParcelArgument implements ArgumentType<ParcelSelector> {
     // source: ClientSuggestionProvider
     var source = context.getSource();
     if (context.getSource() instanceof ClientSuggestionProvider provider) {
-      names = GitParcelClient.get().getParcels().values().stream().map(parcel -> parcel.meta().name());
+      names =
+          GitParcelClient.get().getParcels().values().stream().map(parcel -> parcel.meta().name());
     } else if (context.getSource() instanceof CommandSourceStack stack) {
       names =
           GitParcelLevelSavedData.get(stack.getLevel()).parcels().values().stream()

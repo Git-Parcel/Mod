@@ -59,7 +59,7 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
       parcel.emitUpdate();
 
       source.sendSystemMessage(
-        Translations.of(
+          Translations.of(
               "command.gitparcel.parcel.config.set.success",
               parcel.uuid().toString(),
               key,
