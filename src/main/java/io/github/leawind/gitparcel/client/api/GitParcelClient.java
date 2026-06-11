@@ -1,7 +1,7 @@
 package io.github.leawind.gitparcel.client.api;
 
-import io.github.leawind.gitparcel.core.api.world.Parcels;
-import io.github.leawind.gitparcel.core.mc.network.protocol.parcelformat.ParcelFormatSpecs;
+import io.github.leawind.gitparcel.common.api.world.Parcels;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcelformat.ParcelFormatSpecs;
 
 public interface GitParcelClient {
   /**

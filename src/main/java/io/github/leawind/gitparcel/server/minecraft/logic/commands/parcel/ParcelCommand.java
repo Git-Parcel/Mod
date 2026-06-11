@@ -1,0 +1,54 @@
+package io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel;
+
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
+import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
+import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
+import io.github.leawind.gitparcel.server.minecraft.logic.commands.ParcelFormatter;
+import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.config.ConfigSubcommand;
+import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.delete.DeleteSubcommand;
+import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.save.SaveSubcommand;
+import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.tp.TeleportSubcommand;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+
+public class ParcelCommand extends GitParcelBaseCommand {
+
+  public static final String ARG_PARCELS = "parcels";
+
+  public static void register(
+      CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext context) {
+
+    final var parcel =
+        Commands.literal("parcel")
+            .requires(Commands.hasPermission(Commands.LEVEL_ALL))
+            .then(
+                Commands.argument(ARG_PARCELS, ParcelArgument.parcels())
+                    .executes(ParcelCommand::showInfo)
+                    .then(ConfigSubcommand.build())
+                    .then(DeleteSubcommand.build())
+                    .then(SaveSubcommand.build())
+                    .then(TeleportSubcommand.build()));
+
+    dispatcher.register(parcel);
+  }
+
+  private static int showInfo(CommandContext<CommandSourceStack> ctx)
+      throws CommandSyntaxException {
+    var source = ctx.getSource();
+
+    if (!validateWorldPermission(source, WorldPermissions.LIST_PARCELS)) {
+      return 0;
+    }
+
+    var parcels = ParcelArgument.getParcels(ctx, ARG_PARCELS);
+    for (var parcel : parcels) {
+      source.sendSuccess(() -> ParcelFormatter.formatParcelInfo(parcel, "- ", "  "), false);
+    }
+
+    return 1;
+  }
+}

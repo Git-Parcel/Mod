@@ -1,7 +1,7 @@
 {
 	"required": true,
 	"minVersion": "0.8",
-	"package": "io.github.leawind.gitparcel.core.mc.mixin",
+	"package": "io.github.leawind.gitparcel.common.minecraft.bridge.mixin",
 	"refmap": "${id}.refmap.json",
 	"compatibilityLevel": "JAVA_17",
 	"mixins": [

@@ -1,7 +1,7 @@
 package io.github.leawind.gitparcel.gametest.utils;
 
-import io.github.leawind.gitparcel.core.mc.mixin.AccessGameTestHelper;
-import io.github.leawind.gitparcel.core.testutils.TestUtils;
+import io.github.leawind.gitparcel.common.minecraft.bridge.mixin.AccessGameTestHelper;
+import io.github.leawind.gitparcel.common.testutils.TestUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestInfo;
