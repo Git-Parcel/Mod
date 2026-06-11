@@ -230,20 +230,3 @@ tasks.test {
 tasks.named<Jar>("jmhJar") {
     isZip64 = true
 }
-
-publishMods {
-    modrinth {
-        requires("system_storage_lib")
-        if (mod.isFabric) {
-            requires("fabric-api")
-            optional("modmenu")
-        }
-    }
-
-    curseforge {
-        requires("system_storage_lib")
-        clientRequired = false
-        serverRequired = false
-        if (mod.isFabric) requires("fabric-api")
-    }
-}
