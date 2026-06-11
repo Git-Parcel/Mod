@@ -12,7 +12,8 @@ import org.joml.Vector3i;
  * interleaving the bits of coordinate values.
  */
 @SuppressWarnings("unused")
-public class ZOrder3D {
+public final class ZOrder3D {
+  private ZOrder3D() {}
 
   /**
    * Converts 3D coordinates to a 1D Z-Order index using Vector3i. This method only accepts

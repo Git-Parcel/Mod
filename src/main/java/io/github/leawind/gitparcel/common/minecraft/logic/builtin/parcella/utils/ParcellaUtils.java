@@ -5,7 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.Vec3i;
 
-public class ParcelUtils {
+public final class ParcellaUtils {
+  private ParcellaUtils() {}
 
   public static ArrayList<Subparcel> subdivideParcel(Vec3i size, Vec3i anchorPos, int gridSize) {
     ArrayList<Subparcel> subparcels = new ArrayList<>(1);

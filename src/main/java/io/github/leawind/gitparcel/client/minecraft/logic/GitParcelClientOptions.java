@@ -1,11 +1,14 @@
 package io.github.leawind.gitparcel.client.minecraft.logic;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import io.github.leawind.gitparcel.client.api.GitParcelClient;
 import io.github.leawind.gitparcel.common.platform.api.Services;
 import java.util.function.Consumer;
 import net.minecraft.client.KeyMapping;
 
 public final class GitParcelClientOptions {
+  private GitParcelClientOptions() {}
+
   public static final KeyMapping keyDebugScreen =
       new KeyMapping("key.gitparcel.debug_screen", InputConstants.KEY_R, KeyMapping.Category.DEBUG);
 

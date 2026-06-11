@@ -4,7 +4,8 @@ import io.github.leawind.gitparcel.common.utils.numbase.HexUtils;
 import java.io.File;
 import java.nio.file.Path;
 
-public class RadixTreePathGenerator {
+public final class RadixTreePathGenerator {
+  private RadixTreePathGenerator() {}
 
   public static Path toPath(Path root, long index, String suffix) throws IndexOutOfBoundsException {
     return root.resolve(toRelativePath(index) + suffix);

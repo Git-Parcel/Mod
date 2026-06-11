@@ -1,6 +1,8 @@
 package io.github.leawind.gitparcel.client.minecraft.logic.renderer;
 
 public final class GitParcelRenderer {
+  private GitParcelRenderer() {}
+
   public static final GitParcelRenderer INSTANCE = new GitParcelRenderer();
 
   private final ParcelRenderer parcelRenderer = new ParcelRenderer();

@@ -10,7 +10,9 @@ import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parce
 import io.github.leawind.gitparcel.common.platform.api.Services;
 import org.slf4j.Logger;
 
-public class ModClientEntrypoint {
+public final class ModClientEntrypoint {
+  private ModClientEntrypoint() {}
+
   private static final Logger LOGGER = LogUtils.getLogger();
 
   public static void initialize() {

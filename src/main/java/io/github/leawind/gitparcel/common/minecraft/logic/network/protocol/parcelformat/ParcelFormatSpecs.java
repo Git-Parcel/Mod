@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@Deprecated
 public record ParcelFormatSpecs(List<ParcelFormat.Spec> savers, List<ParcelFormat.Spec> loaders) {
   public static final Codec<ParcelFormatSpecs> CODEC =
       RecordCodecBuilder.create(

@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.Subparcel;
-import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.utils.ParcelUtils;
 import io.github.leawind.gitparcel.common.testutils.AbstractMinecraftTest;
 import java.util.HashSet;
 import java.util.List;
@@ -16,7 +15,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import org.junit.jupiter.api.Test;
 
-public class ParcelUtilsTest extends AbstractMinecraftTest {
+public class ParcellaUtilsTest extends AbstractMinecraftTest {
   private static final Vec3i SIZE_16X = new Vec3i(16, 16, 16);
 
   /**
@@ -65,17 +64,17 @@ public class ParcelUtilsTest extends AbstractMinecraftTest {
   @Test
   void testSubdivideSubparcel() {
     {
-      var result = ParcelUtils.subdivideParcel(SIZE_16X, BlockPos.ZERO, 16);
+      var result = ParcellaUtils.subdivideParcel(SIZE_16X, BlockPos.ZERO, 16);
       assertEquals(List.of(new Subparcel(0, 0, 0, 16, 16, 16)), result);
     }
     {
-      var result = ParcelUtils.subdivideParcel(SIZE_16X, new BlockPos(4, 5, 6), 16);
+      var result = ParcellaUtils.subdivideParcel(SIZE_16X, new BlockPos(4, 5, 6), 16);
       assertEquals(8, result.size());
     }
 
     for (int i = 0; i < 1000; i++) {
       var size = random.nextVec3i(1, 50);
-      assertParcelEqual(size, ParcelUtils.subdivideParcel(size, random.nextVec3i(-100, 100), 16));
+      assertParcelEqual(size, ParcellaUtils.subdivideParcel(size, random.nextVec3i(-100, 100), 16));
     }
   }
 
@@ -83,7 +82,7 @@ public class ParcelUtilsTest extends AbstractMinecraftTest {
   void testSubdivideParcel1D() {
     BiConsumer<List<Integer>, List<Integer>> test =
         (args, expected) -> {
-          var result = ParcelUtils.subdivideParcel1D(16, args.get(0), args.get(1));
+          var result = ParcellaUtils.subdivideParcel1D(16, args.get(0), args.get(1));
           assertEquals(expected, result);
         };
 
@@ -100,7 +99,7 @@ public class ParcelUtilsTest extends AbstractMinecraftTest {
       int size = random.nextInt(1, 1000);
       int anchor = random.nextInt(-100, 100);
 
-      var result = ParcelUtils.subdivideParcel1D(16, size, anchor);
+      var result = ParcellaUtils.subdivideParcel1D(16, size, anchor);
       // assert ascending order
       for (int j = 0; j < result.size() - 1; j++) {
         assertTrue(result.get(j) <= result.get(j + 1));
@@ -112,37 +111,37 @@ public class ParcelUtilsTest extends AbstractMinecraftTest {
 
   @Test
   void testFloorToGrid16() {
-    assertEquals(-16, ParcelUtils.floorToGrid(16, 0, -1));
-    assertEquals(0, ParcelUtils.floorToGrid(16, 0, 0));
-    assertEquals(0, ParcelUtils.floorToGrid(16, 0, 15));
-    assertEquals(16, ParcelUtils.floorToGrid(16, 0, 16));
-    assertEquals(16, ParcelUtils.floorToGrid(16, 0, 17));
+    assertEquals(-16, ParcellaUtils.floorToGrid(16, 0, -1));
+    assertEquals(0, ParcellaUtils.floorToGrid(16, 0, 0));
+    assertEquals(0, ParcellaUtils.floorToGrid(16, 0, 15));
+    assertEquals(16, ParcellaUtils.floorToGrid(16, 0, 16));
+    assertEquals(16, ParcellaUtils.floorToGrid(16, 0, 17));
 
-    assertEquals(1, ParcelUtils.floorToGrid(16, 1, 1));
-    assertEquals(-15, ParcelUtils.floorToGrid(16, 1, 0));
+    assertEquals(1, ParcellaUtils.floorToGrid(16, 1, 1));
+    assertEquals(-15, ParcellaUtils.floorToGrid(16, 1, 0));
 
-    assertEquals(0, ParcelUtils.floorToGrid(16, 32, 1));
-    assertEquals(-15, ParcelUtils.floorToGrid(16, 33, 0));
+    assertEquals(0, ParcellaUtils.floorToGrid(16, 32, 1));
+    assertEquals(-15, ParcellaUtils.floorToGrid(16, 33, 0));
 
-    assertEquals(0, ParcelUtils.floorToGrid(16, -32, 0));
-    assertEquals(2, ParcelUtils.floorToGrid(16, -30, 17));
+    assertEquals(0, ParcellaUtils.floorToGrid(16, -32, 0));
+    assertEquals(2, ParcellaUtils.floorToGrid(16, -30, 17));
   }
 
   @Test
   void testCeilToGrid16() {
-    assertEquals(0, ParcelUtils.ceilToGrid(16, 0, -1));
-    assertEquals(16, ParcelUtils.ceilToGrid(16, 0, 0));
-    assertEquals(16, ParcelUtils.ceilToGrid(16, 0, 15));
-    assertEquals(32, ParcelUtils.ceilToGrid(16, 0, 16));
-    assertEquals(32, ParcelUtils.ceilToGrid(16, 0, 17));
+    assertEquals(0, ParcellaUtils.ceilToGrid(16, 0, -1));
+    assertEquals(16, ParcellaUtils.ceilToGrid(16, 0, 0));
+    assertEquals(16, ParcellaUtils.ceilToGrid(16, 0, 15));
+    assertEquals(32, ParcellaUtils.ceilToGrid(16, 0, 16));
+    assertEquals(32, ParcellaUtils.ceilToGrid(16, 0, 17));
 
-    assertEquals(17, ParcelUtils.ceilToGrid(16, 1, 1));
-    assertEquals(1, ParcelUtils.ceilToGrid(16, 1, 0));
+    assertEquals(17, ParcellaUtils.ceilToGrid(16, 1, 1));
+    assertEquals(1, ParcellaUtils.ceilToGrid(16, 1, 0));
 
-    assertEquals(16, ParcelUtils.ceilToGrid(16, 32, 1));
-    assertEquals(1, ParcelUtils.ceilToGrid(16, 33, 0));
+    assertEquals(16, ParcellaUtils.ceilToGrid(16, 32, 1));
+    assertEquals(1, ParcellaUtils.ceilToGrid(16, 33, 0));
 
-    assertEquals(16, ParcelUtils.ceilToGrid(16, -32, 0));
-    assertEquals(18, ParcelUtils.ceilToGrid(16, -30, 17));
+    assertEquals(16, ParcellaUtils.ceilToGrid(16, -32, 0));
+    assertEquals(18, ParcellaUtils.ceilToGrid(16, -30, 17));
   }
 }

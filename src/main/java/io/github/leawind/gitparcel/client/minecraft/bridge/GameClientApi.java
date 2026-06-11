@@ -12,6 +12,8 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import org.jspecify.annotations.Nullable;
 
 public final class GameClientApi {
+  private GameClientApi() {}
+
   public static final SimpleEventEmitter<Minecraft> ON_CLIENT_TICK_START =
       new SimpleEventEmitter<>();
 

@@ -6,7 +6,7 @@ import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.NbtFormat;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.BlockPalette;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.Subparcel;
-import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.utils.ParcelUtils;
+import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.utils.ParcellaUtils;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.utils.RadixTreePathGenerator;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.utils.ZOrder3D;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
@@ -115,7 +115,7 @@ public class ParcellaD32Saver
 
     // Split the parcel into subparcels
     BlockPos anchorPos = new BlockPos(ctx.anchor);
-    for (var localSubparcel : ParcelUtils.subdivideParcel(ctx.parcelSize, anchorPos, gridSize)) {
+    for (var localSubparcel : ParcellaUtils.subdivideParcel(ctx.parcelSize, anchorPos, gridSize)) {
       Vec3i coord = localSubparcel.getCoord(gridSize, anchorPos);
 
       long index = ZOrder3D.coordToIndexSigned(coord);

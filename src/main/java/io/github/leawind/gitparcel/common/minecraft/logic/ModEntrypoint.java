@@ -2,21 +2,21 @@ package io.github.leawind.gitparcel.common.minecraft.logic;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
+import io.github.leawind.gitparcel.common.minecraft.bridge.mixin.InvokeArgumentTypeInfos;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.mvp.MvpFormat;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d16.ParcellaD16Loader;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d16.ParcellaD16Saver;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d32.ParcellaD32Loader;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d32.ParcellaD32Saver;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.structuretemplate.StructureTemplateFormat;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelFormatArgument;
-import io.github.leawind.gitparcel.common.minecraft.bridge.mixin.InvokeArgumentTypeInfos;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcelformat.UpdateParcelFormatSpecS2CPayload;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcels.UpdateParcelsS2CPayload;
-import io.github.leawind.gitparcel.common.platform.api.Services;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelLevelSavedData;
+import io.github.leawind.gitparcel.common.platform.api.Services;
 import io.github.leawind.gitparcel.server.minecraft.bridge.GameServerApi;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.ParcelCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parceldebug.ParcelDebugCommand;
@@ -30,8 +30,9 @@ import net.minecraft.core.Registry;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import org.slf4j.Logger;
 
-///
 public final class ModEntrypoint {
+  private ModEntrypoint() {}
+
   public static final Logger LOGGER = LogUtils.getLogger();
 
   /**

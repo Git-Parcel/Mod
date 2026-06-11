@@ -9,6 +9,7 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+@Deprecated
 public final class Parcels implements Map<UUID, Parcel> {
   public static final Codec<Parcels> CODEC =
       Parcel.CODEC.listOf().xmap(Parcels::new, Parcels::toList);

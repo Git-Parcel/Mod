@@ -3,7 +3,9 @@ package io.github.leawind.gitparcel.common.api.permission;
 import com.mojang.serialization.Codec;
 import net.minecraft.server.permissions.PermissionLevel;
 
-public class WorldPermissions {
+public final class WorldPermissions {
+  private WorldPermissions() {}
+
   public static final PermissionTypeRegistry<WorldPermissions> REGISTRY =
       new PermissionTypeRegistry<>();
   public static final Codec<PermissionConfig<WorldPermissions>> CONFIG_CODEC =

@@ -14,6 +14,8 @@ import net.minecraft.gizmos.LineGizmo;
 import net.minecraft.world.phys.Vec3;
 
 public final class ParcelRenderer {
+  ParcelRenderer() {}
+
   private static final int WIREFRAME_COLOR = 0xFFFFFFFF;
 
   private static final int X_COLOR = 0xFFFF0000; // red

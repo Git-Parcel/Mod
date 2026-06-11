@@ -3,7 +3,9 @@ package io.github.leawind.gitparcel.common.api.permission;
 import com.mojang.serialization.Codec;
 import net.minecraft.server.permissions.PermissionLevel;
 
-public class ParcelPermissions {
+public final class ParcelPermissions {
+  private ParcelPermissions() {}
+
   public static final PermissionTypeRegistry<ParcelPermissions> REGISTRY =
       new PermissionTypeRegistry<>();
   public static final Codec<PermissionConfig<ParcelPermissions>> CONFIG_CODEC =
