@@ -1,6 +1,6 @@
 package io.github.leawind.gitparcel.core.api.parcel;
 
-import io.github.leawind.gitparcel.core.api.Bridge;
+import io.github.leawind.gitparcel.core.api.Factory;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
@@ -18,7 +18,7 @@ import org.jspecify.annotations.Nullable;
 public interface ParcelFormatRegistry {
 
   static ParcelFormatRegistry get() {
-    return Bridge.getParcelFormatRegistry();
+    return Factory.getParcelFormatRegistry();
   }
 
   void clear();

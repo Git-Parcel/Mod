@@ -7,8 +7,8 @@ import io.github.leawind.gitparcel.core.impl.parcel.ParcelFormatRegistryImpl;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
-public final class Bridge {
-  private Bridge() {}
+public final class Factory {
+  private Factory() {}
 
   @Deprecated
   static GitParcelClient getGitParcelClient() {

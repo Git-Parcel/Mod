@@ -12,6 +12,6 @@ public interface GitParcel {
 
   @Deprecated
   static GitParcelClient client() {
-    return Bridge.getGitParcelClient();
+    return Factory.getGitParcelClient();
   }
 }
