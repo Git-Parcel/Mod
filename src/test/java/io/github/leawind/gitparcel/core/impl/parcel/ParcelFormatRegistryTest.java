@@ -5,13 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import io.github.leawind.gitparcel.core.api.exceptions.ParcelException;
-import java.io.IOException;
-import java.nio.file.Path;
-
+import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatConfig;
-import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelTransform;
+import java.io.IOException;
+import java.nio.file.Path;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -22,7 +21,7 @@ import org.junit.jupiter.api.Test;
 public class ParcelFormatRegistryTest {
   @Test
   void test() {
-    var regsitry = ParcelFormatRegistry.INSTANCE;
+    var regsitry = ParcelFormatRegistry.get();
     regsitry.clear();
     regsitry.registerDefaultSaver(new TestSaver("alpha", 0));
     regsitry.register(new TestSaver("beta", 0));

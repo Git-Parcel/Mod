@@ -147,11 +147,11 @@ public final class ParcelMeta {
   }
 
   public ParcelFormat.@Nullable Saver<?> getFormatSaver() {
-    return ParcelFormatRegistry.INSTANCE.getSaver(formatSpec);
+    return ParcelFormatRegistry.get().getSaver(formatSpec);
   }
 
   public ParcelFormat.@Nullable Loader<?> getFormatLoader() {
-    return ParcelFormatRegistry.INSTANCE.getLoader(formatSpec);
+    return ParcelFormatRegistry.get().getLoader(formatSpec);
   }
 
   public void setFormatSpec(ParcelFormat.Spec formatSpec) {

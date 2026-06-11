@@ -1,8 +1,8 @@
 package io.github.leawind.gitparcel.server.mc.commands.parcels.formats;
 
 import com.mojang.brigadier.builder.ArgumentBuilder;
-import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatRegistry;
+import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.core.api.permission.WorldPermissions;
 import io.github.leawind.gitparcel.core.util.Translations;
 import io.github.leawind.gitparcel.server.mc.commands.GitParcelBaseCommand;
@@ -21,7 +21,7 @@ public class FormatsSubcommand extends GitParcelBaseCommand {
                 return 0;
               }
 
-              var registry = ParcelFormatRegistry.INSTANCE;
+              var registry = ParcelFormatRegistry.get();
 
               var savers = registry.streamSavers().toArray(ParcelFormat.Saver[]::new);
               var loaders = registry.streamLoaders().toArray(ParcelFormat.Loader[]::new);
@@ -36,9 +36,7 @@ public class FormatsSubcommand extends GitParcelBaseCommand {
 
               if (savers.length > 0) {
                 source.sendSuccess(
-                    () ->
-                        Translations.of(
-                            "command.gitparcel.parcel.formats.list.savers_header"),
+                    () -> Translations.of("command.gitparcel.parcel.formats.list.savers_header"),
                     false);
                 for (var saver : savers) {
                   source.sendSuccess(
@@ -51,9 +49,7 @@ public class FormatsSubcommand extends GitParcelBaseCommand {
 
               if (loaders.length > 0) {
                 source.sendSuccess(
-                    () ->
-                        Translations.of(
-                            "command.gitparcel.parcel.formats.list.loaders_header"),
+                    () -> Translations.of("command.gitparcel.parcel.formats.list.loaders_header"),
                     false);
                 for (var loader : loaders) {
                   source.sendSuccess(

@@ -2,13 +2,13 @@ package io.github.leawind.gitparcel.core.mc;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
-import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.builtin.mvp.MvpFormat;
 import io.github.leawind.gitparcel.builtin.parcella.d16.ParcellaD16Loader;
 import io.github.leawind.gitparcel.builtin.parcella.d16.ParcellaD16Saver;
 import io.github.leawind.gitparcel.builtin.parcella.d32.ParcellaD32Loader;
 import io.github.leawind.gitparcel.builtin.parcella.d32.ParcellaD32Saver;
 import io.github.leawind.gitparcel.builtin.structuretemplate.StructureTemplateFormat;
+import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.core.mc.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.core.mc.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.core.mc.commands.arguments.ParcelFormatArgument;
@@ -46,7 +46,7 @@ public final class ModEntrypoint {
 
     GameServerApi.ON_PLAYER_JOIN.on(
         e -> {
-          var payload = UpdateParcelFormatSpecS2CPayload.from(ParcelFormatRegistry.INSTANCE);
+          var payload = UpdateParcelFormatSpecS2CPayload.from(ParcelFormatRegistry.get());
           var packet = new ClientboundCustomPayloadPacket(payload);
           e.player().connection.send(packet);
         });
@@ -55,14 +55,14 @@ public final class ModEntrypoint {
   }
 
   private static void registerFormats() {
-    ParcelFormatRegistry.INSTANCE.registerDefaultSaver(new ParcellaD32Saver());
-    ParcelFormatRegistry.INSTANCE.register(new ParcellaD32Loader());
-    ParcelFormatRegistry.INSTANCE.register(new ParcellaD16Loader());
+    ParcelFormatRegistry.get().registerDefaultSaver(new ParcellaD32Saver());
+    ParcelFormatRegistry.get().register(new ParcellaD32Loader());
+    ParcelFormatRegistry.get().register(new ParcellaD16Loader());
 
     if (Services.PLATFORM_HELPER.isDevelopmentEnvironment()) {
-      ParcelFormatRegistry.INSTANCE.register(new StructureTemplateFormat());
-      ParcelFormatRegistry.INSTANCE.register(new ParcellaD16Saver());
-      ParcelFormatRegistry.INSTANCE.register(new MvpFormat());
+      ParcelFormatRegistry.get().register(new StructureTemplateFormat());
+      ParcelFormatRegistry.get().register(new ParcellaD16Saver());
+      ParcelFormatRegistry.get().register(new MvpFormat());
     }
   }
 

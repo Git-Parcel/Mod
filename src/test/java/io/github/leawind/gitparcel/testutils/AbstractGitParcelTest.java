@@ -1,8 +1,9 @@
 package io.github.leawind.gitparcel.testutils;
 
+import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatConfig;
-import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatRegistry;
+import io.github.leawind.gitparcel.core.impl.parcel.ParcelFormatRegistryImpl;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.core.api.exceptions.ParcelException;
 import java.io.IOException;
@@ -15,11 +16,11 @@ import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.BeforeAll;
 
 /**
- * Base class for tests that need both Minecraft runtime and a pre-populated
- * {@link ParcelFormatRegistry} with test format entries.
+ * Base class for tests that need both Minecraft runtime and a pre-populated {@link
+ * ParcelFormatRegistryImpl} with test format entries.
  *
- * <p>Extends {@link AbstractMinecraftTest} and adds common test
- * {@link ParcelFormat.Saver}/{@link ParcelFormat.Loader} implementations.
+ * <p>Extends {@link AbstractMinecraftTest} and adds common test {@link ParcelFormat.Saver}/{@link
+ * ParcelFormat.Loader} implementations.
  */
 public class AbstractGitParcelTest extends AbstractMinecraftTest {
 
@@ -82,9 +83,9 @@ public class AbstractGitParcelTest extends AbstractMinecraftTest {
 
   @BeforeAll
   static void beforeAllGitParcel() {
-    ParcelFormatRegistry.INSTANCE.clear();
-    ParcelFormatRegistry.INSTANCE.registerDefaultSaver(new TestSaver("alpha", 0));
-    ParcelFormatRegistry.INSTANCE.register(new TestSaver("beta", 0));
-    ParcelFormatRegistry.INSTANCE.register(new TestLoader("charlie", 0));
+    ParcelFormatRegistry.get().clear();
+    ParcelFormatRegistry.get().registerDefaultSaver(new TestSaver("alpha", 0));
+    ParcelFormatRegistry.get().register(new TestSaver("beta", 0));
+    ParcelFormatRegistry.get().register(new TestLoader("charlie", 0));
   }
 }

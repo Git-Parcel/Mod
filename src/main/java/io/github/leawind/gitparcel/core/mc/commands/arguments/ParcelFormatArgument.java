@@ -7,8 +7,8 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatRegistry;
+import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.core.util.Translations;
 import java.util.Arrays;
 import java.util.Collection;
@@ -19,8 +19,7 @@ import net.minecraft.commands.SharedSuggestionProvider;
 public final class ParcelFormatArgument {
   private static final Collection<String> EXAMPLES = Arrays.asList("mvp", "structure_template");
   public static final SimpleCommandExceptionType ERROR_INVALID =
-      new SimpleCommandExceptionType(
-        Translations.of("argument.gitparcel.parcel_format.invalid"));
+      new SimpleCommandExceptionType(Translations.of("argument.gitparcel.parcel_format.invalid"));
 
   public static Saver saver() {
     return new Saver();
@@ -44,7 +43,7 @@ public final class ParcelFormatArgument {
 
     @Override
     public ParcelFormat.Saver<?> parse(StringReader reader) throws CommandSyntaxException {
-      var format = ParcelFormatRegistry.INSTANCE.getSaver(reader.readString());
+      var format = ParcelFormatRegistry.get().getSaver(reader.readString());
       if (format == null) {
         throw ERROR_INVALID.createWithContext(reader);
       }
@@ -55,7 +54,7 @@ public final class ParcelFormatArgument {
     public <S> CompletableFuture<Suggestions> listSuggestions(
         final CommandContext<S> context, final SuggestionsBuilder builder) {
       return context.getSource() instanceof SharedSuggestionProvider
-          ? SharedSuggestionProvider.suggest(ParcelFormatRegistry.INSTANCE.getSaverNames(), builder)
+          ? SharedSuggestionProvider.suggest(ParcelFormatRegistry.get().getSaverNames(), builder)
           : Suggestions.empty();
     }
 
@@ -69,7 +68,7 @@ public final class ParcelFormatArgument {
 
     @Override
     public ParcelFormat.Loader<?> parse(StringReader reader) throws CommandSyntaxException {
-      var format = ParcelFormatRegistry.INSTANCE.getLoader(reader.readString());
+      var format = ParcelFormatRegistry.get().getLoader(reader.readString());
       if (format == null) {
         throw ERROR_INVALID.createWithContext(reader);
       }
@@ -80,8 +79,7 @@ public final class ParcelFormatArgument {
     public <S> CompletableFuture<Suggestions> listSuggestions(
         final CommandContext<S> context, final SuggestionsBuilder builder) {
       return context.getSource() instanceof SharedSuggestionProvider
-          ? SharedSuggestionProvider.suggest(
-              ParcelFormatRegistry.INSTANCE.getLoaderNames(), builder)
+          ? SharedSuggestionProvider.suggest(ParcelFormatRegistry.get().getLoaderNames(), builder)
           : Suggestions.empty();
     }
 

@@ -2,9 +2,9 @@ package io.github.leawind.gitparcel.gametest;
 
 import com.google.common.jimfs.Jimfs;
 import com.mojang.logging.LogUtils;
+import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatConfig;
-import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.core.api.config.ConfigItem;
 import io.github.leawind.gitparcel.gametest.utils.ChannelFlags;
 import io.github.leawind.gitparcel.gametest.utils.GameTestHelpMore;
@@ -26,8 +26,8 @@ public class GitParcelGameTest {
 
   public void testSaveAndLoad(GameTestHelpMore helper) throws Exception {
     TestUtils.forEachFormatCombination(
-        ParcelFormatRegistry.INSTANCE.streamSavers().toList(),
-        (saver, rotation, mirror) -> {
+      ParcelFormatRegistry.get().streamSavers().toList(),
+      (saver, rotation, mirror) -> {
           if (saver.getDefaultConfig() == null) {
             LOGGER.info(
                 "Testing format {} with rotation={} mirror={} config=default",
@@ -129,7 +129,7 @@ public class GitParcelGameTest {
           tempDir,
           true);
 
-      var loader = ParcelFormatRegistry.INSTANCE.getLoader(saver.spec());
+      var loader = ParcelFormatRegistry.get().getLoader(saver.spec());
       if (loader == null) {
         LOGGER.info("  Skipped: no loader for format {}", saver.spec());
         return;

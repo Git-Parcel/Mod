@@ -4,9 +4,9 @@ import com.google.gson.JsonElement;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatConfig;
-import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.core.api.exceptions.ParcelException;
@@ -284,7 +284,8 @@ public final class Parcel {
             mirror, rotation, new Vec3i((int) pivot.x, (int) pivot.y, (int) pivot.z));
 
     var meta =
-        ParcelMeta.from(ParcelFormatRegistry.INSTANCE.defaultSaver().spec(), boundingBox, rotation);
+        ParcelMeta.from(
+          ParcelFormatRegistry.get().defaultSaver().spec(), boundingBox, rotation);
 
     return new Parcel(
         UUID.randomUUID(),

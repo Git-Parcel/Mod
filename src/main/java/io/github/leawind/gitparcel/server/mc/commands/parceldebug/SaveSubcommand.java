@@ -4,8 +4,8 @@ import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatRegistry;
+import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.core.api.exceptions.ParcelException;
@@ -61,14 +61,14 @@ public class SaveSubcommand {
 
   private static int save1(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
     return save(
-        ctx.getSource(),
-        BlockPosArgument.getLoadedBlockPos(ctx, "from"),
-        BlockPosArgument.getLoadedBlockPos(ctx, "to"),
-        FilePathArgument.getPath(ctx, "path"),
-        ParcelFormatRegistry.INSTANCE.defaultSaver(),
-        true,
-        Mirror.NONE,
-        Rotation.NONE);
+      ctx.getSource(),
+      BlockPosArgument.getLoadedBlockPos(ctx, "from"),
+      BlockPosArgument.getLoadedBlockPos(ctx, "to"),
+      FilePathArgument.getPath(ctx, "path"),
+      ParcelFormatRegistry.get().defaultSaver(),
+      true,
+      Mirror.NONE,
+      Rotation.NONE);
   }
 
   private static int save2(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -142,23 +142,21 @@ public class SaveSubcommand {
       ParcelStorage.save(source.getLevel(), transform, meta, null, parcelDir, ignoreEntities);
 
       source.sendSuccess(
-          () -> Translations.of("command.gitparcel.parcel_debug.save.success"),
-          ignoreEntities);
+          () -> Translations.of("command.gitparcel.parcel_debug.save.success"), ignoreEntities);
 
       return 1;
 
     } catch (IOException | ParcelException e) {
       ParcelDebugCommand.LOGGER.error("Error while saving parcel", e);
       source.sendFailure(
-        Translations.of(
+          Translations.of(
               "command.gitparcel.parcel_debug.save.failure",
               e.getClass().getSimpleName() + ": " + e.getMessage()));
       return 0;
     } catch (Exception e) {
       ParcelDebugCommand.LOGGER.error("Unexpected error while saving parcel", e);
       source.sendFailure(
-        Translations.of(
-              "command.gitparcel.parcel_debug.unexpected_error", e.getMessage()));
+          Translations.of("command.gitparcel.parcel_debug.unexpected_error", e.getMessage()));
       return 0;
     }
   }
