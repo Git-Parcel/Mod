@@ -1,15 +1,15 @@
 package io.github.leawind.gitparcel.builtin.parcella.d32;
 
 import com.mojang.logging.LogUtils;
-import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
-import io.github.leawind.gitparcel.core.api.parcel.ParcelTransform;
-import io.github.leawind.gitparcel.core.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.builtin.parcella.BlockPalette;
 import io.github.leawind.gitparcel.builtin.parcella.Subparcel;
 import io.github.leawind.gitparcel.builtin.parcella.SubparcelFormat;
 import io.github.leawind.gitparcel.builtin.parcella.utils.ParcelUtils;
 import io.github.leawind.gitparcel.builtin.parcella.utils.RadixTreePathGenerator;
 import io.github.leawind.gitparcel.builtin.parcella.utils.ZOrder3D;
+import io.github.leawind.gitparcel.core.api.exceptions.ParcelException;
+import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.core.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.core.util.numbase.Base32Utils;
 import io.github.leawind.gitparcel.core.util.numbase.HexUtils;
 import io.github.leawind.inventory.just.Result;
@@ -481,7 +481,7 @@ public class ParcellaD32Loader
         var entityNamespace = namespaceDir.getFileName().toString();
         try (var stream2 =
             Files.list(namespaceDir)
-                .filter(path -> path.endsWith(ctx.config.entityDataFormat.get().suffix))) {
+                .filter(path -> path.endsWith(ctx.config.entityDataFormat.get().getSuffix()))) {
           for (var entityFile : stream2.toList()) {
             var entityKeyPath = entityFile.getFileName().toString();
             loadEntity(

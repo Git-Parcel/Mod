@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.builtin;
+package io.github.leawind.gitparcel.builtin.parcella;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.inventory.just.Result;
@@ -16,7 +16,11 @@ public enum NbtFormat {
   BINARY(".nbt"),
   TEXT(".snbt");
 
-  public final String suffix;
+  private final String suffix;
+
+  public String getSuffix() {
+    return suffix;
+  }
 
   public void write(Path path, CompoundTag tag) throws IOException {
     write(path, tag, true);

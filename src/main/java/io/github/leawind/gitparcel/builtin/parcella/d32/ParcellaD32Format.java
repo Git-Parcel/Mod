@@ -6,7 +6,7 @@ import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.core.api.config.ConfigItem;
 import io.github.leawind.gitparcel.core.api.config.ConfigItemBuilder;
-import io.github.leawind.gitparcel.builtin.NbtFormat;
+import io.github.leawind.gitparcel.builtin.parcella.NbtFormat;
 import io.github.leawind.gitparcel.builtin.parcella.SubparcelFormat;
 import java.util.Comparator;
 import java.util.EnumSet;

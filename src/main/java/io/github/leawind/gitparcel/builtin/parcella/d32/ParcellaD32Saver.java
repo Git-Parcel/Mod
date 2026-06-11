@@ -3,7 +3,7 @@ package io.github.leawind.gitparcel.builtin.parcella.d32;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.core.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.core.api.exceptions.ParcelException;
-import io.github.leawind.gitparcel.builtin.NbtFormat;
+import io.github.leawind.gitparcel.builtin.parcella.NbtFormat;
 import io.github.leawind.gitparcel.builtin.parcella.BlockPalette;
 import io.github.leawind.gitparcel.builtin.parcella.Subparcel;
 import io.github.leawind.gitparcel.builtin.parcella.utils.ParcelUtils;
@@ -328,7 +328,7 @@ public class ParcellaD32Saver
       int index = 0;
       for (Entity entity : entry.getValue()) {
         nbtFormat.write(
-            dir.resolve(index + nbtFormat.suffix),
+            dir.resolve(index + nbtFormat.getSuffix()),
             getEntityNbt(ctx, problemReporter, entity),
             true);
         index++;
