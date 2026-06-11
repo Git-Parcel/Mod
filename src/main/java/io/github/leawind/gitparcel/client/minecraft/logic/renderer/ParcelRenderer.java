@@ -1,6 +1,6 @@
 package io.github.leawind.gitparcel.client.minecraft.logic.renderer;
 
-import io.github.leawind.gitparcel.common.api.GitParcel;
+import io.github.leawind.gitparcel.client.api.GitParcelClient;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import java.util.ArrayList;
@@ -25,7 +25,7 @@ public final class ParcelRenderer {
   private static final WeakHashMap<Parcel, ParcelRenderState> CACHE = new WeakHashMap<>();
 
   void renderGizmos() {
-    for (var parcel : GitParcel.client().getParcels().values()) {
+    for (var parcel : GitParcelClient.get().getParcels().values()) {
       var currentState = new ParcelRenderState(parcel);
       var cachedState = CACHE.get(parcel);
 

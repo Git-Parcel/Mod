@@ -13,7 +13,7 @@ import icyllis.modernui.view.LayoutInflater;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.TextView;
-import io.github.leawind.gitparcel.common.api.GitParcel;
+import io.github.leawind.gitparcel.client.api.GitParcelClient;
 import org.jspecify.annotations.NonNull;
 
 public class GitParcelDebugFragment extends Fragment implements ScreenCallback {
@@ -63,7 +63,7 @@ public class GitParcelDebugFragment extends Fragment implements ScreenCallback {
   }
 
   private static String getFormatSpecsText() {
-    var specs = GitParcel.client().getParcelFormatSpecs();
+    var specs = GitParcelClient.get().getParcelFormatSpecs();
     if (specs == null) {
       return "Parcel formats unavailable\n";
     }
