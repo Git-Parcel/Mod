@@ -3,7 +3,7 @@ package io.github.leawind.gitparcel.client.minecraft.logic;
 import com.mojang.logging.LogUtils;
 import icyllis.modernui.mc.MuiModApi;
 import io.github.leawind.gitparcel.client.minecraft.bridge.GameClientApi;
-import io.github.leawind.gitparcel.client.minecraft.logic.mui.GitParcelDebugFragment;
+import io.github.leawind.gitparcel.client.minecraft.logic.mui.debug.GitParcelDebugFragment;
 import io.github.leawind.gitparcel.client.minecraft.logic.renderer.GitParcelRenderer;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcelformat.UpdateParcelFormatSpecS2CPayload;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcels.UpdateParcelsS2CPayload;
