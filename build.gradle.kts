@@ -1,5 +1,6 @@
 import gg.meza.stonecraft.mod
 import net.fabricmc.loom.task.RemapJarTask
+import org.gradle.util.internal.VersionNumber
 
 plugins {
     id("com.gradleup.shadow") version "8.3.10"
@@ -63,24 +64,33 @@ fun DependencyHandlerScope.shadowBundle(dependencyNotation: String) {
     implementation(dependencyNotation)
     add("shadowBundle", dependencyNotation)
 }
+
+fun DependencyHandlerScope.modImplAlias(dependencyNotation: String) {
+    if (VersionNumber.parse(mod.minecraftVersion) >= VersionNumber.parse("26.1")) {
+        implementation(dependencyNotation)
+    } else {
+        add("modImplementation", dependencyNotation)
+    }
+}
+
 dependencies {
     // region mods
 
     // TODO why can't use modImplementation? it worked in 1.21.11
-    implementation("com.github.Leawind:SystemStorageLib:0.2.0-beta.1")
+    modImplAlias("com.github.Leawind:SystemStorageLib:0.2.0-beta.1")
 
     // region Modern UI
 
     // Modern UI - core framework (>= 3.13.0 uses new coordinates)
-    implementation("dev.icyllis:modernui-core:${project.property("mod.modernui_version")}")
+    modImplAlias("dev.icyllis:modernui-core:${project.property("mod.modernui_version")}")
     // Modern UI - Markflow (required)
-    implementation("icyllis.modernui:ModernUI-Markflow:${project.property("mod.modernui_version")}")
+    modImplAlias("icyllis.modernui:ModernUI-Markflow:${project.property("mod.modernui_version")}")
     if (mod.isFabric) {
         // compatible with Minecraft 26.1~26.1.2
-        implementation("icyllis.modernui:ModernUI-Fabric:26.1.2-3.13.0.4")
+        modImplAlias("icyllis.modernui:ModernUI-Fabric:26.1.2-3.13.0.4")
     } else if (mod.isNeoforge) {
         // compatible with Minecraft 26.1~26.1.2
-        implementation("icyllis.modernui:ModernUI-NeoForge:26.1.2-3.13.0.4")
+        modImplAlias("icyllis.modernui:ModernUI-NeoForge:26.1.2-3.13.0.4")
     }
     // endregion
 
@@ -88,13 +98,13 @@ dependencies {
     // it's required by Modern UI
     if (mod.isFabric) {
         // https://github.com/Fuzss/ForgeConfigApiPort
-        implementation("fuzs.forgeconfigapiport:forgeconfigapiport-fabric:26.1.3")
+        modImplAlias("fuzs.forgeconfigapiport:forgeconfigapiport-fabric:26.1.3")
     }
     // endregion
 
     // region mod menu
     if (mod.isFabric) {
-        implementation("com.terraformersmc:modmenu:18.0.0-beta.1")
+        modImplAlias("com.terraformersmc:modmenu:18.0.0-beta.1")
     }
     // endregion
 
