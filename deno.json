@@ -33,7 +33,8 @@
     "include": [
       "deno.json",
       "src/main/resources/**/*.json",
-      "scripts/**"
+      "scripts/**",
+      "**/*.md"
     ],
     "exclude": []
   }
