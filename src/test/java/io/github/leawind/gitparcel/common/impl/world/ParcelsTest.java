@@ -5,14 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.mojang.serialization.JsonOps;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.api.world.Parcels;
-import io.github.leawind.gitparcel.common.testutils.AbstractMinecraftTest;
+import io.github.leawind.gitparcel.common.testutils.AbstractGitParcelTest;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import org.junit.jupiter.api.Test;
 
-public class ParcelsTest extends AbstractMinecraftTest {
+public class ParcelsTest extends AbstractGitParcelTest {
   @Test
   void test() {
     Parcels parcels = new Parcels();

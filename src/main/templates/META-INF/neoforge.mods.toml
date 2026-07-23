@@ -1,0 +1,43 @@
+modLoader = "javafml"
+loaderVersion = "${loaderVersion}"
+issueTrackerURL = "${issues_url}"
+license = "${mod_license}"
+
+[[mods]]
+modId = "${mod_id}"
+version = "${mod_version}"
+displayName = "${mod_name}"
+description = "${mod_description}"
+authors = "${mod_author}"
+logoFile = "${logo_file}"
+displayURL = "${home_url}"
+logoBlur = false
+
+[["dependencies.${mod_id}"]]
+modId = "minecraft"
+type = "required"
+versionRange = "${mc}"
+ordering = "NONE"
+side = "BOTH"
+referralUrl = "https://www.minecraft.net/"
+
+[["dependencies.${mod_id}"]]
+modId = "neoforge"
+type = "required"
+versionRange = "${loaderVersion}"
+ordering = "NONE"
+side = "BOTH"
+
+[["dependencies.${mod_id}"]]
+modId = "system_storage_lib"
+type = "required"
+versionRange = "[${system_storage_lib_version},)"
+ordering = "NONE"
+side = "SERVER"
+
+[["dependencies.${mod_id}"]]
+modId = "modernui"
+type = "required"
+versionRange = "[${modernui_version},)"
+ordering = "NONE"
+side = "CLIENT"

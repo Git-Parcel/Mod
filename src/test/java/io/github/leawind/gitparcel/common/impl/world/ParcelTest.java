@@ -3,7 +3,7 @@ package io.github.leawind.gitparcel.common.impl.world;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.github.leawind.gitparcel.common.api.world.Parcel;
-import io.github.leawind.gitparcel.common.testutils.AbstractMinecraftTest;
+import io.github.leawind.gitparcel.common.testutils.AbstractGitParcelTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
@@ -12,7 +12,7 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 
-public class ParcelTest extends AbstractMinecraftTest {
+public class ParcelTest extends AbstractGitParcelTest {
 
   @Test
   void testGetPivotBlockPosPos() {

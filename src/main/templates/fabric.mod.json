@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "${mod_name}",
+  "description": "${mod_description}",
+  "authors": ["${mod_author}"],
+  "contact": {
+    "homepage": "${home_url}",
+    "issues": "${issues_url}",
+    "sources": "${source_url}",
+    "email": "${email}"
+  },
+  "license": "${mod_license}",
+  "icon": "${logo_file}",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["${mod_group}.common.platform.fabric.Entrypoint"],
+    "client": ["${mod_group}.client.platform.fabric.ClientEntrypoint"],
+    "server": ["${mod_group}.server.platform.fabric.ServerEntrypoint"]
+  },
+  "depends": {
+    "fabricloader": "*",
+    "fabric-api": "*",
+    "minecraft": "${mc}",
+    "modernui": ">=${modernui_version}",
+    "system_storage_lib": ">=${system_storage_lib_version}"
+  }
+}
