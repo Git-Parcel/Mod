@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.mojang.serialization.JsonOps;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.testutils.AbstractMinecraftTest;
-import io.github.leawind.gitparcel.common.testutils.TestUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
@@ -24,7 +23,7 @@ public class ParcelTransformTest extends AbstractMinecraftTest {
 
     assertFalse(transform.hasOrientation());
 
-    for (int i : TestUtils.iter(100)) {
+    for (int i = 0; i < 100; i++) {
       BlockPos pos = random.nextBlockPos(-100, 100);
       assertEquals(pos, transform.apply(pos));
 
@@ -111,13 +110,13 @@ public class ParcelTransformTest extends AbstractMinecraftTest {
 
   @Test
   void testApplyInvertedBlockPosRoundtrip() {
-    for (int i : TestUtils.iter(100)) {
+    for (int i = 0; i < 100; i++) {
       var mirror = random.nextEnum(Mirror.class);
       var rotation = random.nextEnum(Rotation.class);
       var translate = random.nextVec3i(-100, 100);
       var transform = new ParcelTransform(mirror, rotation, translate);
 
-      for (int j : TestUtils.iter(100)) {
+      for (int j = 0; j < 100; j++) {
         var pos = random.nextBlockPos(-100, 100);
         assertEquals(pos, transform.applyInverted(transform.apply(pos)));
       }
@@ -155,7 +154,7 @@ public class ParcelTransformTest extends AbstractMinecraftTest {
   }
 
   Vec3i randomApplyToSize(ParcelTransform transform, Vec3i size, int rounds) {
-    for (var i : TestUtils.iter(rounds * 2)) {
+    for (int i = 0; i < rounds * 2; i++) {
       size = transform.applyToSize(size);
     }
     return size;
@@ -163,7 +162,7 @@ public class ParcelTransformTest extends AbstractMinecraftTest {
 
   @Test
   void testToMatrix4fAgainstApply() {
-    for (int i : TestUtils.iter(100)) {
+    for (int i = 0; i < 100; i++) {
       var mirror = random.nextEnum(Mirror.class);
       var rotation = random.nextEnum(Rotation.class);
       var translate = random.nextVec3i(-50, 50);
@@ -207,7 +206,7 @@ public class ParcelTransformTest extends AbstractMinecraftTest {
 
   @Test
   void testCodecRoundtripAllValues() {
-    for (int i : TestUtils.iter(100)) {
+    for (int i = 0; i < 100; i++) {
       var mirror = random.nextEnum(Mirror.class);
       var rotation = random.nextEnum(Rotation.class);
       var translation = random.nextVec3i(-100, 100);

@@ -2,14 +2,14 @@ package io.github.leawind.gitparcel.gametest;
 
 import com.google.common.jimfs.Jimfs;
 import com.mojang.logging.LogUtils;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
+import io.github.leawind.gitparcel.common.api.config.ConfigItem;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
-import io.github.leawind.gitparcel.common.api.config.ConfigItem;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
+import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
 import io.github.leawind.gitparcel.gametest.utils.ChannelFlags;
 import io.github.leawind.gitparcel.gametest.utils.GameTestHelpMore;
-import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
-import io.github.leawind.gitparcel.common.testutils.TestUtils;
+import io.github.leawind.gitparcel.gametest.utils.GameTestUtils;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -25,9 +25,9 @@ public class GitParcelGameTest {
   public static final Logger LOGGER = LogUtils.getLogger();
 
   public void testSaveAndLoad(GameTestHelpMore helper) throws Exception {
-    TestUtils.forEachFormatCombination(
-      ParcelFormatRegistry.get().streamSavers().toList(),
-      (saver, rotation, mirror) -> {
+    GameTestUtils.forEachFormatCombination(
+        ParcelFormatRegistry.get().streamSavers().toList(),
+        (saver, rotation, mirror) -> {
           if (saver.getDefaultConfig() == null) {
             LOGGER.info(
                 "Testing format {} with rotation={} mirror={} config=default",
@@ -62,7 +62,7 @@ public class GitParcelGameTest {
       return;
     }
 
-    List<Map<String, ?>> combos = TestUtils.generateConfigCombinations(saver);
+    List<Map<String, ?>> combos = GameTestUtils.generateConfigCombinations(saver);
     for (var combo : combos) {
       config.resetToDefault();
 

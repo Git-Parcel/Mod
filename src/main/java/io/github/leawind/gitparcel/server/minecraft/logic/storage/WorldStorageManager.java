@@ -1,10 +1,10 @@
 package io.github.leawind.gitparcel.server.minecraft.logic.storage;
 
 import io.github.leawind.gitparcel.common.api.GitParcel;
-import io.github.leawind.gitparcel.common.minecraft.bridge.mixin.AccessMinecraftServer;
 import java.nio.file.Path;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.level.storage.LevelResource;
 
 public final class WorldStorageManager {
 
@@ -34,10 +34,6 @@ public final class WorldStorageManager {
   }
 
   public static Path getWorldDir(MinecraftServer server) {
-    return ((AccessMinecraftServer) server)
-        .getStorageSource()
-        .getLevelDirectory()
-        .path()
-        .resolve(DIR_NAME);
+    return server.getWorldPath(LevelResource.ROOT).resolve(DIR_NAME);
   }
 }

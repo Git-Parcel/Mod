@@ -2,32 +2,47 @@ package io.github.leawind.gitparcel.client.platform.neoforge;
 
 /*? if neoforge {*/
 /*
-import io.github.leawind.gitparcel.common.api.GitParcel;
 import io.github.leawind.gitparcel.client.minecraft.logic.GitParcelClientOptions;
 import io.github.leawind.gitparcel.client.minecraft.logic.ModClientEntrypoint;
+import io.github.leawind.gitparcel.client.minecraft.logic.network.ClientPayloadHandler;
+import io.github.leawind.gitparcel.common.api.GitParcel;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcelformat.UpdateParcelFormatSpecS2CPayload;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcels.UpdateParcelsS2CPayload;
+import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
+import net.neoforged.neoforge.common.NeoForge;
 
 @Mod(value = GitParcel.MOD_ID, dist = Dist.CLIENT)
 public class ClientEntrypoint {
   public ClientEntrypoint(IEventBus eventBus) {
     ModClientEntrypoint.initialize();
-    ClientEntrypoint.initialize(eventBus);
+
+    eventBus.addListener(RegisterKeyMappingsEvent.class, ClientEntrypoint::onRegisterKeyMappings);
+    eventBus.addListener(
+        RegisterClientPayloadHandlersEvent.class, ClientEntrypoint::onRegisterPayloadHandlers);
+    NeoForge.EVENT_BUS.addListener(ClientTickEvent.Pre.class, ClientEntrypoint::onClientTick);
   }
 
-  public static void initialize(IEventBus eventBus) {}
+  private static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
+    GitParcelClientOptions.registerKeyMappings(event::register);
+  }
 
-  @EventBusSubscriber(modid = GitParcel.MOD_ID)
-  public static class EventHandler {
+  private static void onRegisterPayloadHandlers(RegisterClientPayloadHandlersEvent event) {
+    event.register(
+        UpdateParcelFormatSpecS2CPayload.TYPE,
+        (payload, context) -> ClientPayloadHandler.handle(payload));
+    event.register(
+        UpdateParcelsS2CPayload.TYPE,
+        (payload, context) -> ClientPayloadHandler.handle(payload));
+  }
 
-    @SubscribeEvent
-    public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
-      GitParcelClientOptions.registerKeyMappings(event::register);
-    }
+  private static void onClientTick(ClientTickEvent.Pre event) {
+    ModClientEntrypoint.onClientTick(Minecraft.getInstance());
   }
 }
 *//*?}*/

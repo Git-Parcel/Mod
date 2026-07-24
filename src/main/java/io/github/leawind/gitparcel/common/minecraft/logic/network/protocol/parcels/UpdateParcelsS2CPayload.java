@@ -2,7 +2,6 @@ package io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parc
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.leawind.gitparcel.client.impl.GitParcelClientImpl;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.api.world.Parcels;
 import io.github.leawind.gitparcel.common.impl.GitParcelUtils;
@@ -11,7 +10,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -64,16 +62,5 @@ public record UpdateParcelsS2CPayload(Parcels parcels, Set<UUID> removedUuids, b
 
   public static UpdateParcelsS2CPayload removals(Collection<UUID> removedUuids) {
     return new UpdateParcelsS2CPayload(new Parcels(), Set.copyOf(removedUuids), false);
-  }
-
-  /** Client-Only */
-  public static void handle(UpdateParcelsS2CPayload payload, LocalPlayer localPlayer) {
-    if (payload.isFullSync) {
-      GitParcelClientImpl.INSTANCE.getParcels().clear();
-    } else {
-      GitParcelClientImpl.INSTANCE.getParcels().removeAll(payload.removedUuids);
-    }
-
-    GitParcelClientImpl.INSTANCE.getParcels().putAll(payload.parcels);
   }
 }

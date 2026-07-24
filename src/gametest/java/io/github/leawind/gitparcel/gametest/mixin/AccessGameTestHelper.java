@@ -1,4 +1,4 @@
-package io.github.leawind.gitparcel.common.minecraft.bridge.mixin;
+package io.github.leawind.gitparcel.gametest.mixin;
 
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestInfo;

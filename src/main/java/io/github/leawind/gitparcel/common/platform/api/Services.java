@@ -8,6 +8,7 @@ public class Services {
   private static final Logger LOGGER = LoggerFactory.getLogger(Services.class);
 
   public static final PlatformHelper PLATFORM_HELPER = load(PlatformHelper.class);
+  public static final ServerNetworking SERVER_NETWORKING = load(ServerNetworking.class);
 
   private static <T> T load(Class<T> clazz) {
     var loadedService =

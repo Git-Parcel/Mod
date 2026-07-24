@@ -8,5 +8,6 @@
   "entrypoints": {
     "fabric-gametest": ["io.github.leawind.gitparcel.gametest.GitParcelGameTestFabric"],
     "fabric-client-gametest": []
-  }
+  },
+  "mixins": ["gitparcel.gametest.mixins.json"]
 }

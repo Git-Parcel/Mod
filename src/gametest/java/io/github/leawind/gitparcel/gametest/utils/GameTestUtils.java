@@ -1,10 +1,8 @@
-package io.github.leawind.gitparcel.common.testutils;
+package io.github.leawind.gitparcel.gametest.utils;
 
 import io.github.leawind.gitparcel.common.api.config.ConfigItem;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
-import it.unimi.dsi.fastutil.ints.IntIterable;
-import it.unimi.dsi.fastutil.ints.IntIterator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -15,30 +13,10 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-public class TestUtils {
-  public static IntIterable iter(int times) {
-    return new IntIterable() {
-      @Override
-      public @NonNull IntIterator iterator() {
-        return new IntIterator() {
-          int i = 0;
-
-          @Override
-          public int nextInt() {
-            return i++;
-          }
-
-          @Override
-          public boolean hasNext() {
-            return i < times;
-          }
-        };
-      }
-    };
-  }
+public final class GameTestUtils {
+  private GameTestUtils() {}
 
   public interface ParcelFormatCombinationConsumer<F extends ParcelFormat> {
     void accept(F format, Rotation rotation, Mirror mirror) throws Exception;

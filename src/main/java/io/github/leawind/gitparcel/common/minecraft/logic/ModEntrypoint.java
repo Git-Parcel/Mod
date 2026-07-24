@@ -3,7 +3,6 @@ package io.github.leawind.gitparcel.common.minecraft.logic;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
-import io.github.leawind.gitparcel.common.minecraft.bridge.mixin.InvokeArgumentTypeInfos;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.mvp.MvpFormat;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d16.ParcellaD16Loader;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d16.ParcellaD16Saver;
@@ -16,18 +15,16 @@ import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.Par
 import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcelformat.UpdateParcelFormatSpecS2CPayload;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcels.UpdateParcelsS2CPayload;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelLevelSavedData;
+import io.github.leawind.gitparcel.common.platform.api.CommandArgumentTypeRegistrar;
 import io.github.leawind.gitparcel.common.platform.api.Services;
-import io.github.leawind.gitparcel.server.minecraft.bridge.GameServerApi;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.ParcelCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parceldebug.ParcelDebugCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcels.ParcelsCommand;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import net.minecraft.commands.synchronization.SingletonArgumentInfo;
-import net.minecraft.core.Registry;
-import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
+import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
 
 public final class ModEntrypoint {
@@ -44,15 +41,6 @@ public final class ModEntrypoint {
     LOGGER.debug("Initializing");
 
     registerFormats();
-
-    GameServerApi.ON_PLAYER_JOIN.on(
-        e -> {
-          var payload = UpdateParcelFormatSpecS2CPayload.from(ParcelFormatRegistry.get());
-          var packet = new ClientboundCustomPayloadPacket(payload);
-          e.player().connection.send(packet);
-        });
-
-    registerGitParcelEvents();
   }
 
   private static void registerFormats() {
@@ -67,15 +55,13 @@ public final class ModEntrypoint {
     }
   }
 
-  private static void registerGitParcelEvents() {
-    // Notify when player join
-    GameServerApi.ON_PLAYER_JOIN.on(
-        e -> {
-          var player = e.player();
-          var parcels = GitParcelLevelSavedData.get(player.level()).parcels();
-          var payload = UpdateParcelsS2CPayload.fullSync(parcels);
-          player.connection.send(new ClientboundCustomPayloadPacket(payload));
-        });
+  /** Synchronizes server-owned registries and parcel state after a player enters play state. */
+  public static void onPlayerJoin(ServerPlayer player) {
+    var formatSpecs = UpdateParcelFormatSpecS2CPayload.from(ParcelFormatRegistry.get());
+    Services.SERVER_NETWORKING.send(player, formatSpecs);
+
+    var parcels = GitParcelLevelSavedData.get(player.level()).parcels();
+    Services.SERVER_NETWORKING.send(player, UpdateParcelsS2CPayload.fullSync(parcels));
   }
 
   public static void registerCommands(
@@ -92,28 +78,24 @@ public final class ModEntrypoint {
     }
   }
 
-  public static void registerCommandArgumentTypes(Registry<ArgumentTypeInfo<?, ?>> registry) {
+  public static void registerCommandArgumentTypes(CommandArgumentTypeRegistrar registrar) {
     LOGGER.debug("Registering command argument types");
 
-    InvokeArgumentTypeInfos.register(
-        registry,
-        "gitparcel:file_path",
+    registrar.register(
+        "file_path",
         FilePathArgument.class,
         SingletonArgumentInfo.contextFree(FilePathArgument::new));
 
-    InvokeArgumentTypeInfos.register(
-        registry,
-        "gitparcel:parcel_format_saver",
+    registrar.register(
+        "parcel_format_saver",
         ParcelFormatArgument.Saver.class,
         SingletonArgumentInfo.contextFree(ParcelFormatArgument::saver));
 
-    InvokeArgumentTypeInfos.register(
-        registry,
-        "gitparcel:parcel_format_loader",
+    registrar.register(
+        "parcel_format_loader",
         ParcelFormatArgument.Loader.class,
         SingletonArgumentInfo.contextFree(ParcelFormatArgument::loader));
 
-    InvokeArgumentTypeInfos.register(
-        registry, "gitparcel:parcel", ParcelArgument.class, new ParcelArgument.Info());
+    registrar.register("parcel", ParcelArgument.class, new ParcelArgument.Info());
   }
 }

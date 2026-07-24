@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.common.minecraft.bridge.mixin;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.leawind.gitparcel.client.minecraft.bridge.GameClientApi;
+import io.github.leawind.gitparcel.common.utils.anno.VersionSensitive;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -17,6 +18,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @SuppressWarnings("unused")
+@VersionSensitive("LevelRenderer render-graph internals; keep this as the remaining render seam")
 @Mixin(LevelRenderer.class)
 public class MixinLevelRenderer {
   @Unique private static final String INJECT_METHOD = "lambda$addMainPass$0";
@@ -43,7 +45,7 @@ public class MixinLevelRenderer {
           @At(
               value = "INVOKE",
               target = "Lnet/minecraft/client/renderer/LevelRenderer;finalizeGizmoCollection()V"))
-  private void beforeFinalizeGizmoCollection_fabric(CallbackInfo ci, @Local PoseStack matrices) {
+  private void beforeFinalizeGizmoCollection(CallbackInfo ci, @Local PoseStack matrices) {
     doBeforeFinalizeGizmoCollection(matrices);
   }
 }

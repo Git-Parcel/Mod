@@ -2,39 +2,17 @@ package io.github.leawind.gitparcel.client.minecraft.bridge;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.leawind.inventory.event.SimpleEventEmitter;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import java.util.Map;
-import java.util.function.BiConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import org.jspecify.annotations.Nullable;
 
 public final class GameClientApi {
   private GameClientApi() {}
 
-  public static final SimpleEventEmitter<Minecraft> ON_CLIENT_TICK_START =
-      new SimpleEventEmitter<>();
-
-  public static class Network {
-    public static final Map<CustomPacketPayload.Type<?>, BiConsumer<CustomPacketPayload, Minecraft>>
-        CUSTOM_PAYLOAD_HANDLERS = new Object2ObjectOpenHashMap<>();
-
-    @SuppressWarnings("unchecked")
-    public static <T extends CustomPacketPayload> void registerGlobalReceiver(
-        CustomPacketPayload.Type<T> type, BiConsumer<T, Minecraft> handler) {
-      CUSTOM_PAYLOAD_HANDLERS.put(type, (BiConsumer<CustomPacketPayload, Minecraft>) handler);
-    }
-  }
-
   public static final class Render {
 
     public static final SimpleEventEmitter<Context> ON_BEFORE_FINALIZE_GIZMOS =
-        new SimpleEventEmitter<>();
-    public static final SimpleEventEmitter<Context> ON_BEFORE_TRANSLUCENT =
-        new SimpleEventEmitter<>();
-    public static final SimpleEventEmitter<Void> ON_GAME_RENDERER_CLOSE =
         new SimpleEventEmitter<>();
 
     public static final class Context {

@@ -100,13 +100,6 @@ modstitch {
 }
 // endregion
 
-// Enable legacy mixin AP for refmap generation (required by mod's mixin accessors)
-if (isFabric) {
-    afterEvaluate {
-        the<net.fabricmc.loom.api.LoomGradleExtensionAPI>().mixin.useLegacyMixinAp.set(true)
-    }
-}
-
 // region Stonecutter
 stonecutter {
     constants {
