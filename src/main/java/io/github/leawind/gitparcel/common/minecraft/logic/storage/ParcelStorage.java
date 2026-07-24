@@ -3,13 +3,14 @@ package io.github.leawind.gitparcel.common.minecraft.logic.storage;
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import net.minecraft.core.Vec3i;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -60,7 +61,9 @@ public class ParcelStorage {
     C config = null;
     var serializedConfig = parcel.formatConfig().orElse(null);
     if (serializedConfig != null) {
-      ParcelFormat.Saver<C> format = (ParcelFormat.Saver<C>) parcel.meta().getFormatSaver();
+      ParcelFormat.Saver<C> format =
+          (ParcelFormat.Saver<C>)
+              ParcelFormatRegistry.get().getSaver(parcel.meta().formatSpec());
       if (format == null) {
         throw new ParcelException.UnsupportedFormat(parcel.meta().formatSpec());
       }
@@ -98,7 +101,8 @@ public class ParcelStorage {
       Path parcelDir,
       boolean ignoreEntities)
       throws IOException, ParcelException {
-    ParcelFormat.Saver<C> format = (ParcelFormat.Saver<C>) meta.getFormatSaver();
+    ParcelFormat.Saver<C> format =
+        (ParcelFormat.Saver<C>) ParcelFormatRegistry.get().getSaver(meta.formatSpec());
     if (format == null) {
       throw new ParcelException.UnsupportedFormat(meta.formatSpec());
     }
@@ -160,10 +164,7 @@ public class ParcelStorage {
     var pivot = Parcel.getPivotBlockPos(mirror, rotation, boundingBox);
     ParcelTransform transform = new ParcelTransform(mirror, rotation, pivot);
 
-    Vec3i sizeWorldSpace =
-        new Vec3i(boundingBox.getXSpan(), boundingBox.getYSpan(), boundingBox.getZSpan());
-    Vec3i sizeParcelSpace = ParcelTransform.rotateSize(rotation, sizeWorldSpace);
-    ParcelMeta meta = new ParcelMeta(saver.spec(), sizeParcelSpace, Vec3i.ZERO);
+    ParcelMeta meta = ParcelFactory.createMetadata(saver.spec(), boundingBox, rotation);
 
     ParcelStorage.save(level, transform, meta, config, parcelDir, ignoreEntities);
   }
@@ -192,7 +193,8 @@ public class ParcelStorage {
       @Block.UpdateFlags int flags)
       throws IOException, ParcelException {
     var meta = ParcelMeta.load(parcelDir.resolve(META_FILE_NAME));
-    ParcelFormat.Loader<C> loader = (ParcelFormat.Loader<C>) meta.getFormatLoader();
+    ParcelFormat.Loader<C> loader =
+        (ParcelFormat.Loader<C>) ParcelFormatRegistry.get().getLoader(meta.formatSpec());
     if (loader == null) {
       throw new ParcelException.UnsupportedFormat(meta.formatSpec());
     }

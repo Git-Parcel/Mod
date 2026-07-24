@@ -4,15 +4,15 @@ import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelMeta;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelFormatArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -22,7 +22,6 @@ import net.minecraft.commands.arguments.TemplateMirrorArgument;
 import net.minecraft.commands.arguments.TemplateRotationArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
@@ -133,11 +132,7 @@ public class SaveSubcommand {
       var pivot = Parcel.getPivotBlockPos(mirror, rotation, boundingBox);
       ParcelTransform transform = new ParcelTransform(mirror, rotation, pivot);
 
-      Vec3i sizeWorldSpace =
-          new Vec3i(boundingBox.getXSpan(), boundingBox.getYSpan(), boundingBox.getZSpan());
-      Vec3i sizeParcelSpace = ParcelTransform.rotateSize(rotation, sizeWorldSpace);
-
-      ParcelMeta meta = new ParcelMeta(format.spec(), sizeParcelSpace, Vec3i.ZERO);
+      var meta = ParcelFactory.createMetadata(format.spec(), boundingBox, rotation);
 
       ParcelStorage.save(source.getLevel(), transform, meta, null, parcelDir, ignoreEntities);
 

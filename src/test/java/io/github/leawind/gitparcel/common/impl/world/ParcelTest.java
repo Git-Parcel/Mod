@@ -6,6 +6,8 @@ import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
+import io.github.leawind.gitparcel.common.minecraft.logic.version.MinecraftVersion;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
 import io.github.leawind.gitparcel.common.testutils.AbstractGitParcelTest;
 import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
@@ -95,10 +97,11 @@ public class ParcelTest extends AbstractGitParcelTest {
   @Test
   void testParcelWithoutTransform() {
     var boundingBox = new BoundingBox(2, 3, 4, 4, 6, 8);
-    var parcel = Parcel.create(boundingBox, Mirror.NONE, Rotation.NONE);
+    var parcel = ParcelFactory.create(boundingBox, Mirror.NONE, Rotation.NONE);
 
     assertEquals(new Vec3i(3, 4, 5), parcel.getSizeParcelSpace());
     assertEquals(new Vec3i(3, 4, 5), parcel.getSizeWorldSpace());
+    assertEquals(MinecraftVersion.currentDataVersion(), parcel.meta().dataVersion());
 
     var localPivot = Vec3.ZERO;
     var worldPivot = new Vec3(2, 3, 4);
@@ -118,7 +121,7 @@ public class ParcelTest extends AbstractGitParcelTest {
   @Test
   void testParcelWithMirror() {
     var boundingBox = new BoundingBox(2, 3, 4, 4, 6, 8);
-    var parcel = Parcel.create(boundingBox, Mirror.LEFT_RIGHT, Rotation.NONE);
+    var parcel = ParcelFactory.create(boundingBox, Mirror.LEFT_RIGHT, Rotation.NONE);
 
     assertEquals(new Vec3i(3, 4, 5), parcel.meta().size());
     assertEquals(new Vec3i(3, 4, 5), parcel.getSizeParcelSpace());
@@ -142,7 +145,7 @@ public class ParcelTest extends AbstractGitParcelTest {
   @Test
   void testParcelWithRotation() {
     var boundingBox = new BoundingBox(4, 3, 2, 8, 6, 4);
-    var parcel = Parcel.create(boundingBox, Mirror.NONE, Rotation.CLOCKWISE_90);
+    var parcel = ParcelFactory.create(boundingBox, Mirror.NONE, Rotation.CLOCKWISE_90);
 
     assertEquals(new Vec3i(3, 4, 5), parcel.meta().size());
     assertEquals(new Vec3i(3, 4, 5), parcel.getSizeParcelSpace());
@@ -166,7 +169,7 @@ public class ParcelTest extends AbstractGitParcelTest {
   @Test
   void testParcelWithMirrorAndRotation1() {
     var boundingBox = new BoundingBox(4, 3, 2, 8, 6, 4);
-    var parcel = Parcel.create(boundingBox, Mirror.LEFT_RIGHT, Rotation.CLOCKWISE_90);
+    var parcel = ParcelFactory.create(boundingBox, Mirror.LEFT_RIGHT, Rotation.CLOCKWISE_90);
 
     assertEquals(new Vec3i(3, 4, 5), parcel.meta().size());
     assertEquals(new Vec3i(3, 4, 5), parcel.getSizeParcelSpace());
@@ -190,7 +193,7 @@ public class ParcelTest extends AbstractGitParcelTest {
   @Test
   void testParcelWithMirrorAndRotation2() {
     var boundingBox = new BoundingBox(4, 3, 2, 8, 6, 4);
-    var parcel = Parcel.create(boundingBox, Mirror.LEFT_RIGHT, Rotation.CLOCKWISE_180);
+    var parcel = ParcelFactory.create(boundingBox, Mirror.LEFT_RIGHT, Rotation.CLOCKWISE_180);
 
     assertEquals(new Vec3i(5, 4, 3), parcel.meta().size());
     assertEquals(new Vec3i(5, 4, 3), parcel.getSizeParcelSpace());
@@ -214,7 +217,7 @@ public class ParcelTest extends AbstractGitParcelTest {
   @Test
   void resolvesInternalStorageDirectory() {
     var parcel =
-        Parcel.create(new BoundingBox(0, 0, 0, 1, 1, 1), Mirror.NONE, Rotation.NONE);
+        ParcelFactory.create(new BoundingBox(0, 0, 0, 1, 1, 1), Mirror.NONE, Rotation.NONE);
     var internalParcelsDir = Path.of("world", "gitparcel", "parcels");
 
     assertEquals(
@@ -225,7 +228,7 @@ public class ParcelTest extends AbstractGitParcelTest {
   @Test
   void resolvesCustomStorageDirectoryFromSerializedLocation() {
     var parcel =
-        Parcel.create(new BoundingBox(0, 0, 0, 1, 1, 1), Mirror.NONE, Rotation.NONE);
+        ParcelFactory.create(new BoundingBox(0, 0, 0, 1, 1, 1), Mirror.NONE, Rotation.NONE);
     var json = (JsonObject) Parcel.CODEC.encodeStart(JsonOps.INSTANCE, parcel).getOrThrow();
     var customRepository = Path.of("custom", "repository");
     var relativeParcelPath = Path.of("parcels", "example");

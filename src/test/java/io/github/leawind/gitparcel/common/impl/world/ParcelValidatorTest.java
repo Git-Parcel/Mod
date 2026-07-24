@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.github.leawind.gitparcel.common.api.world.Parcel;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
 import io.github.leawind.gitparcel.common.testutils.AbstractGitParcelTest;
 import java.util.List;
 import net.minecraft.world.level.block.Mirror;
@@ -52,6 +53,6 @@ class ParcelValidatorTest extends AbstractGitParcelTest {
   }
 
   private static Parcel createParcel(BoundingBox boundingBox) {
-    return Parcel.create(boundingBox, Mirror.NONE, Rotation.NONE);
+    return ParcelFactory.create(boundingBox, Mirror.NONE, Rotation.NONE);
   }
 }

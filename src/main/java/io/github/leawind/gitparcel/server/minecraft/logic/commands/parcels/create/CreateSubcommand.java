@@ -6,6 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
@@ -94,7 +95,7 @@ public class CreateSubcommand extends GitParcelBaseCommand {
 
     try {
       BoundingBox boundingBox = BoundingBox.fromCorners(from, to);
-      Parcel parcel = Parcel.create(boundingBox, mirror, rotation);
+      Parcel parcel = ParcelFactory.create(boundingBox, mirror, rotation);
       parcel.meta().setName(name);
 
       parcelService.addNewParcel(parcel);

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.mojang.serialization.JsonOps;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.api.world.Parcels;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
 import io.github.leawind.gitparcel.common.testutils.AbstractGitParcelTest;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
@@ -18,7 +19,7 @@ public class ParcelsTest extends AbstractGitParcelTest {
     Parcels parcels = new Parcels();
 
     var parcel =
-        Parcel.create(
+        ParcelFactory.create(
             BoundingBox.fromCorners(new Vec3i(0, 0, 0), new Vec3i(10, 10, 10)),
             Mirror.NONE,
             Rotation.NONE);

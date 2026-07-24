@@ -45,11 +45,41 @@ val checkArchitectureBoundaries by tasks.registering {
                 if (relativePath.contains("/common/api/") &&
                     (
                         content.contains("import io.github.leawind.gitparcel.common.minecraft.") ||
+                            content.contains("import io.github.leawind.gitparcel.common.platform.") ||
                             content.contains("import io.github.leawind.gitparcel.server.minecraft.") ||
                             content.contains("import io.github.leawind.gitparcel.client.minecraft.")
                     )
                 ) {
                     violations += "$relativePath makes the API layer depend on a runtime implementation"
+                }
+
+                if (relativePath.endsWith("/common/api/parcel/ParcelMeta.java") &&
+                    (
+                        content.contains("ParcelFormatRegistry") ||
+                            content.contains("import net.minecraft.SharedConstants;") ||
+                            content.contains("import net.minecraft.world.level.block.Rotation;") ||
+                            content.contains(
+                                "import net.minecraft.world.level.levelgen.structure.BoundingBox;",
+                            )
+                    )
+                ) {
+                    violations += "$relativePath mixes metadata with Minecraft runtime creation"
+                }
+
+                if (relativePath.endsWith("/common/api/world/Parcel.java") &&
+                    content.contains("ParcelFormatRegistry")
+                ) {
+                    violations += "$relativePath creates models through the runtime format registry"
+                }
+
+                val minecraftVersionAdapter =
+                    relativePath.endsWith(
+                        "/common/minecraft/logic/version/MinecraftVersion.java",
+                    )
+                if (!minecraftVersionAdapter &&
+                    content.contains("SharedConstants.getCurrentVersion()")
+                ) {
+                    violations += "$relativePath bypasses the Minecraft version adapter"
                 }
 
                 if (relativePath.contains("/common/api/permission/") &&

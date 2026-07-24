@@ -6,7 +6,6 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.common.api.exceptions.InvalidParcelMetaException;
-import io.github.leawind.gitparcel.common.platform.api.Services;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,8 +14,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import net.minecraft.core.Vec3i;
-import net.minecraft.world.level.block.Rotation;
-import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -107,10 +104,6 @@ public final class ParcelMeta {
     this.excludeEntities = excludeEntities.orElse(true);
   }
 
-  public ParcelMeta(ParcelFormat.Spec formatSpec, Vec3i parcelSize, Vec3i anchor) {
-    this(formatSpec, Services.PLATFORM_HELPER.getDataVersion(), parcelSize, anchor);
-  }
-
   public ParcelMeta(ParcelFormat.Spec formatSpec, int dataVersion, Vec3i parcelSize, Vec3i anchor) {
     this.formatSpec = formatSpec;
     this.dataVersion = dataVersion;
@@ -144,14 +137,6 @@ public final class ParcelMeta {
 
   public boolean getExcludeEntities() {
     return Boolean.TRUE.equals(excludeEntities);
-  }
-
-  public ParcelFormat.@Nullable Saver<?> getFormatSaver() {
-    return ParcelFormatRegistry.get().getSaver(formatSpec);
-  }
-
-  public ParcelFormat.@Nullable Loader<?> getFormatLoader() {
-    return ParcelFormatRegistry.get().getLoader(formatSpec);
   }
 
   public void setFormatSpec(ParcelFormat.Spec formatSpec) {
@@ -232,14 +217,6 @@ public final class ParcelMeta {
     public @Nullable List<String> namespaces() {
       return namespaces;
     }
-  }
-
-  public static ParcelMeta from(
-      ParcelFormat.Spec format, BoundingBox boundingBox, Rotation rotation) {
-    Vec3i sizeWorldSpace =
-        new Vec3i(boundingBox.getXSpan(), boundingBox.getYSpan(), boundingBox.getZSpan());
-    Vec3i sizeParcelSpace = ParcelTransform.rotateSize(rotation, sizeWorldSpace);
-    return new ParcelMeta(format, sizeParcelSpace, Vec3i.ZERO);
   }
 
   /**

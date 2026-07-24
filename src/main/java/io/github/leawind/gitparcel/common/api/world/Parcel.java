@@ -3,7 +3,6 @@ package io.github.leawind.gitparcel.common.api.world;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.permission.ParcelPermissions;
@@ -191,17 +190,8 @@ public final class Parcel {
     return BlockPos.containing(getPivotBlockCenter());
   }
 
-  public static Parcel create(BoundingBox boundingBox, Mirror mirror, Rotation rotation) {
-
-    var pivot = getPivot(mirror, rotation, boundingBox);
-    ParcelTransform transform =
-        new ParcelTransform(
-            mirror, rotation, new Vec3i((int) pivot.x, (int) pivot.y, (int) pivot.z));
-
-    var meta =
-        ParcelMeta.from(
-            ParcelFormatRegistry.get().defaultSaver().spec(), boundingBox, rotation);
-
+  /** Creates a parcel model with a new UUID and default visual, permission, and storage settings. */
+  public static Parcel create(ParcelMeta meta, ParcelTransform transform) {
     return new Parcel(
         UUID.randomUUID(),
         meta,

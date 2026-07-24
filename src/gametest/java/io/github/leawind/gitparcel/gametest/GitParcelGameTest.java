@@ -6,8 +6,8 @@ import io.github.leawind.gitparcel.common.api.config.ConfigItem;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
-import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.gametest.utils.ChannelFlags;
 import io.github.leawind.gitparcel.gametest.utils.GameTestHelpMore;
@@ -30,7 +30,7 @@ public class GitParcelGameTest {
     var service = ParcelService.get(helper.getLevel());
     service.reset();
 
-    var parcel = Parcel.create(helper.getBoundingBox(), Mirror.NONE, Rotation.NONE);
+    var parcel = ParcelFactory.create(helper.getBoundingBox(), Mirror.NONE, Rotation.NONE);
     service.addNewParcel(parcel);
     if (service.getParcel(parcel.uuid()) != parcel) {
       helper.fail("Added parcel is not available through the level service");
