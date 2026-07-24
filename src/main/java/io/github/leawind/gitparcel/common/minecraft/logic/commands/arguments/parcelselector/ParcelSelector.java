@@ -4,7 +4,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
-import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelLevelSavedData;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelWorldSavedData;
 import java.util.List;
 import java.util.UUID;
@@ -93,7 +93,7 @@ public final class ParcelSelector {
 
     checkPermissions(source);
 
-    var parcels = GitParcelLevelSavedData.get(source.getLevel()).parcels().values().stream();
+    var parcels = ParcelService.get(source.getLevel()).parcels().stream();
 
     if (name != null) {
       return parcels.filter(parcel -> name.equals(parcel.meta().name())).toList();

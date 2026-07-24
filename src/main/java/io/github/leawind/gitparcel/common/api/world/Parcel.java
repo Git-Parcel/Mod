@@ -1,37 +1,25 @@
 package io.github.leawind.gitparcel.common.api.world;
 
 import com.google.gson.JsonElement;
-import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.permission.ParcelPermissions;
 import io.github.leawind.gitparcel.common.api.permission.PermissionConfig;
-import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
-import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelLevelSavedData;
-import io.github.leawind.gitparcel.server.minecraft.logic.storage.StorageUtils;
-import io.github.leawind.gitparcel.server.minecraft.logic.storage.WorldStorageManager;
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.Vec3i;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
 
 /// Parcel represents an axially aligned cuboid area in the world.
 ///
@@ -82,8 +70,6 @@ import org.slf4j.Logger;
 /// - BoundingBox: `[(4, 2), (9, 5)]`
 ///
 public final class Parcel {
-  public static final Logger LOGGER = LogUtils.getLogger();
-
   public static final Codec<Parcel> CODEC =
       RecordCodecBuilder.create(
           inst ->
@@ -97,10 +83,8 @@ public final class Parcel {
                           .forGetter(Parcel::permissions),
                       ExtraCodecs.JSON
                           .optionalFieldOf("formatConfig")
-                          .forGetter(Parcel::optionalFormatConfig),
-                      ParcelLocation.CODEC
-                          .optionalFieldOf("location")
-                          .forGetter(Parcel::optionalLocation))
+                          .forGetter(Parcel::formatConfig),
+                      ParcelLocation.CODEC.optionalFieldOf("location").forGetter(Parcel::location))
                   .apply(inst, Parcel::new));
 
   // ////////////////////////////////////////////////////////////////
@@ -118,19 +102,11 @@ public final class Parcel {
    * Where to save this parcel.
    *
    * <ul>
-   *   <li>If {@code null}, the parcel is saved to internal parcel repo, refer to {@link
-   *       WorldStorageManager#getInternalParcelsDir}.
+   *   <li>If {@code null}, the parcel is saved to the world's internal parcel repository.
    *   <li>If not null, the parcel is saved to custom location in a custom repo.
    * </ul>
    */
   private @Nullable ParcelLocation location;
-
-  // ////////////////////////////////////////////////////////////////
-  // Unserialized Fields
-  // ////////////////////////////////////////////////////////////////
-
-  /** Set by Level Saved Data, when creating a new one or loaded from saved data */
-  private @Nullable GitParcelLevelSavedData levelSavedData;
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   private Parcel(
@@ -174,11 +150,11 @@ public final class Parcel {
     return permissions;
   }
 
-  private Optional<JsonElement> optionalFormatConfig() {
+  public Optional<JsonElement> formatConfig() {
     return Optional.ofNullable(formatConfig);
   }
 
-  private Optional<ParcelLocation> optionalLocation() {
+  public Optional<ParcelLocation> location() {
     return Optional.ofNullable(location);
   }
 
@@ -215,67 +191,6 @@ public final class Parcel {
     return BlockPos.containing(getPivotBlockCenter());
   }
 
-  public void setLevelSavedData(@Nullable GitParcelLevelSavedData levelSavedData) {
-    this.levelSavedData = levelSavedData;
-  }
-
-  public @Nullable GitParcelLevelSavedData getLevelSavedData() {
-    return levelSavedData;
-  }
-
-  /**
-   * @return ServerLevel of this parcel or null if not initialized
-   */
-  public @Nullable ServerLevel getLevel() {
-    return levelSavedData == null ? null : levelSavedData.getLevel();
-  }
-
-  /**
-   * @throws NullPointerException if this parcel is manually created and levelSavedData is not set
-   */
-  public Path getParcelDirectory() throws NullPointerException {
-    if (location == null) {
-      // TODO move default path resolve logic else where
-      var server = (Objects.requireNonNull(getLevel())).getServer();
-      var repoPath =
-          StorageUtils.worldStorage(server).getInternalParcelsDir().resolve(uuid.toString());
-      return repoPath.resolve("parcel");
-    } else {
-      return location.getParcelPath();
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  public <C extends ParcelFormatConfig<C>> void save(boolean ignoreEntities)
-      throws IOException, ParcelException {
-
-    C config = null;
-    if (formatConfig != null) {
-      ParcelFormat.Saver<C> format = (ParcelFormat.Saver<C>) meta.getFormatSaver();
-      if (format == null) {
-        LOGGER.warn("Parcel {} has unsupported saving format {}", this, meta.formatSpec());
-        throw new ParcelException.UnsupportedFormat(meta.formatSpec());
-      }
-
-      config = format.getDefaultConfig();
-      if (config != null) {
-        config.setFromJson(formatConfig.getAsJsonObject());
-      }
-    }
-
-    ParcelStorage.save(getLevel(), transform, meta, config, getParcelDirectory(), ignoreEntities);
-  }
-
-  /** Should be called when this parcel is updated. */
-  public void emitUpdate() {
-    if (levelSavedData == null) {
-      LOGGER.warn("Parcel {} is not in a level saved data", this);
-      return;
-    }
-    levelSavedData.setDirty();
-    levelSavedData.emitParcelUpdate(this);
-  }
-
   public static Parcel create(BoundingBox boundingBox, Mirror mirror, Rotation rotation) {
 
     var pivot = getPivot(mirror, rotation, boundingBox);
@@ -285,7 +200,7 @@ public final class Parcel {
 
     var meta =
         ParcelMeta.from(
-          ParcelFormatRegistry.get().defaultSaver().spec(), boundingBox, rotation);
+            ParcelFormatRegistry.get().defaultSaver().spec(), boundingBox, rotation);
 
     return new Parcel(
         UUID.randomUUID(),

@@ -3,8 +3,8 @@ package io.github.leawind.gitparcel.server.minecraft.logic.commands.parceldebug;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelLevelSavedData;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelWorldSavedData;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -54,7 +54,7 @@ public class ClearDataSubcommand {
 
   private static int clearLevel(CommandSourceStack source, ServerLevel serverLevel) {
     try {
-      GitParcelLevelSavedData.get(serverLevel).reset();
+      ParcelService.get(serverLevel).reset();
 
       sendSuccess(
           source,

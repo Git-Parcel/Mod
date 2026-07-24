@@ -41,6 +41,46 @@ public class ParcelStorage {
   }
 
   /**
+   * Resolves the directory used for a parcel's files.
+   *
+   * @param internalParcelsDir root directory for parcels stored inside the current world
+   */
+  public static Path resolveParcelDirectory(Parcel parcel, Path internalParcelsDir) {
+    return parcel
+        .location()
+        .map(Parcel.ParcelLocation::getParcelPath)
+        .orElseGet(
+            () -> internalParcelsDir.resolve(parcel.uuid().toString()).resolve("parcel"));
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <C extends ParcelFormatConfig<C>> void save(
+      Level level, Parcel parcel, Path parcelDir, boolean ignoreEntities)
+      throws IOException, ParcelException {
+    C config = null;
+    var serializedConfig = parcel.formatConfig().orElse(null);
+    if (serializedConfig != null) {
+      ParcelFormat.Saver<C> format = (ParcelFormat.Saver<C>) parcel.meta().getFormatSaver();
+      if (format == null) {
+        throw new ParcelException.UnsupportedFormat(parcel.meta().formatSpec());
+      }
+
+      config = format.getDefaultConfig();
+      if (config != null) {
+        config.setFromJson(serializedConfig.getAsJsonObject());
+      }
+    }
+
+    save(
+        level,
+        parcel.transform(),
+        parcel.meta(),
+        config,
+        parcelDir,
+        ignoreEntities);
+  }
+
+  /**
    * The position is specified in transform, and the size is specified in meta.
    *
    * @param parcelDir The parcel directory, which contains the {@value #META_FILE_NAME} file and

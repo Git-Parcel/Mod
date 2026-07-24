@@ -5,7 +5,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
-import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelLevelSavedData;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.ParcelCommand;
@@ -25,11 +25,11 @@ public class DeleteSubcommand extends GitParcelBaseCommand {
     }
 
     var serverLevel = source.getLevel();
-    var levelSavedData = GitParcelLevelSavedData.get(serverLevel);
+    var parcelService = ParcelService.get(serverLevel);
 
     var parcels = ParcelArgument.getParcels(ctx, ParcelCommand.ARG_PARCELS);
     for (var parcel : parcels) {
-      levelSavedData.deleteParcel(parcel.uuid());
+      parcelService.deleteParcel(parcel.uuid());
     }
 
     source.sendSuccess(

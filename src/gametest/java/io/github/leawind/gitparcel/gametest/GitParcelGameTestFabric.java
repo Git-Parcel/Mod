@@ -15,6 +15,11 @@ public class GitParcelGameTestFabric extends GitParcelGameTest implements Custom
   }
 
   @GameTest(structure = "gitparcel:swamp_hut-7x8x9")
+  public void testParcelLifecycle(GameTestHelper helper) throws Exception {
+    Tester.test(helper, super::testParcelLifecycle);
+  }
+
+  @GameTest(structure = "gitparcel:swamp_hut-7x8x9")
   public void testSaveAndLoad(GameTestHelper helper) throws Exception {
     Tester.test(helper, super::testSaveAndLoad);
   }

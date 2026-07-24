@@ -10,6 +10,7 @@ import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelFormatArgument;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.ParcelCommand;
@@ -51,12 +52,13 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
     if (!validateWorldPermission(source, WorldPermissions.CONFIG_PARCEL)) {
       return 0;
     }
+    var parcelService = ParcelService.get(source.getLevel());
 
     for (var parcel : ParcelArgument.getParcels(ctx, ParcelCommand.ARG_PARCELS)) {
       var value = valueReader.read(ctx);
 
       setter.set(parcel, value);
-      parcel.emitUpdate();
+      parcelService.updateParcel(parcel);
 
       source.sendSystemMessage(
           Translations.of(

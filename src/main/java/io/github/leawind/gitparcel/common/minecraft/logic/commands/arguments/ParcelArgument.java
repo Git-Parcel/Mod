@@ -12,7 +12,7 @@ import io.github.leawind.gitparcel.client.api.GitParcelClient;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.parcelselector.ParcelSelector;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.parcelselector.ParcelSelectorParser;
-import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelLevelSavedData;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import java.util.Collection;
 import java.util.List;
@@ -107,7 +107,7 @@ public class ParcelArgument implements ArgumentType<ParcelSelector> {
           GitParcelClient.get().getParcels().values().stream().map(parcel -> parcel.meta().name());
     } else if (context.getSource() instanceof CommandSourceStack stack) {
       names =
-          GitParcelLevelSavedData.get(stack.getLevel()).parcels().values().stream()
+          ParcelService.get(stack.getLevel()).parcels().stream()
               .map(parcel -> parcel.meta().name());
     } else {
       names = Stream.empty();

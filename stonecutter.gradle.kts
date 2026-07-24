@@ -19,7 +19,7 @@ val buildAndCollect by tasks.registering(Sync::class) {
 
 val checkArchitectureBoundaries by tasks.registering {
     group = "verification"
-    description = "Checks that loader and client networking details stay behind compatibility boundaries."
+    description = "Checks loader, networking, source-set, and API layering boundaries."
 
     val mainJava = layout.projectDirectory.dir("src/main/java")
     val productionMixins = layout.projectDirectory.file("src/main/resources/gitparcel.mixins.json")
@@ -40,6 +40,16 @@ val checkArchitectureBoundaries by tasks.registering {
 
                 if (!relativePath.contains("/platform/") && loaderImport.containsMatchIn(content)) {
                     violations += "$relativePath imports a loader API outside a platform package"
+                }
+
+                if (relativePath.contains("/common/api/") &&
+                    (
+                        content.contains("import io.github.leawind.gitparcel.common.minecraft.") ||
+                            content.contains("import io.github.leawind.gitparcel.server.minecraft.") ||
+                            content.contains("import io.github.leawind.gitparcel.client.minecraft.")
+                    )
+                ) {
+                    violations += "$relativePath makes the API layer depend on a runtime implementation"
                 }
 
                 if (relativePath.contains("/testutils/")) {

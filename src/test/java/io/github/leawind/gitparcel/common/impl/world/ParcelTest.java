@@ -2,8 +2,12 @@ package io.github.leawind.gitparcel.common.impl.world;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.google.gson.JsonObject;
+import com.mojang.serialization.JsonOps;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
+import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
 import io.github.leawind.gitparcel.common.testutils.AbstractGitParcelTest;
+import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
@@ -205,5 +209,34 @@ public class ParcelTest extends AbstractGitParcelTest {
     assertEquals(worldPivotBlockPos, parcel.getPivotBlockPos());
 
     assertEquals(boundingBox, parcel.getBoundingBox());
+  }
+
+  @Test
+  void resolvesInternalStorageDirectory() {
+    var parcel =
+        Parcel.create(new BoundingBox(0, 0, 0, 1, 1, 1), Mirror.NONE, Rotation.NONE);
+    var internalParcelsDir = Path.of("world", "gitparcel", "parcels");
+
+    assertEquals(
+        internalParcelsDir.resolve(parcel.uuid().toString()).resolve("parcel"),
+        ParcelStorage.resolveParcelDirectory(parcel, internalParcelsDir));
+  }
+
+  @Test
+  void resolvesCustomStorageDirectoryFromSerializedLocation() {
+    var parcel =
+        Parcel.create(new BoundingBox(0, 0, 0, 1, 1, 1), Mirror.NONE, Rotation.NONE);
+    var json = (JsonObject) Parcel.CODEC.encodeStart(JsonOps.INSTANCE, parcel).getOrThrow();
+    var customRepository = Path.of("custom", "repository");
+    var relativeParcelPath = Path.of("parcels", "example");
+    var location = new JsonObject();
+    location.addProperty("repo", customRepository.toString());
+    location.addProperty("relative", relativeParcelPath.toString());
+    json.add("location", location);
+    var relocated = Parcel.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
+
+    assertEquals(
+        customRepository.resolve(relativeParcelPath),
+        ParcelStorage.resolveParcelDirectory(relocated, Path.of("unused")));
   }
 }

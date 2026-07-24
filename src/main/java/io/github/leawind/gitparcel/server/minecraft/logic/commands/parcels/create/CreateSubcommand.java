@@ -6,7 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
-import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelLevelSavedData;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
 import net.minecraft.commands.CommandSourceStack;
@@ -86,7 +86,7 @@ public class CreateSubcommand extends GitParcelBaseCommand {
       Rotation rotation) {
     var source = ctx.getSource();
     var level = source.getLevel();
-    var savedData = GitParcelLevelSavedData.get(level);
+    var parcelService = ParcelService.get(level);
 
     if (!validateWorldPermission(source, WorldPermissions.CREATE_PARCEL)) {
       return 0;
@@ -97,7 +97,7 @@ public class CreateSubcommand extends GitParcelBaseCommand {
       Parcel parcel = Parcel.create(boundingBox, mirror, rotation);
       parcel.meta().setName(name);
 
-      savedData.addNewParcel(parcel);
+      parcelService.addNewParcel(parcel);
 
       source.sendSuccess(
           () ->

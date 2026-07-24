@@ -13,8 +13,7 @@ import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.Fil
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelFormatArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcelformat.UpdateParcelFormatSpecS2CPayload;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcels.UpdateParcelsS2CPayload;
-import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelLevelSavedData;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.platform.api.CommandArgumentTypeRegistrar;
 import io.github.leawind.gitparcel.common.platform.api.Services;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.ParcelCommand;
@@ -60,8 +59,7 @@ public final class ModEntrypoint {
     var formatSpecs = UpdateParcelFormatSpecS2CPayload.from(ParcelFormatRegistry.get());
     Services.SERVER_NETWORKING.send(player, formatSpecs);
 
-    var parcels = GitParcelLevelSavedData.get(player.level()).parcels();
-    Services.SERVER_NETWORKING.send(player, UpdateParcelsS2CPayload.fullSync(parcels));
+    ParcelService.get(player.level()).syncTo(player);
   }
 
   public static void registerCommands(
