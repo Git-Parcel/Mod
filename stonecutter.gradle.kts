@@ -19,7 +19,7 @@ val buildAndCollect by tasks.registering(Sync::class) {
 
 val checkArchitectureBoundaries by tasks.registering {
     group = "verification"
-    description = "Checks loader, networking, source-set, and API layering boundaries."
+    description = "Checks version-sensitive runtime and API layering boundaries."
 
     val mainJava = layout.projectDirectory.dir("src/main/java")
     val productionMixins = layout.projectDirectory.file("src/main/resources/gitparcel.mixins.json")
@@ -50,6 +50,32 @@ val checkArchitectureBoundaries by tasks.registering {
                     )
                 ) {
                     violations += "$relativePath makes the API layer depend on a runtime implementation"
+                }
+
+                if (relativePath.contains("/common/api/permission/") &&
+                    (
+                        content.contains("import net.minecraft.commands.") ||
+                            content.contains("import net.minecraft.server.permissions.")
+                    )
+                ) {
+                    violations += "$relativePath exposes Minecraft's version-specific permission API"
+                }
+
+                val minecraftPermissionAdapter =
+                    relativePath.endsWith(
+                        "/common/minecraft/logic/permission/MinecraftPermissions.java",
+                    )
+                if (!minecraftPermissionAdapter &&
+                    (
+                        content.contains("Commands.LEVEL_") ||
+                            content.contains("Commands.hasPermission(") ||
+                            Regex(
+                                """\b(source|player|serverPlayer)\.hasPermissions?\(""",
+                            ).containsMatchIn(content) ||
+                            content.contains("import net.minecraft.server.permissions.")
+                    )
+                ) {
+                    violations += "$relativePath bypasses the Minecraft permission adapter"
                 }
 
                 if (relativePath.contains("/common/api/parcel/") &&

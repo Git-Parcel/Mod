@@ -1,7 +1,5 @@
 package io.github.leawind.gitparcel.common.api.permission;
 
-import net.minecraft.server.permissions.PermissionLevel;
-
 /**
  * An immutable definition of a single permission type.
  *

@@ -2,6 +2,8 @@ package io.github.leawind.gitparcel.server.minecraft.logic.commands.parceldebug;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
+import io.github.leawind.gitparcel.common.api.permission.PermissionLevel;
+import io.github.leawind.gitparcel.common.minecraft.logic.permission.MinecraftPermissions;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -15,7 +17,7 @@ public class ParcelDebugCommand {
 
     var parcel_debug =
         Commands.literal("parcel_debug")
-            .requires(Commands.hasPermission(Commands.LEVEL_ADMINS))
+            .requires(MinecraftPermissions.require(PermissionLevel.ADMINS))
             .then(ClearDataSubcommand.build())
             .then(SaveSubcommand.build())
             .then(StorageSubcommand.build())

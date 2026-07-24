@@ -4,8 +4,9 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
-import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
+import io.github.leawind.gitparcel.common.minecraft.logic.permission.MinecraftPermissions;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelWorldSavedData;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.BiConsumer;
@@ -71,7 +72,7 @@ public final class ParcelSelector {
       return;
     }
     var permissions = GitParcelWorldSavedData.get(source.getServer()).permissions();
-    if (!permissions.permits(WorldPermissions.LIST_PARCELS, source.permissions())) {
+    if (!MinecraftPermissions.permits(source, permissions, WorldPermissions.LIST_PARCELS)) {
       throw ParcelArgument.ERROR_SELECTOR_NOT_ALLOWED.create();
     }
   }

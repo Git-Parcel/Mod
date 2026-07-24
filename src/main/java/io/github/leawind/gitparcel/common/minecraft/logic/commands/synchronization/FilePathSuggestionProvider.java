@@ -6,6 +6,8 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import io.github.leawind.gitparcel.common.api.permission.PermissionLevel;
+import io.github.leawind.gitparcel.common.minecraft.logic.permission.MinecraftPermissions;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import java.io.FilenameFilter;
 import java.nio.file.InvalidPathException;
@@ -13,7 +15,6 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import org.jspecify.annotations.Nullable;
 
@@ -61,7 +62,8 @@ public class FilePathSuggestionProvider<S> implements SuggestionProvider<S> {
     // Only provide suggestions for owner
     if (context.getSource() instanceof CommandSourceStack source) {
       var serverPlayer = source.getPlayer();
-      if (serverPlayer == null || !Commands.LEVEL_OWNERS.check(serverPlayer.permissions())) {
+      if (serverPlayer == null
+          || !MinecraftPermissions.hasPermission(serverPlayer, PermissionLevel.OWNERS)) {
         throw ERROR_NO_PERMISSION.create();
       }
     }

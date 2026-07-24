@@ -3,8 +3,10 @@ package io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.github.leawind.gitparcel.common.api.permission.PermissionLevel;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
+import io.github.leawind.gitparcel.common.minecraft.logic.permission.MinecraftPermissions;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.ParcelFormatter;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.config.ConfigSubcommand;
@@ -24,7 +26,7 @@ public class ParcelCommand extends GitParcelBaseCommand {
 
     final var parcel =
         Commands.literal("parcel")
-            .requires(Commands.hasPermission(Commands.LEVEL_ALL))
+            .requires(MinecraftPermissions.require(PermissionLevel.ALL))
             .then(
                 Commands.argument(ARG_PARCELS, ParcelArgument.parcels())
                     .executes(ParcelCommand::showInfo)

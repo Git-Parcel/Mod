@@ -6,10 +6,6 @@ import it.unimi.dsi.fastutil.objects.Object2ByteMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import java.util.Map;
-import net.minecraft.commands.Commands;
-import net.minecraft.server.permissions.PermissionCheck;
-import net.minecraft.server.permissions.PermissionLevel;
-import net.minecraft.server.permissions.PermissionSet;
 
 /**
  * Stores per-type permission level requirements backed by a {@link PermissionTypeRegistry}.
@@ -28,8 +24,8 @@ import net.minecraft.server.permissions.PermissionSet;
  * // Override a specific permission
  * config.set(ParcelPermissions.SAVE, PermissionLevel.MODERATORS);
  *
- * // Check if a player's permission set allows an action
- * boolean allowed = config.permits(ParcelPermissions.SAVE, source.permissions());
+ * // Check whether a granted level allows an action
+ * boolean allowed = config.permits(ParcelPermissions.SAVE, PermissionLevel.ADMINS);
  * }</pre>
  *
  * @param <T> the type-safety tag, matching the corresponding registry and permission types
@@ -118,56 +114,10 @@ public final class PermissionConfig<T> {
    * Returns whether the given level meets or exceeds the requirement for this type.
    *
    * @param type the permission type to check
-   * @param level the level to test
-   * @see #permits(PermissionType, PermissionSet) for checking against a player's permission set
+   * @param grantedLevel the granted level to test
    */
-  public boolean permits(PermissionType<T> type, PermissionLevel level) {
-    return level.isEqualOrHigherThan(get(type));
-  }
-
-  /**
-   * Returns whether the given permission set meets the requirement for this type. This is the
-   * primary method used at runtime to check command permissions.
-   *
-   * @param type the permission type to check
-   * @param set typically obtained from {@code CommandSourceStack.permissions()}
-   */
-  public boolean permits(PermissionType<T> type, PermissionSet set) {
-    return getChecker(get(type)).check(set);
-  }
-
-  /**
-   * Resolves the highest {@link PermissionLevel} granted by the given set, from {@link
-   * PermissionLevel#ALL} up to {@link PermissionLevel#OWNERS}.
-   */
-  public static PermissionLevel levelOf(PermissionSet set) {
-    if (Commands.LEVEL_OWNERS.check(set)) {
-      return PermissionLevel.OWNERS;
-    } else if (Commands.LEVEL_ADMINS.check(set)) {
-      return PermissionLevel.ADMINS;
-    } else if (Commands.LEVEL_GAMEMASTERS.check(set)) {
-      return PermissionLevel.GAMEMASTERS;
-    } else if (Commands.LEVEL_MODERATORS.check(set)) {
-      return PermissionLevel.MODERATORS;
-    } else if (Commands.LEVEL_ALL.check(set)) {
-      return PermissionLevel.ALL;
-    } else {
-      return PermissionLevel.ALL;
-    }
-  }
-
-  /**
-   * Returns a {@link PermissionCheck} that passes when the given level is met. The check maps each
-   * {@link PermissionLevel} to its corresponding vanilla {@link Commands} level check.
-   */
-  public static PermissionCheck getChecker(PermissionLevel level) {
-    return switch (level) {
-      case PermissionLevel.ALL -> Commands.LEVEL_ALL;
-      case PermissionLevel.MODERATORS -> Commands.LEVEL_MODERATORS;
-      case PermissionLevel.GAMEMASTERS -> Commands.LEVEL_GAMEMASTERS;
-      case PermissionLevel.ADMINS -> Commands.LEVEL_ADMINS;
-      case PermissionLevel.OWNERS -> Commands.LEVEL_OWNERS;
-    };
+  public boolean permits(PermissionType<T> type, PermissionLevel grantedLevel) {
+    return grantedLevel.includes(get(type));
   }
 
   /**

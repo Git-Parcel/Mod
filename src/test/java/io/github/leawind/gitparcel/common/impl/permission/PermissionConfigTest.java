@@ -3,12 +3,11 @@ package io.github.leawind.gitparcel.common.impl.permission;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.mojang.serialization.JsonOps;
-import java.util.Map;
-
 import io.github.leawind.gitparcel.common.api.permission.PermissionConfig;
+import io.github.leawind.gitparcel.common.api.permission.PermissionLevel;
 import io.github.leawind.gitparcel.common.api.permission.PermissionType;
 import io.github.leawind.gitparcel.common.api.permission.PermissionTypeRegistry;
-import net.minecraft.server.permissions.PermissionLevel;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -128,6 +127,9 @@ public class PermissionConfigTest {
     assertTrue(map.containsKey(ADMIN.id()));
     assertTrue(map.containsKey(EDIT.id()));
     assertTrue(map.containsKey(VIEW.id()));
+    assertEquals((byte) 4, map.getByte(ADMIN.id()));
+    assertEquals((byte) 2, map.getByte(EDIT.id()));
+    assertEquals((byte) 1, map.getByte(VIEW.id()));
   }
 
   @Test
