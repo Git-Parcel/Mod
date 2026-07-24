@@ -3,7 +3,6 @@ package io.github.leawind.gitparcel.common.minecraft.logic.builtin.mvp;
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -14,15 +13,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Vec3i;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import org.jspecify.annotations.Nullable;
 
-public class MvpFormat implements ParcelFormat.Saver<ParcelFormatConfig.None> {
+public class MvpFormat implements ParcelFormat.ContextSaver<ParcelFormatConfig.None> {
   private static final Spec SPEC = new Spec("mvp", 0);
 
   @Override
@@ -31,15 +27,12 @@ public class MvpFormat implements ParcelFormat.Saver<ParcelFormatConfig.None> {
   }
 
   @Override
-  public void save(
-      Level level,
-      Vec3i parcelSize,
-      Vec3i anchor,
-      ParcelTransform transform,
-      Path dataDir,
-      boolean ignoreEntities,
-      ParcelFormatConfig.@Nullable None config)
+  public void save(SaveContext<ParcelFormatConfig.None> context)
       throws IOException, ParcelException.UnsupportedFeature {
+    var level = context.level();
+    var parcelSize = context.parcelSize();
+    var transform = context.transform();
+    var dataDir = context.dataDir();
 
     if (transform.hasOrientation()) {
       throw new ParcelException.UnsupportedFeature(spec(), Feature.ROTATE, Feature.MIRROR);

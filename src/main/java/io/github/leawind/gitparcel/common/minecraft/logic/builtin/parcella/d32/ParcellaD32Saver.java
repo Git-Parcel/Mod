@@ -2,7 +2,6 @@ package io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d32;
 
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.BlockPalette;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.NbtFormat;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.Subparcel;
@@ -10,6 +9,7 @@ import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.utils
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.utils.RadixTreePathGenerator;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.utils.ZOrder3D;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
+import io.github.leawind.gitparcel.common.minecraft.logic.transform.ParcelBlockTransform;
 import io.github.leawind.gitparcel.common.utils.algorithms.VolumetricRLE;
 import io.github.leawind.gitparcel.common.utils.numbase.Base32Utils;
 import io.github.leawind.gitparcel.common.utils.numbase.HexUtils;
@@ -36,7 +36,6 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.painting.Painting;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -46,7 +45,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 public class ParcellaD32Saver
-    implements ParcellaD32Format, ParcelFormat.Saver<ParcellaD32Format.Config> {
+    implements ParcellaD32Format, ParcelFormat.ContextSaver<ParcellaD32Format.Config> {
 
   public static final class Context extends SaveContext<Config> {
     public final Path blocksDir;
@@ -55,41 +54,35 @@ public class ParcellaD32Saver
 
     public @Nullable BlockPalette blockPalette = null;
 
-    public Context(
-        Level level,
-        Vec3i parcelSize,
-        Vec3i anchor,
-        ParcelTransform transform,
-        Path dataDir,
-        boolean ignoreEntities,
-        Config config) {
-      super(level, parcelSize, transform, anchor, dataDir, ignoreEntities, config);
-      blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
+    public Context(SaveContext<Config> context, Config config) {
+      super(
+          context.level(),
+          context.parcelSize(),
+          context.transform(),
+          context.anchor(),
+          context.dataDir(),
+          context.ignoreEntities(),
+          config);
+      blocksDir = dataDir().resolve(BLOCKS_DIR_NAME);
       blocksPaletteFile = blocksDir.resolve(PALETTE_FILE_NAME);
-      entitiesDir = dataDir.resolve(ENTITIES_DIR_NAME);
+      entitiesDir = dataDir().resolve(ENTITIES_DIR_NAME);
     }
   }
 
   @Override
-  public void save(
-      Level level,
-      Vec3i parcelSize,
-      Vec3i anchor,
-      ParcelTransform transform,
-      Path dataDir,
-      boolean ignoreEntities,
-      @Nullable Config config)
+  public void save(SaveContext<Config> context)
       throws IOException, ParcelException.UnsupportedFeature {
+    Config config = context.config();
     if (config == null) {
       config = new Config();
     }
 
-    var ctx = new Context(level, parcelSize, anchor, transform, dataDir, ignoreEntities, config);
+    var ctx = new Context(context, config);
 
     try (var problemReporter = new ProblemReporter.ScopedCollector(ParcelStorage.LOGGER)) {
       saveBlocks(ctx, 32);
 
-      if (!ignoreEntities) {
+      if (!context.ignoreEntities()) {
         saveEntities(ctx, problemReporter);
       }
     }
@@ -114,8 +107,9 @@ public class ParcellaD32Saver
     Files.createDirectories(subParcelsDir);
 
     // Split the parcel into subparcels
-    BlockPos anchorPos = new BlockPos(ctx.anchor);
-    for (var localSubparcel : ParcellaUtils.subdivideParcel(ctx.parcelSize, anchorPos, gridSize)) {
+    BlockPos anchorPos = new BlockPos(ctx.anchor());
+    for (var localSubparcel :
+        ParcellaUtils.subdivideParcel(ctx.parcelSize(), anchorPos, gridSize)) {
       Vec3i coord = localSubparcel.getCoord(gridSize, anchorPos);
 
       long index = ZOrder3D.coordToIndexSigned(coord);
@@ -171,8 +165,8 @@ public class ParcellaD32Saver
     var sb = new StringBuilder(8192);
     char[] base32Chars = Base32Utils.CHARS;
 
-    var level = ctx.level;
-    var transform = ctx.transform;
+    var level = ctx.level();
+    var transform = ctx.transform();
     boolean usePalette = ctx.config.usePalette.get();
     var palette = ctx.blockPalette;
 
@@ -193,7 +187,7 @@ public class ParcellaD32Saver
 
               BlockState blockState = level.getBlockState(pos);
               // blockState: world space
-              blockState = transform.applyInverted(blockState);
+              blockState = ParcelBlockTransform.toParcelSpace(transform, blockState);
               // blockState: local space
 
               BlockEntity blockEntity = level.getBlockEntity(pos);
@@ -250,7 +244,7 @@ public class ParcellaD32Saver
     int sizeY = subparcel.sizeY;
     int sizeZ = subparcel.sizeZ;
 
-    var level = ctx.level;
+    var level = ctx.level();
     var palette = ctx.blockPalette;
     boolean usePalette = ctx.config.usePalette.get();
 
@@ -258,11 +252,11 @@ public class ParcellaD32Saver
       for (int j = 0, y = 0; j < sizeY; j++, y++) {
         for (int k = 0, z = 0; k < sizeZ; k++, z++) {
           BlockPos pos = new BlockPos(x + originX, y + originY, z + originZ);
-          pos = ctx.transform.apply(pos);
+          pos = ctx.transform().apply(pos);
 
           BlockState blockState = level.getBlockState(pos);
           // blockState: world space
-          blockState = ctx.transform.applyInverted(blockState);
+          blockState = ParcelBlockTransform.toParcelSpace(ctx.transform(), blockState);
           // blockState: local space
 
           BlockEntity blockEntity = level.getBlockEntity(pos);
@@ -297,8 +291,8 @@ public class ParcellaD32Saver
       }
     }
 
-    var origin = ctx.transform.getTranslatedOrigin();
-    var worldSize = ctx.transform.applyToSize(ctx.parcelSize);
+    var origin = ctx.transform().getTranslatedOrigin();
+    var worldSize = ctx.transform().applyToSize(ctx.parcelSize());
 
     AABB aabb =
         new AABB(
@@ -310,7 +304,7 @@ public class ParcellaD32Saver
             origin.getZ() + worldSize.getZ());
 
     List<Entity> entities =
-        ctx.level.getEntities((Entity) null, aabb, entity -> !(entity instanceof Player));
+        ctx.level().getEntities((Entity) null, aabb, entity -> !(entity instanceof Player));
 
     NbtFormat nbtFormat = ctx.config.entityDataFormat.get();
 
@@ -353,7 +347,7 @@ public class ParcellaD32Saver
     entity.save(output);
 
     {
-      Vec3 pos = ctx.transform.applyInverted(worldPos);
+      Vec3 pos = ctx.transform().applyInverted(worldPos);
       ListTag list = new ListTag();
       list.add(DoubleTag.valueOf(pos.x));
       list.add(DoubleTag.valueOf(pos.y));
@@ -370,7 +364,7 @@ public class ParcellaD32Saver
         blockPos = BlockPos.containing(worldPos);
       }
 
-      blockPos = ctx.transform.applyInverted(blockPos);
+      blockPos = ctx.transform().applyInverted(blockPos);
 
       ListTag list = new ListTag();
       list.add(IntTag.valueOf(blockPos.getX()));

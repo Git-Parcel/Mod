@@ -7,9 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
 
 /**
  * Represents a <strong>local to world</strong> transformation applicable to parcels, including
@@ -40,12 +38,6 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
   /** Identity transform. */
   public static final ParcelTransform IDENTITY =
       new ParcelTransform(Mirror.NONE, Rotation.NONE, Vec3i.ZERO);
-
-  public Matrix4f toMatrix4f() {
-    var m = new Matrix4f();
-    apply(m);
-    return m;
-  }
 
   /**
    * Transforms a local space size vector to world space.
@@ -99,24 +91,6 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
   }
 
   /**
-   * Applies mirror and rotation transformations to a {@link BlockState}.
-   *
-   * <p>Translation does not affect {@link BlockState}.
-   *
-   * @param blockState The block state
-   * @return The transformed block state
-   */
-  public BlockState apply(BlockState blockState) {
-    return blockState.mirror(mirror).rotate(rotation);
-  }
-
-  public void apply(Matrix4f matrix) {
-    TransformUtils.mirror(mirror, matrix);
-    TransformUtils.rotateY(rotation, matrix);
-    TransformUtils.translate(translation, matrix);
-  }
-
-  /**
    * Applies the inverted transformations (translate, rotate, mirror) to a {@link Vec3}.
    *
    * @param vec The vector
@@ -140,18 +114,6 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
     pos = TransformUtils.rotateInverted(rotation, pos);
     pos = TransformUtils.mirror(mirror, pos);
     return pos;
-  }
-
-  /**
-   * Applies the inverted transformations (mirror, rotate) to a {@link BlockState}.
-   *
-   * <p>Translation does not affect {@link BlockState}.
-   *
-   * @param blockState The block state
-   * @return The inversely transformed block state
-   */
-  public BlockState applyInverted(BlockState blockState) {
-    return blockState.rotate(TransformUtils.invert(rotation)).mirror(mirror);
   }
 
   public static Vec3i rotateSize(Rotation rotation, Vec3i size) {

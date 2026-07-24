@@ -12,7 +12,6 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
 import org.junit.jupiter.api.Test;
 
 public class ParcelTransformTest extends AbstractMinecraftTest {
@@ -161,33 +160,6 @@ public class ParcelTransformTest extends AbstractMinecraftTest {
   }
 
   @Test
-  void testToMatrix4fAgainstApply() {
-    for (int i = 0; i < 100; i++) {
-      var mirror = random.nextEnum(Mirror.class);
-      var rotation = random.nextEnum(Rotation.class);
-      var translate = random.nextVec3i(-50, 50);
-      var transform = new ParcelTransform(mirror, rotation, translate);
-
-      Matrix4f expected = new Matrix4f();
-      transform.apply(expected);
-      Matrix4f actual = transform.toMatrix4f();
-
-      assertMatrixEquals(expected, actual, 1e-6f);
-    }
-  }
-
-  @Test
-  void testApplyMatrix4fOnIdentity() {
-    var transform =
-        new ParcelTransform(Mirror.FRONT_BACK, Rotation.CLOCKWISE_90, new BlockPos(1, 2, 3));
-    Matrix4f viaApply = new Matrix4f();
-    transform.apply(viaApply);
-    Matrix4f viaConstructor = transform.toMatrix4f();
-
-    assertMatrixEquals(viaApply, viaConstructor, 1e-6f);
-  }
-
-  @Test
   void testCodecRoundtrip() {
     var transform =
         new ParcelTransform(Mirror.FRONT_BACK, Rotation.CLOCKWISE_90, new Vec3i(1, 2, 3));
@@ -225,22 +197,4 @@ public class ParcelTransformTest extends AbstractMinecraftTest {
     assertEquals(Vec3i.ZERO, ParcelTransform.IDENTITY.translation());
   }
 
-  static void assertMatrixEquals(Matrix4f expected, Matrix4f actual, float epsilon) {
-    assertEquals(expected.m00(), actual.m00(), epsilon);
-    assertEquals(expected.m01(), actual.m01(), epsilon);
-    assertEquals(expected.m02(), actual.m02(), epsilon);
-    assertEquals(expected.m03(), actual.m03(), epsilon);
-    assertEquals(expected.m10(), actual.m10(), epsilon);
-    assertEquals(expected.m11(), actual.m11(), epsilon);
-    assertEquals(expected.m12(), actual.m12(), epsilon);
-    assertEquals(expected.m13(), actual.m13(), epsilon);
-    assertEquals(expected.m20(), actual.m20(), epsilon);
-    assertEquals(expected.m21(), actual.m21(), epsilon);
-    assertEquals(expected.m22(), actual.m22(), epsilon);
-    assertEquals(expected.m23(), actual.m23(), epsilon);
-    assertEquals(expected.m30(), actual.m30(), epsilon);
-    assertEquals(expected.m31(), actual.m31(), epsilon);
-    assertEquals(expected.m32(), actual.m32(), epsilon);
-    assertEquals(expected.m33(), actual.m33(), epsilon);
-  }
 }

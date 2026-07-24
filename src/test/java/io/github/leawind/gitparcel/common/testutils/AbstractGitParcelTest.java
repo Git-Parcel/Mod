@@ -4,15 +4,8 @@ import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.common.impl.parcel.ParcelFormatRegistryImpl;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import java.io.IOException;
-import java.nio.file.Path;
-import net.minecraft.core.Vec3i;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.ServerLevelAccessor;
-import net.minecraft.world.level.block.Block;
-import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.BeforeAll;
 
 /**
@@ -39,43 +32,27 @@ public class AbstractGitParcelTest extends AbstractMinecraftTest {
   }
 
   protected static class TestSaver extends TestFormat
-      implements ParcelFormat.Saver<ParcelFormatConfig.None> {
+      implements ParcelFormat.ContextSaver<ParcelFormatConfig.None> {
 
     public TestSaver(String id, int version) {
       super(id, version);
     }
 
     @Override
-    public void save(
-        Level level,
-        Vec3i parcelSize,
-        Vec3i anchor,
-        ParcelTransform transform,
-        Path dataDir,
-        boolean ignoreEntities,
-        ParcelFormatConfig.@Nullable None config)
+    public void save(SaveContext<ParcelFormatConfig.None> context)
         throws IOException, ParcelException.UnsupportedFeature {
       throw new IOException("Unimplemented");
     }
   }
 
   protected static class TestLoader extends TestFormat
-      implements ParcelFormat.Loader<ParcelFormatConfig.None> {
+      implements ParcelFormat.ContextLoader<ParcelFormatConfig.None> {
     protected TestLoader(String id, int version) {
       super(id, version);
     }
 
     @Override
-    public void load(
-        ServerLevelAccessor level,
-        Vec3i size,
-        Vec3i anchor,
-        ParcelTransform transform,
-        Path dataDir,
-        boolean ignoreBlocks,
-        boolean ignoreEntities,
-        @Block.UpdateFlags int flags,
-        ParcelFormatConfig.@Nullable None config)
+    public void load(LoadContext<ParcelFormatConfig.None> context)
         throws IOException, ParcelException.CorruptedParcelException {
       throw new IOException("Unimplemented");
     }

@@ -4,30 +4,24 @@ import com.google.common.collect.ImmutableList;
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Vec3i;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtAccounterException;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.ServerLevelAccessor;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
-import org.jspecify.annotations.Nullable;
 
 public class StructureTemplateFormat
-    implements ParcelFormat.Saver<ParcelFormatConfig.None>,
-        ParcelFormat.Loader<ParcelFormatConfig.None> {
+    implements ParcelFormat.ContextSaver<ParcelFormatConfig.None>,
+        ParcelFormat.ContextLoader<ParcelFormatConfig.None> {
   String NBT_FILE_NAME = "structure.nbt";
 
   private static final Spec SPEC = new Spec("structure_template", 0);
@@ -38,15 +32,13 @@ public class StructureTemplateFormat
   }
 
   @Override
-  public void save(
-      Level level,
-      Vec3i parcelSize,
-      Vec3i anchor,
-      ParcelTransform transform,
-      Path dataDir,
-      boolean ignoreEntities,
-      ParcelFormatConfig.@Nullable None config)
+  public void save(SaveContext<ParcelFormatConfig.None> context)
       throws IOException, ParcelException.UnsupportedFeature {
+    var level = context.level();
+    var parcelSize = context.parcelSize();
+    var transform = context.transform();
+    var dataDir = context.dataDir();
+
     if (transform.hasOrientation()) {
       throw new ParcelException.UnsupportedFeature(spec(), Feature.ROTATE, Feature.MIRROR);
     }
@@ -64,20 +56,16 @@ public class StructureTemplateFormat
   }
 
   /**
-   * @param ignoreBlocks This parameter is ignored, it always loads blocks
+   * The {@link LoadContext#ignoreBlocks()} option is ignored; this format always loads blocks.
    */
   @Override
-  public void load(
-      ServerLevelAccessor level,
-      Vec3i size,
-      Vec3i anchor,
-      ParcelTransform transform,
-      Path dataDir,
-      boolean ignoreBlocks,
-      boolean ignoreEntities,
-      @Block.UpdateFlags int flags,
-      ParcelFormatConfig.@Nullable None config)
+  public void load(LoadContext<ParcelFormatConfig.None> context)
       throws IOException, ParcelException.CorruptedParcelException {
+    var level = context.level();
+    var size = context.parcelSize();
+    var transform = context.transform();
+    var dataDir = context.dataDir();
+
     ParcelStorage.LOGGER.info(
         "Loading structure template with size {} and transform {}", size, transform);
 
@@ -103,12 +91,17 @@ public class StructureTemplateFormat
 
     StructurePlaceSettings settings =
         new StructurePlaceSettings()
-            .setIgnoreEntities(!ignoreEntities)
+            .setIgnoreEntities(!context.ignoreEntities())
             .setKnownShape(isStrict)
             .setMirror(transform.mirror())
             .setRotation(transform.rotation());
 
     template.placeInWorld(
-        level, pivotPos, pivotPos, settings, RandomSource.create(pivotPos.asLong()), flags);
+        level,
+        pivotPos,
+        pivotPos,
+        settings,
+        RandomSource.create(pivotPos.asLong()),
+        context.blockUpdateFlags());
   }
 }

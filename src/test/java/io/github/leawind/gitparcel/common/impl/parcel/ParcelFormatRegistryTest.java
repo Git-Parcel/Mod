@@ -14,7 +14,6 @@ import java.nio.file.Path;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
-import net.minecraft.world.level.block.Block;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
@@ -87,7 +86,7 @@ public class ParcelFormatRegistryTest {
         Path dataDir,
         boolean ignoreBlocks,
         boolean ignoreEntities,
-        @Block.UpdateFlags int flags,
+        int flags,
         ParcelFormatConfig.@Nullable None config)
         throws IOException, ParcelException.CorruptedParcelException {
       throw new UnsupportedOperationException();

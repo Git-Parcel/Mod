@@ -13,7 +13,7 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class ParcellaD16Loader extends ParcellaD32Loader
-    implements ParcellaD16Format, ParcelFormat.Loader<ParcellaD32Format.Config> {
+    implements ParcellaD16Format, ParcelFormat.ContextLoader<ParcellaD32Format.Config> {
   @Override
   protected void loadBlocks(Context ctx, ProblemReporter problemReporter)
       throws IOException, ParcelException.CorruptedParcelException {

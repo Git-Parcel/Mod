@@ -2,12 +2,12 @@ package io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d16;
 
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.BlockPalette;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.Subparcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d32.ParcellaD32Format;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d32.ParcellaD32Saver;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
+import io.github.leawind.gitparcel.common.minecraft.logic.transform.ParcelBlockTransform;
 import io.github.leawind.gitparcel.common.utils.algorithms.VolumetricRLE;
 import io.github.leawind.gitparcel.common.utils.numbase.HexUtils;
 import java.io.IOException;
@@ -18,37 +18,28 @@ import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.ProblemReporter;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import org.jspecify.annotations.Nullable;
 
 public class ParcellaD16Saver extends ParcellaD32Saver
-    implements ParcellaD16Format, ParcelFormat.Saver<ParcellaD32Format.Config> {
+    implements ParcellaD16Format, ParcelFormat.ContextSaver<ParcellaD32Format.Config> {
   @Override
-  public void save(
-      Level level,
-      Vec3i parcelSize,
-      Vec3i anchor,
-      ParcelTransform transform,
-      Path dataDir,
-      boolean ignoreEntities,
-      @Nullable Config config)
+  public void save(SaveContext<Config> context)
       throws IOException, ParcelException.UnsupportedFeature {
+    Config config = context.config();
     if (config == null) {
       config = new Config();
     }
 
-    var ctx = new Context(level, parcelSize, anchor, transform, dataDir, ignoreEntities, config);
+    var ctx = new Context(context, config);
 
     try (var problemReporter = new ProblemReporter.ScopedCollector(ParcelStorage.LOGGER)) {
 
       saveBlocks(ctx, 16);
 
-      if (!ignoreEntities) {
+      if (!context.ignoreEntities()) {
         saveEntities(ctx, problemReporter);
       }
     }
@@ -62,8 +53,8 @@ public class ParcellaD16Saver extends ParcellaD32Saver
     char[] hexChars = HexUtils.UPPERS;
 
     BlockPalette palette = ctx.blockPalette;
-    var level = ctx.level;
-    var transform = ctx.transform;
+    var level = ctx.level();
+    var transform = ctx.transform();
 
     // When no palette, use a temporary identity map for VolumetricRLE int IDs
     var stateToTempId = new IdentityHashMap<BlockState, Integer>();
@@ -77,13 +68,13 @@ public class ParcellaD16Saver extends ParcellaD32Saver
             (x, y, z) -> {
               BlockPos pos =
                   new BlockPos(x + subparcel.originX, y + subparcel.originY, z + subparcel.originZ);
-              pos = ctx.transform.apply(pos);
+              pos = ctx.transform().apply(pos);
               // pos: world space
 
               // get blockState in world space
               BlockState blockState = level.getBlockState(pos);
               // convert blockState to local space
-              blockState = transform.applyInverted(blockState);
+              blockState = ParcelBlockTransform.toParcelSpace(transform, blockState);
 
               BlockEntity blockEntity = level.getBlockEntity(pos);
               if (blockEntity != null) {

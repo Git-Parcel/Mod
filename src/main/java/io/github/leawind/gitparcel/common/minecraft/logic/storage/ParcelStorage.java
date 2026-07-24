@@ -136,13 +136,14 @@ public class ParcelStorage {
     }
 
     format.save(
-        level,
-        meta.size(),
-        meta.anchor(),
-        transform,
-        getDataDir(parcelDir),
-        ignoreEntities && meta.getExcludeEntities(),
-        actualConfig);
+        new ParcelFormat.SaveContext<>(
+            level,
+            meta.size(),
+            transform,
+            meta.anchor(),
+            getDataDir(parcelDir),
+            ignoreEntities && meta.getExcludeEntities(),
+            actualConfig));
   }
 
   public static <C extends ParcelFormatConfig<C>> void save(
@@ -209,15 +210,16 @@ public class ParcelStorage {
 
     Path dataDir = parcelDir.resolve(DATA_DIR_NAME);
     loader.load(
-        level,
-        meta.size(),
-        meta.anchor(),
-        transform,
-        dataDir,
-        ignoreBlocks,
-        ignoreEntities,
-        flags,
-        config);
+        new ParcelFormat.LoadContext<>(
+            level,
+            meta.size(),
+            transform,
+            meta.anchor(),
+            dataDir,
+            ignoreBlocks,
+            ignoreEntities,
+            flags,
+            config));
   }
 
   public static void load(

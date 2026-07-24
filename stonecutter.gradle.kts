@@ -52,6 +52,38 @@ val checkArchitectureBoundaries by tasks.registering {
                     violations += "$relativePath makes the API layer depend on a runtime implementation"
                 }
 
+                if (relativePath.contains("/common/api/parcel/") &&
+                    (
+                        content.contains(
+                            "import net.minecraft.world.level.block.state.BlockState;",
+                        ) ||
+                            content.contains("import org.joml.Matrix4f;")
+                    )
+                ) {
+                    violations += "$relativePath exposes runtime-specific transform operations"
+                }
+
+                if (relativePath.endsWith("/common/api/parcel/ParcelFormat.java") &&
+                    content.contains("import net.minecraft.world.level.block.Block;")
+                ) {
+                    violations += "$relativePath exposes version-specific block update annotations"
+                }
+
+                val isContextFormat =
+                    content.contains("ParcelFormat.ContextSaver") ||
+                        content.contains("ParcelFormat.ContextLoader")
+                if (isContextFormat &&
+                    (
+                        content.contains("import net.minecraft.world.level.Level;") ||
+                            content.contains(
+                                "import net.minecraft.world.level.ServerLevelAccessor;",
+                            ) ||
+                            content.contains("import net.minecraft.world.level.block.Block;")
+                    )
+                ) {
+                    violations += "$relativePath bypasses its format operation context"
+                }
+
                 if (relativePath.contains("/testutils/")) {
                     violations += "$relativePath places test-only code in the production source set"
                 }

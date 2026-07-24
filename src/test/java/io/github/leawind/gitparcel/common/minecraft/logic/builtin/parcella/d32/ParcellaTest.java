@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d32;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.BlockPalette;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.Subparcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.SubparcelFormat;
@@ -31,9 +32,7 @@ public class ParcellaTest extends AbstractMinecraftTest {
   void setUpParcella() {
     var paletteConfig = new ParcellaD32Format.Config();
     paletteConfig.usePalette.set(true);
-    paletteCtx =
-        new ParcellaD32Loader.Context(
-            null, null, null, null, Path.of(""), false, false, 0, paletteConfig);
+    paletteCtx = createContext(paletteConfig);
     paletteCtx.blockPalette = new BlockPalette();
     paletteCtx.blockPalette.collect(Blocks.AIR.defaultBlockState());
     paletteCtx.blockPalette.collect(Blocks.STONE.defaultBlockState());
@@ -87,9 +86,7 @@ public class ParcellaTest extends AbstractMinecraftTest {
 
     var noPaletteConfig = new ParcellaD32Format.Config();
     noPaletteConfig.usePalette.set(false);
-    var noPaletteCtx =
-        new ParcellaD32Loader.Context(
-            null, null, null, null, Path.of(""), false, false, 0, noPaletteConfig);
+    var noPaletteCtx = createContext(noPaletteConfig);
 
     List<int[]> positions = new ArrayList<>();
     List<BlockState> blockStates = new ArrayList<>();
@@ -155,9 +152,7 @@ public class ParcellaTest extends AbstractMinecraftTest {
 
     var noPaletteConfig = new ParcellaD32Format.Config();
     noPaletteConfig.usePalette.set(false);
-    var noPaletteCtx =
-        new ParcellaD32Loader.Context(
-            null, null, null, null, Path.of(""), false, false, 0, noPaletteConfig);
+    var noPaletteCtx = createContext(noPaletteConfig);
 
     List<BlockState> blockStates = new ArrayList<>();
     new ParcellaD32Loader()
@@ -194,5 +189,12 @@ public class ParcellaTest extends AbstractMinecraftTest {
             (x, y, z, blockState) -> blockStates.add(blockState),
             DUMMY_REPORTER);
     // Should not crash
+  }
+
+  private static ParcellaD32Loader.Context createContext(ParcellaD32Format.Config config) {
+    var context =
+        new ParcelFormat.LoadContext<ParcellaD32Format.Config>(
+            null, null, null, null, Path.of(""), false, false, 0, config);
+    return new ParcellaD32Loader.Context(context, config);
   }
 }

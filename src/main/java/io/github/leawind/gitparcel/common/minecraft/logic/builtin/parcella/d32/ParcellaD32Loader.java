@@ -3,13 +3,13 @@ package io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d32;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.BlockPalette;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.Subparcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.SubparcelFormat;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.utils.ParcellaUtils;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.utils.RadixTreePathGenerator;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.utils.ZOrder3D;
+import io.github.leawind.gitparcel.common.minecraft.logic.transform.ParcelBlockTransform;
 import io.github.leawind.gitparcel.common.utils.numbase.Base32Utils;
 import io.github.leawind.gitparcel.common.utils.numbase.HexUtils;
 import io.github.leawind.inventory.just.Result;
@@ -29,8 +29,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityProcessor;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.level.ServerLevelAccessor;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.storage.TagValueInput;
@@ -39,7 +37,7 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
 public class ParcellaD32Loader
-    implements ParcellaD32Format, ParcelFormat.Loader<ParcellaD32Format.Config> {
+    implements ParcellaD32Format, ParcelFormat.ContextLoader<ParcellaD32Format.Config> {
   private static final Logger LOGGER = LogUtils.getLogger();
 
   public static final class Context extends LoadContext<Config> {
@@ -50,30 +48,21 @@ public class ParcellaD32Loader
 
     public @Nullable BlockPalette blockPalette = null;
 
-    public Context(
-        ServerLevelAccessor level,
-        Vec3i parcelSize,
-        ParcelTransform transform,
-        Vec3i anchor,
-        Path dataDir,
-        boolean ignoreBlocks,
-        boolean ignoreEntities,
-        @Block.UpdateFlags int flags,
-        @Nullable Config config) {
+    public Context(LoadContext<Config> context, @Nullable Config config) {
       super(
-          level,
-          parcelSize,
-          transform,
-          anchor,
-          dataDir,
-          ignoreBlocks,
-          ignoreEntities,
-          flags,
+          context.level(),
+          context.parcelSize(),
+          context.transform(),
+          context.anchor(),
+          context.dataDir(),
+          context.ignoreBlocks(),
+          context.ignoreEntities(),
+          context.blockUpdateFlags(),
           config);
-      blocksDir = dataDir.resolve(BLOCKS_DIR_NAME);
+      blocksDir = dataDir().resolve(BLOCKS_DIR_NAME);
       blocksPaletteFile = blocksDir.resolve(PALETTE_FILE_NAME);
       subparcelsDir = blocksDir.resolve(SUBPARCELS_DIR_NAME);
-      entitiesDir = dataDir.resolve(ENTITIES_DIR_NAME);
+      entitiesDir = dataDir().resolve(ENTITIES_DIR_NAME);
     }
   }
 
@@ -81,35 +70,29 @@ public class ParcellaD32Loader
    * @see StructureTemplate#placeInWorld
    */
   @Override
-  public void load(
-      ServerLevelAccessor level,
-      Vec3i size,
-      Vec3i anchor,
-      ParcelTransform transform,
-      Path dataDir,
-      boolean ignoreBlocks,
-      boolean ignoreEntities,
-      @Block.UpdateFlags int flags,
-      @Nullable Config config)
+  public void load(LoadContext<Config> context)
       throws IOException, ParcelException.CorruptedParcelException {
-    LOGGER.debug("Loading from: {}", dataDir);
-    LOGGER.debug("    Size: {}", size);
-    LOGGER.debug("    Transform: {}", transform);
-    LOGGER.debug("    Ignore blocks: {}", ignoreBlocks);
-    LOGGER.debug("    Ignore entities: {}", ignoreEntities);
-    LOGGER.debug("    Update flags: {}", flags);
+    Config config = context.config();
+    if (config == null) {
+      config = new Config();
+    }
+
+    LOGGER.debug("Loading from: {}", context.dataDir());
+    LOGGER.debug("    Size: {}", context.parcelSize());
+    LOGGER.debug("    Transform: {}", context.transform());
+    LOGGER.debug("    Ignore blocks: {}", context.ignoreBlocks());
+    LOGGER.debug("    Ignore entities: {}", context.ignoreEntities());
+    LOGGER.debug("    Update flags: {}", context.blockUpdateFlags());
     LOGGER.debug("    Config: {}", config);
 
-    Context ctx =
-        new Context(
-            level, size, transform, anchor, dataDir, ignoreBlocks, ignoreEntities, flags, config);
+    Context ctx = new Context(context, config);
 
     try (var problemReporter = new ProblemReporter.ScopedCollector(LOGGER)) {
-      if (!ignoreBlocks) {
+      if (!context.ignoreBlocks()) {
         loadBlocks(ctx, problemReporter);
       }
 
-      if (!ignoreEntities) {
+      if (!context.ignoreEntities()) {
         loadEntities(ctx, problemReporter);
       }
     }
@@ -139,8 +122,9 @@ public class ParcellaD32Loader
     }
 
     // Split the parcel into subparcels
-    BlockPos anchorPos = new BlockPos(ctx.anchor);
-    for (var localSubparcel : ParcellaUtils.subdivideParcel(ctx.parcelSize, anchorPos, gridSize)) {
+    BlockPos anchorPos = new BlockPos(ctx.anchor());
+    for (var localSubparcel :
+        ParcellaUtils.subdivideParcel(ctx.parcelSize(), anchorPos, gridSize)) {
       Vec3i coord = localSubparcel.getCoord(gridSize, anchorPos);
       long index = ZOrder3D.coordToIndexSigned(coord);
       Path blockStateFile =
@@ -171,15 +155,16 @@ public class ParcellaD32Loader
 
       BlockStateLoader blockStateLoader =
           (localX, localY, localZ, localBlockState) -> {
-            BlockState worldBlockState = ctx.transform.apply(localBlockState);
+            BlockState worldBlockState =
+                ParcelBlockTransform.toWorldSpace(ctx.transform(), localBlockState);
             localPos.set(
                 localSubparcel.originX + localX,
                 localSubparcel.originY + localY,
                 localSubparcel.originZ + localZ);
-            BlockPos worldPos = ctx.transform.apply(localPos);
+            BlockPos worldPos = ctx.transform().apply(localPos);
 
-            ctx.level.setBlock(worldPos, worldBlockState, ctx.flags);
-            ctx.level.getChunk(worldPos).removeBlockEntity(worldPos);
+            ctx.level().setBlock(worldPos, worldBlockState, ctx.blockUpdateFlags());
+            ctx.level().getChunk(worldPos).removeBlockEntity(worldPos);
           };
 
       switch (subparcelFormat) {
@@ -457,16 +442,16 @@ public class ParcellaD32Loader
       }
 
       var worldPos =
-          ctx.transform.apply(
+          ctx.transform().apply(
               new BlockPos(
                   localSubparcel.originX + lx,
                   localSubparcel.originY + ly,
                   localSubparcel.originZ + lz));
 
-      var blockEntity = ctx.level.getBlockEntity(worldPos);
+      var blockEntity = ctx.level().getBlockEntity(worldPos);
       if (blockEntity != null) {
         blockEntity.loadWithComponents(
-            TagValueInput.create(problemReporter, ctx.level.registryAccess(), entry.data()));
+            TagValueInput.create(problemReporter, ctx.level().registryAccess(), entry.data()));
       }
     }
   }
@@ -527,7 +512,7 @@ public class ParcellaD32Loader
               localPosList.getDouble(2).orElse(0.0));
 
       // Transform position from local space to world space
-      Vec3 worldPos = ctx.transform.apply(localPos);
+      Vec3 worldPos = ctx.transform().apply(localPos);
 
       // Override position in entity NBT
       ListTag worldPosList = new ListTag();
@@ -538,9 +523,9 @@ public class ParcellaD32Loader
 
       Entity entity =
           EntityType.loadEntityRecursive(
-              entityNbt, ctx.level.getLevel(), EntitySpawnReason.LOAD, EntityProcessor.NOP);
+              entityNbt, ctx.level().getLevel(), EntitySpawnReason.LOAD, EntityProcessor.NOP);
       if (entity != null) {
-        ctx.level.addFreshEntity(entity);
+        ctx.level().addFreshEntity(entity);
       }
     } catch (Exception e) {
       LOGGER.error("Error loading entity from {}: {}", path, e.getMessage(), e);
