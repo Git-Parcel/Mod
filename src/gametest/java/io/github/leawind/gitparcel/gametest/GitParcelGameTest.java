@@ -7,6 +7,7 @@ import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelWorldSavedData;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.gametest.utils.ChannelFlags;
@@ -27,13 +28,22 @@ public class GitParcelGameTest {
   public static final Logger LOGGER = LogUtils.getLogger();
 
   public void testParcelLifecycle(GameTestHelpMore helper) {
-    var service = ParcelService.get(helper.getLevel());
+    var level = helper.getLevel();
+    var service = ParcelService.get(level);
     service.reset();
 
     var parcel = ParcelFactory.create(helper.getBoundingBox(), Mirror.NONE, Rotation.NONE);
     service.addNewParcel(parcel);
     if (service.getParcel(parcel.uuid()) != parcel) {
       helper.fail("Added parcel is not available through the level service");
+    }
+    if (ParcelService.get(level).getParcel(parcel.uuid()) != parcel) {
+      helper.fail("Level saved data is not shared between service instances");
+    }
+
+    var server = level.getServer();
+    if (GitParcelWorldSavedData.get(server) != GitParcelWorldSavedData.get(server)) {
+      helper.fail("World saved data is not cached by the server");
     }
 
     parcel.visual().showWireframe(false);

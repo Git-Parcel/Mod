@@ -5,12 +5,10 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.common.api.permission.ParcelPermissions;
 import io.github.leawind.gitparcel.common.api.permission.PermissionConfig;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
-import io.github.leawind.gitparcel.common.impl.GitParcelUtils;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.level.saveddata.SavedData;
-import net.minecraft.world.level.saveddata.SavedDataType;
 
-public final class GitParcelWorldSavedData extends SavedData {
+public final class GitParcelWorldSavedData
+    extends CodecSavedData<GitParcelWorldSavedData> {
   private static final long DEFAULT_MAX_PARCEL_VOLUME = 128 * 128 * 128;
 
   public static final Codec<GitParcelWorldSavedData> CODEC =
@@ -28,9 +26,6 @@ public final class GitParcelWorldSavedData extends SavedData {
                           .forGetter(GitParcelWorldSavedData::maxParcelVolume))
                   .apply(inst, GitParcelWorldSavedData::new));
 
-  public static final SavedDataType<GitParcelWorldSavedData> TYPE =
-      new SavedDataType<>(
-          GitParcelUtils.identifier("world"), GitParcelWorldSavedData::new, CODEC, null);
   private final PermissionConfig<WorldPermissions> permissions;
   private final PermissionConfig<ParcelPermissions> parcelDefaultPermissions;
 
@@ -53,7 +48,7 @@ public final class GitParcelWorldSavedData extends SavedData {
     setDirty();
   }
 
-  private GitParcelWorldSavedData() {
+  GitParcelWorldSavedData() {
     this(
         new PermissionConfig<>(WorldPermissions.REGISTRY),
         new PermissionConfig<>(ParcelPermissions.REGISTRY),
@@ -64,13 +59,14 @@ public final class GitParcelWorldSavedData extends SavedData {
       PermissionConfig<WorldPermissions> permissions,
       PermissionConfig<ParcelPermissions> parcelDefaultPermissions,
       long maxParcelVolume) {
+    super(CODEC);
     this.permissions = permissions;
     this.parcelDefaultPermissions = parcelDefaultPermissions;
     this.maxParcelVolume = maxParcelVolume;
   }
 
   public static GitParcelWorldSavedData get(MinecraftServer server) {
-    return server.overworld().getDataStorage().computeIfAbsent(TYPE);
+    return GitParcelSavedDataAccess.world(server);
   }
 
   public void reset() {

@@ -4,32 +4,26 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.api.world.Parcels;
-import io.github.leawind.gitparcel.common.impl.GitParcelUtils;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.saveddata.SavedData;
-import net.minecraft.world.level.saveddata.SavedDataType;
 import org.jspecify.annotations.Nullable;
 
-final class GitParcelLevelSavedData extends SavedData {
-  private static final Codec<GitParcelLevelSavedData> CODEC =
+final class GitParcelLevelSavedData extends CodecSavedData<GitParcelLevelSavedData> {
+  static final Codec<GitParcelLevelSavedData> CODEC =
       RecordCodecBuilder.create(
           inst ->
               inst.group(
                       Parcels.CODEC.fieldOf("parcels").forGetter(GitParcelLevelSavedData::parcels))
                   .apply(inst, GitParcelLevelSavedData::new));
 
-  private static final SavedDataType<GitParcelLevelSavedData> TYPE =
-      new SavedDataType<>(
-          GitParcelUtils.identifier("level"), GitParcelLevelSavedData::new, CODEC, null);
-
   private final Parcels parcels;
 
-  private GitParcelLevelSavedData() {
+  GitParcelLevelSavedData() {
     this(new Parcels());
   }
 
   private GitParcelLevelSavedData(Parcels parcels) {
+    super(CODEC);
     this.parcels = parcels;
   }
 
@@ -56,6 +50,6 @@ final class GitParcelLevelSavedData extends SavedData {
   }
 
   static GitParcelLevelSavedData get(ServerLevel level) {
-    return level.getDataStorage().computeIfAbsent(TYPE);
+    return GitParcelSavedDataAccess.level(level);
   }
 }

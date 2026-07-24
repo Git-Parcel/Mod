@@ -108,6 +108,32 @@ val checkArchitectureBoundaries by tasks.registering {
                     violations += "$relativePath bypasses the Minecraft permission adapter"
                 }
 
+                val savedDataAccess =
+                    relativePath.endsWith(
+                        "/common/minecraft/logic/world/GitParcelSavedDataAccess.java",
+                    )
+                val codecSavedData =
+                    relativePath.endsWith(
+                        "/common/minecraft/logic/world/CodecSavedData.java",
+                    )
+                if (!savedDataAccess &&
+                    (
+                        content.contains("SavedDataType<") ||
+                            content.contains("SavedData.Factory<") ||
+                            Regex(
+                                """\.getDataStorage\(\)\s*\.computeIfAbsent\(""",
+                            ).containsMatchIn(content)
+                    )
+                ) {
+                    violations += "$relativePath bypasses the Minecraft SavedData access adapter"
+                }
+                if (!codecSavedData &&
+                    relativePath.contains("/common/minecraft/logic/world/") &&
+                    content.contains("extends SavedData")
+                ) {
+                    violations += "$relativePath bypasses the codec-backed SavedData base"
+                }
+
                 if (relativePath.contains("/common/api/parcel/") &&
                     (
                         content.contains(
