@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.common.minecraft.logic;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatCapabilities;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.mvp.MvpFormat;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d16.ParcellaD16Loader;
@@ -12,7 +13,7 @@ import io.github.leawind.gitparcel.common.minecraft.logic.builtin.structuretempl
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelFormatArgument;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcelformat.UpdateParcelFormatSpecS2CPayload;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelFormatsMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.platform.api.CommandArgumentTypeRegistrar;
 import io.github.leawind.gitparcel.common.platform.api.Services;
@@ -56,8 +57,8 @@ public final class ModEntrypoint {
 
   /** Synchronizes server-owned registries and parcel state after a player enters play state. */
   public static void onPlayerJoin(ServerPlayer player) {
-    var formatSpecs = UpdateParcelFormatSpecS2CPayload.from(ParcelFormatRegistry.get());
-    Services.SERVER_NETWORKING.send(player, formatSpecs);
+    var capabilities = ParcelFormatCapabilities.from(ParcelFormatRegistry.get());
+    Services.SERVER_NETWORKING.send(player, new UpdateParcelFormatsMessage(capabilities));
 
     ParcelService.get(player.level()).syncTo(player);
   }

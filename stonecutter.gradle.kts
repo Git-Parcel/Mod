@@ -170,13 +170,38 @@ val checkArchitectureBoundaries by tasks.registering {
                     violations += "$relativePath places test-only code in the production source set"
                 }
 
-                if (relativePath.contains("/common/minecraft/logic/network/protocol/") &&
+                if (relativePath.contains("/common/minecraft/logic/network/protocol/")) {
+                    violations += "$relativePath reintroduces the retired network protocol package"
+                }
+
+                val minecraftPayloadAdapter =
+                    relativePath.endsWith(
+                        "/common/minecraft/logic/network/payload/MinecraftPayloads.java",
+                    )
+                if (!minecraftPayloadAdapter &&
                     (
-                        content.contains("import io.github.leawind.gitparcel.client.") ||
-                            content.contains("import net.minecraft.client.")
+                        content.contains("import net.minecraft.network.RegistryFriendlyByteBuf;") ||
+                            content.contains("import net.minecraft.network.codec.") ||
+                            content.contains(
+                                "import net.minecraft.network.protocol.common.custom.CustomPacketPayload;",
+                            )
                     )
                 ) {
-                    violations += "$relativePath couples a common payload to client-only code"
+                    violations += "$relativePath bypasses the Minecraft payload adapter"
+                }
+
+                if (relativePath.endsWith("/common/platform/api/ServerNetworking.java") &&
+                    content.contains("net.minecraft.network")
+                ) {
+                    violations += "$relativePath exposes Minecraft's version-specific payload API"
+                }
+
+                if (relativePath.endsWith(
+                        "/client/minecraft/logic/network/ClientPayloadHandler.java",
+                    ) &&
+                    content.contains(".network.payload.")
+                ) {
+                    violations += "$relativePath handles transport payloads instead of stable messages"
                 }
             }
 

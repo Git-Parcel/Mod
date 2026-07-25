@@ -1,8 +1,8 @@
 package io.github.leawind.gitparcel.client.api;
 
 import io.github.leawind.gitparcel.client.impl.GitParcelClientImpl;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatCapabilities;
 import io.github.leawind.gitparcel.common.api.world.Parcels;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcelformat.ParcelFormatSpecs;
 
 public interface GitParcelClient {
   /**
@@ -10,7 +10,7 @@ public interface GitParcelClient {
    *
    * <p>Automatically updated when joining a server.
    */
-  ParcelFormatSpecs getParcelFormatSpecs();
+  ParcelFormatCapabilities getParcelFormatCapabilities();
 
   /**
    * Parcels in the server world.

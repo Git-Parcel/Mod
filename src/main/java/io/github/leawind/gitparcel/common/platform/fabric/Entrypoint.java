@@ -2,8 +2,7 @@
 package io.github.leawind.gitparcel.common.platform.fabric;
 
 import io.github.leawind.gitparcel.common.minecraft.logic.ModEntrypoint;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcelformat.UpdateParcelFormatSpecS2CPayload;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcels.UpdateParcelsS2CPayload;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.payload.MinecraftPayloads;
 import io.github.leawind.gitparcel.common.utils.anno.VersionSensitive;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -31,15 +30,15 @@ public class Entrypoint implements ModInitializer {
     /*? if >= 26.1 {*/
     PayloadTypeRegistry.clientboundPlay()
         .register(
-            UpdateParcelFormatSpecS2CPayload.TYPE, UpdateParcelFormatSpecS2CPayload.STREAM_CODEC);
+            MinecraftPayloads.PARCEL_FORMATS_TYPE, MinecraftPayloads.PARCEL_FORMATS_CODEC);
     PayloadTypeRegistry.clientboundPlay()
-        .register(UpdateParcelsS2CPayload.TYPE, UpdateParcelsS2CPayload.STREAM_CODEC);
+        .register(MinecraftPayloads.PARCELS_TYPE, MinecraftPayloads.PARCELS_CODEC);
     /*?} else {*/
     /*PayloadTypeRegistry.playS2C()
                        .register(
-                         UpdateParcelFormatSpecS2CPayload.TYPE, UpdateParcelFormatSpecS2CPayload.STREAM_CODEC);
+                         MinecraftPayloads.PARCEL_FORMATS_TYPE, MinecraftPayloads.PARCEL_FORMATS_CODEC);
     PayloadTypeRegistry.playS2C()
-                       .register(UpdateParcelsS2CPayload.TYPE, UpdateParcelsS2CPayload.STREAM_CODEC);
+                       .register(MinecraftPayloads.PARCELS_TYPE, MinecraftPayloads.PARCELS_CODEC);
     */
     /*?}*/
   }

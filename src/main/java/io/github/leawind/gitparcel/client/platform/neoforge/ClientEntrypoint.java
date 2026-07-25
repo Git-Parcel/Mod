@@ -6,8 +6,7 @@ import io.github.leawind.gitparcel.client.minecraft.logic.GitParcelClientOptions
 import io.github.leawind.gitparcel.client.minecraft.logic.ModClientEntrypoint;
 import io.github.leawind.gitparcel.client.minecraft.logic.network.ClientPayloadHandler;
 import io.github.leawind.gitparcel.common.api.GitParcel;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcelformat.UpdateParcelFormatSpecS2CPayload;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcels.UpdateParcelsS2CPayload;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.payload.MinecraftPayloads;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -34,11 +33,11 @@ public class ClientEntrypoint {
 
   private static void onRegisterPayloadHandlers(RegisterClientPayloadHandlersEvent event) {
     event.register(
-        UpdateParcelFormatSpecS2CPayload.TYPE,
-        (payload, context) -> ClientPayloadHandler.handle(payload));
+        MinecraftPayloads.PARCEL_FORMATS_TYPE,
+        (payload, context) -> ClientPayloadHandler.handle(payload.message()));
     event.register(
-        UpdateParcelsS2CPayload.TYPE,
-        (payload, context) -> ClientPayloadHandler.handle(payload));
+        MinecraftPayloads.PARCELS_TYPE,
+        (payload, context) -> ClientPayloadHandler.handle(payload.message()));
   }
 
   private static void onClientTick(ClientTickEvent.Pre event) {

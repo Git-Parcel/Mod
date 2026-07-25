@@ -1,8 +1,8 @@
 package io.github.leawind.gitparcel.client.impl;
 
 import io.github.leawind.gitparcel.client.api.GitParcelClient;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatCapabilities;
 import io.github.leawind.gitparcel.common.api.world.Parcels;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcelformat.ParcelFormatSpecs;
 import org.jspecify.annotations.NonNull;
 
 public final class GitParcelClientImpl implements GitParcelClient {
@@ -10,12 +10,12 @@ public final class GitParcelClientImpl implements GitParcelClient {
 
   private GitParcelClientImpl() {}
 
-  private volatile ParcelFormatSpecs specs = ParcelFormatSpecs.empty();
+  private volatile ParcelFormatCapabilities capabilities = ParcelFormatCapabilities.empty();
   public volatile Parcels parcels = new Parcels();
 
   @Override
-  public ParcelFormatSpecs getParcelFormatSpecs() {
-    return specs;
+  public ParcelFormatCapabilities getParcelFormatCapabilities() {
+    return capabilities;
   }
 
   @Override
@@ -23,7 +23,7 @@ public final class GitParcelClientImpl implements GitParcelClient {
     return parcels;
   }
 
-  public void setParcelFormatSpecs(@NonNull ParcelFormatSpecs specs) {
-    this.specs = specs;
+  public void setParcelFormatCapabilities(@NonNull ParcelFormatCapabilities capabilities) {
+    this.capabilities = capabilities;
   }
 }

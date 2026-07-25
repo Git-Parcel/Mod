@@ -3,7 +3,7 @@ package io.github.leawind.gitparcel.common.minecraft.logic.world;
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.impl.world.ParcelValidator;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcels.UpdateParcelsS2CPayload;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelsMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
 import io.github.leawind.gitparcel.common.platform.api.Services;
 import io.github.leawind.gitparcel.server.minecraft.logic.storage.StorageUtils;
@@ -47,7 +47,7 @@ public final class ParcelService {
   public void reset() {
     savedData.clearParcels();
     Services.SERVER_NETWORKING.sendToAllPlayers(
-        level, UpdateParcelsS2CPayload.fullSync(savedData.parcels()));
+        level, UpdateParcelsMessage.fullSync(savedData.parcels()));
   }
 
   public void addNewParcel(Parcel parcel) throws IllegalArgumentException {
@@ -56,14 +56,14 @@ public final class ParcelService {
 
     savedData.addParcel(parcel);
     Services.SERVER_NETWORKING.sendToAllPlayers(
-        level, UpdateParcelsS2CPayload.incremental(parcel));
+        level, UpdateParcelsMessage.incremental(parcel));
   }
 
   public @Nullable Parcel deleteParcel(UUID uuid) {
     var deleted = savedData.removeParcel(uuid);
     if (deleted != null) {
       Services.SERVER_NETWORKING.sendToAllPlayers(
-          level, UpdateParcelsS2CPayload.removals(Set.of(uuid)));
+          level, UpdateParcelsMessage.removals(Set.of(uuid)));
     }
     return deleted;
   }
@@ -77,7 +77,7 @@ public final class ParcelService {
 
     savedData.setDirty();
     Services.SERVER_NETWORKING.sendToAllPlayers(
-        level, UpdateParcelsS2CPayload.incremental(parcel));
+        level, UpdateParcelsMessage.incremental(parcel));
   }
 
   public Path getParcelDirectory(Parcel parcel) {
@@ -93,6 +93,6 @@ public final class ParcelService {
 
   public void syncTo(ServerPlayer player) {
     Services.SERVER_NETWORKING.send(
-        player, UpdateParcelsS2CPayload.fullSync(savedData.parcels()));
+        player, UpdateParcelsMessage.fullSync(savedData.parcels()));
   }
 }

@@ -55,7 +55,7 @@ public class MetadataPanelView extends ScrollView {
   }
 
   public void refresh() {
-    var specs = GitParcelClient.get().getParcelFormatSpecs();
+    var specs = GitParcelClient.get().getParcelFormatCapabilities();
     if (specs == null) {
       mMarkflow.setMarkdown(mPreview, "Parcel formats unavailable\n");
       return;
@@ -76,7 +76,7 @@ public class MetadataPanelView extends ScrollView {
   }
 
   private String getFormatsText() {
-    var specs = GitParcelClient.get().getParcelFormatSpecs();
+    var specs = GitParcelClient.get().getParcelFormatCapabilities();
     if (specs == null) {
       return "Parcel formats unavailable\n";
     }

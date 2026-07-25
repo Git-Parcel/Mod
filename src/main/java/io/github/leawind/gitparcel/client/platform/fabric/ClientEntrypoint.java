@@ -4,8 +4,7 @@ package io.github.leawind.gitparcel.client.platform.fabric;
 import io.github.leawind.gitparcel.client.minecraft.logic.GitParcelClientOptions;
 import io.github.leawind.gitparcel.client.minecraft.logic.ModClientEntrypoint;
 import io.github.leawind.gitparcel.client.minecraft.logic.network.ClientPayloadHandler;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcelformat.UpdateParcelFormatSpecS2CPayload;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcels.UpdateParcelsS2CPayload;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.payload.MinecraftPayloads;
 import io.github.leawind.gitparcel.common.utils.anno.VersionSensitive;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -25,11 +24,11 @@ public class ClientEntrypoint implements ClientModInitializer {
 
     ClientTickEvents.START_CLIENT_TICK.register(ModClientEntrypoint::onClientTick);
     ClientPlayNetworking.registerGlobalReceiver(
-        UpdateParcelFormatSpecS2CPayload.TYPE,
-        (payload, context) -> ClientPayloadHandler.handle(payload));
+        MinecraftPayloads.PARCEL_FORMATS_TYPE,
+        (payload, context) -> ClientPayloadHandler.handle(payload.message()));
     ClientPlayNetworking.registerGlobalReceiver(
-        UpdateParcelsS2CPayload.TYPE,
-        (payload, context) -> ClientPayloadHandler.handle(payload));
+        MinecraftPayloads.PARCELS_TYPE,
+        (payload, context) -> ClientPayloadHandler.handle(payload.message()));
 
     // Register key mappings
     /*? if >= 26.1 {*/

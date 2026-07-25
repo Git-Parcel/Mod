@@ -3,8 +3,9 @@ package io.github.leawind.gitparcel.common.platform.neoforge;
 /*? if neoforge {*/
 /*
 import com.google.auto.service.AutoService;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.message.ServerMessage;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.payload.MinecraftPayloads;
 import io.github.leawind.gitparcel.common.platform.api.ServerNetworking;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -12,8 +13,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class ServerNetworkingImpl implements ServerNetworking {
 
   @Override
-  public void send(ServerPlayer player, CustomPacketPayload payload) {
-    PacketDistributor.sendToPlayer(player, payload);
+  public void send(ServerPlayer player, ServerMessage message) {
+    PacketDistributor.sendToPlayer(player, MinecraftPayloads.encode(message));
   }
 }
 *//*?}*/

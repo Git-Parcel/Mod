@@ -4,8 +4,7 @@ package io.github.leawind.gitparcel.common.platform.neoforge;
 /*
 import io.github.leawind.gitparcel.common.api.GitParcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.ModEntrypoint;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcelformat.UpdateParcelFormatSpecS2CPayload;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.protocol.parcels.UpdateParcelsS2CPayload;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.payload.MinecraftPayloads;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -40,8 +39,8 @@ public class Entrypoint {
     var registrar = event.registrar(GitParcel.MOD_ID).versioned(GitParcel.PROTOCOL_VERSION);
 
     registrar.playToClient(
-        UpdateParcelFormatSpecS2CPayload.TYPE, UpdateParcelFormatSpecS2CPayload.STREAM_CODEC);
-    registrar.playToClient(UpdateParcelsS2CPayload.TYPE, UpdateParcelsS2CPayload.STREAM_CODEC);
+        MinecraftPayloads.PARCEL_FORMATS_TYPE, MinecraftPayloads.PARCEL_FORMATS_CODEC);
+    registrar.playToClient(MinecraftPayloads.PARCELS_TYPE, MinecraftPayloads.PARCELS_CODEC);
   }
 
   private static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
