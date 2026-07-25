@@ -12,8 +12,8 @@ public final class GameClientApi {
 
   public static final class Render {
 
-    public static final SimpleEventEmitter<Context> ON_BEFORE_FINALIZE_GIZMOS =
-        new SimpleEventEmitter<>();
+    public static final SimpleEventEmitter.Owned<Context> ON_BEFORE_FINALIZE_GIZMOS =
+        SimpleEventEmitter.create();
 
     public static final class Context {
       private boolean isInitialized = false;

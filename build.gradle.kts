@@ -186,7 +186,7 @@ dependencies {
     // endregion
 
     // region bundled
-    add(shadowBundle.name, "com.github.Leawind:inventory-java:0.2.1")
+    add(shadowBundle.name, "com.github.Leawind:inventory-java:0.4.0")
     add(shadowBundle.name, "com.github.ben-manes.caffeine:caffeine:3.2.3")
     add(shadowBundle.name, "org.eclipse.jgit:org.eclipse.jgit:7.6.0.202603022253-r") {
         exclude(group = "org.slf4j", module = "slf4j-api")
