@@ -23,39 +23,39 @@ public class FormatsSubcommand extends GitParcelBaseCommand {
 
               var registry = ParcelFormatRegistry.get();
 
-              var savers = registry.streamSavers().toArray(ParcelFormat.Saver[]::new);
-              var loaders = registry.streamLoaders().toArray(ParcelFormat.Loader[]::new);
+              var writers = registry.streamWriters().toArray(ParcelFormat.Writer[]::new);
+              var readers = registry.streamReaders().toArray(ParcelFormat.Reader[]::new);
 
               source.sendSuccess(
                   () ->
                       Translations.of(
                           "command.gitparcel.parcel.formats.list.header",
-                          savers.length,
-                          loaders.length),
+                          writers.length,
+                          readers.length),
                   false);
 
-              if (savers.length > 0) {
+              if (writers.length > 0) {
                 source.sendSuccess(
-                    () -> Translations.of("command.gitparcel.parcel.formats.list.savers_header"),
+                    () -> Translations.of("command.gitparcel.parcel.formats.list.writers_header"),
                     false);
-                for (var saver : savers) {
+                for (var writer : writers) {
                   source.sendSuccess(
                       () ->
                           Component.literal("  - ")
-                              .append(Component.literal(saver.spec().toString())),
+                              .append(Component.literal(writer.spec().toString())),
                       false);
                 }
               }
 
-              if (loaders.length > 0) {
+              if (readers.length > 0) {
                 source.sendSuccess(
-                    () -> Translations.of("command.gitparcel.parcel.formats.list.loaders_header"),
+                    () -> Translations.of("command.gitparcel.parcel.formats.list.readers_header"),
                     false);
-                for (var loader : loaders) {
+                for (var reader : readers) {
                   source.sendSuccess(
                       () ->
                           Component.literal("  - ")
-                              .append(Component.literal(loader.spec().toString())),
+                              .append(Component.literal(reader.spec().toString())),
                       false);
                 }
               }

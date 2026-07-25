@@ -25,18 +25,8 @@ public final class GameTestUtils {
   public static <F extends ParcelFormat> void forEachFormatCombination(
       Collection<F> formats, ParcelFormatCombinationConsumer<F> consumer) throws Exception {
     for (var format : formats) {
-      Rotation[] rotations =
-          format.features().contains(ParcelFormat.Feature.ROTATE)
-              ? Rotation.values()
-              : new Rotation[] {Rotation.NONE};
-
-      Mirror[] mirrors =
-          format.features().contains(ParcelFormat.Feature.MIRROR)
-              ? Mirror.values()
-              : new Mirror[] {Mirror.NONE};
-
-      for (Rotation rotation : rotations) {
-        for (Mirror mirror : mirrors) {
+      for (Rotation rotation : Rotation.values()) {
+        for (Mirror mirror : Mirror.values()) {
           consumer.accept(format, rotation, mirror);
         }
       }

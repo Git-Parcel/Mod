@@ -87,8 +87,8 @@ public class MetadataPanelView extends ScrollView {
     for (var spec : specs.toSet().stream().sorted().toList()) {
       sb.append("- `").append(spec).append("`: ");
 
-      if (specs.hasSaver(spec)) {
-        if (specs.hasLoader(spec)) {
+      if (specs.hasWriter(spec)) {
+        if (specs.hasReader(spec)) {
           sb.append("Save and Load");
         } else {
           sb.append("Save only");

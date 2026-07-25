@@ -17,33 +17,34 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 
 public final class ParcelFormatArgument {
-  private static final Collection<String> EXAMPLES = Arrays.asList("mvp", "structure_template");
+  private static final Collection<String> EXAMPLES =
+      Arrays.asList("parcella_d16", "parcella_d32");
   public static final SimpleCommandExceptionType ERROR_INVALID =
       new SimpleCommandExceptionType(Translations.of("argument.gitparcel.parcel_format.invalid"));
 
-  public static Saver saver() {
-    return new Saver();
+  public static Writer writer() {
+    return new Writer();
   }
 
-  public static Loader loader() {
-    return new Loader();
+  public static Reader reader() {
+    return new Reader();
   }
 
-  public static ParcelFormat.Saver<?> getSaver(
+  public static ParcelFormat.Writer<?> getWriter(
       CommandContext<CommandSourceStack> context, String name) {
-    return context.getArgument(name, ParcelFormat.Saver.class);
+    return context.getArgument(name, ParcelFormat.Writer.class);
   }
 
-  public static ParcelFormat.Loader<?> getLoader(
+  public static ParcelFormat.Reader<?> getReader(
       CommandContext<CommandSourceStack> context, String name) {
-    return context.getArgument(name, ParcelFormat.Loader.class);
+    return context.getArgument(name, ParcelFormat.Reader.class);
   }
 
-  public static class Saver implements ArgumentType<ParcelFormat.Saver<?>> {
+  public static class Writer implements ArgumentType<ParcelFormat.Writer<?>> {
 
     @Override
-    public ParcelFormat.Saver<?> parse(StringReader reader) throws CommandSyntaxException {
-      var format = ParcelFormatRegistry.get().getSaver(reader.readString());
+    public ParcelFormat.Writer<?> parse(StringReader reader) throws CommandSyntaxException {
+      var format = ParcelFormatRegistry.get().getWriter(reader.readString());
       if (format == null) {
         throw ERROR_INVALID.createWithContext(reader);
       }
@@ -54,7 +55,7 @@ public final class ParcelFormatArgument {
     public <S> CompletableFuture<Suggestions> listSuggestions(
         final CommandContext<S> context, final SuggestionsBuilder builder) {
       return context.getSource() instanceof SharedSuggestionProvider
-          ? SharedSuggestionProvider.suggest(ParcelFormatRegistry.get().getSaverNames(), builder)
+          ? SharedSuggestionProvider.suggest(ParcelFormatRegistry.get().getWriterNames(), builder)
           : Suggestions.empty();
     }
 
@@ -64,11 +65,11 @@ public final class ParcelFormatArgument {
     }
   }
 
-  public static class Loader implements ArgumentType<ParcelFormat.Loader<?>> {
+  public static class Reader implements ArgumentType<ParcelFormat.Reader<?>> {
 
     @Override
-    public ParcelFormat.Loader<?> parse(StringReader reader) throws CommandSyntaxException {
-      var format = ParcelFormatRegistry.get().getLoader(reader.readString());
+    public ParcelFormat.Reader<?> parse(StringReader reader) throws CommandSyntaxException {
+      var format = ParcelFormatRegistry.get().getReader(reader.readString());
       if (format == null) {
         throw ERROR_INVALID.createWithContext(reader);
       }
@@ -79,7 +80,7 @@ public final class ParcelFormatArgument {
     public <S> CompletableFuture<Suggestions> listSuggestions(
         final CommandContext<S> context, final SuggestionsBuilder builder) {
       return context.getSource() instanceof SharedSuggestionProvider
-          ? SharedSuggestionProvider.suggest(ParcelFormatRegistry.get().getLoaderNames(), builder)
+          ? SharedSuggestionProvider.suggest(ParcelFormatRegistry.get().getReaderNames(), builder)
           : Suggestions.empty();
     }
 

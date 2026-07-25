@@ -44,7 +44,7 @@ public class SaveSubcommand {
             .then(save_mirror);
 
     var save_format =
-        Commands.argument("format", ParcelFormatArgument.saver())
+        Commands.argument("format", ParcelFormatArgument.writer())
             .executes(SaveSubcommand::save2)
             .then(save_ignore_entities);
 
@@ -64,7 +64,7 @@ public class SaveSubcommand {
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         FilePathArgument.getPath(ctx, "path"),
-        ParcelFormatRegistry.get().defaultSaver(),
+        ParcelFormatRegistry.get().defaultWriter(),
         true,
         Mirror.NONE,
         Rotation.NONE);
@@ -76,7 +76,7 @@ public class SaveSubcommand {
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         FilePathArgument.getPath(ctx, "path"),
-        ParcelFormatArgument.getSaver(ctx, "format"),
+        ParcelFormatArgument.getWriter(ctx, "format"),
         true,
         Mirror.NONE,
         Rotation.NONE);
@@ -88,7 +88,7 @@ public class SaveSubcommand {
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         FilePathArgument.getPath(ctx, "path"),
-        ParcelFormatArgument.getSaver(ctx, "format"),
+        ParcelFormatArgument.getWriter(ctx, "format"),
         BoolArgumentType.getBool(ctx, "ignore_entities"),
         Mirror.NONE,
         Rotation.NONE);
@@ -100,7 +100,7 @@ public class SaveSubcommand {
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         FilePathArgument.getPath(ctx, "path"),
-        ParcelFormatArgument.getSaver(ctx, "format"),
+        ParcelFormatArgument.getWriter(ctx, "format"),
         BoolArgumentType.getBool(ctx, "ignore_entities"),
         TemplateMirrorArgument.getMirror(ctx, "mirror"),
         Rotation.NONE);
@@ -112,7 +112,7 @@ public class SaveSubcommand {
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         FilePathArgument.getPath(ctx, "path"),
-        ParcelFormatArgument.getSaver(ctx, "format"),
+        ParcelFormatArgument.getWriter(ctx, "format"),
         BoolArgumentType.getBool(ctx, "ignore_entities"),
         TemplateMirrorArgument.getMirror(ctx, "mirror"),
         TemplateRotationArgument.getRotation(ctx, "rotation"));
@@ -123,7 +123,7 @@ public class SaveSubcommand {
       BlockPos corner1,
       BlockPos corner2,
       Path parcelDir,
-      ParcelFormat.Saver<?> format,
+      ParcelFormat.Writer<?> format,
       boolean ignoreEntities,
       Mirror mirror,
       Rotation rotation) {

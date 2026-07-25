@@ -6,47 +6,47 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/** The parcel formats that a server can save and load. */
+/** The parcel formats that a server can write and read. */
 public record ParcelFormatCapabilities(
-    List<ParcelFormat.Spec> savers, List<ParcelFormat.Spec> loaders) {
+    List<ParcelFormat.Spec> writers, List<ParcelFormat.Spec> readers) {
   public static final Codec<ParcelFormatCapabilities> CODEC =
       RecordCodecBuilder.create(
           inst ->
               inst.group(
                       ParcelFormat.Spec.CODEC
                           .listOf()
-                          .fieldOf("savers")
-                          .forGetter(ParcelFormatCapabilities::savers),
+                          .fieldOf("writers")
+                          .forGetter(ParcelFormatCapabilities::writers),
                       ParcelFormat.Spec.CODEC
                           .listOf()
-                          .fieldOf("loaders")
-                          .forGetter(ParcelFormatCapabilities::loaders))
+                          .fieldOf("readers")
+                          .forGetter(ParcelFormatCapabilities::readers))
                   .apply(inst, ParcelFormatCapabilities::new));
 
   public ParcelFormatCapabilities {
-    savers = List.copyOf(savers);
-    loaders = List.copyOf(loaders);
+    writers = List.copyOf(writers);
+    readers = List.copyOf(readers);
   }
 
   public Set<ParcelFormat.Spec> toSet() {
     Set<ParcelFormat.Spec> set = new HashSet<>();
-    set.addAll(savers);
-    set.addAll(loaders);
+    set.addAll(writers);
+    set.addAll(readers);
     return Set.copyOf(set);
   }
 
-  public boolean hasSaver(ParcelFormat.Spec spec) {
-    return savers.contains(spec);
+  public boolean hasWriter(ParcelFormat.Spec spec) {
+    return writers.contains(spec);
   }
 
-  public boolean hasLoader(ParcelFormat.Spec spec) {
-    return loaders.contains(spec);
+  public boolean hasReader(ParcelFormat.Spec spec) {
+    return readers.contains(spec);
   }
 
   public static ParcelFormatCapabilities from(ParcelFormatRegistry registry) {
-    var savers = registry.streamSavers().map(ParcelFormat::spec).toList();
-    var loaders = registry.streamLoaders().map(ParcelFormat::spec).toList();
-    return new ParcelFormatCapabilities(savers, loaders);
+    var writers = registry.streamWriters().map(ParcelFormat::spec).toList();
+    var readers = registry.streamReaders().map(ParcelFormat::spec).toList();
+    return new ParcelFormatCapabilities(writers, readers);
   }
 
   public static ParcelFormatCapabilities empty() {

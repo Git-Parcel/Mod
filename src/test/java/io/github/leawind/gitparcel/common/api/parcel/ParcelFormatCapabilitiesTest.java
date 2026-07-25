@@ -16,24 +16,24 @@ class ParcelFormatCapabilitiesTest extends AbstractGitParcelTest {
   void createsCapabilitiesFromRegistry() {
     var capabilities = ParcelFormatCapabilities.from(ParcelFormatRegistry.get());
 
-    assertTrue(capabilities.hasSaver(new ParcelFormat.Spec("alpha", 0)));
-    assertTrue(capabilities.hasSaver(new ParcelFormat.Spec("beta", 0)));
-    assertTrue(capabilities.hasLoader(new ParcelFormat.Spec("charlie", 0)));
-    assertFalse(capabilities.hasLoader(new ParcelFormat.Spec("beta", 0)));
+    assertTrue(capabilities.hasWriter(new ParcelFormat.Spec("alpha", 0)));
+    assertTrue(capabilities.hasWriter(new ParcelFormat.Spec("beta", 0)));
+    assertTrue(capabilities.hasReader(new ParcelFormat.Spec("charlie", 0)));
+    assertFalse(capabilities.hasReader(new ParcelFormat.Spec("beta", 0)));
     assertEquals(3, capabilities.toSet().size());
   }
 
   @Test
   void ownsImmutableCopies() {
-    var savers = new ArrayList<>(List.of(new ParcelFormat.Spec("alpha", 0)));
-    var capabilities = new ParcelFormatCapabilities(savers, List.of());
+    var writers = new ArrayList<>(List.of(new ParcelFormat.Spec("alpha", 0)));
+    var capabilities = new ParcelFormatCapabilities(writers, List.of());
 
-    savers.clear();
+    writers.clear();
 
-    assertEquals(1, capabilities.savers().size());
+    assertEquals(1, capabilities.writers().size());
     assertThrows(
         UnsupportedOperationException.class,
-        () -> capabilities.savers().add(new ParcelFormat.Spec("beta", 0)));
+        () -> capabilities.writers().add(new ParcelFormat.Spec("beta", 0)));
   }
 
   @Test

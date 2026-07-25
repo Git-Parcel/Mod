@@ -90,6 +90,12 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
     return pos;
   }
 
+  /** Applies mirror and rotation to a direction vector without translating it. */
+  public Vec3 applyVector(Vec3 vec) {
+    vec = TransformUtils.mirror(mirror, vec);
+    return TransformUtils.rotate(rotation, vec);
+  }
+
   /**
    * Applies the inverted transformations (translate, rotate, mirror) to a {@link Vec3}.
    *
@@ -114,6 +120,12 @@ public record ParcelTransform(Mirror mirror, Rotation rotation, Vec3i translatio
     pos = TransformUtils.rotateInverted(rotation, pos);
     pos = TransformUtils.mirror(mirror, pos);
     return pos;
+  }
+
+  /** Applies the inverse rotation and mirror to a direction vector without translating it. */
+  public Vec3 applyVectorInverted(Vec3 vec) {
+    vec = TransformUtils.rotateInverted(rotation, vec);
+    return TransformUtils.mirror(mirror, vec);
   }
 
   public static Vec3i rotateSize(Rotation rotation, Vec3i size) {

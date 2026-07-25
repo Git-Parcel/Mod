@@ -30,14 +30,14 @@ public final class ParcelFactory {
     return createMetadata(format, sizeParcelSpace, Vec3i.ZERO);
   }
 
-  /** Creates a parcel using the active default format saver. */
+  /** Creates a parcel using the active default format writer. */
   public static Parcel create(BoundingBox boundingBox, Mirror mirror, Rotation rotation) {
     var pivot = Parcel.getPivot(mirror, rotation, boundingBox);
     var transform =
         new ParcelTransform(
             mirror, rotation, new Vec3i((int) pivot.x, (int) pivot.y, (int) pivot.z));
 
-    var format = ParcelFormatRegistry.get().defaultSaver().spec();
+    var format = ParcelFormatRegistry.get().defaultWriter().spec();
     var meta = createMetadata(format, boundingBox, rotation);
 
     return Parcel.create(meta, transform);

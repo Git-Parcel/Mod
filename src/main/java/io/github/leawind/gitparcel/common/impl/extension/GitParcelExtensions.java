@@ -1,6 +1,8 @@
 package io.github.leawind.gitparcel.common.impl.extension;
 
 import io.github.leawind.gitparcel.common.api.extension.GitParcelExtension;
+import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentTypeRegistry;
+import io.github.leawind.gitparcel.common.api.extension.processor.ParcelDataProcessorRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
 import java.util.ArrayList;
@@ -65,7 +67,9 @@ public final class GitParcelExtensions {
       }
     }
 
-    registry.setDefaultSaver(DEFAULT_FORMAT);
+    registry.setDefaultWriter(DEFAULT_FORMAT);
+    ParcelDataProcessorRegistry.get().freeze();
+    ParcelAttachmentTypeRegistry.get().freeze();
     registry.freeze();
   }
 }

@@ -134,7 +134,10 @@ val checkArchitectureBoundaries by tasks.registering {
                     violations += "$relativePath bypasses the codec-backed SavedData base"
                 }
 
+                val isPortableBlockSection =
+                    relativePath.endsWith("/common/api/parcel/content/BlockSection.java")
                 if (relativePath.contains("/common/api/parcel/") &&
+                    !isPortableBlockSection &&
                     (
                         content.contains(
                             "import net.minecraft.world.level.block.state.BlockState;",

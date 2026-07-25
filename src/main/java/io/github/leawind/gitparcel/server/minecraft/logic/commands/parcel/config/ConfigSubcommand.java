@@ -80,15 +80,15 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
   private static ArgumentBuilder<CommandSourceStack, ?> buildMetaFormat() {
     return Commands.literal("meta.format")
         .then(
-            Commands.argument("save_format", ParcelFormatArgument.saver())
+            Commands.argument("save_format", ParcelFormatArgument.writer())
                 .executes(
                     ctx -> {
-                      var saver = ParcelFormatArgument.getSaver(ctx, "save_format");
+                      var writer = ParcelFormatArgument.getWriter(ctx, "save_format");
                       return handle(
                           ctx,
                           "meta.format",
-                          c -> saver,
-                          (p, s) -> p.meta().setFormatSpec(s.spec()));
+                          c -> writer,
+                          (p, w) -> p.meta().setFormatSpec(w.spec()));
                     }));
   }
 

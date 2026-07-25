@@ -69,14 +69,14 @@ public final class ModEntrypoint {
         SingletonArgumentInfo.contextFree(FilePathArgument::new));
 
     registrar.register(
-        "parcel_format_saver",
-        ParcelFormatArgument.Saver.class,
-        SingletonArgumentInfo.contextFree(ParcelFormatArgument::saver));
+        "parcel_format_writer",
+        ParcelFormatArgument.Writer.class,
+        SingletonArgumentInfo.contextFree(ParcelFormatArgument::writer));
 
     registrar.register(
-        "parcel_format_loader",
-        ParcelFormatArgument.Loader.class,
-        SingletonArgumentInfo.contextFree(ParcelFormatArgument::loader));
+        "parcel_format_reader",
+        ParcelFormatArgument.Reader.class,
+        SingletonArgumentInfo.contextFree(ParcelFormatArgument::reader));
 
     registrar.register("parcel", ParcelArgument.class, new ParcelArgument.Info());
   }

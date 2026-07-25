@@ -1,68 +1,64 @@
 package io.github.leawind.gitparcel.common.testutils;
 
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
+import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
-import io.github.leawind.gitparcel.common.impl.parcel.ParcelFormatRegistryImpl;
-import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentSink;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentSource;
 import java.io.IOException;
 import org.junit.jupiter.api.BeforeAll;
 
-/**
- * Base class for tests that need both Minecraft runtime and a pre-populated {@link
- * ParcelFormatRegistryImpl} with test format entries.
- *
- * <p>Extends {@link AbstractMinecraftTest} and adds common test {@link ParcelFormat.Saver}/{@link
- * ParcelFormat.Loader} implementations.
- */
+/** Minecraft test base with a small format registry fixture. */
 public class AbstractGitParcelTest extends AbstractMinecraftTest {
-
-  protected static class TestFormat implements ParcelFormat.Impl<ParcelFormatConfig.None> {
-
-    @Override
-    public Spec spec() {
-      return spec;
-    }
-
+  protected abstract static class TestFormat
+      implements ParcelFormat.Impl<ParcelFormatConfig.None> {
     private final Spec spec;
 
     protected TestFormat(String id, int version) {
       this.spec = new Spec(id, version);
     }
+
+    @Override
+    public Spec spec() {
+      return spec;
+    }
   }
 
-  protected static class TestSaver extends TestFormat
-      implements ParcelFormat.ContextSaver<ParcelFormatConfig.None> {
-
-    public TestSaver(String id, int version) {
+  protected static final class TestWriter extends TestFormat
+      implements ParcelFormat.Writer<ParcelFormatConfig.None> {
+    public TestWriter(String id, int version) {
       super(id, version);
     }
 
     @Override
-    public void save(SaveContext<ParcelFormatConfig.None> context)
-        throws IOException, ParcelException.UnsupportedFeature {
-      throw new IOException("Unimplemented");
+    public int blockSectionSize() {
+      return 16;
     }
+
+    @Override
+    public void write(
+        WriteContext<ParcelFormatConfig.None> context, ParcelContentSource source)
+        throws IOException, ParcelException {}
   }
 
-  protected static class TestLoader extends TestFormat
-      implements ParcelFormat.ContextLoader<ParcelFormatConfig.None> {
-    protected TestLoader(String id, int version) {
+  protected static final class TestReader extends TestFormat
+      implements ParcelFormat.Reader<ParcelFormatConfig.None> {
+    public TestReader(String id, int version) {
       super(id, version);
     }
 
     @Override
-    public void load(LoadContext<ParcelFormatConfig.None> context)
-        throws IOException, ParcelException.CorruptedParcelException {
-      throw new IOException("Unimplemented");
-    }
+    public void read(ReadContext<ParcelFormatConfig.None> context, ParcelContentSink sink)
+        throws IOException, ParcelException {}
   }
 
   @BeforeAll
   static void beforeAllGitParcel() {
-    ParcelFormatRegistry.get().clear();
-    ParcelFormatRegistry.get().registerDefaultSaver(new TestSaver("alpha", 0));
-    ParcelFormatRegistry.get().register(new TestSaver("beta", 0));
-    ParcelFormatRegistry.get().register(new TestLoader("charlie", 0));
+    var registry = ParcelFormatRegistry.get();
+    registry.clear();
+    registry.registerDefaultWriter(new TestWriter("alpha", 0));
+    registry.register(new TestWriter("beta", 0));
+    registry.register(new TestReader("charlie", 0));
   }
 }

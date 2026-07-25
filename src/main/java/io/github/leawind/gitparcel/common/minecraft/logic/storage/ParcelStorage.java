@@ -5,9 +5,12 @@ import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelMeta;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
+import io.github.leawind.gitparcel.common.minecraft.logic.portable.MinecraftParcelContentSink;
+import io.github.leawind.gitparcel.common.minecraft.logic.portable.MinecraftParcelContentSource;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -61,9 +64,9 @@ public class ParcelStorage {
     C config = null;
     var serializedConfig = parcel.formatConfig().orElse(null);
     if (serializedConfig != null) {
-      ParcelFormat.Saver<C> format =
-          (ParcelFormat.Saver<C>)
-              ParcelFormatRegistry.get().getSaver(parcel.meta().formatSpec());
+      ParcelFormat.Writer<C> format =
+          (ParcelFormat.Writer<C>)
+              ParcelFormatRegistry.get().getWriter(parcel.meta().formatSpec());
       if (format == null) {
         throw new ParcelException.UnsupportedFormat(parcel.meta().formatSpec());
       }
@@ -101,19 +104,10 @@ public class ParcelStorage {
       Path parcelDir,
       boolean ignoreEntities)
       throws IOException, ParcelException {
-    ParcelFormat.Saver<C> format =
-        (ParcelFormat.Saver<C>) ParcelFormatRegistry.get().getSaver(meta.formatSpec());
+    ParcelFormat.Writer<C> format =
+        (ParcelFormat.Writer<C>) ParcelFormatRegistry.get().getWriter(meta.formatSpec());
     if (format == null) {
       throw new ParcelException.UnsupportedFormat(meta.formatSpec());
-    }
-
-    if (transform.rotation() != Rotation.NONE
-        && !format.features().contains(ParcelFormat.Feature.ROTATE)) {
-      throw new ParcelException.UnsupportedFeature(meta.formatSpec(), ParcelFormat.Feature.ROTATE);
-    }
-    if (transform.mirror() != Mirror.NONE
-        && !format.features().contains(ParcelFormat.Feature.MIRROR)) {
-      throw new ParcelException.UnsupportedFeature(meta.formatSpec(), ParcelFormat.Feature.MIRROR);
     }
 
     meta.save(getMetaFile(parcelDir));
@@ -139,19 +133,26 @@ public class ParcelStorage {
       }
     }
 
-    format.save(
-        new ParcelFormat.SaveContext<>(
+    var space = new ParcelSpace(transform, meta.anchor());
+    var source =
+        new MinecraftParcelContentSource(
             level,
             meta.size(),
-            transform,
             meta.anchor(),
+            space,
+            ignoreEntities && meta.getExcludeEntities());
+    format.write(
+        new ParcelFormat.WriteContext<>(
+            meta.size(),
+            meta.anchor(),
+            meta.dataVersion(),
             getDataDir(parcelDir),
-            ignoreEntities && meta.getExcludeEntities(),
-            actualConfig));
+            actualConfig),
+        source);
   }
 
   public static <C extends ParcelFormatConfig<C>> void save(
-      ParcelFormat.Saver<C> saver,
+      ParcelFormat.Writer<C> writer,
       Level level,
       BoundingBox boundingBox,
       Rotation rotation,
@@ -164,7 +165,7 @@ public class ParcelStorage {
     var pivot = Parcel.getPivotBlockPos(mirror, rotation, boundingBox);
     ParcelTransform transform = new ParcelTransform(mirror, rotation, pivot);
 
-    ParcelMeta meta = ParcelFactory.createMetadata(saver.spec(), boundingBox, rotation);
+    ParcelMeta meta = ParcelFactory.createMetadata(writer.spec(), boundingBox, rotation);
 
     ParcelStorage.save(level, transform, meta, config, parcelDir, ignoreEntities);
   }
@@ -193,14 +194,14 @@ public class ParcelStorage {
       @Block.UpdateFlags int flags)
       throws IOException, ParcelException {
     var meta = ParcelMeta.load(parcelDir.resolve(META_FILE_NAME));
-    ParcelFormat.Loader<C> loader =
-        (ParcelFormat.Loader<C>) ParcelFormatRegistry.get().getLoader(meta.formatSpec());
-    if (loader == null) {
+    ParcelFormat.Reader<C> reader =
+        (ParcelFormat.Reader<C>) ParcelFormatRegistry.get().getReader(meta.formatSpec());
+    if (reader == null) {
       throw new ParcelException.UnsupportedFormat(meta.formatSpec());
     }
 
     Path configFile = getConfigFile(parcelDir);
-    C config = loader.getDefaultConfig();
+    C config = reader.getDefaultConfig();
     if (config != null && Files.exists(configFile)) {
       try {
         config.load(configFile);
@@ -211,17 +212,26 @@ public class ParcelStorage {
     }
 
     Path dataDir = parcelDir.resolve(DATA_DIR_NAME);
-    loader.load(
-        new ParcelFormat.LoadContext<>(
+    var sink =
+        new MinecraftParcelContentSink(
             level,
-            meta.size(),
-            transform,
-            meta.anchor(),
-            dataDir,
+            new ParcelSpace(transform, meta.anchor()),
             ignoreBlocks,
             ignoreEntities,
             flags,
-            config));
+            meta.dataVersion());
+    try {
+      reader.read(
+          new ParcelFormat.ReadContext<>(
+              meta.size(),
+              meta.anchor(),
+              meta.dataVersion(),
+              dataDir,
+              config),
+          sink);
+    } finally {
+      sink.finish();
+    }
   }
 
   public static void load(

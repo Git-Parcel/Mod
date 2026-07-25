@@ -17,63 +17,63 @@ public final class ParcelFormatRegistryImpl implements ParcelFormatRegistry {
 
   public static final ParcelFormatRegistry INSTANCE = new ParcelFormatRegistryImpl();
 
-  private final Map<ParcelFormat.Spec, ParcelFormat.Saver<?>> savers =
+  private final Map<ParcelFormat.Spec, ParcelFormat.Writer<?>> writers =
       new Object2ObjectArrayMap<>();
-  private final Map<ParcelFormat.Spec, ParcelFormat.Loader<?>> loaders =
+  private final Map<ParcelFormat.Spec, ParcelFormat.Reader<?>> readers =
       new Object2ObjectArrayMap<>();
 
-  private ParcelFormat.@Nullable Saver<?> defaultSaver;
+  private ParcelFormat.@Nullable Writer<?> defaultWriter;
   private boolean frozen;
 
   public void clear() {
     ensureMutable();
-    savers.clear();
-    loaders.clear();
-    defaultSaver = null;
+    writers.clear();
+    readers.clear();
+    defaultWriter = null;
   }
 
   public <C extends ParcelFormatConfig<C>, F extends ParcelFormat.Impl<C>> void register(F format)
       throws IllegalArgumentException {
     ensureMutable();
 
-    boolean isSaverOrLoader = false;
+    boolean isWriterOrReader = false;
 
-    if (format instanceof ParcelFormat.Saver<?> saver) {
-      if (savers.containsKey(saver.spec())) {
-        throw new IllegalArgumentException("duplicate saver: " + saver);
+    if (format instanceof ParcelFormat.Writer<?> writer) {
+      if (writers.containsKey(writer.spec())) {
+        throw new IllegalArgumentException("duplicate writer: " + writer);
       }
-      savers.put(format.spec(), saver);
-      isSaverOrLoader = true;
+      writers.put(format.spec(), writer);
+      isWriterOrReader = true;
     }
 
-    if (format instanceof ParcelFormat.Loader<?> loader) {
-      if (loaders.containsKey(loader.spec())) {
-        throw new IllegalArgumentException("duplicate loader: " + loader);
+    if (format instanceof ParcelFormat.Reader<?> reader) {
+      if (readers.containsKey(reader.spec())) {
+        throw new IllegalArgumentException("duplicate reader: " + reader);
       }
-      loaders.put(format.spec(), loader);
-      isSaverOrLoader = true;
+      readers.put(format.spec(), reader);
+      isWriterOrReader = true;
     }
 
-    if (!isSaverOrLoader) {
-      throw new IllegalArgumentException("format must be either saver or loader");
+    if (!isWriterOrReader) {
+      throw new IllegalArgumentException("format must be either writer or reader");
     }
   }
 
-  public <C extends ParcelFormatConfig<C>> void registerDefaultSaver(ParcelFormat.Saver<C> format)
+  public <C extends ParcelFormatConfig<C>> void registerDefaultWriter(ParcelFormat.Writer<C> format)
       throws IllegalArgumentException {
     ensureMutable();
     register(format);
-    defaultSaver = format;
+    defaultWriter = format;
   }
 
   @Override
-  public void setDefaultSaver(ParcelFormat.Spec spec) {
+  public void setDefaultWriter(ParcelFormat.Spec spec) {
     ensureMutable();
-    var saver = getSaver(spec);
-    if (saver == null) {
+    var writer = getWriter(spec);
+    if (writer == null) {
       throw new IllegalStateException("Default parcel format is not registered: " + spec);
     }
-    defaultSaver = saver;
+    defaultWriter = writer;
   }
 
   @Override
@@ -92,45 +92,45 @@ public final class ParcelFormatRegistryImpl implements ParcelFormatRegistry {
     }
   }
 
-  public ParcelFormat.Saver<?> defaultSaver() throws NullPointerException {
-    return Objects.requireNonNull(defaultSaver);
+  public ParcelFormat.Writer<?> defaultWriter() throws NullPointerException {
+    return Objects.requireNonNull(defaultWriter);
   }
 
-  public ParcelFormat.@Nullable Saver<?> getSaver(String id) {
-    return savers.values().stream()
+  public ParcelFormat.@Nullable Writer<?> getWriter(String id) {
+    return writers.values().stream()
         .filter(format -> format.spec().id().equals(id))
         .max(Comparator.comparingInt(f -> f.spec().version()))
         .orElse(null);
   }
 
-  public ParcelFormat.@Nullable Saver<?> getSaver(ParcelFormat.Spec spec) {
-    return savers.get(spec);
+  public ParcelFormat.@Nullable Writer<?> getWriter(ParcelFormat.Spec spec) {
+    return writers.get(spec);
   }
 
-  public ParcelFormat.@Nullable Loader<?> getLoader(String id) {
-    return loaders.values().stream()
+  public ParcelFormat.@Nullable Reader<?> getReader(String id) {
+    return readers.values().stream()
         .filter(format -> format.spec().id().equals(id))
         .max(Comparator.comparingInt(f -> f.spec().version()))
         .orElse(null);
   }
 
-  public ParcelFormat.@Nullable Loader<?> getLoader(ParcelFormat.Spec spec) {
-    return loaders.get(spec);
+  public ParcelFormat.@Nullable Reader<?> getReader(ParcelFormat.Spec spec) {
+    return readers.get(spec);
   }
 
-  public Set<String> getSaverNames() {
-    return savers.keySet().stream().map(ParcelFormat.Spec::id).collect(Collectors.toSet());
+  public Set<String> getWriterNames() {
+    return writers.keySet().stream().map(ParcelFormat.Spec::id).collect(Collectors.toSet());
   }
 
-  public Set<String> getLoaderNames() {
-    return loaders.keySet().stream().map(ParcelFormat.Spec::id).collect(Collectors.toSet());
+  public Set<String> getReaderNames() {
+    return readers.keySet().stream().map(ParcelFormat.Spec::id).collect(Collectors.toSet());
   }
 
-  public Stream<ParcelFormat.Saver<?>> streamSavers() {
-    return savers.values().stream();
+  public Stream<ParcelFormat.Writer<?>> streamWriters() {
+    return writers.values().stream();
   }
 
-  public Stream<ParcelFormat.Loader<?>> streamLoaders() {
-    return loaders.values().stream();
+  public Stream<ParcelFormat.Reader<?>> streamReaders() {
+    return readers.values().stream();
   }
 }

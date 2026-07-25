@@ -80,7 +80,7 @@ public class LoadSubcommand {
             | Block.UPDATE_SKIP_ALL_SIDEEFFECTS;
 
     try {
-      // Entities are loaded by the format loader when ignoreEntities is false
+      // Entities are loaded by the format reader when ignoreEntities is false
       ParcelStorage.load(source.getLevel(), transform, path, false, false, loadFlags);
 
       source.sendSuccess(

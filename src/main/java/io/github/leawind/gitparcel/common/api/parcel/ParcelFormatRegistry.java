@@ -6,10 +6,10 @@ import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A registry for {@link ParcelFormat} savers and loaders.
+ * A registry for {@link ParcelFormat} writers and readers.
  *
- * <p>Maintains separate maps for save and load format implementations, keyed by {@link
- * ParcelFormat.Spec}. Also tracks an optional default saver used when no specific format is
+ * <p>Maintains separate maps for writer and reader implementations, keyed by {@link
+ * ParcelFormat.Spec}. Also tracks an optional default writer used when no specific format is
  * requested.
  *
  * <p>A singleton instance is available via {@link #get()}, though subclasses may create additional
@@ -29,56 +29,56 @@ public interface ParcelFormatRegistry {
   boolean isFrozen();
 
   /**
-   * @throws IllegalArgumentException if {@code format} is neither a saver nor a loader, or if a
-   *     saver or loader with the same {@link ParcelFormat.Spec} is already registered
+   * @throws IllegalArgumentException if {@code format} is neither a writer nor a reader, or if a
+   *     writer or reader with the same {@link ParcelFormat.Spec} is already registered
    */
   <C extends ParcelFormatConfig<C>, F extends ParcelFormat.Impl<C>> void register(F format);
 
   /**
-   * @throws IllegalArgumentException if the format is already registered as a saver
+   * @throws IllegalArgumentException if the format is already registered as a writer
    */
-  <C extends ParcelFormatConfig<C>> void registerDefaultSaver(ParcelFormat.Saver<C> format);
+  <C extends ParcelFormatConfig<C>> void registerDefaultWriter(ParcelFormat.Writer<C> format);
 
   /**
-   * Selects an already registered saver as the default.
+   * Selects an already registered writer as the default.
    *
-   * @throws IllegalStateException if no saver is registered for {@code spec}
+   * @throws IllegalStateException if no writer is registered for {@code spec}
    */
-  void setDefaultSaver(ParcelFormat.Spec spec);
+  void setDefaultWriter(ParcelFormat.Spec spec);
 
   /**
-   * Returns the default saver.
+   * Returns the default writer.
    *
-   * @return the default {@link ParcelFormat.Saver} instance
-   * @throws NullPointerException if no default saver has been set via {@link #registerDefaultSaver}
+   * @return the default {@link ParcelFormat.Writer} instance
+   * @throws NullPointerException if no default writer has been selected
    */
-  ParcelFormat.Saver<?> defaultSaver();
+  ParcelFormat.Writer<?> defaultWriter();
 
   /**
-   * @return the latest-version saver for {@code id}, or {@code null} if none is registered
+   * @return the latest-version writer for {@code id}, or {@code null} if none is registered
    */
-  ParcelFormat.@Nullable Saver<?> getSaver(String id);
+  ParcelFormat.@Nullable Writer<?> getWriter(String id);
 
-  ParcelFormat.@Nullable Saver<?> getSaver(ParcelFormat.Spec spec);
+  ParcelFormat.@Nullable Writer<?> getWriter(ParcelFormat.Spec spec);
 
   /**
-   * @return the latest-version loader for {@code id}, or {@code null} if none is registered
+   * @return the latest-version reader for {@code id}, or {@code null} if none is registered
    */
-  ParcelFormat.@Nullable Loader<?> getLoader(String id);
+  ParcelFormat.@Nullable Reader<?> getReader(String id);
 
-  ParcelFormat.@Nullable Loader<?> getLoader(ParcelFormat.Spec spec);
+  ParcelFormat.@Nullable Reader<?> getReader(ParcelFormat.Spec spec);
 
   /**
-   * @return an unordered {@link Set} of saver id strings; empty if no savers are registered
+   * @return an unordered {@link Set} of writer id strings; empty if no writers are registered
    */
-  Set<String> getSaverNames();
+  Set<String> getWriterNames();
 
   /**
-   * @return an unordered {@link Set} of loader id strings; empty if no loaders are registered
+   * @return an unordered {@link Set} of reader id strings; empty if no readers are registered
    */
-  Set<String> getLoaderNames();
+  Set<String> getReaderNames();
 
-  Stream<ParcelFormat.Saver<?>> streamSavers();
+  Stream<ParcelFormat.Writer<?>> streamWriters();
 
-  Stream<ParcelFormat.Loader<?>> streamLoaders();
+  Stream<ParcelFormat.Reader<?>> streamReaders();
 }

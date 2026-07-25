@@ -1,7 +1,6 @@
 package io.github.leawind.gitparcel.common.api.exceptions;
 
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
-import java.util.Arrays;
 
 /** Custom exception for parcel-related errors. */
 public class ParcelException extends Exception {
@@ -20,19 +19,6 @@ public class ParcelException extends Exception {
     public UnsupportedFormat(ParcelFormat.Spec formatSpec) {
       super(String.format("Unsupported format: %s", formatSpec));
       this.formatSpec = formatSpec;
-    }
-  }
-
-  public static class UnsupportedFeature extends ParcelException {
-    public final ParcelFormat.Spec formatSpec;
-    public final ParcelFormat.Feature[] features;
-
-    public UnsupportedFeature(ParcelFormat.Spec formatSpec, ParcelFormat.Feature... features) {
-      super(
-          String.format(
-              "Unsupported features for format %s: %s", formatSpec, Arrays.toString(features)));
-      this.formatSpec = formatSpec;
-      this.features = features;
     }
   }
 

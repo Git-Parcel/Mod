@@ -58,17 +58,17 @@ public class GitParcelGameTest {
 
   public void testSaveAndLoad(GameTestHelpMore helper) throws Exception {
     GameTestUtils.forEachFormatCombination(
-        ParcelFormatRegistry.get().streamSavers().toList(),
-        (saver, rotation, mirror) -> {
-          if (saver.getDefaultConfig() == null) {
+        ParcelFormatRegistry.get().streamWriters().toList(),
+        (writer, rotation, mirror) -> {
+          if (writer.getDefaultConfig() == null) {
             LOGGER.info(
                 "Testing format {} with rotation={} mirror={} config=default",
-                saver.spec(),
+                writer.spec(),
                 rotation,
                 mirror);
-            doSaveAndLoad(helper, saver, rotation, mirror, null);
+            doSaveAndLoad(helper, writer, rotation, mirror, null);
           } else {
-            testAllConfigCombinations(helper, saver, rotation, mirror);
+            testAllConfigCombinations(helper, writer, rotation, mirror);
           }
         });
 
@@ -83,18 +83,18 @@ public class GitParcelGameTest {
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   private void testAllConfigCombinations(
-      GameTestHelpMore helper, ParcelFormat.Saver<?> rawSaver, Rotation rotation, Mirror mirror)
+      GameTestHelpMore helper, ParcelFormat.Writer<?> rawWriter, Rotation rotation, Mirror mirror)
       throws Exception {
 
-    var saver = (ParcelFormat.Saver) rawSaver;
-    ParcelFormatConfig<?> config = saver.getDefaultConfig();
+    var writer = (ParcelFormat.Writer) rawWriter;
+    ParcelFormatConfig<?> config = writer.getDefaultConfig();
 
     if (config == null) {
-      doSaveAndLoad(helper, saver, rotation, mirror, null);
+      doSaveAndLoad(helper, writer, rotation, mirror, null);
       return;
     }
 
-    List<Map<String, ?>> combos = GameTestUtils.generateConfigCombinations(saver);
+    List<Map<String, ?>> combos = GameTestUtils.generateConfigCombinations(writer);
     for (var combo : combos) {
       config.resetToDefault();
 
@@ -107,24 +107,24 @@ public class GitParcelGameTest {
 
       LOGGER.info(
           "Testing format {} with rotation={} mirror={} config={}",
-          saver.spec(),
+          writer.spec(),
           rotation,
           mirror,
           config.toJson());
 
-      doSaveAndLoad(helper, saver, rotation, mirror, config);
+      doSaveAndLoad(helper, writer, rotation, mirror, config);
     }
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   private void doSaveAndLoad(
       GameTestHelpMore helper,
-      ParcelFormat.Saver<?> rawSaver,
+      ParcelFormat.Writer<?> rawWriter,
       Rotation rotation,
       Mirror mirror,
       @Nullable ParcelFormatConfig config)
       throws Exception {
-    var saver = (ParcelFormat.Saver) rawSaver;
+    var writer = (ParcelFormat.Writer) rawWriter;
 
     try (var fs = Jimfs.newFileSystem()) {
       Path tempDir = fs.getPath("/tmp");
@@ -152,7 +152,7 @@ public class GitParcelGameTest {
               box.maxZ());
 
       ParcelStorage.save(
-          saver,
+          writer,
           helper.getLevel(),
           helper.absoluteBoundingBox(bottomBox),
           rotation,
@@ -161,9 +161,9 @@ public class GitParcelGameTest {
           tempDir,
           true);
 
-      var loader = ParcelFormatRegistry.get().getLoader(saver.spec());
-      if (loader == null) {
-        LOGGER.info("  Skipped: no loader for format {}", saver.spec());
+      var reader = ParcelFormatRegistry.get().getReader(writer.spec());
+      if (reader == null) {
+        LOGGER.info("  Skipped: no reader for format {}", writer.spec());
         return;
       }
 
