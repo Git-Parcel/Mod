@@ -23,8 +23,10 @@ public final class ParcelFormatRegistryImpl implements ParcelFormatRegistry {
       new Object2ObjectArrayMap<>();
 
   private ParcelFormat.@Nullable Saver<?> defaultSaver;
+  private boolean frozen;
 
   public void clear() {
+    ensureMutable();
     savers.clear();
     loaders.clear();
     defaultSaver = null;
@@ -32,6 +34,7 @@ public final class ParcelFormatRegistryImpl implements ParcelFormatRegistry {
 
   public <C extends ParcelFormatConfig<C>, F extends ParcelFormat.Impl<C>> void register(F format)
       throws IllegalArgumentException {
+    ensureMutable();
 
     boolean isSaverOrLoader = false;
 
@@ -58,8 +61,35 @@ public final class ParcelFormatRegistryImpl implements ParcelFormatRegistry {
 
   public <C extends ParcelFormatConfig<C>> void registerDefaultSaver(ParcelFormat.Saver<C> format)
       throws IllegalArgumentException {
+    ensureMutable();
     register(format);
     defaultSaver = format;
+  }
+
+  @Override
+  public void setDefaultSaver(ParcelFormat.Spec spec) {
+    ensureMutable();
+    var saver = getSaver(spec);
+    if (saver == null) {
+      throw new IllegalStateException("Default parcel format is not registered: " + spec);
+    }
+    defaultSaver = saver;
+  }
+
+  @Override
+  public void freeze() {
+    frozen = true;
+  }
+
+  @Override
+  public boolean isFrozen() {
+    return frozen;
+  }
+
+  private void ensureMutable() {
+    if (frozen) {
+      throw new IllegalStateException("Parcel format registry is frozen");
+    }
   }
 
   public ParcelFormat.Saver<?> defaultSaver() throws NullPointerException {

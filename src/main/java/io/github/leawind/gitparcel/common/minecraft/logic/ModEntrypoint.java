@@ -4,12 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatCapabilities;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
-import io.github.leawind.gitparcel.common.minecraft.logic.builtin.mvp.MvpFormat;
-import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d16.ParcellaD16Loader;
-import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d16.ParcellaD16Saver;
-import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d32.ParcellaD32Loader;
-import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d32.ParcellaD32Saver;
-import io.github.leawind.gitparcel.common.minecraft.logic.builtin.structuretemplate.StructureTemplateFormat;
+import io.github.leawind.gitparcel.common.impl.extension.GitParcelExtensions;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelFormatArgument;
@@ -40,19 +35,7 @@ public final class ModEntrypoint {
   public static void initialize() {
     LOGGER.debug("Initializing");
 
-    registerFormats();
-  }
-
-  private static void registerFormats() {
-    ParcelFormatRegistry.get().registerDefaultSaver(new ParcellaD32Saver());
-    ParcelFormatRegistry.get().register(new ParcellaD32Loader());
-    ParcelFormatRegistry.get().register(new ParcellaD16Loader());
-
-    if (Services.PLATFORM_HELPER.isDevelopmentEnvironment()) {
-      ParcelFormatRegistry.get().register(new StructureTemplateFormat());
-      ParcelFormatRegistry.get().register(new ParcellaD16Saver());
-      ParcelFormatRegistry.get().register(new MvpFormat());
-    }
+    GitParcelExtensions.discoverAndFreeze();
   }
 
   /** Synchronizes server-owned registries and parcel state after a player enters play state. */

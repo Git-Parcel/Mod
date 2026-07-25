@@ -23,6 +23,11 @@ public interface ParcelFormatRegistry {
 
   void clear();
 
+  /** Prevents further registrations. */
+  void freeze();
+
+  boolean isFrozen();
+
   /**
    * @throws IllegalArgumentException if {@code format} is neither a saver nor a loader, or if a
    *     saver or loader with the same {@link ParcelFormat.Spec} is already registered
@@ -33,6 +38,13 @@ public interface ParcelFormatRegistry {
    * @throws IllegalArgumentException if the format is already registered as a saver
    */
   <C extends ParcelFormatConfig<C>> void registerDefaultSaver(ParcelFormat.Saver<C> format);
+
+  /**
+   * Selects an already registered saver as the default.
+   *
+   * @throws IllegalStateException if no saver is registered for {@code spec}
+   */
+  void setDefaultSaver(ParcelFormat.Spec spec);
 
   /**
    * Returns the default saver.
