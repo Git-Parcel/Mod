@@ -1,6 +1,9 @@
 {
+  "argument.gitparcel.filepath.cannot_be_dir": "路径不能是目录",
+  "argument.gitparcel.filepath.cannot_be_file": "路径不能是文件",
   "argument.gitparcel.filepath.invalid_path": "非法的文件路径",
   "argument.gitparcel.filepath.no_permission": "没有权限",
+  "argument.gitparcel.filepath.not_exist": "路径不存在",
   "argument.gitparcel.filepath.not_dir": "该路径不是目录",
   "argument.gitparcel.parcel_format.invalid": "无效的格式",
   "argument.gitparcel.parcel.invalid": "无效的名称或 UUID",
@@ -36,6 +39,8 @@
   "command.gitparcel.parcel.formats.list.readers_header": "读取器:",
   "command.gitparcel.parcel.formats.list.writers_header": "写入器:",
   "command.gitparcel.parcel.list.header": "当前维度有 %d 个 Parcel：",
+  "command.gitparcel.parcel.save.failure": "保存失败：%s",
+  "command.gitparcel.parcel.save.success": "已保存 Parcel %s",
   "command.gitparcel.parcel.unexpected_error": "意外错误: %s",
   "key.gitparcel.admin_screen": "Git Parcel 管理员屏幕",
   "key.gitparcel.debug_screen": "Git Parcel 调试屏幕",

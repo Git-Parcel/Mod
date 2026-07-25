@@ -7,6 +7,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
+import io.github.leawind.gitparcel.common.api.permission.ParcelPermissions;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelFormatArgument;
@@ -53,8 +54,15 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
       return 0;
     }
     var parcelService = ParcelService.get(source.getLevel());
+    var parcels = ParcelArgument.getParcels(ctx, ParcelCommand.ARG_PARCELS);
 
-    for (var parcel : ParcelArgument.getParcels(ctx, ParcelCommand.ARG_PARCELS)) {
+    for (var parcel : parcels) {
+      if (!validateParcelPermission(source, parcel, ParcelPermissions.CONFIG)) {
+        return 0;
+      }
+    }
+
+    for (var parcel : parcels) {
       var value = valueReader.read(ctx);
 
       setter.set(parcel, value);

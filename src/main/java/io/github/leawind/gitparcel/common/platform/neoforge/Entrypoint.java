@@ -27,6 +27,8 @@ public class Entrypoint {
     NeoForge.EVENT_BUS.addListener(RegisterCommandsEvent.class, Entrypoint::onRegisterCommands);
     NeoForge.EVENT_BUS.addListener(
         PlayerEvent.PlayerLoggedInEvent.class, Entrypoint::onPlayerLoggedIn);
+    NeoForge.EVENT_BUS.addListener(
+        PlayerEvent.PlayerChangedDimensionEvent.class, Entrypoint::onPlayerChangedDimension);
   }
 
   private static void onRegisterCommands(RegisterCommandsEvent event) {
@@ -46,6 +48,12 @@ public class Entrypoint {
   private static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
     if (event.getEntity() instanceof ServerPlayer player) {
       ModEntrypoint.onPlayerJoin(player);
+    }
+  }
+
+  private static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+    if (event.getEntity() instanceof ServerPlayer player) {
+      ModEntrypoint.onPlayerChangeDimension(player);
     }
   }
 }

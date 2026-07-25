@@ -46,6 +46,11 @@ public final class ModEntrypoint {
     ParcelService.get(player.level()).syncTo(player);
   }
 
+  /** Replaces client parcel state after the player moves to another dimension. */
+  public static void onPlayerChangeDimension(ServerPlayer player) {
+    ParcelService.get(player.level()).syncTo(player);
+  }
+
   public static void registerCommands(
       CommandDispatcher<CommandSourceStack> dispatcher,
       CommandBuildContext context,

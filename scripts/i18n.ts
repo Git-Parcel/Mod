@@ -3,7 +3,7 @@ import * as fs from 'npm:@leawind/inventory@0.18.6/fs'
 import log from 'npm:@leawind/inventory@0.18.6/log'
 import { LangsManager } from './lib/langs.ts'
 
-const LANGUAGES_DIR = fs.P`common/src/main/resources/assets/minecraft/lang`
+const LANGUAGES_DIR = fs.P`src/main/resources/assets/minecraft/lang`
 
 async function main() {
   const mgr = new LangsManager(LANGUAGES_DIR)

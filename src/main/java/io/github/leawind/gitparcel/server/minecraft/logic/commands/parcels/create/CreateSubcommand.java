@@ -8,6 +8,7 @@ import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelWorldSavedData;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
 import net.minecraft.commands.CommandSourceStack;
@@ -95,7 +96,10 @@ public class CreateSubcommand extends GitParcelBaseCommand {
 
     try {
       BoundingBox boundingBox = BoundingBox.fromCorners(from, to);
-      Parcel parcel = ParcelFactory.create(boundingBox, mirror, rotation);
+      var defaultPermissions =
+          GitParcelWorldSavedData.get(source.getServer()).parcelDefaultPermissions().copy();
+      Parcel parcel =
+          ParcelFactory.create(boundingBox, mirror, rotation, defaultPermissions);
       parcel.meta().setName(name);
 
       parcelService.addNewParcel(parcel);

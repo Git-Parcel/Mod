@@ -4,6 +4,8 @@ import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
+import io.github.leawind.gitparcel.common.api.permission.ParcelPermissions;
+import io.github.leawind.gitparcel.common.api.permission.PermissionConfig;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.version.MinecraftVersion;
 import net.minecraft.core.Vec3i;
@@ -32,6 +34,19 @@ public final class ParcelFactory {
 
   /** Creates a parcel using the active default format writer. */
   public static Parcel create(BoundingBox boundingBox, Mirror mirror, Rotation rotation) {
+    return create(
+        boundingBox,
+        mirror,
+        rotation,
+        new PermissionConfig<>(ParcelPermissions.REGISTRY));
+  }
+
+  /** Creates a parcel using the active default format writer and supplied permissions. */
+  public static Parcel create(
+      BoundingBox boundingBox,
+      Mirror mirror,
+      Rotation rotation,
+      PermissionConfig<ParcelPermissions> permissions) {
     var pivot = Parcel.getPivot(mirror, rotation, boundingBox);
     var transform =
         new ParcelTransform(
@@ -40,6 +55,6 @@ public final class ParcelFactory {
     var format = ParcelFormatRegistry.get().defaultWriter().spec();
     var meta = createMetadata(format, boundingBox, rotation);
 
-    return Parcel.create(meta, transform);
+    return Parcel.create(meta, transform, permissions);
   }
 }

@@ -14,6 +14,9 @@ import io.github.leawind.gitparcel.common.minecraft.logic.portable.MinecraftParc
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.Comparator;
+import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -110,45 +113,153 @@ public class ParcelStorage {
       throw new ParcelException.UnsupportedFormat(meta.formatSpec());
     }
 
-    meta.save(getMetaFile(parcelDir));
-
     C actualConfig = config;
     if (actualConfig == null) {
       actualConfig = format.getDefaultConfig();
-    }
-
-    if (actualConfig != null) {
-      var configFile = getConfigFile(parcelDir);
-      if (Files.exists(configFile)) {
+      var existingConfigFile = getConfigFile(parcelDir);
+      if (actualConfig != null && Files.exists(existingConfigFile)) {
         try {
-          actualConfig.load(configFile);
+          actualConfig.load(existingConfigFile);
         } catch (Exception e) {
           LOGGER.error(
               "Failed to load format config, use default and overwrite: {}", e.getMessage(), e);
           actualConfig.resetToDefault();
-          actualConfig.save(configFile);
         }
-      } else {
-        actualConfig.save(configFile);
       }
+    }
+
+    C resolvedConfig = actualConfig;
+    replaceDirectory(
+        parcelDir,
+        stagingDir ->
+            writeSnapshot(
+                format,
+                level,
+                transform,
+                meta,
+                resolvedConfig,
+                stagingDir,
+                ignoreEntities || meta.getExcludeEntities()));
+  }
+
+  private static <C extends ParcelFormatConfig<C>> void writeSnapshot(
+      ParcelFormat.Writer<C> format,
+      Level level,
+      ParcelTransform transform,
+      ParcelMeta meta,
+      @Nullable C config,
+      Path parcelDir,
+      boolean ignoreEntities)
+      throws IOException, ParcelException {
+    meta.save(getMetaFile(parcelDir));
+    if (config != null) {
+      config.save(getConfigFile(parcelDir));
     }
 
     var space = new ParcelSpace(transform, meta.anchor());
     var source =
         new MinecraftParcelContentSource(
-            level,
-            meta.size(),
-            meta.anchor(),
-            space,
-            ignoreEntities && meta.getExcludeEntities());
+            level, meta.size(), meta.anchor(), space, ignoreEntities);
     format.write(
         new ParcelFormat.WriteContext<>(
             meta.size(),
             meta.anchor(),
             meta.dataVersion(),
             getDataDir(parcelDir),
-            actualConfig),
+            config),
         source);
+  }
+
+  @FunctionalInterface
+  interface DirectoryWriter {
+    void write(Path directory) throws IOException, ParcelException;
+  }
+
+  /**
+   * Builds a complete replacement next to the destination before swapping it into place.
+   *
+   * <p>If writing fails, the existing directory is left untouched. If installation fails after the
+   * existing directory has been moved aside, restoration is attempted before the failure is
+   * propagated.
+   */
+  static void replaceDirectory(Path target, DirectoryWriter writer)
+      throws IOException, ParcelException {
+    Path normalizedTarget = target.normalize();
+    Path parent = normalizedTarget.getParent();
+    if (parent == null) {
+      normalizedTarget = normalizedTarget.toAbsolutePath().normalize();
+      parent = normalizedTarget.getParent();
+    }
+    Files.createDirectories(parent);
+
+    String fileName =
+        normalizedTarget.getFileName() == null
+            ? "parcel"
+            : normalizedTarget.getFileName().toString();
+    Path staging = Files.createTempDirectory(parent, "." + fileName + ".staging-");
+    Path backup =
+        parent.resolve("." + fileName + ".backup-" + UUID.randomUUID());
+    boolean previousMoved = false;
+    boolean installed = false;
+
+    try {
+      writer.write(staging);
+
+      if (Files.exists(normalizedTarget)) {
+        move(normalizedTarget, backup);
+        previousMoved = true;
+      }
+
+      try {
+        move(staging, normalizedTarget);
+        installed = true;
+      } catch (IOException installFailure) {
+        if (previousMoved) {
+          try {
+            move(backup, normalizedTarget);
+            previousMoved = false;
+          } catch (IOException restoreFailure) {
+            installFailure.addSuppressed(restoreFailure);
+          }
+        }
+        throw installFailure;
+      }
+
+      if (previousMoved) {
+        try {
+          deleteRecursively(backup);
+          previousMoved = false;
+        } catch (IOException cleanupFailure) {
+          LOGGER.warn("Failed to remove parcel backup {}", backup, cleanupFailure);
+        }
+      }
+    } finally {
+      if (!installed) {
+        deleteRecursivelyIfExists(staging);
+      }
+    }
+  }
+
+  private static void move(Path source, Path target) throws IOException {
+    try {
+      Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+    } catch (java.nio.file.AtomicMoveNotSupportedException ignored) {
+      Files.move(source, target);
+    }
+  }
+
+  private static void deleteRecursivelyIfExists(Path directory) throws IOException {
+    if (Files.exists(directory)) {
+      deleteRecursively(directory);
+    }
+  }
+
+  private static void deleteRecursively(Path directory) throws IOException {
+    try (var paths = Files.walk(directory)) {
+      for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
+        Files.delete(path);
+      }
+    }
   }
 
   public static <C extends ParcelFormatConfig<C>> void save(

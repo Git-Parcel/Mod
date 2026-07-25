@@ -392,7 +392,7 @@ afterEvaluate {
             projectId = System.getenv("CURSEFORGE_ID")
             minecraftVersions.add(mcVersion)
             clientRequired = true
-            serverRequired = false
+            serverRequired = true
             if (isFabric) {
                 optional { slug.set("modmenu") }
             }

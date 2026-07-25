@@ -90,6 +90,11 @@ public final class PermissionConfig<T> {
     requirements.clear();
   }
 
+  /** Returns an independent copy with the same explicit requirements. */
+  public PermissionConfig<T> copy() {
+    return from(registry, toMap());
+  }
+
   /**
    * Sets the required level for the given type by level id.
    *

@@ -242,4 +242,18 @@ public class PermissionConfigTest {
     config.set(ADMIN, PermissionLevel.MODERATORS);
     assertEquals(PermissionLevel.MODERATORS, config.get(ADMIN));
   }
+
+  @Test
+  void copyIsIndependent() {
+    config.set(ADMIN, PermissionLevel.OWNERS);
+
+    var copy = config.copy();
+    copy.set(ADMIN, PermissionLevel.ALL);
+    copy.set(EDIT, PermissionLevel.ADMINS);
+
+    assertEquals(PermissionLevel.OWNERS, config.get(ADMIN));
+    assertEquals(PermissionLevel.MODERATORS, config.get(EDIT));
+    assertEquals(PermissionLevel.ALL, copy.get(ADMIN));
+    assertEquals(PermissionLevel.ADMINS, copy.get(EDIT));
+  }
 }

@@ -12,6 +12,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -25,6 +26,8 @@ public class ClientEntrypoint {
     eventBus.addListener(
         RegisterClientPayloadHandlersEvent.class, ClientEntrypoint::onRegisterPayloadHandlers);
     NeoForge.EVENT_BUS.addListener(ClientTickEvent.Pre.class, ClientEntrypoint::onClientTick);
+    NeoForge.EVENT_BUS.addListener(
+        ClientPlayerNetworkEvent.LoggingOut.class, ClientEntrypoint::onLoggingOut);
   }
 
   private static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
@@ -42,6 +45,10 @@ public class ClientEntrypoint {
 
   private static void onClientTick(ClientTickEvent.Pre event) {
     ModClientEntrypoint.onClientTick(Minecraft.getInstance());
+  }
+
+  private static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+    ModClientEntrypoint.onDisconnect();
   }
 }
 *//*?}*/

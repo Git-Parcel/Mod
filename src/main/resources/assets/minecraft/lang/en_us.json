@@ -1,6 +1,9 @@
 {
+  "argument.gitparcel.filepath.cannot_be_dir": "The path cannot be a directory",
+  "argument.gitparcel.filepath.cannot_be_file": "The path cannot be a file",
   "argument.gitparcel.filepath.invalid_path": "Invalid file path",
   "argument.gitparcel.filepath.no_permission": "No permission",
+  "argument.gitparcel.filepath.not_exist": "The path does not exist",
   "argument.gitparcel.filepath.not_dir": "The path is not a directory",
   "argument.gitparcel.parcel_format.invalid": "Invalid format",
   "argument.gitparcel.parcel.invalid": "Invalid name or UUID",
@@ -36,6 +39,8 @@
   "command.gitparcel.parcel.formats.list.readers_header": "Readers:",
   "command.gitparcel.parcel.formats.list.writers_header": "Writers:",
   "command.gitparcel.parcel.list.header": "There are %d parcels in current dimension:",
+  "command.gitparcel.parcel.save.failure": "Save failed: %s",
+  "command.gitparcel.parcel.save.success": "Saved parcel %s",
   "command.gitparcel.parcel.unexpected_error": "Unexpected error: %s",
   "key.gitparcel.admin_screen": "Git Parcel Admin Screen",
   "key.gitparcel.debug_screen": "Git Parcel Debug Screen",

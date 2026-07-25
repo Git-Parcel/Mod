@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.client.minecraft.logic;
 import com.mojang.logging.LogUtils;
 import icyllis.modernui.mc.MuiModApi;
 import io.github.leawind.gitparcel.client.minecraft.bridge.GameClientApi;
+import io.github.leawind.gitparcel.client.impl.GitParcelClientImpl;
 import io.github.leawind.gitparcel.client.minecraft.logic.mui.debug.GitParcelDebugFragment;
 import io.github.leawind.gitparcel.client.minecraft.logic.renderer.GitParcelRenderer;
 import io.github.leawind.gitparcel.common.platform.api.Services;
@@ -32,5 +33,10 @@ public final class ModClientEntrypoint {
       minecraft.setScreen(
           MuiModApi.get().createScreen(new GitParcelDebugFragment(), null, minecraft.screen));
     }
+  }
+
+  /** Clears state owned by the previous server connection. */
+  public static void onDisconnect() {
+    GitParcelClientImpl.INSTANCE.reset();
   }
 }

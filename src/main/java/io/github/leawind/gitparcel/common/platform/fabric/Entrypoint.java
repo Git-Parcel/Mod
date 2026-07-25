@@ -6,6 +6,7 @@ import io.github.leawind.gitparcel.common.minecraft.logic.network.payload.Minecr
 import io.github.leawind.gitparcel.common.utils.anno.VersionSensitive;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 
@@ -23,6 +24,8 @@ public class Entrypoint implements ModInitializer {
     CommandRegistrationCallback.EVENT.register(ModEntrypoint::registerCommands);
     ServerPlayConnectionEvents.JOIN.register(
         (listener, sender, server) -> ModEntrypoint.onPlayerJoin(listener.getPlayer()));
+    ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(
+        (player, origin, destination) -> ModEntrypoint.onPlayerChangeDimension(player));
   }
 
   @VersionSensitive("fabric playS2C -> clientboundPlay, since mc26.1")

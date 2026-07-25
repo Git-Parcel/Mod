@@ -6,12 +6,12 @@ import io.github.leawind.gitparcel.common.api.world.Parcels;
 import org.jspecify.annotations.NonNull;
 
 public final class GitParcelClientImpl implements GitParcelClient {
-  public static GitParcelClientImpl INSTANCE = new GitParcelClientImpl();
+  public static final GitParcelClientImpl INSTANCE = new GitParcelClientImpl();
 
   private GitParcelClientImpl() {}
 
   private volatile ParcelFormatCapabilities capabilities = ParcelFormatCapabilities.empty();
-  public volatile Parcels parcels = new Parcels();
+  private final Parcels parcels = new Parcels();
 
   @Override
   public ParcelFormatCapabilities getParcelFormatCapabilities() {
@@ -25,5 +25,10 @@ public final class GitParcelClientImpl implements GitParcelClient {
 
   public void setParcelFormatCapabilities(@NonNull ParcelFormatCapabilities capabilities) {
     this.capabilities = capabilities;
+  }
+
+  public void reset() {
+    capabilities = ParcelFormatCapabilities.empty();
+    parcels.clear();
   }
 }

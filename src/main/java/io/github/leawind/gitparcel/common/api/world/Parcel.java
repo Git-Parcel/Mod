@@ -8,6 +8,7 @@ import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.permission.ParcelPermissions;
 import io.github.leawind.gitparcel.common.api.permission.PermissionConfig;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -192,12 +193,20 @@ public final class Parcel {
 
   /** Creates a parcel model with a new UUID and default visual, permission, and storage settings. */
   public static Parcel create(ParcelMeta meta, ParcelTransform transform) {
+    return create(meta, transform, new PermissionConfig<>(ParcelPermissions.REGISTRY));
+  }
+
+  /** Creates a parcel model with a new UUID and the supplied permission requirements. */
+  public static Parcel create(
+      ParcelMeta meta,
+      ParcelTransform transform,
+      PermissionConfig<ParcelPermissions> permissions) {
     return new Parcel(
         UUID.randomUUID(),
         meta,
         transform,
         new Visual(),
-        new PermissionConfig<>(ParcelPermissions.REGISTRY),
+        permissions,
         Optional.empty(),
         Optional.empty());
   }
@@ -328,11 +337,22 @@ public final class Parcel {
                             .forGetter(ParcelLocation::getParcelPathString))
                     .apply(inst, ParcelLocation::new));
 
-    public ParcelLocation(String repoPathString, String parcelPathString) {
-      this(Path.of(repoPathString), Path.of(parcelPathString));
+    public ParcelLocation {
+      repo = Objects.requireNonNull(repo, "repo").normalize();
+      relative = Objects.requireNonNull(relative, "relative").normalize();
       if (relative.isAbsolute()) {
         throw new IllegalArgumentException("Parcel path must be relative");
       }
+      if (relative.toString().isEmpty()) {
+        throw new IllegalArgumentException("Parcel path must not be empty");
+      }
+      if (relative.startsWith("..")) {
+        throw new IllegalArgumentException("Parcel path must stay inside the repository");
+      }
+    }
+
+    public ParcelLocation(String repoPathString, String parcelPathString) {
+      this(Path.of(repoPathString), Path.of(parcelPathString));
     }
 
     private String getRepoPathString() {
@@ -344,7 +364,7 @@ public final class Parcel {
     }
 
     public Path getParcelPath() {
-      return repo.resolve(relative);
+      return repo.resolve(relative).normalize();
     }
   }
 }

@@ -1,6 +1,7 @@
 package io.github.leawind.gitparcel.common.impl.world;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
@@ -241,5 +242,32 @@ public class ParcelTest extends AbstractGitParcelTest {
     assertEquals(
         customRepository.resolve(relativeParcelPath),
         ParcelStorage.resolveParcelDirectory(relocated, Path.of("unused")));
+  }
+
+  @Test
+  void rejectsParcelLocationOutsideRepository() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new Parcel.ParcelLocation(Path.of("repo"), Path.of("..", "outside")));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new Parcel.ParcelLocation(Path.of("repo"), Path.of("/absolute")));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new Parcel.ParcelLocation(Path.of("repo"), Path.of("")));
+  }
+
+  @Test
+  void normalizesParcelLocationInsideRepository() {
+    var location =
+        new Parcel.ParcelLocation(
+            Path.of("custom", ".", "repository"),
+            Path.of("parcels", "nested", "..", "example"));
+
+    assertEquals(Path.of("custom", "repository"), location.repo());
+    assertEquals(Path.of("parcels", "example"), location.relative());
+    assertEquals(
+        Path.of("custom", "repository", "parcels", "example"),
+        location.getParcelPath());
   }
 }
