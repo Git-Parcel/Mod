@@ -4,13 +4,16 @@ import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.impl.world.ParcelValidator;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelsMessage;
+import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelRepositoryService;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
 import io.github.leawind.gitparcel.common.platform.api.Services;
+import io.github.leawind.gitparcel.common.utils.git.GitRepo;
 import io.github.leawind.gitparcel.server.minecraft.logic.storage.StorageUtils;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
@@ -81,9 +84,7 @@ public final class ParcelService {
   }
 
   public Path getParcelDirectory(Parcel parcel) {
-    var internalParcelsDir =
-        StorageUtils.worldStorage(level.getServer()).getInternalParcelsDir();
-    return ParcelStorage.resolveParcelDirectory(parcel, internalParcelsDir);
+    return ParcelStorage.resolveParcelDirectory(parcel, getInternalParcelsDirectory());
   }
 
   public void saveParcel(Parcel parcel, boolean ignoreEntities)
@@ -91,8 +92,35 @@ public final class ParcelService {
     ParcelStorage.save(level, parcel, getParcelDirectory(parcel), ignoreEntities);
   }
 
+  public Optional<GitRepo.CommitInfo> commitParcel(
+      Parcel parcel, String message, GitRepo.CommitIdentity identity)
+      throws IOException, ParcelException {
+    return ParcelRepositoryService.commit(
+        parcel, getInternalParcelsDirectory(), message, identity);
+  }
+
+  public List<GitRepo.CommitInfo> getParcelHistory(Parcel parcel, int limit)
+      throws IOException, ParcelException {
+    return ParcelRepositoryService.history(
+        parcel, getInternalParcelsDirectory(), limit);
+  }
+
+  public void restoreParcel(Parcel parcel, String revision, boolean ignoreEntities)
+      throws IOException, ParcelException {
+    ParcelRepositoryService.restore(
+        level,
+        parcel,
+        getInternalParcelsDirectory(),
+        revision,
+        ignoreEntities);
+  }
+
   public void syncTo(ServerPlayer player) {
     Services.SERVER_NETWORKING.send(
         player, UpdateParcelsMessage.fullSync(savedData.parcels()));
+  }
+
+  private Path getInternalParcelsDirectory() {
+    return StorageUtils.worldStorage(level.getServer()).getInternalParcelsDir();
   }
 }

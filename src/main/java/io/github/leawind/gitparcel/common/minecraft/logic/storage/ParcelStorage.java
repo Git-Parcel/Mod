@@ -17,6 +17,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -53,11 +55,47 @@ public class ParcelStorage {
    * @param internalParcelsDir root directory for parcels stored inside the current world
    */
   public static Path resolveParcelDirectory(Parcel parcel, Path internalParcelsDir) {
+    return resolveRepositoryLocation(parcel, internalParcelsDir).parcelDirectory();
+  }
+
+  /**
+   * Resolves both the repository and the parcel's path within it.
+   *
+   * <p>Internally stored parcels each receive an independent repository. A custom location can
+   * instead place one or more parcels inside an existing repository.
+   */
+  public static RepositoryLocation resolveRepositoryLocation(
+      Parcel parcel, Path internalParcelsDir) {
     return parcel
         .location()
-        .map(Parcel.ParcelLocation::getParcelPath)
+        .map(location -> new RepositoryLocation(location.repo(), location.relative()))
         .orElseGet(
-            () -> internalParcelsDir.resolve(parcel.uuid().toString()).resolve("parcel"));
+            () ->
+                new RepositoryLocation(
+                    internalParcelsDir.resolve(parcel.uuid().toString()), Path.of("parcel")));
+  }
+
+  public record RepositoryLocation(Path repository, Path relative) {
+    public RepositoryLocation {
+      repository = repository.normalize();
+      relative = relative.normalize();
+      if (relative.isAbsolute()
+          || relative.toString().isEmpty()
+          || relative.startsWith("..")) {
+        throw new IllegalArgumentException("Parcel path must stay below the repository");
+      }
+    }
+
+    public Path parcelDirectory() {
+      return repository.resolve(relative).normalize();
+    }
+
+    /** Returns the repository-relative path using Git's platform-independent separator. */
+    public String gitPath() {
+      return StreamSupport.stream(relative.spliterator(), false)
+          .map(Path::toString)
+          .collect(Collectors.joining("/"));
+    }
   }
 
   @SuppressWarnings("unchecked")
@@ -248,7 +286,7 @@ public class ParcelStorage {
     }
   }
 
-  private static void deleteRecursivelyIfExists(Path directory) throws IOException {
+  static void deleteRecursivelyIfExists(Path directory) throws IOException {
     if (Files.exists(directory)) {
       deleteRecursively(directory);
     }

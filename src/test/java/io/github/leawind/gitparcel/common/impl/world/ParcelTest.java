@@ -224,6 +224,13 @@ public class ParcelTest extends AbstractGitParcelTest {
     assertEquals(
         internalParcelsDir.resolve(parcel.uuid().toString()).resolve("parcel"),
         ParcelStorage.resolveParcelDirectory(parcel, internalParcelsDir));
+    var repository =
+        ParcelStorage.resolveRepositoryLocation(parcel, internalParcelsDir);
+    assertEquals(
+        internalParcelsDir.resolve(parcel.uuid().toString()),
+        repository.repository());
+    assertEquals(Path.of("parcel"), repository.relative());
+    assertEquals("parcel", repository.gitPath());
   }
 
   @Test
@@ -242,6 +249,11 @@ public class ParcelTest extends AbstractGitParcelTest {
     assertEquals(
         customRepository.resolve(relativeParcelPath),
         ParcelStorage.resolveParcelDirectory(relocated, Path.of("unused")));
+    var repository =
+        ParcelStorage.resolveRepositoryLocation(relocated, Path.of("unused"));
+    assertEquals(customRepository, repository.repository());
+    assertEquals(relativeParcelPath, repository.relative());
+    assertEquals("parcels/example", repository.gitPath());
   }
 
   @Test
