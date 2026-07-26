@@ -7,11 +7,8 @@ import io.github.leawind.gitparcel.common.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.permission.ParcelPermissions;
 import io.github.leawind.gitparcel.common.api.permission.PermissionConfig;
-import java.nio.file.Path;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.Vec3i;
@@ -76,6 +73,7 @@ public final class Parcel {
           inst ->
               inst.group(
                       UUIDUtil.STRING_CODEC.fieldOf("uuid").forGetter(Parcel::uuid),
+                      Codec.STRING.optionalFieldOf("dimension").forGetter(Parcel::dimension),
                       ParcelMeta.CODEC.fieldOf("meta").forGetter(Parcel::meta),
                       ParcelTransform.CODEC.fieldOf("transform").forGetter(Parcel::transform),
                       Visual.CODEC.fieldOf("visual").forGetter(Parcel::visual),
@@ -84,8 +82,7 @@ public final class Parcel {
                           .forGetter(Parcel::permissions),
                       ExtraCodecs.JSON
                           .optionalFieldOf("formatConfig")
-                          .forGetter(Parcel::formatConfig),
-                      ParcelLocation.CODEC.optionalFieldOf("location").forGetter(Parcel::location))
+                          .forGetter(Parcel::formatConfig))
                   .apply(inst, Parcel::new));
 
   // ////////////////////////////////////////////////////////////////
@@ -93,38 +90,29 @@ public final class Parcel {
   // ////////////////////////////////////////////////////////////////
 
   private final UUID uuid;
+  private @Nullable String dimension;
   private final ParcelMeta meta;
   private ParcelTransform transform;
   private Visual visual;
   private PermissionConfig<ParcelPermissions> permissions;
   private @Nullable JsonElement formatConfig;
 
-  /**
-   * Where to save this parcel.
-   *
-   * <ul>
-   *   <li>If {@code null}, the parcel is saved to the world's internal parcel repository.
-   *   <li>If not null, the parcel is saved to custom location in a custom repo.
-   * </ul>
-   */
-  private @Nullable ParcelLocation location;
-
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   private Parcel(
       UUID uuid,
+      Optional<String> dimension,
       ParcelMeta meta,
       ParcelTransform transform,
       Visual visual,
       PermissionConfig<ParcelPermissions> permissions,
-      Optional<JsonElement> formatConfig,
-      Optional<ParcelLocation> location) {
+      Optional<JsonElement> formatConfig) {
     this.uuid = uuid;
+    this.dimension = dimension.orElse(null);
     this.meta = meta;
     this.transform = transform;
     this.visual = visual;
     this.permissions = permissions;
     this.formatConfig = formatConfig.orElse(null);
-    this.location = location.orElse(null);
   }
 
   // ////////////////////////////////////////////////////////////////
@@ -133,6 +121,22 @@ public final class Parcel {
 
   public UUID uuid() {
     return uuid;
+  }
+
+  /** Dimension owning this runtime parcel registration. */
+  public Optional<String> dimension() {
+    return Optional.ofNullable(dimension);
+  }
+
+  /** Assigns the owning dimension; moving across dimensions requires a distinct use case. */
+  public void assignDimension(String dimension) {
+    if (dimension == null || dimension.isBlank()) {
+      throw new IllegalArgumentException("Parcel dimension must not be blank");
+    }
+    if (this.dimension != null && !this.dimension.equals(dimension)) {
+      throw new IllegalStateException("Parcel already belongs to dimension " + this.dimension);
+    }
+    this.dimension = dimension;
   }
 
   public ParcelMeta meta() {
@@ -153,15 +157,6 @@ public final class Parcel {
 
   public Optional<JsonElement> formatConfig() {
     return Optional.ofNullable(formatConfig);
-  }
-
-  public Optional<ParcelLocation> location() {
-    return Optional.ofNullable(location);
-  }
-
-  /** Changes where future save and Git operations resolve this parcel. */
-  public void setLocation(@Nullable ParcelLocation location) {
-    this.location = location;
   }
 
   // ////////////////////////////////////////////////////////////////
@@ -207,23 +202,14 @@ public final class Parcel {
       ParcelMeta meta,
       ParcelTransform transform,
       PermissionConfig<ParcelPermissions> permissions) {
-    return create(meta, transform, permissions, null);
-  }
-
-  /** Creates a parcel backed by the supplied storage location. */
-  public static Parcel create(
-      ParcelMeta meta,
-      ParcelTransform transform,
-      PermissionConfig<ParcelPermissions> permissions,
-      @Nullable ParcelLocation location) {
     return new Parcel(
         UUID.randomUUID(),
+        Optional.empty(),
         meta,
         transform,
         new Visual(),
         permissions,
-        Optional.empty(),
-        Optional.ofNullable(location));
+        Optional.empty());
   }
 
   public static BlockPos getPivotBlockPos(Mirror mirror, Rotation rotation, BoundingBox box) {
@@ -337,118 +323,4 @@ public final class Parcel {
     }
   }
 
-  /**
-   * A parcel directory in either a direct repository path or a symbolically named shared
-   * repository. Exactly one repository reference is present.
-   *
-   * @param repo direct Git repository path, or {@code null} for a shared repository
-   * @param sharedRepositoryName shared catalog name, or {@code null} for a direct repository
-   * @param relative Parcel directory path relative to the repository
-   */
-  public record ParcelLocation(
-      @Nullable Path repo,
-      @Nullable String sharedRepositoryName,
-      Path relative) {
-    private static final Pattern SHARED_REPOSITORY_NAME =
-        Pattern.compile("^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$");
-
-    public static final Codec<ParcelLocation> CODEC =
-        RecordCodecBuilder.create(
-            inst ->
-                inst.group(
-                        Codec.STRING
-                            .optionalFieldOf("repo")
-                            .forGetter(ParcelLocation::getRepoPathString),
-                        Codec.STRING
-                            .optionalFieldOf("shared_repository")
-                            .forGetter(ParcelLocation::getSharedRepositoryName),
-                        Codec.STRING
-                            .fieldOf("relative")
-                            .forGetter(ParcelLocation::getParcelPathString))
-                    .apply(inst, ParcelLocation::fromSerialized));
-
-    public ParcelLocation {
-      if ((repo == null) == (sharedRepositoryName == null)) {
-        throw new IllegalArgumentException(
-            "Parcel location must have exactly one repository reference");
-      }
-      if (repo != null) {
-        repo = repo.normalize();
-      }
-      if (sharedRepositoryName != null
-          && !SHARED_REPOSITORY_NAME.matcher(sharedRepositoryName).matches()) {
-        throw new IllegalArgumentException("Invalid shared repository name");
-      }
-      relative = Objects.requireNonNull(relative, "relative").normalize();
-      if (relative.isAbsolute()) {
-        throw new IllegalArgumentException("Parcel path must be relative");
-      }
-      if (relative.toString().isEmpty()) {
-        throw new IllegalArgumentException("Parcel path must not be empty");
-      }
-      if (relative.startsWith("..")) {
-        throw new IllegalArgumentException("Parcel path must stay inside the repository");
-      }
-      for (Path part : relative) {
-        if (part.toString().equals(".git")) {
-          throw new IllegalArgumentException("Parcel path must not contain .git");
-        }
-      }
-      if (sharedRepositoryName != null
-          && relative.getName(0).toString().equals("meta.json")) {
-        throw new IllegalArgumentException(
-            "Shared parcel path conflicts with repository metadata");
-      }
-    }
-
-    public ParcelLocation(Path repo, Path relative) {
-      this(repo, null, relative);
-    }
-
-    public ParcelLocation(String repoPathString, String parcelPathString) {
-      this(Path.of(repoPathString), Path.of(parcelPathString));
-    }
-
-    public static ParcelLocation shared(String repositoryName, Path relative) {
-      return new ParcelLocation(null, repositoryName, relative);
-    }
-
-    public Optional<String> sharedRepository() {
-      return Optional.ofNullable(sharedRepositoryName);
-    }
-
-    public boolean isShared() {
-      return sharedRepositoryName != null;
-    }
-
-    private static ParcelLocation fromSerialized(
-        Optional<String> repo,
-        Optional<String> sharedRepository,
-        String relative) {
-      return new ParcelLocation(
-          repo.map(Path::of).orElse(null),
-          sharedRepository.orElse(null),
-          Path.of(relative));
-    }
-
-    private Optional<String> getRepoPathString() {
-      return Optional.ofNullable(repo).map(Path::toString);
-    }
-
-    private Optional<String> getSharedRepositoryName() {
-      return Optional.ofNullable(sharedRepositoryName);
-    }
-
-    private String getParcelPathString() {
-      return relative.toString();
-    }
-
-    public Path getParcelPath() {
-      if (repo == null) {
-        throw new IllegalStateException(
-            "Shared parcel locations require a shared repository root");
-      }
-      return repo.resolve(relative).normalize();
-    }
-  }
 }

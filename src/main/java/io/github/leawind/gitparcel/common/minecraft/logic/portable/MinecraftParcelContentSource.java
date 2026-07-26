@@ -16,6 +16,7 @@ import io.github.leawind.gitparcel.common.minecraft.logic.transform.ParcelBlockT
 import io.github.leawind.gitparcel.common.impl.extension.attachment.ParcelAttachmentSession;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
@@ -111,6 +112,7 @@ public final class MinecraftParcelContentSource implements ParcelContentSource {
             (Entity) null,
             bounds,
             entity -> !(entity instanceof Player) && !entity.isPassenger());
+    entities.sort(Comparator.comparing(Entity::getUUID));
     try (var reporter = new ProblemReporter.ScopedCollector(ParcelStorage.LOGGER)) {
       for (Entity entity : entities) {
         var output = TagValueOutput.createWithContext(reporter, entity.registryAccess());

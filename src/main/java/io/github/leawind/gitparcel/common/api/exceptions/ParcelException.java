@@ -32,4 +32,11 @@ public class ParcelException extends Exception {
       super(message, cause);
     }
   }
+
+  /** Another write use case currently owns the parcel. */
+  public static class Busy extends ParcelException {
+    public Busy(String message) {
+      super(message);
+    }
+  }
 }

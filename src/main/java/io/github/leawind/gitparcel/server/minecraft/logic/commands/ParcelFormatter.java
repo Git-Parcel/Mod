@@ -73,20 +73,7 @@ public final class ParcelFormatter {
         .append(Component.literal(linePrefix + "  Mirror: " + transform.mirror()))
         .append(Component.literal("\n"));
 
-    var location = parcel.location().orElse(null);
-    if (location == null) {
-      component.append(Component.literal(linePrefix + "Storage: world-internal"));
-    } else if (location.isShared()) {
-      component.append(
-          Component.literal(
-              linePrefix
-                  + "Storage: shared "
-                  + location.sharedRepository().orElseThrow()
-                  + "/"
-                  + location.relative()));
-    } else {
-      component.append(Component.literal(linePrefix + "Storage: custom repository"));
-    }
+    component.append(Component.literal(linePrefix + "Storage: world-internal snapshot repository"));
 
     return component;
   }

@@ -1,22 +1,21 @@
 package io.github.leawind.gitparcel.server.minecraft.logic.network;
 
 import com.mojang.logging.LogUtils;
-import io.github.leawind.gitparcel.common.api.git.GitCommitSnapshot;
-import io.github.leawind.gitparcel.common.api.git.GitOperationSnapshot;
-import io.github.leawind.gitparcel.common.api.git.ParcelHistoryPage;
+import io.github.leawind.gitparcel.common.api.operation.OperationSnapshot;
 import io.github.leawind.gitparcel.common.api.git.SharedRepositorySnapshot;
 import io.github.leawind.gitparcel.common.api.permission.ParcelPermissions;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
+import io.github.leawind.gitparcel.common.api.snapshot.SnapshotTreePage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.QueryParcelHistoryMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.QueryServerStateMessage;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateGitOperationsMessage;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateOperationsMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelHistoryMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateSharedRepositoriesMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.permission.MinecraftPermissions;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelWorldSavedData;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.platform.api.Services;
-import io.github.leawind.gitparcel.server.minecraft.logic.git.GitOperationManager;
+import io.github.leawind.gitparcel.server.minecraft.logic.operation.OperationManager;
 import io.github.leawind.gitparcel.server.minecraft.logic.storage.shared.SharedRepositoryService;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
@@ -63,39 +63,37 @@ public final class ServerQueryHandler {
       return;
     }
     if (!MinecraftPermissions.permits(
-        player, parcel.permissions(), ParcelPermissions.LOAD)) {
+        player, parcel.permissions(), ParcelPermissions.VIEW)) {
       sendHistoryFailure(player, request, "Permission denied");
       return;
     }
 
-    try {
-      var page =
-          ParcelService.get(player.level())
-              .getParcelHistoryPage(
-                  parcel, request.limit(), request.beforeRevision().orElse(null));
-      var commits =
-          page.commits().stream()
-              .map(
-                  commit ->
-                      new GitCommitSnapshot(
-                          commit.revision(),
-                          commit.committedAt().toString(),
-                          commit.author(),
-                          commit.message()))
-              .toList();
-      Services.SERVER_NETWORKING.send(
-          player,
-          new UpdateParcelHistoryMessage(
-              new ParcelHistoryPage(
-                  request.parcelUuid(),
-                  request.beforeRevision(),
-                  commits,
-                  page.nextCursor(),
-                  Optional.empty())));
-    } catch (Exception e) {
-      LOGGER.error("Failed to query history for parcel {}", request.parcelUuid(), e);
-      sendHistoryFailure(player, request, describeHistoryError(e));
-    }
+    var service = ParcelService.get(player.level());
+    var manager = OperationManager.get(player.level().getServer());
+    var result = new AtomicReference<SnapshotTreePage>();
+    manager.submit(
+        "query_snapshot_tree",
+        parcel.uuid().toString(),
+        player.getUUID().toString(),
+        ignored -> {
+          var page =
+              service.querySnapshotTreeInBackground(
+                  parcel, request.limit(), request.cursor(), manager);
+          result.set(page);
+          return page.nodes().size() + " snapshot nodes";
+        },
+        completed -> {
+          if (completed.state() == OperationSnapshot.State.SUCCEEDED) {
+            Services.SERVER_NETWORKING.send(
+                player, new UpdateParcelHistoryMessage(result.get()));
+          } else {
+            sendHistoryFailure(
+                player,
+                request,
+                completed.error().filter("Operation queue is full"::equals)
+                    .orElse("Failed to read parcel history"));
+          }
+        });
   }
 
   public static void syncAvailableState(ServerPlayer player) {
@@ -144,33 +142,15 @@ public final class ServerQueryHandler {
   public static void syncOperations(ServerPlayer player) {
     var server = player.level().getServer();
     var permissions = GitParcelWorldSavedData.get(server).permissions();
-    if (!MinecraftPermissions.permits(
-        player, permissions, WorldPermissions.MANAGE_SHARED_REPOSITORIES)) {
-      Services.SERVER_NETWORKING.send(
-          player, new UpdateGitOperationsMessage(List.of(), Optional.empty()));
-      return;
-    }
-
-    var operations =
-        GitOperationManager.get(server).recent(OPERATION_LIMIT).stream()
-            .map(ServerQueryHandler::snapshot)
-            .toList();
+    boolean canManage =
+        MinecraftPermissions.permits(
+            player, permissions, WorldPermissions.MANAGE_SHARED_REPOSITORIES);
+    String playerId = player.getUUID().toString();
+    var operations = OperationManager.get(server).recent(OPERATION_LIMIT).stream()
+        .filter(operation -> canManage || operation.owner().equals(playerId))
+        .toList();
     Services.SERVER_NETWORKING.send(
-        player, new UpdateGitOperationsMessage(operations, Optional.empty()));
-  }
-
-  private static GitOperationSnapshot snapshot(
-      GitOperationManager.OperationSnapshot operation) {
-    return new GitOperationSnapshot(
-        operation.id(),
-        operation.type(),
-        operation.repository(),
-        operation.requestedBy(),
-        operation.status().name(),
-        operation.submittedAt().toString(),
-        Optional.ofNullable(operation.startedAt()).map(Object::toString),
-        Optional.ofNullable(operation.completedAt()).map(Object::toString),
-        operation.detail());
+        player, new UpdateOperationsMessage(operations, Optional.empty()));
   }
 
   private static void sendHistoryFailure(
@@ -178,21 +158,7 @@ public final class ServerQueryHandler {
     Services.SERVER_NETWORKING.send(
         player,
         new UpdateParcelHistoryMessage(
-            ParcelHistoryPage.failure(
-                request.parcelUuid(), request.beforeRevision(), error)));
-  }
-
-  private static String describeHistoryError(Exception exception) {
-    String message = exception.getMessage();
-    if ("Shared repository is busy".equals(message)) {
-      return message;
-    }
-    if (message != null
-        && (message.startsWith("Unknown Git history cursor")
-            || message.startsWith("Git history cursor does not belong"))) {
-      return "Invalid or stale history cursor";
-    }
-    return "Failed to read parcel history";
+            SnapshotTreePage.failure(request.parcelUuid(), request.cursor(), error)));
   }
 
   private static synchronized boolean acceptQuery(ServerPlayer player, String category) {

@@ -29,6 +29,7 @@ public class Entrypoint implements ModInitializer {
         (listener, sender, server) -> ModEntrypoint.onPlayerJoin(listener.getPlayer()));
     ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(
         (player, origin, destination) -> ModEntrypoint.onPlayerChangeDimension(player));
+    ServerLifecycleEvents.SERVER_STARTED.register(ModEntrypoint::onServerStarted);
     ServerLifecycleEvents.SERVER_STOPPING.register(ModEntrypoint::onServerStopping);
   }
 
@@ -45,7 +46,7 @@ public class Entrypoint implements ModInitializer {
             MinecraftPayloads.SHARED_REPOSITORIES_TYPE,
             MinecraftPayloads.SHARED_REPOSITORIES_CODEC);
     PayloadTypeRegistry.clientboundPlay()
-        .register(MinecraftPayloads.GIT_OPERATIONS_TYPE, MinecraftPayloads.GIT_OPERATIONS_CODEC);
+        .register(MinecraftPayloads.OPERATIONS_TYPE, MinecraftPayloads.OPERATIONS_CODEC);
     PayloadTypeRegistry.clientboundPlay()
         .register(MinecraftPayloads.PARCEL_HISTORY_TYPE, MinecraftPayloads.PARCEL_HISTORY_CODEC);
     PayloadTypeRegistry.serverboundPlay()

@@ -9,13 +9,10 @@ import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.Par
 import io.github.leawind.gitparcel.common.minecraft.logic.permission.MinecraftPermissions;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.ParcelFormatter;
-import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.bind.BindSubcommand;
-import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.bind.PublishSubcommand;
-import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.bind.UnbindSubcommand;
-import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.commit.CommitSubcommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.config.ConfigSubcommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.delete.DeleteSubcommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.history.HistorySubcommand;
+import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.publish.PublishSubcommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.restore.RestoreSubcommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.save.SaveSubcommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.tp.TeleportSubcommand;
@@ -36,16 +33,13 @@ public class ParcelCommand extends GitParcelBaseCommand {
             .then(
                 Commands.argument(ARG_PARCELS, ParcelArgument.parcels())
                     .executes(ParcelCommand::showInfo)
-                    .then(BindSubcommand.build())
-                    .then(CommitSubcommand.build())
                     .then(ConfigSubcommand.build())
                     .then(DeleteSubcommand.build())
                     .then(HistorySubcommand.build())
                     .then(PublishSubcommand.build())
                     .then(RestoreSubcommand.build())
                     .then(SaveSubcommand.build())
-                    .then(TeleportSubcommand.build())
-                    .then(UnbindSubcommand.build()));
+                    .then(TeleportSubcommand.build()));
 
     dispatcher.register(parcel);
   }

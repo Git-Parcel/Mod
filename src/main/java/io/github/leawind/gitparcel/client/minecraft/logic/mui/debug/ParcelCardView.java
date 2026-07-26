@@ -145,14 +145,16 @@ public class ParcelCardView extends LinearLayout {
     appendDetailLine(
         detail,
         "Permissions",
-        "save="
+        "view="
+            + perm.get(ParcelPermissions.VIEW)
+            + " save="
             + perm.get(ParcelPermissions.SAVE)
-            + " load="
-            + perm.get(ParcelPermissions.LOAD)
+            + " restore="
+            + perm.get(ParcelPermissions.RESTORE)
             + " config="
             + perm.get(ParcelPermissions.CONFIG)
-            + " commit="
-            + perm.get(ParcelPermissions.COMMIT));
+            + " history="
+            + perm.get(ParcelPermissions.MANAGE_HISTORY));
 
     var translation = transform.translation();
     appendDetailLine(

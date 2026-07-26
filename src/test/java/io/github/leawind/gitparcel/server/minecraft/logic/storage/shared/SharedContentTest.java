@@ -96,7 +96,7 @@ public class SharedContentTest {
     sharedContent.saveRepoMeta("my_repo", expected);
 
     var actual = sharedContent.loadRepoMeta("my_repo");
-    assertEquals(expected, actual);
+    assertEquals(List.of("parcel_a", "subdir/parcel_b"), actual);
   }
 
   @Test
@@ -112,7 +112,7 @@ public class SharedContentTest {
   void testRepoMetaFileIsCreatedUnderRepoDir() throws IOException {
     sharedContent.saveRepoMeta("my_repo", List.of("parcel_a/"));
 
-    var metaFile = tempDir.resolve("my_repo/meta.json");
+    var metaFile = tempDir.resolve("my_repo/gitparcel.json");
     assertTrue(Files.exists(metaFile));
   }
 
@@ -156,7 +156,13 @@ public class SharedContentTest {
         () -> sharedContent.saveRepoMeta("repo", List.of(".git/objects")));
     assertThrows(
         IllegalArgumentException.class,
-        () -> sharedContent.saveRepoMeta("repo", List.of("meta.json/parcel")));
+        () -> sharedContent.saveRepoMeta("repo", List.of(".GIT/objects")));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> sharedContent.saveRepoMeta("repo", List.of("bad\\portable")));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> sharedContent.saveRepoMeta("repo", List.of("gitparcel.json/parcel")));
   }
 
   @Test
@@ -195,6 +201,19 @@ public class SharedContentTest {
         List.of("parcels/example", "parcels/new", "parcels/other"),
         sharedContent.loadRepoMeta("repo"));
     assertTrue(sharedContent.containsParcelPath("repo", "parcels/example/"));
+  }
+
+  @Test
+  void repositoryManifestRejectsDuplicateAndNestedParcelPaths() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> sharedContent.saveRepoMeta("repo", List.of("build", "build/../build")));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> sharedContent.saveRepoMeta("repo", List.of("village", "village/house")));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> sharedContent.saveRepoMeta("repo", List.of("Village", "village")));
   }
 
   @Test

@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
+import io.github.leawind.gitparcel.common.utils.git.SafeSnapshotPath;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
@@ -16,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeSet;
@@ -31,8 +33,8 @@ import org.slf4j.LoggerFactory;
  * Manages shareable content that can be distributed across game instances.
  *
  * <p>Shared content consists of parcel repositories (git repos) stored in a common directory. Each
- * repo is tracked via {@code repos.json} at the shared root, and each repo has a {@code meta.json}
- * mapping the relative paths of parcels within it.
+ * repo is tracked via {@code repos.json} at the shared root, and each repository commit uses a
+ * versioned {@code gitparcel.json} manifest listing its parcel paths.
  */
 public final class SharedContent {
   private static final Logger LOGGER = LoggerFactory.getLogger(SharedContent.class);
@@ -43,8 +45,11 @@ public final class SharedContent {
   /** Repository index file name. */
   private static final String REPOS_INDEX_FILE = "repos.json";
 
-  /** Repository metadata file name (within each repo directory). */
-  private static final String REPO_META_FILE = "meta.json";
+  /** Portable, versioned repository manifest file name (within each repository). */
+  public static final String REPOSITORY_MANIFEST_FILE = "gitparcel.json";
+
+  public static final int REPOSITORY_MANIFEST_SCHEMA = 1;
+  private static final int MAX_REPOSITORY_MANIFEST_BYTES = 1024 * 1024;
 
   private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
@@ -176,7 +181,7 @@ public final class SharedContent {
   }
 
   /**
-   * Loads the parcel list from the repo's {@code meta.json}.
+   * Loads the parcel list from the repository's {@code gitparcel.json} manifest.
    *
    * @param repoName the repository name (directory name under shared root)
    * @return list of parcel relative paths within the repo, empty list if the file does not exist
@@ -187,10 +192,21 @@ public final class SharedContent {
     if (!Files.exists(metaFile)) {
       return Collections.emptyList();
     }
+    return parseRepositoryManifest(
+        repoName, new String(readManifest(metaFile), StandardCharsets.UTF_8));
+  }
+
+  /** Parses and validates a manifest read from an arbitrary Git commit. */
+  public synchronized List<String> parseRepositoryManifest(String repoName, String content)
+      throws IOException {
     try {
-      var json = GSON.fromJson(Files.readString(metaFile), JsonObject.class);
+      var json = GSON.fromJson(content, JsonObject.class);
       if (json == null) {
-        throw new IOException("Repository metadata must contain a JSON object: " + metaFile);
+        throw new IOException("Repository manifest must contain a JSON object");
+      }
+      if (!json.has("schema_version")
+          || json.get("schema_version").getAsInt() != REPOSITORY_MANIFEST_SCHEMA) {
+        throw new IOException("Unsupported Git Parcel repository manifest schema");
       }
       var parcels = json.getAsJsonArray("parcels");
       if (parcels == null) {
@@ -201,15 +217,14 @@ public final class SharedContent {
       if (result == null) {
         return Collections.emptyList();
       }
-      result.forEach(path -> validateParcelPath(repoName, path));
-      return List.copyOf(result);
+      return normalizeParcelPaths(repoName, result);
     } catch (RuntimeException e) {
-      throw new IOException("Invalid shared repository metadata: " + metaFile, e);
+      throw new IOException("Invalid Git Parcel repository manifest", e);
     }
   }
 
   /**
-   * Saves the parcel list to the repo's {@code meta.json}.
+   * Saves the parcel list to the repo's {@code gitparcel.json} manifest.
    *
    * @param repoName the repository name
    * @param parcelPaths list of parcel relative paths within the repo
@@ -218,10 +233,11 @@ public final class SharedContent {
   public synchronized void saveRepoMeta(String repoName, List<String> parcelPaths)
       throws IOException {
     validateRepositoryName(repoName);
-    parcelPaths.forEach(path -> validateParcelPath(repoName, path));
+    List<String> normalized = normalizeParcelPaths(repoName, parcelPaths);
     var metaFile = getRepoMetaFile(repoName);
     var json = new JsonObject();
-    json.add("parcels", GSON.toJsonTree(parcelPaths));
+    json.addProperty("schema_version", REPOSITORY_MANIFEST_SCHEMA);
+    json.add("parcels", GSON.toJsonTree(normalized));
     writeAtomically(metaFile, GSON.toJson(json));
   }
 
@@ -248,7 +264,7 @@ public final class SharedContent {
   public synchronized RepoMetaSnapshot snapshotRepoMeta(String repoName) throws IOException {
     Path file = getRepoMetaFile(repoName);
     return Files.exists(file)
-        ? new RepoMetaSnapshot(Files.readAllBytes(file))
+        ? new RepoMetaSnapshot(readManifest(file))
         : new RepoMetaSnapshot(null);
   }
 
@@ -290,13 +306,13 @@ public final class SharedContent {
   }
 
   /**
-   * Gets the path to a repo's {@code meta.json}.
+   * Gets the path to a repo's {@code gitparcel.json} manifest.
    *
    * @param repoName the repository name
-   * @return the meta.json path
+   * @return the manifest path
    */
   private Path getRepoMetaFile(String repoName) {
-    return getRepoDir(repoName).resolve(REPO_META_FILE);
+    return getRepoDir(repoName).resolve(REPOSITORY_MANIFEST_FILE);
   }
 
   public static String validateRepositoryName(String repoName) {
@@ -311,6 +327,32 @@ public final class SharedContent {
     normalizedParcelPath(repoName, parcelPath);
   }
 
+  private List<String> normalizeParcelPaths(String repoName, List<String> parcelPaths) {
+    if (parcelPaths == null) {
+      throw new IllegalArgumentException("Parcel path list must not be null");
+    }
+    var normalized = new TreeSet<String>();
+    var portableNames = new TreeSet<String>();
+    for (String path : parcelPaths) {
+      String gitPath = getParcelGitPath(repoName, path);
+      if (!normalized.add(gitPath)) {
+        throw new IllegalArgumentException("Duplicate parcel path: " + gitPath);
+      }
+      if (!portableNames.add(gitPath.toLowerCase(Locale.ROOT))) {
+        throw new IllegalArgumentException("Platform-ambiguous parcel path: " + gitPath);
+      }
+    }
+    String previous = null;
+    for (String path : normalized) {
+      if (previous != null && path.startsWith(previous + "/")) {
+        throw new IllegalArgumentException(
+            "Parcel paths must not contain one another: " + previous + " and " + path);
+      }
+      previous = path;
+    }
+    return List.copyOf(normalized);
+  }
+
   private Path normalizedParcelPath(String repoName, String parcelPath) {
     validateRepositoryName(repoName);
     if (parcelPath == null || parcelPath.isBlank()) {
@@ -323,12 +365,12 @@ public final class SharedContent {
       throw new IllegalArgumentException(
           "Parcel path must stay inside repository " + repoName + ": " + parcelPath);
     }
-    for (Path part : relative) {
-      if (part.toString().equals(".git")) {
-        throw new IllegalArgumentException("Parcel path must not contain .git");
-      }
-    }
-    if (relative.getName(0).toString().equals(REPO_META_FILE)) {
+    String gitPath =
+        StreamSupport.stream(relative.spliterator(), false)
+            .map(Path::toString)
+            .collect(Collectors.joining("/"));
+    SafeSnapshotPath.validateGitPath(gitPath, 64);
+    if (relative.getName(0).toString().equalsIgnoreCase(REPOSITORY_MANIFEST_FILE)) {
       throw new IllegalArgumentException("Parcel path conflicts with repository metadata");
     }
     return relative;
@@ -336,6 +378,16 @@ public final class SharedContent {
 
   private static void writeAtomically(Path file, String content) throws IOException {
     writeAtomically(file, content.getBytes(StandardCharsets.UTF_8));
+  }
+
+  private static byte[] readManifest(Path file) throws IOException {
+    try (var input = Files.newInputStream(file)) {
+      byte[] content = input.readNBytes(MAX_REPOSITORY_MANIFEST_BYTES + 1);
+      if (content.length > MAX_REPOSITORY_MANIFEST_BYTES) {
+        throw new IOException("Git Parcel repository manifest exceeds 1 MiB: " + file);
+      }
+      return content;
+    }
   }
 
   private static void writeAtomically(Path file, byte[] content) throws IOException {

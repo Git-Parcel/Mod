@@ -145,6 +145,11 @@ public final class MinecraftParcelContentSink implements ParcelContentSink {
     if (entity == null) {
       throw new ParcelException("Failed to create entity " + record.type());
     }
+    var worldPosition = space.toWorld(record.pos());
+    entity.snapTo(
+        worldPosition,
+        space.toWorldYaw(entity.getYRot()),
+        entity.getXRot());
     level.addFreshEntityWithPassengers(entity);
   }
 

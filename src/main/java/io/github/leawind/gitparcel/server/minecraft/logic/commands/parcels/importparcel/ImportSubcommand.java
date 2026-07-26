@@ -5,11 +5,13 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
+import io.github.leawind.gitparcel.common.api.operation.OperationSnapshot;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
-import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.bind.BindSubcommand;
+import io.github.leawind.gitparcel.server.minecraft.logic.commands.SharedRepositoryArguments;
+import io.github.leawind.gitparcel.server.minecraft.logic.operation.OperationManager;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.TemplateMirrorArgument;
@@ -21,6 +23,7 @@ import net.minecraft.world.level.block.Rotation;
 
 public final class ImportSubcommand extends GitParcelBaseCommand {
   private static final String ARG_REPOSITORY = "repository";
+  private static final String ARG_REVISION = "revision";
   private static final String ARG_PATH = "path";
   private static final String ARG_AT = "at";
 
@@ -38,14 +41,16 @@ public final class ImportSubcommand extends GitParcelBaseCommand {
     return Commands.literal("import")
         .then(
             Commands.argument(ARG_REPOSITORY, StringArgumentType.word())
-                .suggests(BindSubcommand::suggestRepositories)
+                .suggests(SharedRepositoryArguments::suggestRepositories)
                 .then(
-                    Commands.argument(ARG_PATH, StringArgumentType.string())
-                        .suggests(BindSubcommand::suggestParcelPaths)
+                    Commands.argument(ARG_REVISION, StringArgumentType.word())
                         .then(
-                            Commands.argument(ARG_AT, BlockPosArgument.blockPos())
-                                .executes(ImportSubcommand::importDefault)
-                                .then(mirror))));
+                            Commands.argument(ARG_PATH, StringArgumentType.string())
+                                .suggests(SharedRepositoryArguments::suggestParcelPaths)
+                                .then(
+                                    Commands.argument(ARG_AT, BlockPosArgument.blockPos())
+                                        .executes(ImportSubcommand::importDefault)
+                                        .then(mirror)))));
   }
 
   private static int importDefault(CommandContext<CommandSourceStack> ctx)
@@ -73,34 +78,60 @@ public final class ImportSubcommand extends GitParcelBaseCommand {
       CommandContext<CommandSourceStack> ctx, Mirror mirror, Rotation rotation)
       throws CommandSyntaxException {
     var source = ctx.getSource();
-    if (!validateWorldPermission(source, WorldPermissions.CREATE_PARCEL)) {
+    if (!validateWorldPermission(source, WorldPermissions.CREATE_PARCEL)
+        || !validateWorldPermission(source, WorldPermissions.PUBLISH_IMPORT)) {
       return 0;
     }
 
     String repository = StringArgumentType.getString(ctx, ARG_REPOSITORY);
+    String revision = StringArgumentType.getString(ctx, ARG_REVISION);
     String path = StringArgumentType.getString(ctx, ARG_PATH);
     BlockPos position = BlockPosArgument.getLoadedBlockPos(ctx, ARG_AT);
-    try {
-      var parcel =
-          ParcelService.get(source.getLevel())
-              .importSharedParcel(
-                  repository,
-                  path,
-                  new ParcelTransform(mirror, rotation, position));
-      source.sendSystemMessage(
-          Translations.of(
-              "command.gitparcel.parcel.import.success",
-              parcel.uuid().toString(),
-              repository,
-              path));
-      return 1;
-    } catch (Exception e) {
-      LOGGER.error("Failed to import shared parcel {}/{}", repository, path, e);
-      source.sendFailure(
-          Translations.of(
-              "command.gitparcel.parcel.import.failure",
-              BindSubcommand.describe(e)));
+    var service = ParcelService.get(source.getLevel());
+    var manager = OperationManager.get(source.getServer());
+    var transform = new ParcelTransform(mirror, rotation, position);
+    var identity = snapshotIdentity(source);
+    var operation =
+        manager.submit(
+            "import_snapshot",
+            repository + "@" + revision + ":" + path,
+            operationOwner(source),
+            progress ->
+                service
+                    .importSharedSnapshotInBackground(
+                        repository,
+                        revision,
+                        path,
+                        transform,
+                        identity,
+                        progress,
+                        manager)
+                    .uuid()
+                    .toString(),
+            completed -> {
+              if (completed.state() == OperationSnapshot.State.SUCCEEDED) {
+                source.sendSystemMessage(
+                    Translations.of(
+                        "command.gitparcel.parcel.import.success",
+                        completed.result().orElseThrow(),
+                        repository,
+                        path));
+              } else {
+                source.sendFailure(
+                    Translations.of(
+                        "command.gitparcel.parcel.import.failure",
+                        completed.error().orElse("Failed")));
+              }
+            });
+    if (operation.state() == OperationSnapshot.State.FAILED) {
       return 0;
     }
+    source.sendSystemMessage(
+        Translations.of(
+            "command.gitparcel.git_operation.started",
+            operation.operationId(),
+            operation.kind(),
+            operation.target()));
+    return 1;
   }
 }

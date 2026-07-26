@@ -17,7 +17,7 @@ public final class WorldPermissions {
   public static final PermissionType<WorldPermissions> LIST_FORMATS =
       type("list_formats", PermissionLevel.MODERATORS);
   public static final PermissionType<WorldPermissions> LIST_PARCELS =
-      type("list_pararcels", PermissionLevel.MODERATORS);
+      type("list_parcels", PermissionLevel.MODERATORS);
   public static final PermissionType<WorldPermissions> CREATE_PARCEL =
       type("create_parcel", PermissionLevel.OWNERS);
   public static final PermissionType<WorldPermissions> DELETE_PARCEL =
@@ -26,6 +26,8 @@ public final class WorldPermissions {
       type("config_parcel", PermissionLevel.OWNERS);
   public static final PermissionType<WorldPermissions> LIST_SHARED_REPOSITORIES =
       type("list_shared_repositories", PermissionLevel.MODERATORS);
+  public static final PermissionType<WorldPermissions> PUBLISH_IMPORT =
+      type("publish_import", PermissionLevel.ADMINS);
   public static final PermissionType<WorldPermissions> MANAGE_SHARED_REPOSITORIES =
       type("manage_shared_repositories", PermissionLevel.OWNERS);
 }

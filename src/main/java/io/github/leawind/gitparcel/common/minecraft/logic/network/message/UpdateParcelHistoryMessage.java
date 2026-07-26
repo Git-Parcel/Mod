@@ -1,11 +1,11 @@
 package io.github.leawind.gitparcel.common.minecraft.logic.network.message;
 
 import com.mojang.serialization.Codec;
-import io.github.leawind.gitparcel.common.api.git.ParcelHistoryPage;
+import io.github.leawind.gitparcel.common.api.snapshot.SnapshotTreePage;
 
-/** Delivers one requested page of parcel Git history. */
-public record UpdateParcelHistoryMessage(ParcelHistoryPage page) implements ServerMessage {
+/** Delivers one requested page of the parcel's logical snapshot tree. */
+public record UpdateParcelHistoryMessage(SnapshotTreePage page) implements ServerMessage {
   public static final Codec<UpdateParcelHistoryMessage> CODEC =
-      ParcelHistoryPage.CODEC.xmap(
+      SnapshotTreePage.CODEC.xmap(
           UpdateParcelHistoryMessage::new, UpdateParcelHistoryMessage::page);
 }

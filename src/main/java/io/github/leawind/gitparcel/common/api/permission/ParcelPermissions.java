@@ -14,10 +14,14 @@ public final class ParcelPermissions {
     return REGISTRY.register(new PermissionType<>(id, defaultLevel));
   }
 
-  public static final PermissionType<ParcelPermissions> SAVE = type("save", PermissionLevel.ADMINS);
-  public static final PermissionType<ParcelPermissions> LOAD = type("load", PermissionLevel.ADMINS);
+  public static final PermissionType<ParcelPermissions> VIEW =
+      type("view", PermissionLevel.MODERATORS);
+  public static final PermissionType<ParcelPermissions> SAVE =
+      type("save_snapshot", PermissionLevel.ADMINS);
+  public static final PermissionType<ParcelPermissions> RESTORE =
+      type("restore_snapshot", PermissionLevel.ADMINS);
+  public static final PermissionType<ParcelPermissions> MANAGE_HISTORY =
+      type("manage_history", PermissionLevel.OWNERS);
   public static final PermissionType<ParcelPermissions> CONFIG =
       type("config", PermissionLevel.OWNERS);
-  public static final PermissionType<ParcelPermissions> COMMIT =
-      type("commit", PermissionLevel.ADMINS);
 }

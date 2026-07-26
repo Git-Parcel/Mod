@@ -3,10 +3,10 @@ package io.github.leawind.gitparcel.client.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.github.leawind.gitparcel.common.api.git.GitOperationSnapshot;
-import io.github.leawind.gitparcel.common.api.git.ParcelHistoryPage;
 import io.github.leawind.gitparcel.common.api.git.SharedRepositorySnapshot;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateGitOperationsMessage;
+import io.github.leawind.gitparcel.common.api.operation.OperationSnapshot;
+import io.github.leawind.gitparcel.common.api.snapshot.SnapshotTreePage;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateOperationsMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelHistoryMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateSharedRepositoriesMessage;
 import java.util.List;
@@ -30,53 +30,61 @@ class GitParcelClientImplTest {
         new SharedRepositorySnapshot(
             "builds", "local", Optional.empty(), Optional.empty(), List.of("house"));
     var operation =
-        new GitOperationSnapshot(
-            1,
+        new OperationSnapshot(
+            UUID.randomUUID(),
             "create",
-            "builds",
             "Tester",
-            "SUCCEEDED",
+            "builds",
+            OperationSnapshot.State.SUCCEEDED,
+            "succeeded",
+            1,
+            Optional.of(1L),
+            Optional.of("repositories"),
             "2026-07-26T00:00:00Z",
             Optional.empty(),
+            "2026-07-26T00:00:01Z",
             Optional.of("2026-07-26T00:00:01Z"),
-            "Created");
+            Optional.of("Created"),
+            Optional.empty());
 
     client.setSharedRepositories(
         new UpdateSharedRepositoriesMessage(List.of(repository), Optional.empty()));
-    client.setGitOperations(
-        new UpdateGitOperationsMessage(List.of(operation), Optional.of("stale warning")));
+    client.setOperations(
+        new UpdateOperationsMessage(List.of(operation), Optional.of("stale warning")));
     UUID parcelUuid = UUID.randomUUID();
     client.setParcelHistory(
         new UpdateParcelHistoryMessage(
-            new ParcelHistoryPage(
+            new SnapshotTreePage(
                 parcelUuid,
                 Optional.empty(),
                 List.of(),
+                Optional.empty(),
                 Optional.empty(),
                 Optional.empty())));
 
     assertEquals(List.of(repository), client.getSharedRepositories());
-    assertEquals(List.of(operation), client.getGitOperations());
-    assertTrue(client.getGitOperationsError().isPresent());
-    assertTrue(client.getParcelHistoryPage(parcelUuid).isPresent());
+    assertEquals(List.of(operation), client.getOperations());
+    assertTrue(client.getOperationsError().isPresent());
+    assertTrue(client.getSnapshotTreePage(parcelUuid).isPresent());
 
     client.removeParcelHistory(Set.of(parcelUuid));
-    assertTrue(client.getParcelHistoryPage(parcelUuid).isEmpty());
+    assertTrue(client.getSnapshotTreePage(parcelUuid).isEmpty());
     client.setParcelHistory(
         new UpdateParcelHistoryMessage(
-            new ParcelHistoryPage(
+            new SnapshotTreePage(
                 parcelUuid,
                 Optional.empty(),
                 List.of(),
+                Optional.empty(),
                 Optional.empty(),
                 Optional.empty())));
 
     client.reset();
 
     assertTrue(client.getSharedRepositories().isEmpty());
-    assertTrue(client.getGitOperations().isEmpty());
+    assertTrue(client.getOperations().isEmpty());
     assertTrue(client.getSharedRepositoriesError().isEmpty());
-    assertTrue(client.getGitOperationsError().isEmpty());
-    assertTrue(client.getParcelHistoryPage(parcelUuid).isEmpty());
+    assertTrue(client.getOperationsError().isEmpty());
+    assertTrue(client.getSnapshotTreePage(parcelUuid).isEmpty());
   }
 }

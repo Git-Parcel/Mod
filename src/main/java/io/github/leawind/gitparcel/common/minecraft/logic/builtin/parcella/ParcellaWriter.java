@@ -6,6 +6,7 @@ import io.github.leawind.gitparcel.common.api.parcel.content.BlockSection;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.ParcellaRecordCodecs.BlockEntities;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.utils.RadixTreePathGenerator;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.utils.ZOrder3D;
+import io.github.leawind.gitparcel.common.utils.io.NioFileTree;
 import io.github.leawind.gitparcel.common.utils.algorithms.VolumetricRLE;
 import io.github.leawind.gitparcel.common.utils.numbase.HexUtils;
 import java.io.IOException;
@@ -57,9 +58,13 @@ public abstract class ParcellaWriter
             : null;
 
     BlockPalette finalPalette = palette;
+    long[] sectionCount = {0};
     source.forEachBlockSection(
         sectionSize,
-        section -> writeSection(config, finalPalette, sectionsDir, section));
+        section -> {
+          writeSection(config, finalPalette, sectionsDir, section);
+          context.progress().report("format_blocks", ++sectionCount[0], "sections");
+        });
 
     if (palette != null) {
       palette.save(blocksDir.resolve(PALETTE_FILE_NAME));
@@ -81,6 +86,7 @@ public abstract class ParcellaWriter
                   "%08X%s".formatted(
                       entityIndex[0]++, config.entityDataFormat.get().getSuffix())),
               tag);
+          context.progress().report("format_entities", entityIndex[0], "entities");
         });
 
     int[] attachmentIndex = {0};
@@ -94,6 +100,7 @@ public abstract class ParcellaWriter
                       .getOrThrow();
           NbtFormat.TEXT.write(
               attachmentsDir.resolve("%08X.snbt".formatted(attachmentIndex[0]++)), tag);
+          context.progress().report("format_attachments", attachmentIndex[0], "attachments");
         });
   }
 
@@ -209,13 +216,6 @@ public abstract class ParcellaWriter
   }
 
   static void clearDirectory(Path directory) throws IOException {
-    if (!Files.exists(directory)) {
-      return;
-    }
-    try (var paths = Files.walk(directory)) {
-      for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
-        Files.delete(path);
-      }
-    }
+    NioFileTree.clearDirectory(directory);
   }
 }

@@ -1,133 +1,220 @@
 package io.github.leawind.gitparcel.common.minecraft.logic.storage;
 
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
+import io.github.leawind.gitparcel.common.api.operation.ProgressReporter;
+import io.github.leawind.gitparcel.common.api.operation.ServerThreadBridge;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelMeta;
+import io.github.leawind.gitparcel.common.api.snapshot.SnapshotId;
+import io.github.leawind.gitparcel.common.api.snapshot.SnapshotNode;
+import io.github.leawind.gitparcel.common.api.snapshot.SnapshotTreePage;
+import io.github.leawind.gitparcel.common.api.snapshot.SnapshotWorkspaceFactory;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
+import io.github.leawind.gitparcel.common.impl.snapshot.TemporarySnapshotWorkspaceFactory;
 import io.github.leawind.gitparcel.common.utils.git.GitRepo;
+import io.github.leawind.gitparcel.common.utils.git.GitRepositoryCore;
+import io.github.leawind.gitparcel.common.utils.git.InternalRepository;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
+import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.jspecify.annotations.Nullable;
 
-/** Git operations for parcel snapshots, independent from command presentation. */
+/** Server-authoritative snapshot use cases for one parcel-owned internal bare repository. */
 public final class ParcelRepositoryService {
+  private static final GitRepositoryCore.Identity SERVER_IDENTITY =
+      new GitRepositoryCore.Identity("Git Parcel Server", "server@gitparcel.local");
+
   private ParcelRepositoryService() {}
 
-  public static Optional<GitRepo.CommitInfo> commit(
+  public static InternalRepository repository(Parcel parcel, Path internalParcelsDir) {
+    return InternalRepository.at(internalParcelsDir, parcel.uuid());
+  }
+
+  public static SnapshotId saveSnapshot(
+      ServerLevel level,
       Parcel parcel,
       Path internalParcelsDir,
-      String message,
-      GitRepo.CommitIdentity identity)
+      String name,
+      String description,
+      GitRepo.CommitIdentity identity,
+      boolean ignoreEntities)
       throws IOException, ParcelException {
-    var location = ParcelStorage.resolveRepositoryLocation(parcel, internalParcelsDir);
-    return commit(parcel, location, message, identity);
+    return saveSnapshot(
+        level,
+        parcel,
+        internalParcelsDir,
+        name,
+        description,
+        identity,
+        ignoreEntities,
+        TemporarySnapshotWorkspaceFactory.INSTANCE,
+        ProgressReporter.NONE,
+        SnapshotNode.Source.SAVED);
   }
 
-  public static Optional<GitRepo.CommitInfo> commit(
+  public static SnapshotId saveSnapshot(
+      ServerLevel level,
       Parcel parcel,
-      ParcelStorage.RepositoryLocation location,
-      String message,
-      GitRepo.CommitIdentity identity)
+      Path internalParcelsDir,
+      String name,
+      String description,
+      GitRepo.CommitIdentity identity,
+      boolean ignoreEntities,
+      SnapshotWorkspaceFactory workspaceFactory,
+      ProgressReporter progress,
+      SnapshotNode.Source source)
       throws IOException, ParcelException {
-    if (!Files.isRegularFile(location.parcelDirectory().resolve("parcel.json"))) {
-      throw new ParcelException("Parcel has not been saved; run save before commit");
+    try (var workspace = workspaceFactory.create()) {
+      Path snapshotRoot = workspace.root().resolve("snapshot");
+      captureSnapshot(level, parcel, snapshotRoot, ignoreEntities, progress);
+      return saveWorkspaceSnapshot(
+          parcel,
+          internalParcelsDir,
+          snapshotRoot,
+          name,
+          description,
+          identity,
+          source,
+          progress);
     }
-
-    try {
-      List<String> commitPaths =
-          location.sharedRepository() == null
-              ? List.of(location.gitPath())
-              : List.of(location.gitPath(), "meta.json");
-      return GitRepo.get(location.repository())
-          .commit(commitPaths, message, identity);
-    } catch (GitAPIException e) {
-      throw new ParcelException("Git commit failed", e);
-    }
   }
 
-  public static List<GitRepo.CommitInfo> history(
-      Parcel parcel, Path internalParcelsDir, int limit)
+  public static void captureSnapshot(
+      ServerLevel level,
+      Parcel parcel,
+      Path snapshotRoot,
+      boolean ignoreEntities,
+      ProgressReporter progress)
       throws IOException, ParcelException {
-    var location = ParcelStorage.resolveRepositoryLocation(parcel, internalParcelsDir);
-    return history(location, limit);
+    progress.report("world_capture", 0, "blocks");
+    ParcelStorage.captureSnapshot(level, parcel, snapshotRoot, ignoreEntities, progress);
+    progress.report("workspace_ready", 1, 1, "snapshots");
   }
 
-  public static List<GitRepo.CommitInfo> history(
-      ParcelStorage.RepositoryLocation location, int limit)
-      throws IOException, ParcelException {
-    return historyPage(location, limit, null).commits();
+  public static SnapshotId saveWorkspaceSnapshot(
+      Parcel parcel,
+      Path internalParcelsDir,
+      Path snapshotRoot,
+      String name,
+      String description,
+      GitRepo.CommitIdentity identity,
+      SnapshotNode.Source source,
+      ProgressReporter progress)
+      throws IOException {
+    var metadata =
+        new InternalRepository.SaveMetadata(
+            name,
+            description,
+            new GitRepositoryCore.Identity(identity.name(), identity.email()),
+            SERVER_IDENTITY,
+            source,
+            Instant.now());
+    return repository(parcel, internalParcelsDir).saveSnapshot(snapshotRoot, metadata, progress);
   }
 
-  public static GitRepo.HistoryPage historyPage(
-      ParcelStorage.RepositoryLocation location,
+  public static SnapshotTreePage querySnapshotTree(
+      Parcel parcel,
+      Path internalParcelsDir,
       int limit,
-      @Nullable String beforeRevision)
-      throws IOException, ParcelException {
-    try {
-      return GitRepo.get(location.repository())
-          .historyPage(location.gitPath(), limit, beforeRevision);
-    } catch (GitAPIException e) {
-      throw new ParcelException("Failed to read Git history", e);
-    }
+      Optional<SnapshotId> cursor)
+      throws IOException {
+    return repository(parcel, internalParcelsDir)
+        .queryTree(parcel.uuid(), limit, cursor);
   }
 
-  /**
-   * Loads one committed snapshot into the parcel's current world transform without checking out the
-   * repository.
-   */
-  public static void restore(
+  public static InternalRepository.RestoreResult restoreSnapshot(
       ServerLevel level,
       Parcel parcel,
       Path internalParcelsDir,
-      String revision,
-      boolean ignoreEntities)
-      throws IOException, ParcelException {
-    var location = ParcelStorage.resolveRepositoryLocation(parcel, internalParcelsDir);
-    restore(level, parcel, location, revision, ignoreEntities);
+      SnapshotId snapshotId,
+      boolean ignoreEntities,
+      SnapshotWorkspaceFactory workspaceFactory,
+      ProgressReporter progress)
+      throws IOException {
+    return restoreSnapshot(
+        level,
+        parcel,
+        internalParcelsDir,
+        snapshotId,
+        ignoreEntities,
+        workspaceFactory,
+        progress,
+        ServerThreadBridge.DIRECT);
   }
 
-  public static void restore(
+  public static InternalRepository.RestoreResult restoreSnapshot(
       ServerLevel level,
       Parcel parcel,
-      ParcelStorage.RepositoryLocation location,
-      String revision,
-      boolean ignoreEntities)
-      throws IOException, ParcelException {
-    Path temporaryRoot = Files.createTempDirectory("gitparcel-restore-");
-    Path snapshot = temporaryRoot.resolve("parcel");
+      Path internalParcelsDir,
+      SnapshotId snapshotId,
+      boolean ignoreEntities,
+      SnapshotWorkspaceFactory workspaceFactory,
+      ProgressReporter progress,
+      ServerThreadBridge serverThread)
+      throws IOException {
+    return repository(parcel, internalParcelsDir)
+        .restoreSnapshot(
+            snapshotId,
+            workspaceFactory,
+            snapshotRestorer(level, parcel, ignoreEntities, progress, serverThread),
+            progress);
+  }
 
-    try {
-      GitRepo.get(location.repository())
-          .exportRevision(revision, location.gitPath(), snapshot);
-      validateGeometry(parcel.meta(), ParcelMeta.load(snapshot.resolve("parcel.json")));
+  /** Retries an interrupted restore, or applies its protected pre-restore snapshot. */
+  public static InternalRepository.RestoreResult resolvePendingRestore(
+      ServerLevel level,
+      Parcel parcel,
+      Path internalParcelsDir,
+      UUID operationId,
+      boolean rollback,
+      boolean ignoreEntities,
+      SnapshotWorkspaceFactory workspaceFactory,
+      ProgressReporter progress,
+      ServerThreadBridge serverThread)
+      throws IOException {
+    return repository(parcel, internalParcelsDir)
+        .resolvePendingRestore(
+            operationId,
+            rollback,
+            workspaceFactory,
+            snapshotRestorer(level, parcel, ignoreEntities, progress, serverThread),
+            progress);
+  }
 
-      final int loadFlags =
-          Block.UPDATE_CLIENTS
-              | Block.UPDATE_IMMEDIATE
-              | Block.UPDATE_KNOWN_SHAPE
-              | Block.UPDATE_SKIP_ALL_SIDEEFFECTS;
-      ParcelStorage.load(
-          level,
-          parcel.transform(),
-          snapshot,
-          false,
-          ignoreEntities || parcel.meta().getExcludeEntities(),
-          loadFlags);
-    } finally {
-      try {
-        ParcelStorage.deleteRecursivelyIfExists(temporaryRoot);
-      } catch (IOException cleanupFailure) {
-        ParcelStorage.LOGGER.warn(
-            "Failed to remove temporary Git restore directory {}",
-            temporaryRoot,
-            cleanupFailure);
+  private static InternalRepository.SnapshotRestorer snapshotRestorer(
+      ServerLevel level,
+      Parcel parcel,
+      boolean ignoreEntities,
+      ProgressReporter progress,
+      ServerThreadBridge serverThread) {
+    return new InternalRepository.SnapshotRestorer() {
+      @Override
+      public void validate(Path snapshotRoot) throws Exception {
+        ParcelMeta restored = ParcelStorage.validateSnapshot(snapshotRoot, progress);
+        validateGeometry(parcel.meta(), restored);
       }
-    }
+
+      @Override
+      public void apply(Path snapshotRoot) throws Exception {
+        final int loadFlags =
+            Block.UPDATE_CLIENTS
+                | Block.UPDATE_IMMEDIATE
+                | Block.UPDATE_KNOWN_SHAPE
+                | Block.UPDATE_SKIP_ALL_SIDEEFFECTS;
+        serverThread.run(
+            () ->
+                ParcelStorage.applyValidatedSnapshot(
+                    level,
+                    parcel.transform(),
+                    snapshotRoot,
+                    false,
+                    ignoreEntities || parcel.meta().getExcludeEntities(),
+                    loadFlags,
+                    ProgressReporter.prefixed("restore_", progress)));
+      }
+    };
   }
 
   public static void validateGeometry(ParcelMeta current, ParcelMeta restored)
@@ -135,7 +222,7 @@ public final class ParcelRepositoryService {
     if (!current.size().equals(restored.size())
         || !current.anchor().equals(restored.anchor())) {
       throw new ParcelException(
-          "Cannot restore a revision whose size or anchor differs from the registered parcel");
+          "Cannot restore a snapshot whose size or anchor differs from the registered parcel");
     }
   }
 }

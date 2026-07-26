@@ -18,6 +18,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class SharedRepositoryServiceTest {
+  private static final GitRepo.CommitIdentity IDENTITY =
+      new GitRepo.CommitIdentity("Tester", "tester@gitparcel.local");
+
   @TempDir Path tempDir;
 
   @Test
@@ -50,14 +53,15 @@ class SharedRepositoryServiceTest {
     var service = new SharedRepositoryService(tempDir);
     service.create("builds");
     var content = service.content();
-    Path metadata = tempDir.resolve("builds/meta.json");
+    Path metadata = tempDir.resolve("builds/gitparcel.json");
 
     var absent = content.snapshotRepoMeta("builds");
     content.addParcelPath("builds", "spawn/house");
     content.restoreRepoMeta("builds", absent);
     assertFalse(Files.exists(metadata));
 
-    Files.writeString(metadata, "{\n  \"parcels\": [\"old\"]\n}\n");
+    Files.writeString(
+        metadata, "{\n  \"schema_version\": 1,\n  \"parcels\": [\"old\"]\n}\n");
     byte[] expected = Files.readAllBytes(metadata);
     var existing = content.snapshotRepoMeta("builds");
     content.addParcelPath("builds", "new");
@@ -94,5 +98,36 @@ class SharedRepositoryServiceTest {
     try (var lease = service.tryAcquire("builds").orElseThrow()) {
       assertEquals("builds", lease.name());
     }
+  }
+
+  @Test
+  void validatesVersionedManifestAgainstTheSelectedCommitTree() throws Exception {
+    var service = new SharedRepositoryService(tempDir);
+    service.create("builds");
+    Path repository = service.repositoryPath("builds");
+    Files.createDirectories(repository.resolve("house/data"));
+    Files.writeString(repository.resolve("house/parcel.json"), "{}");
+    Files.writeString(repository.resolve("house/data/blocks.txt"), "stone");
+    service.content().saveRepoMeta("builds", List.of("house"));
+    var first =
+        GitRepo.get(repository)
+            .commit(
+                List.of("house", SharedContent.REPOSITORY_MANIFEST_FILE),
+                "Add house",
+                IDENTITY)
+            .orElseThrow();
+
+    assertEquals(List.of("house"), service.parcelPaths("builds", first.revision()));
+
+    Files.createDirectories(repository.resolve("unlisted/data"));
+    Files.writeString(repository.resolve("unlisted/parcel.json"), "{}");
+    Files.writeString(repository.resolve("unlisted/data/blocks.txt"), "dirt");
+    var inconsistent =
+        GitRepo.get(repository)
+            .commit("unlisted", "Add unlisted parcel", IDENTITY)
+            .orElseThrow();
+    assertThrows(
+        IOException.class,
+        () -> service.parcelPaths("builds", inconsistent.revision()));
   }
 }

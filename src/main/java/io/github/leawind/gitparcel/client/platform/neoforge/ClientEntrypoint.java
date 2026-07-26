@@ -45,7 +45,7 @@ public class ClientEntrypoint {
         MinecraftPayloads.SHARED_REPOSITORIES_TYPE,
         (payload, context) -> ClientPayloadHandler.handle(payload.message()));
     event.register(
-        MinecraftPayloads.GIT_OPERATIONS_TYPE,
+        MinecraftPayloads.OPERATIONS_TYPE,
         (payload, context) -> ClientPayloadHandler.handle(payload.message()));
     event.register(
         MinecraftPayloads.PARCEL_HISTORY_TYPE,

@@ -25,6 +25,10 @@ import net.minecraft.world.level.block.state.BlockState;
 /** Shared streaming reader for all Parcella grid sizes. */
 public abstract class ParcellaReader
     implements ParcelFormat.Reader<ParcellaFormat.Config>, ParcellaFormat {
+  private static final int MAX_DIRECTORY_RECORDS = 100_000;
+  private static final long MAX_SECTION_FILE_BYTES = 16L * 1024 * 1024;
+  private static final long MAX_RECORD_FILE_BYTES = 64L * 1024 * 1024;
+
   private final int sectionSize;
   private final ParcellaDigitCodec digitCodec;
 
@@ -49,6 +53,7 @@ public abstract class ParcellaReader
             ? loadPalette(blocksDir.resolve(PALETTE_FILE_NAME))
             : null;
 
+    long[] attachmentCount = {0};
     readDirectory(
         context.dataDir().resolve(ATTACHMENTS_DIR_NAME),
         ".snbt",
@@ -56,9 +61,11 @@ public abstract class ParcellaReader
           CompoundTag tag = readTag(NbtFormat.TEXT, path);
           sink.acceptAttachment(
               ParcellaRecordCodecs.decode(ParcellaRecordCodecs.ATTACHMENT, tag));
+          context.progress().report("format_attachments", ++attachmentCount[0], "attachments");
         });
 
     Vec3i anchor = context.anchor();
+    long sectionCount = 0;
     for (var section :
         ParcellaUtils.subdivideParcel(context.parcelSize(), context.anchor(), sectionSize)) {
       BlockPos relativeOrigin =
@@ -102,31 +109,39 @@ public abstract class ParcellaReader
               new Vec3i(section.sizeX, section.sizeY, section.sizeZ),
               states,
               blockEntities));
+      context.progress().report("format_blocks", ++sectionCount, "sections");
     }
 
     NbtFormat entityFormat = config.entityDataFormat.get();
+    long[] entityCount = {0};
     readDirectory(
         context.dataDir().resolve(ENTITIES_DIR_NAME),
         entityFormat.getSuffix(),
         path ->
-            sink.acceptEntity(
-                ParcellaRecordCodecs.decode(
-                    ParcellaRecordCodecs.ENTITY, readTag(entityFormat, path))));
+            {
+              sink.acceptEntity(
+                  ParcellaRecordCodecs.decode(
+                      ParcellaRecordCodecs.ENTITY, readTag(entityFormat, path)));
+              context.progress().report("format_entities", ++entityCount[0], "entities");
+            });
     sink.finish();
   }
 
   private List<BlockState> decodeFlat(
       Config config, BlockPalette palette, Path path, Subparcel section)
       throws IOException, ParcelException.CorruptedParcelException {
-    List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
+    requireFileSize(path, MAX_SECTION_FILE_BYTES, "Block section");
     int expected = section.sizeX * section.sizeY * section.sizeZ;
-    if (lines.size() != expected) {
-      throw new ParcelException.CorruptedParcelException(
-          "Expected %d states in %s, got %d".formatted(expected, path, lines.size()));
-    }
     var states = new ArrayList<BlockState>(expected);
-    for (String line : lines) {
-      states.add(decodeState(line, palette, path));
+    try (var reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+      String line;
+      while (states.size() < expected && (line = reader.readLine()) != null) {
+        states.add(decodeState(line, palette, path));
+      }
+      if (states.size() != expected || reader.readLine() != null) {
+        throw new ParcelException.CorruptedParcelException(
+            "Expected exactly %d states in %s".formatted(expected, path));
+      }
     }
     return states;
   }
@@ -134,28 +149,37 @@ public abstract class ParcellaReader
   private List<BlockState> decodeRle(
       Config config, BlockPalette palette, Path path, Subparcel section)
       throws IOException, ParcelException.CorruptedParcelException {
+    requireFileSize(path, MAX_SECTION_FILE_BYTES, "Block section");
     int count = section.sizeX * section.sizeY * section.sizeZ;
     var states = new ArrayList<BlockState>(java.util.Collections.nCopies(count, Blocks.AIR.defaultBlockState()));
-    for (String line : Files.readAllLines(path, StandardCharsets.UTF_8)) {
-      if (line.isBlank()) {
-        continue;
-      }
-      int separator = findSeparator(line);
-      if (separator != 3 && separator != 6) {
-        throw new ParcelException.CorruptedParcelException("Invalid RLE line in " + path);
-      }
-      int x0 = parseDigit(line.charAt(0), path);
-      int y0 = parseDigit(line.charAt(1), path);
-      int z0 = parseDigit(line.charAt(2), path);
-      int x1 = separator == 3 ? x0 : parseDigit(line.charAt(3), path);
-      int y1 = separator == 3 ? y0 : parseDigit(line.charAt(4), path);
-      int z1 = separator == 3 ? z0 : parseDigit(line.charAt(5), path);
-      BlockState state = decodeState(line.substring(separator + 1), palette, path);
-      validateRange(section, x0, y0, z0, x1, y1, z1, path);
-      for (int x = x0; x <= x1; x++) {
-        for (int y = y0; y <= y1; y++) {
-          for (int z = z0; z <= z1; z++) {
-            states.set((x * section.sizeY + y) * section.sizeZ + z, state);
+    try (var reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+      String line;
+      int records = 0;
+      while ((line = reader.readLine()) != null) {
+        if (++records > count) {
+          throw new ParcelException.CorruptedParcelException(
+              "Too many RLE records in " + path);
+        }
+        if (line.isBlank()) {
+          continue;
+        }
+        int separator = findSeparator(line);
+        if (separator != 3 && separator != 6) {
+          throw new ParcelException.CorruptedParcelException("Invalid RLE line in " + path);
+        }
+        int x0 = parseDigit(line.charAt(0), path);
+        int y0 = parseDigit(line.charAt(1), path);
+        int z0 = parseDigit(line.charAt(2), path);
+        int x1 = separator == 3 ? x0 : parseDigit(line.charAt(3), path);
+        int y1 = separator == 3 ? y0 : parseDigit(line.charAt(4), path);
+        int z1 = separator == 3 ? z0 : parseDigit(line.charAt(5), path);
+        BlockState state = decodeState(line.substring(separator + 1), palette, path);
+        validateRange(section, x0, y0, z0, x1, y1, z1, path);
+        for (int x = x0; x <= x1; x++) {
+          for (int y = y0; y <= y1; y++) {
+            for (int z = z0; z <= z1; z++) {
+              states.set((x * section.sizeY + y) * section.sizeZ + z, state);
+            }
           }
         }
       }
@@ -225,6 +249,7 @@ public abstract class ParcellaReader
   private static BlockPalette loadPalette(Path path)
       throws ParcelException.CorruptedParcelException {
     try {
+      requireFileSize(path, MAX_SECTION_FILE_BYTES, "Block palette");
       return BlockPalette.load(path);
     } catch (Exception e) {
       throw new ParcelException.CorruptedParcelException("Invalid palette: " + path, e);
@@ -233,6 +258,12 @@ public abstract class ParcellaReader
 
   private static CompoundTag readTag(NbtFormat format, Path path)
       throws ParcelException.CorruptedParcelException {
+    try {
+      requireFileSize(path, MAX_RECORD_FILE_BYTES, "NBT record");
+    } catch (IOException e) {
+      throw new ParcelException.CorruptedParcelException(
+          "Failed to inspect record size: " + path, e);
+    }
     var result = format.read(path);
     if (result.isErr()) {
       throw new ParcelException.CorruptedParcelException(
@@ -241,20 +272,35 @@ public abstract class ParcellaReader
     return result.unwrap();
   }
 
+  private static void requireFileSize(Path path, long maximum, String type) throws IOException {
+    if (Files.size(path) > maximum) {
+      throw new IOException(type + " exceeds the format size limit: " + path);
+    }
+  }
+
   private static void readDirectory(Path directory, String suffix, FileConsumer consumer)
       throws IOException, ParcelException {
     if (!Files.isDirectory(directory)) {
       return;
     }
+    var matching = new ArrayList<Path>();
     try (var paths = Files.list(directory)) {
-      for (Path path :
-          paths
-              .filter(Files::isRegularFile)
-              .filter(item -> item.getFileName().toString().endsWith(suffix))
-              .sorted(Comparator.comparing(item -> item.getFileName().toString()))
-              .toList()) {
-        consumer.accept(path);
+      var iterator = paths.iterator();
+      while (iterator.hasNext()) {
+        Path path = iterator.next();
+        if (Files.isRegularFile(path)
+            && path.getFileName().toString().endsWith(suffix)) {
+          if (matching.size() >= MAX_DIRECTORY_RECORDS) {
+            throw new ParcelException.CorruptedParcelException(
+                "Too many records in directory: " + directory);
+          }
+          matching.add(path);
+        }
       }
+    }
+    matching.sort(Comparator.comparing(item -> item.getFileName().toString()));
+    for (Path path : matching) {
+      consumer.accept(path);
     }
   }
 

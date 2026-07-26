@@ -2,7 +2,7 @@ package io.github.leawind.gitparcel.client.minecraft.logic.network;
 
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.client.impl.GitParcelClientImpl;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateGitOperationsMessage;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateOperationsMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelFormatsMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelHistoryMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelsMessage;
@@ -33,8 +33,8 @@ public final class ClientPayloadHandler {
     GitParcelClientImpl.INSTANCE.setSharedRepositories(message);
   }
 
-  public static void handle(UpdateGitOperationsMessage message) {
-    GitParcelClientImpl.INSTANCE.setGitOperations(message);
+  public static void handle(UpdateOperationsMessage message) {
+    GitParcelClientImpl.INSTANCE.setOperations(message);
   }
 
   public static void handle(UpdateParcelHistoryMessage message) {

@@ -5,7 +5,7 @@ import io.github.leawind.gitparcel.common.minecraft.logic.network.message.Client
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.QueryParcelHistoryMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.QueryServerStateMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.ServerMessage;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateGitOperationsMessage;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateOperationsMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelFormatsMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelHistoryMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelsMessage;
@@ -32,8 +32,8 @@ public final class MinecraftPayloads {
   public static final Identifier PARCELS_ID = GitParcelUtils.identifier("update_parcels");
   public static final Identifier SHARED_REPOSITORIES_ID =
       GitParcelUtils.identifier("update_shared_repositories");
-  public static final Identifier GIT_OPERATIONS_ID =
-      GitParcelUtils.identifier("update_git_operations");
+  public static final Identifier OPERATIONS_ID =
+      GitParcelUtils.identifier("update_operations");
   public static final Identifier QUERY_SERVER_STATE_ID =
       GitParcelUtils.identifier("query_server_state");
   public static final Identifier QUERY_PARCEL_HISTORY_ID =
@@ -47,8 +47,8 @@ public final class MinecraftPayloads {
       new CustomPacketPayload.Type<>(PARCELS_ID);
   public static final CustomPacketPayload.Type<SharedRepositoriesPayload> SHARED_REPOSITORIES_TYPE =
       new CustomPacketPayload.Type<>(SHARED_REPOSITORIES_ID);
-  public static final CustomPacketPayload.Type<GitOperationsPayload> GIT_OPERATIONS_TYPE =
-      new CustomPacketPayload.Type<>(GIT_OPERATIONS_ID);
+  public static final CustomPacketPayload.Type<OperationsPayload> OPERATIONS_TYPE =
+      new CustomPacketPayload.Type<>(OPERATIONS_ID);
   public static final CustomPacketPayload.Type<QueryServerStatePayload> QUERY_SERVER_STATE_TYPE =
       new CustomPacketPayload.Type<>(QUERY_SERVER_STATE_ID);
   public static final CustomPacketPayload.Type<QueryParcelHistoryPayload>
@@ -67,10 +67,10 @@ public final class MinecraftPayloads {
       SHARED_REPOSITORIES_CODEC =
           ByteBufCodecs.fromCodecWithRegistries(UpdateSharedRepositoriesMessage.CODEC)
               .map(SharedRepositoriesPayload::new, SharedRepositoriesPayload::message);
-  public static final StreamCodec<RegistryFriendlyByteBuf, GitOperationsPayload>
-      GIT_OPERATIONS_CODEC =
-          ByteBufCodecs.fromCodecWithRegistries(UpdateGitOperationsMessage.CODEC)
-              .map(GitOperationsPayload::new, GitOperationsPayload::message);
+  public static final StreamCodec<RegistryFriendlyByteBuf, OperationsPayload>
+      OPERATIONS_CODEC =
+          ByteBufCodecs.fromCodecWithRegistries(UpdateOperationsMessage.CODEC)
+              .map(OperationsPayload::new, OperationsPayload::message);
   public static final StreamCodec<RegistryFriendlyByteBuf, QueryServerStatePayload>
       QUERY_SERVER_STATE_CODEC =
           ByteBufCodecs.fromCodecWithRegistries(QueryServerStateMessage.CODEC)
@@ -96,8 +96,8 @@ public final class MinecraftPayloads {
     if (message instanceof UpdateSharedRepositoriesMessage update) {
       return new SharedRepositoriesPayload(update);
     }
-    if (message instanceof UpdateGitOperationsMessage update) {
-      return new GitOperationsPayload(update);
+    if (message instanceof UpdateOperationsMessage update) {
+      return new OperationsPayload(update);
     }
     if (message instanceof UpdateParcelHistoryMessage update) {
       return new ParcelHistoryPayload(update);
@@ -138,11 +138,11 @@ public final class MinecraftPayloads {
     }
   }
 
-  public record GitOperationsPayload(UpdateGitOperationsMessage message)
+  public record OperationsPayload(UpdateOperationsMessage message)
       implements CustomPacketPayload {
     @Override
-    public @NonNull Type<GitOperationsPayload> type() {
-      return GIT_OPERATIONS_TYPE;
+    public @NonNull Type<OperationsPayload> type() {
+      return OPERATIONS_TYPE;
     }
   }
 

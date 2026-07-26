@@ -28,13 +28,19 @@ public class DeleteSubcommand extends GitParcelBaseCommand {
     var parcelService = ParcelService.get(serverLevel);
 
     var parcels = ParcelArgument.getParcels(ctx, ParcelCommand.ARG_PARCELS);
-    for (var parcel : parcels) {
-      parcelService.deleteParcel(parcel.uuid());
+    final int deleted;
+    try {
+      deleted = parcelService.deleteParcels(parcels);
+    } catch (Exception e) {
+      LOGGER.error("Failed to delete parcel registration", e);
+      source.sendFailure(
+          Translations.of("command.gitparcel.parcel.delete.failure", describe(e)));
+      return 0;
     }
 
     source.sendSuccess(
-        () -> Translations.of("command.gitparcel.parcel.delete.success", parcels.size()), true);
+        () -> Translations.of("command.gitparcel.parcel.delete.success", deleted), true);
 
-    return parcels.size();
+    return deleted;
   }
 }

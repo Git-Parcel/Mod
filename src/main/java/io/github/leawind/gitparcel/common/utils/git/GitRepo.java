@@ -1,14 +1,14 @@
 package io.github.leawind.gitparcel.common.utils.git;
 
+import io.github.leawind.gitparcel.common.api.operation.ProgressReporter;
+import io.github.leawind.gitparcel.common.utils.io.NioFileTree;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -20,12 +20,10 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.dircache.DirCacheEditor;
 import org.eclipse.jgit.lib.Constants;
-import org.eclipse.jgit.lib.FileMode;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
-import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.RemoteRefUpdate;
@@ -48,14 +46,20 @@ public final class GitRepo {
 
   private final Path path;
   private final File file;
+  private final GitRepositoryCore core;
 
   private GitRepo(Path path) {
     this.path = path;
     this.file = path.toFile();
+    this.core = new GitRepositoryCore(path, RepositoryPolicy.SHARED);
   }
 
   public Path path() {
     return path;
+  }
+
+  public GitRepositoryCore core() {
+    return core;
   }
 
   public boolean hasDotGit() {
@@ -350,71 +354,12 @@ public final class GitRepo {
     if (revision == null || revision.isBlank()) {
       throw new IllegalArgumentException("Revision must not be blank");
     }
-    Path normalizedDestination = destination.toAbsolutePath().normalize();
-    if (Files.exists(normalizedDestination)) {
-      throw new IOException("Export destination already exists: " + normalizedDestination);
-    }
-
-    try (Git git = open()) {
-      if (git == null) {
-        throw new IOException("Git repository does not exist: " + path);
-      }
-
-      var repository = git.getRepository();
-      var commitId = repository.resolve(revision + "^{commit}");
-      if (commitId == null) {
-        throw new IOException("Unknown Git revision: " + revision);
-      }
-
-      boolean found = false;
-      Files.createDirectories(normalizedDestination);
-      try (var revWalk = new RevWalk(repository);
-          var treeWalk = new TreeWalk(repository)) {
-        var commit = revWalk.parseCommit(commitId);
-        treeWalk.addTree(commit.getTree());
-        treeWalk.setRecursive(true);
-
-        String prefix = gitPath + "/";
-        while (treeWalk.next()) {
-          String treePath = treeWalk.getPathString();
-          if (!treePath.startsWith(prefix)) {
-            continue;
-          }
-
-          String relativeString = treePath.substring(prefix.length());
-          if (relativeString.isEmpty()) {
-            continue;
-          }
-
-          FileMode mode = treeWalk.getFileMode(0);
-          if (!FileMode.REGULAR_FILE.equals(mode)
-              && !FileMode.EXECUTABLE_FILE.equals(mode)) {
-            throw new IOException(
-                "Unsupported Git tree entry type for parcel file: " + treePath);
-          }
-
-          Path output = normalizedDestination.resolve(relativeString).normalize();
-          if (!output.startsWith(normalizedDestination)) {
-            throw new IOException("Git tree entry escapes export directory: " + treePath);
-          }
-
-          Files.createDirectories(output.getParent());
-          try (OutputStream stream = Files.newOutputStream(output)) {
-            repository.open(treeWalk.getObjectId(0)).copyTo(stream);
-          }
-          found = true;
-        }
-      } catch (IOException | RuntimeException e) {
-        deleteRecursivelyIfExists(normalizedDestination);
-        throw e;
-      }
-
-      if (!found) {
-        deleteRecursivelyIfExists(normalizedDestination);
-        throw new IOException(
-            "Revision %s does not contain parcel path %s".formatted(revision, gitPath));
-      }
-    }
+    core.exportResolvedSubtree(
+        revision,
+        gitPath,
+        destination,
+        SnapshotTreeLimits.DEFAULT,
+        ProgressReporter.NONE);
   }
 
   private Git openOrInit() throws IOException, GitAPIException {
@@ -473,14 +418,7 @@ public final class GitRepo {
   }
 
   private static void deleteRecursivelyIfExists(Path directory) throws IOException {
-    if (!Files.exists(directory)) {
-      return;
-    }
-    try (var paths = Files.walk(directory)) {
-      for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
-        Files.delete(path);
-      }
-    }
+    NioFileTree.deleteRecursivelyIfExists(directory);
   }
 
   public record CommitIdentity(String name, String email) {

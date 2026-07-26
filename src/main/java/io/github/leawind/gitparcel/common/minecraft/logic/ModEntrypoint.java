@@ -15,14 +15,14 @@ import io.github.leawind.gitparcel.common.platform.api.Services;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.ParcelCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parceldebug.ParcelDebugCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcels.ParcelsCommand;
-import io.github.leawind.gitparcel.server.minecraft.logic.git.GitOperationManager;
+import io.github.leawind.gitparcel.server.minecraft.logic.operation.OperationManager;
 import io.github.leawind.gitparcel.server.minecraft.logic.network.ServerQueryHandler;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.synchronization.SingletonArgumentInfo;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
 
 public final class ModEntrypoint {
@@ -55,10 +55,28 @@ public final class ModEntrypoint {
     ParcelService.get(player.level()).syncTo(player);
   }
 
-  /** Cancels queued network work and releases Git worker threads for this server. */
+  /** Audits parcel repositories and reports interrupted restore operations. */
+  public static void onServerStarted(MinecraftServer server) {
+    var manager = OperationManager.get(server);
+    for (var level : server.getAllLevels()) {
+      var service = ParcelService.get(level);
+      var parcels = service.parcels();
+      manager.submit(
+          "audit_repositories",
+          level.dimension().identifier().toString(),
+          "server",
+          () -> {
+            service.auditRepositories(parcels);
+            return "Audited " + parcels.size() + " parcel repositories";
+          },
+          ignored -> {});
+    }
+  }
+
+  /** Cancels queued work and releases operation worker threads for this server. */
   public static void onServerStopping(MinecraftServer server) {
     ServerQueryHandler.shutdown(server);
-    GitOperationManager.shutdown(server);
+    OperationManager.shutdown(server);
   }
 
   public static void registerCommands(

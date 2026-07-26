@@ -1,8 +1,9 @@
 package io.github.leawind.gitparcel.client.api;
 
 import io.github.leawind.gitparcel.client.impl.GitParcelClientImpl;
-import io.github.leawind.gitparcel.common.api.git.GitOperationSnapshot;
-import io.github.leawind.gitparcel.common.api.git.ParcelHistoryPage;
+import io.github.leawind.gitparcel.common.api.operation.OperationSnapshot;
+import io.github.leawind.gitparcel.common.api.snapshot.SnapshotId;
+import io.github.leawind.gitparcel.common.api.snapshot.SnapshotTreePage;
 import io.github.leawind.gitparcel.common.api.git.SharedRepositorySnapshot;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatCapabilities;
 import io.github.leawind.gitparcel.common.api.world.Parcels;
@@ -28,21 +29,21 @@ public interface GitParcelClient {
   /** Most recently received shared repository snapshots. */
   List<SharedRepositorySnapshot> getSharedRepositories();
 
-  /** Most recently received asynchronous Git operation snapshots. */
-  List<GitOperationSnapshot> getGitOperations();
+  /** Most recently received permission-filtered asynchronous operations. */
+  List<OperationSnapshot> getOperations();
 
   Optional<String> getSharedRepositoriesError();
 
-  Optional<String> getGitOperationsError();
+  Optional<String> getOperationsError();
 
   /** Most recently received history page for a parcel. */
-  Optional<ParcelHistoryPage> getParcelHistoryPage(UUID parcelUuid);
+  Optional<SnapshotTreePage> getSnapshotTreePage(UUID parcelUuid);
 
-  /** Requests fresh repository and Git-operation state from the server. */
+  /** Requests fresh repository and operation state from the server. */
   void queryServerState();
 
   /** Requests one history page; pass an empty cursor for the newest page. */
-  void queryParcelHistory(UUID parcelUuid, Optional<String> beforeRevision, int limit);
+  void querySnapshotTree(UUID parcelUuid, Optional<SnapshotId> cursor, int limit);
 
   static GitParcelClient get() {
     return GitParcelClientImpl.INSTANCE;

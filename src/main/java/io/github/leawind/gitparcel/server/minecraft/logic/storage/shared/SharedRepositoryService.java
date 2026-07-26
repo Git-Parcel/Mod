@@ -1,16 +1,19 @@
 package io.github.leawind.gitparcel.server.minecraft.logic.storage.shared;
 
 import io.github.leawind.gitparcel.common.utils.git.GitRepo;
+import io.github.leawind.gitparcel.common.utils.git.SnapshotTreeLimits;
+import io.github.leawind.gitparcel.common.utils.io.NioFileTree;
 import io.github.leawind.gitparcel.server.minecraft.logic.storage.StorageUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import net.minecraft.server.MinecraftServer;
@@ -50,6 +53,38 @@ public final class SharedRepositoryService {
   public List<String> parcelPaths(String name) throws IOException {
     requireRegistered(name);
     return content.loadRepoMeta(name);
+  }
+
+  /** Reads the portable manifest from one explicit commit instead of trusting the working tree. */
+  public List<String> parcelPaths(String name, String revision) throws IOException {
+    requireRegistered(name);
+    byte[] manifest =
+        GitRepo.get(content.getRepoDir(name))
+            .core()
+            .readResolvedSmallFile(
+                revision, SharedContent.REPOSITORY_MANIFEST_FILE, 1024 * 1024);
+    List<String> paths = content.parseRepositoryManifest(
+        name, new String(manifest, StandardCharsets.UTF_8));
+    var declared = new TreeSet<>(paths);
+    var actual = new TreeSet<String>();
+    for (String file :
+        GitRepo.get(content.getRepoDir(name))
+            .core()
+            .listResolvedFiles(revision, SnapshotTreeLimits.DEFAULT)) {
+      if (file.equals("parcel.json")) {
+        actual.add("");
+      } else if (file.endsWith("/parcel.json")) {
+        actual.add(file.substring(0, file.length() - "/parcel.json".length()));
+      }
+    }
+    if (!actual.equals(declared)) {
+      throw new IOException(
+          "Repository manifest does not match parcel trees; declared="
+              + declared
+              + ", actual="
+              + actual);
+    }
+    return paths;
   }
 
   public void create(String name) throws IOException, GitAPIException {
@@ -209,14 +244,7 @@ public final class SharedRepositoryService {
 
   private static void cleanupCreatedDirectory(Path directory, Exception original) {
     try {
-      if (!Files.exists(directory)) {
-        return;
-      }
-      try (var paths = Files.walk(directory)) {
-        for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
-          Files.delete(path);
-        }
-      }
+      NioFileTree.deleteRecursivelyIfExists(directory);
     } catch (IOException cleanupFailure) {
       original.addSuppressed(cleanupFailure);
     }

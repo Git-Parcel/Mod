@@ -1,16 +1,12 @@
 package io.github.leawind.gitparcel.common.impl.world;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
-import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
 import io.github.leawind.gitparcel.common.minecraft.logic.version.MinecraftVersion;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
 import io.github.leawind.gitparcel.common.testutils.AbstractGitParcelTest;
-import java.nio.file.Path;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
@@ -216,109 +212,14 @@ public class ParcelTest extends AbstractGitParcelTest {
   }
 
   @Test
-  void resolvesInternalStorageDirectory() {
+  void serializedParcelDoesNotContainRepositoryLocation() {
     var parcel =
         ParcelFactory.create(new BoundingBox(0, 0, 0, 1, 1, 1), Mirror.NONE, Rotation.NONE);
-    var internalParcelsDir = Path.of("world", "gitparcel", "parcels");
-
-    assertEquals(
-        internalParcelsDir.resolve(parcel.uuid().toString()).resolve("parcel"),
-        ParcelStorage.resolveParcelDirectory(parcel, internalParcelsDir));
-    var repository =
-        ParcelStorage.resolveRepositoryLocation(parcel, internalParcelsDir);
-    assertEquals(
-        internalParcelsDir.resolve(parcel.uuid().toString()),
-        repository.repository());
-    assertEquals(Path.of("parcel"), repository.relative());
-    assertEquals("parcel", repository.gitPath());
-  }
-
-  @Test
-  void resolvesCustomStorageDirectoryFromSerializedLocation() {
-    var parcel =
-        ParcelFactory.create(new BoundingBox(0, 0, 0, 1, 1, 1), Mirror.NONE, Rotation.NONE);
+    parcel.assignDimension("minecraft:overworld");
     var json = (JsonObject) Parcel.CODEC.encodeStart(JsonOps.INSTANCE, parcel).getOrThrow();
-    var customRepository = Path.of("custom", "repository");
-    var relativeParcelPath = Path.of("parcels", "example");
-    var location = new JsonObject();
-    location.addProperty("repo", customRepository.toString());
-    location.addProperty("relative", relativeParcelPath.toString());
-    json.add("location", location);
-    var relocated = Parcel.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
-
-    assertEquals(
-        customRepository.resolve(relativeParcelPath),
-        ParcelStorage.resolveParcelDirectory(relocated, Path.of("unused")));
-    var repository =
-        ParcelStorage.resolveRepositoryLocation(relocated, Path.of("unused"));
-    assertEquals(customRepository, repository.repository());
-    assertEquals(relativeParcelPath, repository.relative());
-    assertEquals("parcels/example", repository.gitPath());
-  }
-
-  @Test
-  void rejectsParcelLocationOutsideRepository() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new Parcel.ParcelLocation(Path.of("repo"), Path.of("..", "outside")));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new Parcel.ParcelLocation(Path.of("repo"), Path.of("/absolute")));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new Parcel.ParcelLocation(Path.of("repo"), Path.of("")));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new Parcel.ParcelLocation(Path.of("repo"), Path.of(".git", "parcel")));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> Parcel.ParcelLocation.shared("shared", Path.of("meta.json", "parcel")));
-  }
-
-  @Test
-  void normalizesParcelLocationInsideRepository() {
-    var location =
-        new Parcel.ParcelLocation(
-            Path.of("custom", ".", "repository"),
-            Path.of("parcels", "nested", "..", "example"));
-
-    assertEquals(Path.of("custom", "repository"), location.repo());
-    assertEquals(Path.of("parcels", "example"), location.relative());
-    assertEquals(
-        Path.of("custom", "repository", "parcels", "example"),
-        location.getParcelPath());
-  }
-
-  @Test
-  void serializesAndResolvesSymbolicSharedRepositoryLocation() {
-    var location =
-        Parcel.ParcelLocation.shared(
-            "community-builds", Path.of("villages", "spawn"));
-    var encoded =
-        Parcel.ParcelLocation.CODEC
-            .encodeStart(JsonOps.INSTANCE, location)
-            .getOrThrow();
-    var decoded =
-        Parcel.ParcelLocation.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow();
-
-    assertEquals(location, decoded);
-    assertEquals("community-builds", decoded.sharedRepository().orElseThrow());
-    assertThrows(IllegalStateException.class, decoded::getParcelPath);
-
-    var parcel =
-        ParcelFactory.create(
-            new BoundingBox(0, 0, 0, 1, 1, 1),
-            Mirror.NONE,
-            Rotation.NONE);
-    parcel.setLocation(decoded);
-    var resolved =
-        ParcelStorage.resolveRepositoryLocation(
-            parcel,
-            Path.of("internal"),
-            Path.of("shared"));
-    assertEquals(
-        Path.of("shared", "community-builds"), resolved.repository());
-    assertEquals(Path.of("villages", "spawn"), resolved.relative());
-    assertEquals("community-builds", resolved.sharedRepository());
+    assertEquals(false, json.has("location"));
+    var decoded = Parcel.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
+    assertEquals(parcel.uuid(), decoded.uuid());
+    assertEquals(parcel.dimension(), decoded.dimension());
   }
 }

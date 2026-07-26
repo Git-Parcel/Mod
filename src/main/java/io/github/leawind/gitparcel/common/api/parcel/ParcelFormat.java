@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.common.api.parcel;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
+import io.github.leawind.gitparcel.common.api.operation.ProgressReporter;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentSink;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentSource;
 import java.io.IOException;
@@ -105,18 +106,21 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
     private final int dataVersion;
     private final Path dataDir;
     private final @Nullable C config;
+    private final ProgressReporter progress;
 
     protected BaseContext(
         Vec3i parcelSize,
         Vec3i anchor,
         int dataVersion,
         Path dataDir,
-        @Nullable C config) {
+        @Nullable C config,
+        ProgressReporter progress) {
       this.parcelSize = parcelSize;
       this.anchor = anchor;
       this.dataVersion = dataVersion;
       this.dataDir = dataDir;
       this.config = config;
+      this.progress = ProgressReporter.safe(progress);
     }
 
     public Vec3i parcelSize() {
@@ -138,6 +142,11 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
     public @Nullable C config() {
       return config;
     }
+
+    /** A non-null, failure-isolated progress sink owned by the enclosing use case. */
+    public ProgressReporter progress() {
+      return progress;
+    }
   }
 
   final class WriteContext<C extends ParcelFormatConfig<C>> extends BaseContext<C> {
@@ -147,7 +156,17 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
         int dataVersion,
         Path dataDir,
         @Nullable C config) {
-      super(parcelSize, anchor, dataVersion, dataDir, config);
+      this(parcelSize, anchor, dataVersion, dataDir, config, ProgressReporter.NONE);
+    }
+
+    public WriteContext(
+        Vec3i parcelSize,
+        Vec3i anchor,
+        int dataVersion,
+        Path dataDir,
+        @Nullable C config,
+        ProgressReporter progress) {
+      super(parcelSize, anchor, dataVersion, dataDir, config, progress);
     }
   }
 
@@ -158,7 +177,17 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
         int dataVersion,
         Path dataDir,
         @Nullable C config) {
-      super(parcelSize, anchor, dataVersion, dataDir, config);
+      this(parcelSize, anchor, dataVersion, dataDir, config, ProgressReporter.NONE);
+    }
+
+    public ReadContext(
+        Vec3i parcelSize,
+        Vec3i anchor,
+        int dataVersion,
+        Path dataDir,
+        @Nullable C config,
+        ProgressReporter progress) {
+      super(parcelSize, anchor, dataVersion, dataDir, config, progress);
     }
   }
 }

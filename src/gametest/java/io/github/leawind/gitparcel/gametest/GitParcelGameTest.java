@@ -6,10 +6,13 @@ import io.github.leawind.gitparcel.common.api.config.ConfigItem;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
+import io.github.leawind.gitparcel.common.api.snapshot.RestoreSnapshotRequest;
+import io.github.leawind.gitparcel.common.api.snapshot.SnapshotNode;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelWorldSavedData;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
+import io.github.leawind.gitparcel.common.utils.git.GitRepo;
 import io.github.leawind.gitparcel.gametest.utils.ChannelFlags;
 import io.github.leawind.gitparcel.gametest.utils.GameTestHelpMore;
 import io.github.leawind.gitparcel.gametest.utils.GameTestUtils;
@@ -17,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
@@ -27,7 +31,7 @@ import org.slf4j.Logger;
 public class GitParcelGameTest {
   public static final Logger LOGGER = LogUtils.getLogger();
 
-  public void testParcelLifecycle(GameTestHelpMore helper) {
+  public void testParcelLifecycle(GameTestHelpMore helper) throws Exception {
     var level = helper.getLevel();
     var service = ParcelService.get(level);
     service.reset();
@@ -72,6 +76,60 @@ public class GitParcelGameTest {
           }
         });
 
+    helper.succeed();
+  }
+
+  public void testSnapshotBranching(GameTestHelpMore helper) throws Exception {
+    var service = ParcelService.get(helper.getLevel());
+    service.reset();
+    var parcel = ParcelFactory.create(helper.getBoundingBox(), Mirror.NONE, Rotation.NONE);
+    service.addNewParcel(parcel);
+    var player = new GitRepo.CommitIdentity("GameTest", "gametest@gitparcel.local");
+
+    var root = service.saveSnapshot(parcel, "Root", "", player, true);
+    var originalChild = service.saveSnapshot(parcel, "Original child", "", player, true);
+    if (root.equals(originalChild)) {
+      helper.fail("Explicitly saving unchanged content did not create a new snapshot");
+    }
+
+    service.restoreSnapshot(
+        parcel,
+        root,
+        RestoreSnapshotRequest.Mode.DIRECT,
+        true,
+        player);
+    var fork = service.saveSnapshot(parcel, "Fork", "", player, true);
+    var page = service.querySnapshotTree(parcel, 10, Optional.empty());
+    var parents =
+        page.nodes().stream()
+            .collect(java.util.stream.Collectors.toMap(SnapshotNode::id, SnapshotNode::parentId));
+    if (page.nodes().size() != 3
+        || !page.current().orElseThrow().equals(fork)
+        || !parents.get(originalChild).orElseThrow().equals(root)
+        || !parents.get(fork).orElseThrow().equals(root)) {
+      helper.fail("Restoring an old snapshot and saving did not produce the expected fork");
+    }
+
+    service.restoreSnapshot(
+        parcel,
+        root,
+        RestoreSnapshotRequest.Mode.SAVE_THEN_RESTORE,
+        true,
+        player);
+    page = service.querySnapshotTree(parcel, 10, Optional.empty());
+    boolean protectedFork =
+        page.nodes().stream()
+            .anyMatch(
+                node ->
+                    node.parentId().filter(fork::equals).isPresent()
+                        && node.name().startsWith("Before restore "));
+    if (page.nodes().size() != 4
+        || !page.current().orElseThrow().equals(root)
+        || !protectedFork) {
+      helper.fail("Save-first restore did not retain a protected snapshot");
+    }
+
+    service.deleteParcel(parcel.uuid());
     helper.succeed();
   }
 

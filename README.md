@@ -3,13 +3,15 @@
 
 # Git Parcel
 
-**使用 Git 管理 Minecraft 世界中的 Parcel**
+**用快照管理 Minecraft 世界中的 Parcel**
 
 </div>
 
 ## 简介
 
-Git Parcel 是一个 Minecraft Mod，使用 Git（通过 JGit）来管理游戏世界中的 Parcel——即世界中的轴对齐长方体区域。每个 Parcel 都有唯一的 UUID 标识，并包含元数据、变换、权限配置以及可插拔的存储格式。
+Git Parcel 是一个服务端权威的 Minecraft Mod，用不可变快照管理游戏世界中的
+Parcel——即世界中的轴对齐长方体区域。每个 Parcel 拥有独立的树状历史；底层使用
+JGit 和 bare 仓库实现，但普通玩家无需理解 Git 工作树或暂存区。
 
 > [!NOTE]
 >
@@ -17,39 +19,28 @@ Git Parcel 是一个 Minecraft Mod，使用 Git（通过 JGit）来管理游戏�
 
 ## 核心特性
 
-- **Git 集成**：基于 JGit 实现，将 Parcel 数据存储在 Git 仓库中
+- **原子快照**：一次保存完成世界捕获、格式编码、Git 对象写入和当前基准更新
+- **树状历史**：恢复旧快照后继续保存即可自然分叉，原有后代始终保留
+- **安全恢复**：先完整校验内容再写世界，并持久记录未完成的恢复操作
+- **共享仓库**：显式发布已保存快照、按指定 revision 导入，不与实时世界绑定
 - **可扩展存储格式**：内置 Parcella D32/D16，并可通过 Java SPI 注册更多格式
 - **可扩展数据处理**：通过处理器与附件机制保存需要特殊语义或世界外部数据的内容
 - **锚点机制**：使用锚点锚定世界中的特定位置，移动、调整 parcel 边界时仅影响边界附近的数据，未移动的子 parcel 可不受影响
 - **变换支持**：加载到世界中时，可以指定旋转、镜像、平移变换
 - **权限系统**：细粒度的 Parcel 权限控制
-- **多加载器支持**：Fabric、NeoForge、Forge
-- **现代 UI**：基于 ModernUI 的图形界面
+- **多加载器支持**：Fabric、NeoForge
 
 ## 命令
 
-### `/parcels`
+- `/parcels create <from> <to> <name> [mirror] [rotation]`：创建 Parcel。
+- `/parcel <selector> save [name]`：原子地保存一个新快照。
+- `/parcel <selector> history [limit]`：查看快照树和当前基准。
+- `/parcel <selector> restore <snapshot_id> [save-first]`：直接恢复，或先保存再恢复。
+- `/parcel <selector> publish <repository> <path> [message]`：发布当前已保存快照。
+- `/parcels import <repository> <revision> <path> <at> ...`：显式导入共享内容。
+- `/parcels repositories ...`：创建、克隆及同步共享 Git 仓库。
 
-- `parcels`
-  - `create <from> <to> [name] [mirror] [rotation]` 在当前维度中创建新的 Parcel
-  - `formats` 列出服务端支持的所有 ParcelFormat
-
-### `/parcel`
-
-- `parcel`
-  - `<parcel>` 查看指定的parcel的基本信息
-    - `teleport` 将执行者传送到 parcel
-    - `config` 管理 parcel 属性
-      - `set` 设置属性值
-        - `meta.format <save_format>`
-        - `meta.name <word>`
-        - `meta.author <word>`
-        - `meta.description [string]`
-        - `meta.excludeEntities [bool]`
-        - `visual.showWireframe <bool>`
-        - `visual.showAnchor <bool>`
-    - `save [ignore_entities]` 保存指定 parcel 到其工作区
-    - `delete` 删除 parcel
+完整语义和权限说明见 [命令参考](docs/COMMANDS.md)。玩家 GUI 仍在后续阶段实现。
 
 ### `/parcel_debug`
 

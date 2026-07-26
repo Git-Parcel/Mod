@@ -9,7 +9,8 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
-import io.github.leawind.gitparcel.server.minecraft.logic.git.GitOperationManager;
+import io.github.leawind.gitparcel.common.api.operation.OperationSnapshot;
+import io.github.leawind.gitparcel.server.minecraft.logic.operation.OperationManager;
 import io.github.leawind.gitparcel.server.minecraft.logic.network.ServerQueryHandler;
 import io.github.leawind.gitparcel.server.minecraft.logic.storage.shared.SharedRepositoryService;
 import java.io.IOException;
@@ -172,29 +173,29 @@ public final class RepositoriesSubcommand extends GitParcelBaseCommand {
     }
 
     var operation =
-        GitOperationManager.get(source.getServer())
+        OperationManager.get(source.getServer())
             .submit(
                 type,
                 repository,
-                source.getTextName(),
+                operationOwner(source),
                 action,
                 completed -> {
-                  if (completed.status() == GitOperationManager.Status.SUCCEEDED) {
+                  if (completed.state() == OperationSnapshot.State.SUCCEEDED) {
                     source.sendSystemMessage(
                         Translations.of(
                             "command.gitparcel.git_operation.success",
-                            completed.id(),
-                            completed.type(),
-                            completed.repository(),
-                            completed.detail()));
+                            completed.operationId(),
+                            completed.kind(),
+                            completed.target(),
+                            completed.result().orElse("Completed")));
                   } else {
                     source.sendFailure(
                         Translations.of(
                             "command.gitparcel.git_operation.failure",
-                            completed.id(),
-                            completed.type(),
-                            completed.repository(),
-                            completed.detail()));
+                            completed.operationId(),
+                            completed.kind(),
+                            completed.target(),
+                            completed.error().orElse("Failed")));
                   }
                   if (source.getEntity() instanceof ServerPlayer player) {
                     ServerQueryHandler.syncRepositories(player);
@@ -204,13 +205,13 @@ public final class RepositoriesSubcommand extends GitParcelBaseCommand {
     source.sendSystemMessage(
         Translations.of(
             "command.gitparcel.git_operation.started",
-            operation.id(),
+            operation.operationId(),
             type,
             repository));
     if (source.getEntity() instanceof ServerPlayer player) {
       ServerQueryHandler.syncOperations(player);
     }
-    return operation.status() == GitOperationManager.Status.FAILED ? 0 : 1;
+    return operation.state() == OperationSnapshot.State.FAILED ? 0 : 1;
   }
 
   private static CompletableFuture<Suggestions> suggestRepositories(
@@ -224,7 +225,7 @@ public final class RepositoriesSubcommand extends GitParcelBaseCommand {
     }
   }
 
-  private static String describe(Exception exception) {
+  protected static String describe(Exception exception) {
     String message = exception.getMessage();
     return exception.getClass().getSimpleName()
         + (message == null ? "" : ": " + message);

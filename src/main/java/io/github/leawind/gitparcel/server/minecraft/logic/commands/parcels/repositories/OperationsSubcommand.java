@@ -1,12 +1,16 @@
 package io.github.leawind.gitparcel.server.minecraft.logic.commands.parcels.repositories;
 
-import com.mojang.brigadier.arguments.LongArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
+import io.github.leawind.gitparcel.common.minecraft.logic.permission.MinecraftPermissions;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelWorldSavedData;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
-import io.github.leawind.gitparcel.server.minecraft.logic.git.GitOperationManager;
+import io.github.leawind.gitparcel.common.api.operation.OperationSnapshot;
+import io.github.leawind.gitparcel.server.minecraft.logic.operation.OperationManager;
+import java.util.UUID;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 
@@ -19,18 +23,18 @@ public final class OperationsSubcommand extends GitParcelBaseCommand {
     return Commands.literal("operations")
         .executes(OperationsSubcommand::list)
         .then(
-            Commands.argument("id", LongArgumentType.longArg(1))
+            Commands.argument("id", StringArgumentType.word())
                 .executes(OperationsSubcommand::show));
   }
 
   private static int list(CommandContext<CommandSourceStack> ctx) {
     var source = ctx.getSource();
-    if (!validateWorldPermission(source, WorldPermissions.MANAGE_SHARED_REPOSITORIES)) {
-      return 0;
-    }
-
+    boolean canManage = canManageAll(source);
+    String owner = operationOwner(source);
     var operations =
-        GitOperationManager.get(source.getServer()).recent(DEFAULT_LIMIT);
+        OperationManager.get(source.getServer()).recent(DEFAULT_LIMIT).stream()
+            .filter(operation -> canManage || operation.owner().equals(owner))
+            .toList();
     source.sendSystemMessage(
         Translations.of(
             "command.gitparcel.git_operation.list.header",
@@ -41,32 +45,46 @@ public final class OperationsSubcommand extends GitParcelBaseCommand {
 
   private static int show(CommandContext<CommandSourceStack> ctx) {
     var source = ctx.getSource();
-    if (!validateWorldPermission(source, WorldPermissions.MANAGE_SHARED_REPOSITORIES)) {
+    final UUID id;
+    try {
+      id = UUID.fromString(StringArgumentType.getString(ctx, "id"));
+    } catch (IllegalArgumentException e) {
+      source.sendFailure(Translations.of("command.gitparcel.git_operation.not_found", "invalid-id"));
       return 0;
     }
-
-    long id = LongArgumentType.getLong(ctx, "id");
-    var operation = GitOperationManager.get(source.getServer()).get(id);
+    var operation = OperationManager.get(source.getServer()).get(id);
     if (operation.isEmpty()) {
       source.sendFailure(
           Translations.of("command.gitparcel.git_operation.not_found", id));
+      return 0;
+    }
+    if (!canManageAll(source)
+        && !operation.orElseThrow().owner().equals(operationOwner(source))) {
+      source.sendFailure(Translations.of("command.gitparcel.no_permission"));
       return 0;
     }
     send(source, operation.orElseThrow());
     return 1;
   }
 
+  private static boolean canManageAll(CommandSourceStack source) {
+    return MinecraftPermissions.permits(
+        source,
+        GitParcelWorldSavedData.get(source.getServer()).permissions(),
+        WorldPermissions.MANAGE_SHARED_REPOSITORIES);
+  }
+
   private static void send(
       CommandSourceStack source,
-      GitOperationManager.OperationSnapshot operation) {
+      OperationSnapshot operation) {
     source.sendSystemMessage(
         Translations.of(
             "command.gitparcel.git_operation.list.entry",
-            operation.id(),
-            operation.status().name(),
-            operation.type(),
-            operation.repository(),
-            operation.requestedBy(),
-            operation.detail()));
+            operation.operationId(),
+            operation.state().name(),
+            operation.kind(),
+            operation.target(),
+            operation.owner(),
+            operation.error().or(() -> operation.result()).orElse(operation.phase())));
   }
 }
