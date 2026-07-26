@@ -4,5 +4,6 @@ package io.github.leawind.gitparcel.common.minecraft.logic.network.message;
 public sealed interface ServerMessage
     permits UpdateGitOperationsMessage,
         UpdateParcelFormatsMessage,
+        UpdateParcelHistoryMessage,
         UpdateParcelsMessage,
         UpdateSharedRepositoriesMessage {}

@@ -272,26 +272,68 @@ public final class GitRepo {
   /** Lists newest-first commits which changed the specified parcel directory. */
   public synchronized List<CommitInfo> history(String repositoryRelativePath, int limit)
       throws IOException, GitAPIException {
+    return historyPage(repositoryRelativePath, limit, null).commits();
+  }
+
+  /** Lists one cursor-based page of newest-first commits for a repository-relative path. */
+  public synchronized HistoryPage historyPage(
+      String repositoryRelativePath, int limit, @Nullable String beforeRevision)
+      throws IOException, GitAPIException {
     String gitPath = validateGitPath(repositoryRelativePath);
     if (limit < 1) {
       throw new IllegalArgumentException("History limit must be positive");
     }
+    if (beforeRevision != null && beforeRevision.isBlank()) {
+      throw new IllegalArgumentException("History cursor must not be blank");
+    }
 
     try (Git git = open()) {
       if (git == null) {
-        return List.of();
+        return new HistoryPage(List.of(), Optional.empty());
       }
 
       var result = new ArrayList<CommitInfo>();
       try {
-        for (RevCommit commit :
-            git.log().addPath(gitPath).setMaxCount(limit).call()) {
+        var command = git.log().addPath(gitPath);
+        org.eclipse.jgit.lib.ObjectId cursorId = null;
+        if (beforeRevision != null) {
+          cursorId = git.getRepository().resolve(beforeRevision + "^{commit}");
+          if (cursorId == null) {
+            throw new IOException("Unknown Git history cursor: " + beforeRevision);
+          }
+          command.add(cursorId);
+        }
+
+        boolean cursorSeen = beforeRevision == null;
+        for (RevCommit commit : command.call()) {
+          if (!cursorSeen) {
+            if (!commit.getId().equals(cursorId)) {
+              throw new IOException(
+                  "Git history cursor does not belong to parcel path: " + beforeRevision);
+            }
+            cursorSeen = true;
+            continue;
+          }
           result.add(toInfo(commit));
+          if (result.size() > limit) {
+            break;
+          }
+        }
+        if (!cursorSeen) {
+          throw new IOException(
+              "Git history cursor does not belong to parcel path: " + beforeRevision);
         }
       } catch (NoHeadException ignored) {
-        return List.of();
+        return new HistoryPage(List.of(), Optional.empty());
       }
-      return List.copyOf(result);
+
+      boolean hasMore = result.size() > limit;
+      if (hasMore) {
+        result.removeLast();
+      }
+      Optional<String> nextCursor =
+          hasMore ? Optional.of(result.getLast().revision()) : Optional.empty();
+      return new HistoryPage(List.copyOf(result), nextCursor);
     }
   }
 
@@ -454,4 +496,11 @@ public final class GitRepo {
 
   public record CommitInfo(
       String revision, Instant committedAt, String author, String message) {}
+
+  public record HistoryPage(List<CommitInfo> commits, Optional<String> nextCursor) {
+    public HistoryPage {
+      commits = List.copyOf(commits);
+      nextCursor = nextCursor == null ? Optional.empty() : nextCursor;
+    }
+  }
 }

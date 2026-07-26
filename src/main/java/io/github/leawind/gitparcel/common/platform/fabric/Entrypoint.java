@@ -46,10 +46,16 @@ public class Entrypoint implements ModInitializer {
             MinecraftPayloads.SHARED_REPOSITORIES_CODEC);
     PayloadTypeRegistry.clientboundPlay()
         .register(MinecraftPayloads.GIT_OPERATIONS_TYPE, MinecraftPayloads.GIT_OPERATIONS_CODEC);
+    PayloadTypeRegistry.clientboundPlay()
+        .register(MinecraftPayloads.PARCEL_HISTORY_TYPE, MinecraftPayloads.PARCEL_HISTORY_CODEC);
     PayloadTypeRegistry.serverboundPlay()
         .register(
             MinecraftPayloads.QUERY_SERVER_STATE_TYPE,
             MinecraftPayloads.QUERY_SERVER_STATE_CODEC);
+    PayloadTypeRegistry.serverboundPlay()
+        .register(
+            MinecraftPayloads.QUERY_PARCEL_HISTORY_TYPE,
+            MinecraftPayloads.QUERY_PARCEL_HISTORY_CODEC);
     /*?} else {*/
     /*PayloadTypeRegistry.playS2C()
                        .register(
@@ -60,6 +66,11 @@ public class Entrypoint implements ModInitializer {
     /*?}*/
     ServerPlayNetworking.registerGlobalReceiver(
         MinecraftPayloads.QUERY_SERVER_STATE_TYPE,
+        (payload, context) ->
+            context.server().execute(
+                () -> ServerQueryHandler.handle(payload.message(), context.player())));
+    ServerPlayNetworking.registerGlobalReceiver(
+        MinecraftPayloads.QUERY_PARCEL_HISTORY_TYPE,
         (payload, context) ->
             context.server().execute(
                 () -> ServerQueryHandler.handle(payload.message(), context.player())));

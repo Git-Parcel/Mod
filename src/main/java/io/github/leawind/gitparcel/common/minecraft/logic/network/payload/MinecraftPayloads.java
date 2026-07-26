@@ -2,10 +2,12 @@ package io.github.leawind.gitparcel.common.minecraft.logic.network.payload;
 
 import io.github.leawind.gitparcel.common.impl.GitParcelUtils;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.ClientMessage;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.message.QueryParcelHistoryMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.QueryServerStateMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.ServerMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateGitOperationsMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelFormatsMessage;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelHistoryMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelsMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateSharedRepositoriesMessage;
 import io.github.leawind.gitparcel.common.utils.anno.VersionSensitive;
@@ -34,6 +36,10 @@ public final class MinecraftPayloads {
       GitParcelUtils.identifier("update_git_operations");
   public static final Identifier QUERY_SERVER_STATE_ID =
       GitParcelUtils.identifier("query_server_state");
+  public static final Identifier QUERY_PARCEL_HISTORY_ID =
+      GitParcelUtils.identifier("query_parcel_history");
+  public static final Identifier PARCEL_HISTORY_ID =
+      GitParcelUtils.identifier("update_parcel_history");
 
   public static final CustomPacketPayload.Type<ParcelFormatsPayload> PARCEL_FORMATS_TYPE =
       new CustomPacketPayload.Type<>(PARCEL_FORMATS_ID);
@@ -45,6 +51,10 @@ public final class MinecraftPayloads {
       new CustomPacketPayload.Type<>(GIT_OPERATIONS_ID);
   public static final CustomPacketPayload.Type<QueryServerStatePayload> QUERY_SERVER_STATE_TYPE =
       new CustomPacketPayload.Type<>(QUERY_SERVER_STATE_ID);
+  public static final CustomPacketPayload.Type<QueryParcelHistoryPayload>
+      QUERY_PARCEL_HISTORY_TYPE = new CustomPacketPayload.Type<>(QUERY_PARCEL_HISTORY_ID);
+  public static final CustomPacketPayload.Type<ParcelHistoryPayload> PARCEL_HISTORY_TYPE =
+      new CustomPacketPayload.Type<>(PARCEL_HISTORY_ID);
 
   public static final StreamCodec<RegistryFriendlyByteBuf, ParcelFormatsPayload>
       PARCEL_FORMATS_CODEC =
@@ -65,6 +75,14 @@ public final class MinecraftPayloads {
       QUERY_SERVER_STATE_CODEC =
           ByteBufCodecs.fromCodecWithRegistries(QueryServerStateMessage.CODEC)
               .map(QueryServerStatePayload::new, QueryServerStatePayload::message);
+  public static final StreamCodec<RegistryFriendlyByteBuf, QueryParcelHistoryPayload>
+      QUERY_PARCEL_HISTORY_CODEC =
+          ByteBufCodecs.fromCodecWithRegistries(QueryParcelHistoryMessage.CODEC)
+              .map(QueryParcelHistoryPayload::new, QueryParcelHistoryPayload::message);
+  public static final StreamCodec<RegistryFriendlyByteBuf, ParcelHistoryPayload>
+      PARCEL_HISTORY_CODEC =
+          ByteBufCodecs.fromCodecWithRegistries(UpdateParcelHistoryMessage.CODEC)
+              .map(ParcelHistoryPayload::new, ParcelHistoryPayload::message);
 
   private MinecraftPayloads() {}
 
@@ -81,12 +99,18 @@ public final class MinecraftPayloads {
     if (message instanceof UpdateGitOperationsMessage update) {
       return new GitOperationsPayload(update);
     }
+    if (message instanceof UpdateParcelHistoryMessage update) {
+      return new ParcelHistoryPayload(update);
+    }
     throw new IllegalArgumentException("Unsupported server message: " + message.getClass());
   }
 
   public static CustomPacketPayload encode(ClientMessage message) {
     if (message instanceof QueryServerStateMessage query) {
       return new QueryServerStatePayload(query);
+    }
+    if (message instanceof QueryParcelHistoryMessage query) {
+      return new QueryParcelHistoryPayload(query);
     }
     throw new IllegalArgumentException("Unsupported client message: " + message.getClass());
   }
@@ -127,6 +151,22 @@ public final class MinecraftPayloads {
     @Override
     public @NonNull Type<QueryServerStatePayload> type() {
       return QUERY_SERVER_STATE_TYPE;
+    }
+  }
+
+  public record QueryParcelHistoryPayload(QueryParcelHistoryMessage message)
+      implements CustomPacketPayload {
+    @Override
+    public @NonNull Type<QueryParcelHistoryPayload> type() {
+      return QUERY_PARCEL_HISTORY_TYPE;
+    }
+  }
+
+  public record ParcelHistoryPayload(UpdateParcelHistoryMessage message)
+      implements CustomPacketPayload {
+    @Override
+    public @NonNull Type<ParcelHistoryPayload> type() {
+      return PARCEL_HISTORY_TYPE;
     }
   }
 }

@@ -4,10 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.mojang.serialization.JsonOps;
+import io.github.leawind.gitparcel.common.api.git.GitCommitSnapshot;
 import io.github.leawind.gitparcel.common.api.git.GitOperationSnapshot;
+import io.github.leawind.gitparcel.common.api.git.ParcelHistoryPage;
 import io.github.leawind.gitparcel.common.api.git.SharedRepositorySnapshot;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class ServerStateMessagesTest {
@@ -65,5 +68,30 @@ class ServerStateMessagesTest {
 
     assertEquals(expected, actual);
     assertTrue(actual.error().isPresent());
+  }
+
+  @Test
+  void historyQueryAndPageCodecsPreserveCursor() {
+    UUID parcelUuid = UUID.randomUUID();
+    var query = new QueryParcelHistoryMessage(parcelUuid, Optional.of("cursor"), 20);
+    var queryJson =
+        QueryParcelHistoryMessage.CODEC.encodeStart(JsonOps.INSTANCE, query).getOrThrow();
+    assertEquals(
+        query,
+        QueryParcelHistoryMessage.CODEC.parse(JsonOps.INSTANCE, queryJson).getOrThrow());
+
+    var page =
+        new ParcelHistoryPage(
+            parcelUuid,
+            Optional.of("cursor"),
+            List.of(new GitCommitSnapshot("revision", "time", "author", "message")),
+            Optional.of("next"),
+            Optional.empty());
+    var message = new UpdateParcelHistoryMessage(page);
+    var pageJson =
+        UpdateParcelHistoryMessage.CODEC.encodeStart(JsonOps.INSTANCE, message).getOrThrow();
+    assertEquals(
+        message,
+        UpdateParcelHistoryMessage.CODEC.parse(JsonOps.INSTANCE, pageJson).getOrThrow());
   }
 }

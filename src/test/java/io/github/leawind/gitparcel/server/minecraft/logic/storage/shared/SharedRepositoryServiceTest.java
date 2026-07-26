@@ -11,6 +11,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -61,5 +64,35 @@ class SharedRepositoryServiceTest {
     content.restoreRepoMeta("builds", existing);
     assertEquals(List.of("old"), content.loadRepoMeta("builds"));
     assertArrayEquals(expected, Files.readAllBytes(metadata));
+  }
+
+  @Test
+  void tryAcquireDoesNotWaitForBusyRepository() throws Exception {
+    var service = new SharedRepositoryService(tempDir);
+    service.create("builds");
+    var acquired = new CountDownLatch(1);
+    var release = new CountDownLatch(1);
+
+    try (var executor = Executors.newSingleThreadExecutor()) {
+      var holder =
+          executor.submit(
+              () -> {
+                try (var ignored = service.acquire("builds")) {
+                  acquired.countDown();
+                  release.await();
+                }
+                return null;
+              });
+      try {
+        assertTrue(acquired.await(5, TimeUnit.SECONDS));
+        assertTrue(service.tryAcquire("builds").isEmpty());
+      } finally {
+        release.countDown();
+      }
+      holder.get(5, TimeUnit.SECONDS);
+    }
+    try (var lease = service.tryAcquire("builds").orElseThrow()) {
+      assertEquals("builds", lease.name());
+    }
   }
 }

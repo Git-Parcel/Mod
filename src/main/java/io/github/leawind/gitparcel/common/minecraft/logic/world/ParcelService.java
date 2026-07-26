@@ -148,6 +148,25 @@ public final class ParcelService {
     return ParcelRepositoryService.history(resolveRepositoryLocation(parcel), limit);
   }
 
+  /** Reads one history page without waiting for a busy shared repository. */
+  public GitRepo.HistoryPage getParcelHistoryPage(
+      Parcel parcel, int limit, @Nullable String beforeRevision)
+      throws IOException, ParcelException {
+    var shared = parcel.location().flatMap(Parcel.ParcelLocation::sharedRepository);
+    if (shared.isPresent()) {
+      var lease =
+          SharedRepositoryService.get(level.getServer())
+              .tryAcquire(shared.orElseThrow())
+              .orElseThrow(() -> new ParcelException("Shared repository is busy"));
+      try (lease) {
+        return ParcelRepositoryService.historyPage(
+            sharedLocation(parcel, lease), limit, beforeRevision);
+      }
+    }
+    return ParcelRepositoryService.historyPage(
+        resolveRepositoryLocation(parcel), limit, beforeRevision);
+  }
+
   public void restoreParcel(Parcel parcel, String revision, boolean ignoreEntities)
       throws IOException, ParcelException {
     var shared = parcel.location().flatMap(Parcel.ParcelLocation::sharedRepository);

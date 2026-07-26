@@ -51,9 +51,19 @@ public class Entrypoint {
         MinecraftPayloads.SHARED_REPOSITORIES_CODEC);
     registrar.playToClient(
         MinecraftPayloads.GIT_OPERATIONS_TYPE, MinecraftPayloads.GIT_OPERATIONS_CODEC);
+    registrar.playToClient(
+        MinecraftPayloads.PARCEL_HISTORY_TYPE, MinecraftPayloads.PARCEL_HISTORY_CODEC);
     registrar.playToServer(
         MinecraftPayloads.QUERY_SERVER_STATE_TYPE,
         MinecraftPayloads.QUERY_SERVER_STATE_CODEC,
+        (payload, context) ->
+            context.enqueueWork(
+                () ->
+                    ServerQueryHandler.handle(
+                        payload.message(), (ServerPlayer) context.player())));
+    registrar.playToServer(
+        MinecraftPayloads.QUERY_PARCEL_HISTORY_TYPE,
+        MinecraftPayloads.QUERY_PARCEL_HISTORY_CODEC,
         (payload, context) ->
             context.enqueueWork(
                 () ->

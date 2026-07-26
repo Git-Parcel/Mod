@@ -1,14 +1,20 @@
 package io.github.leawind.gitparcel.server.minecraft.logic.network;
 
 import com.mojang.logging.LogUtils;
+import io.github.leawind.gitparcel.common.api.git.GitCommitSnapshot;
 import io.github.leawind.gitparcel.common.api.git.GitOperationSnapshot;
+import io.github.leawind.gitparcel.common.api.git.ParcelHistoryPage;
 import io.github.leawind.gitparcel.common.api.git.SharedRepositorySnapshot;
+import io.github.leawind.gitparcel.common.api.permission.ParcelPermissions;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.message.QueryParcelHistoryMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.QueryServerStateMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateGitOperationsMessage;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelHistoryMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateSharedRepositoriesMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.permission.MinecraftPermissions;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelWorldSavedData;
+import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.platform.api.Services;
 import io.github.leawind.gitparcel.server.minecraft.logic.git.GitOperationManager;
 import io.github.leawind.gitparcel.server.minecraft.logic.storage.shared.SharedRepositoryService;
@@ -28,13 +34,13 @@ public final class ServerQueryHandler {
   private static final Logger LOGGER = LogUtils.getLogger();
   private static final int OPERATION_LIMIT = 100;
   private static final long QUERY_COOLDOWN_NANOS = 500_000_000L;
-  private static final Map<MinecraftServer, Map<UUID, Long>> LAST_QUERIES =
+  private static final Map<MinecraftServer, Map<QueryKey, Long>> LAST_QUERIES =
       new WeakHashMap<>();
 
   private ServerQueryHandler() {}
 
   public static void handle(QueryServerStateMessage request, ServerPlayer player) {
-    if (!acceptQuery(player)) {
+    if (!acceptQuery(player, "server_state")) {
       return;
     }
     if (request.repositories()) {
@@ -42,6 +48,53 @@ public final class ServerQueryHandler {
     }
     if (request.operations()) {
       syncOperations(player);
+    }
+  }
+
+  public static void handle(QueryParcelHistoryMessage request, ServerPlayer player) {
+    if (!acceptQuery(player, "parcel_history")) {
+      sendHistoryFailure(player, request, "Too many history requests");
+      return;
+    }
+
+    var parcel = ParcelService.get(player.level()).getParcel(request.parcelUuid());
+    if (parcel == null) {
+      sendHistoryFailure(player, request, "Parcel not found");
+      return;
+    }
+    if (!MinecraftPermissions.permits(
+        player, parcel.permissions(), ParcelPermissions.LOAD)) {
+      sendHistoryFailure(player, request, "Permission denied");
+      return;
+    }
+
+    try {
+      var page =
+          ParcelService.get(player.level())
+              .getParcelHistoryPage(
+                  parcel, request.limit(), request.beforeRevision().orElse(null));
+      var commits =
+          page.commits().stream()
+              .map(
+                  commit ->
+                      new GitCommitSnapshot(
+                          commit.revision(),
+                          commit.committedAt().toString(),
+                          commit.author(),
+                          commit.message()))
+              .toList();
+      Services.SERVER_NETWORKING.send(
+          player,
+          new UpdateParcelHistoryMessage(
+              new ParcelHistoryPage(
+                  request.parcelUuid(),
+                  request.beforeRevision(),
+                  commits,
+                  page.nextCursor(),
+                  Optional.empty())));
+    } catch (Exception e) {
+      LOGGER.error("Failed to query history for parcel {}", request.parcelUuid(), e);
+      sendHistoryFailure(player, request, describeHistoryError(e));
     }
   }
 
@@ -120,15 +173,40 @@ public final class ServerQueryHandler {
         operation.detail());
   }
 
-  private static synchronized boolean acceptQuery(ServerPlayer player) {
+  private static void sendHistoryFailure(
+      ServerPlayer player, QueryParcelHistoryMessage request, String error) {
+    Services.SERVER_NETWORKING.send(
+        player,
+        new UpdateParcelHistoryMessage(
+            ParcelHistoryPage.failure(
+                request.parcelUuid(), request.beforeRevision(), error)));
+  }
+
+  private static String describeHistoryError(Exception exception) {
+    String message = exception.getMessage();
+    if ("Shared repository is busy".equals(message)) {
+      return message;
+    }
+    if (message != null
+        && (message.startsWith("Unknown Git history cursor")
+            || message.startsWith("Git history cursor does not belong"))) {
+      return "Invalid or stale history cursor";
+    }
+    return "Failed to read parcel history";
+  }
+
+  private static synchronized boolean acceptQuery(ServerPlayer player, String category) {
     var server = player.level().getServer();
     long now = System.nanoTime();
     var queries = LAST_QUERIES.computeIfAbsent(server, ignored -> new HashMap<>());
-    Long previous = queries.get(player.getUUID());
+    var key = new QueryKey(player.getUUID(), category);
+    Long previous = queries.get(key);
     if (previous != null && now - previous < QUERY_COOLDOWN_NANOS) {
       return false;
     }
-    queries.put(player.getUUID(), now);
+    queries.put(key, now);
     return true;
   }
+
+  private record QueryKey(UUID playerUuid, String category) {}
 }

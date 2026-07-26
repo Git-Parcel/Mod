@@ -3,14 +3,20 @@ package io.github.leawind.gitparcel.client.impl;
 import io.github.leawind.gitparcel.client.api.GitParcelClient;
 import io.github.leawind.gitparcel.client.platform.ClientServices;
 import io.github.leawind.gitparcel.common.api.git.GitOperationSnapshot;
+import io.github.leawind.gitparcel.common.api.git.ParcelHistoryPage;
 import io.github.leawind.gitparcel.common.api.git.SharedRepositorySnapshot;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatCapabilities;
 import io.github.leawind.gitparcel.common.api.world.Parcels;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.message.QueryParcelHistoryMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.QueryServerStateMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateGitOperationsMessage;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelHistoryMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateSharedRepositoriesMessage;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jspecify.annotations.NonNull;
 
 public final class GitParcelClientImpl implements GitParcelClient {
@@ -24,6 +30,8 @@ public final class GitParcelClientImpl implements GitParcelClient {
   private volatile List<GitOperationSnapshot> gitOperations = List.of();
   private volatile Optional<String> sharedRepositoriesError = Optional.empty();
   private volatile Optional<String> gitOperationsError = Optional.empty();
+  private final ConcurrentHashMap<UUID, ParcelHistoryPage> parcelHistory =
+      new ConcurrentHashMap<>();
 
   @Override
   public ParcelFormatCapabilities getParcelFormatCapabilities() {
@@ -56,8 +64,20 @@ public final class GitParcelClientImpl implements GitParcelClient {
   }
 
   @Override
+  public Optional<ParcelHistoryPage> getParcelHistoryPage(UUID parcelUuid) {
+    return Optional.ofNullable(parcelHistory.get(parcelUuid));
+  }
+
+  @Override
   public void queryServerState() {
     ClientServices.networking().send(QueryServerStateMessage.all());
+  }
+
+  @Override
+  public void queryParcelHistory(
+      UUID parcelUuid, Optional<String> beforeRevision, int limit) {
+    ClientServices.networking()
+        .send(new QueryParcelHistoryMessage(parcelUuid, beforeRevision, limit));
   }
 
   public void setParcelFormatCapabilities(@NonNull ParcelFormatCapabilities capabilities) {
@@ -74,6 +94,18 @@ public final class GitParcelClientImpl implements GitParcelClient {
     gitOperationsError = message.error();
   }
 
+  public void setParcelHistory(UpdateParcelHistoryMessage message) {
+    parcelHistory.put(message.page().parcelUuid(), message.page());
+  }
+
+  public void clearParcelHistory() {
+    parcelHistory.clear();
+  }
+
+  public void removeParcelHistory(Set<UUID> parcelUuids) {
+    parcelUuids.forEach(parcelHistory::remove);
+  }
+
   public void reset() {
     capabilities = ParcelFormatCapabilities.empty();
     parcels.clear();
@@ -81,5 +113,6 @@ public final class GitParcelClientImpl implements GitParcelClient {
     gitOperations = List.of();
     sharedRepositoriesError = Optional.empty();
     gitOperationsError = Optional.empty();
+    parcelHistory.clear();
   }
 }

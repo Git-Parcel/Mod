@@ -12,6 +12,7 @@ import java.util.Optional;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.jspecify.annotations.Nullable;
 
 /** Git operations for parcel snapshots, independent from command presentation. */
 public final class ParcelRepositoryService {
@@ -59,8 +60,17 @@ public final class ParcelRepositoryService {
   public static List<GitRepo.CommitInfo> history(
       ParcelStorage.RepositoryLocation location, int limit)
       throws IOException, ParcelException {
+    return historyPage(location, limit, null).commits();
+  }
+
+  public static GitRepo.HistoryPage historyPage(
+      ParcelStorage.RepositoryLocation location,
+      int limit,
+      @Nullable String beforeRevision)
+      throws IOException, ParcelException {
     try {
-      return GitRepo.get(location.repository()).history(location.gitPath(), limit);
+      return GitRepo.get(location.repository())
+          .historyPage(location.gitPath(), limit, beforeRevision);
     } catch (GitAPIException e) {
       throw new ParcelException("Failed to read Git history", e);
     }

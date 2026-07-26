@@ -210,4 +210,50 @@ class GitRepoTest {
       assertFalse(git.status().call().hasUncommittedChanges());
     }
   }
+
+  @Test
+  void paginatesHistoryWithStableRevisionCursors() throws Exception {
+    Path repositoryDir = tempDir.resolve("history-pages");
+    Path parcelFile = repositoryDir.resolve("parcel/parcel.json");
+    Files.createDirectories(parcelFile.getParent());
+    GitRepo repository = GitRepo.get(repositoryDir);
+
+    for (int i = 1; i <= 5; i++) {
+      Files.writeString(parcelFile, "version " + i);
+      repository.commit("parcel", "Version " + i, IDENTITY).orElseThrow();
+    }
+
+    var first = repository.historyPage("parcel", 2, null);
+    assertEquals(List.of("Version 5", "Version 4"), messages(first));
+    assertTrue(first.nextCursor().isPresent());
+
+    Files.writeString(parcelFile, "version 6");
+    repository.commit("parcel", "Version 6", IDENTITY).orElseThrow();
+
+    var second =
+        repository.historyPage("parcel", 2, first.nextCursor().orElseThrow());
+    assertEquals(List.of("Version 3", "Version 2"), messages(second));
+    assertTrue(second.nextCursor().isPresent());
+
+    var third =
+        repository.historyPage("parcel", 2, second.nextCursor().orElseThrow());
+    assertEquals(List.of("Version 1"), messages(third));
+    assertTrue(third.nextCursor().isEmpty());
+
+    assertThrows(
+        IOException.class,
+        () -> repository.historyPage("parcel", 2, "0000000000000000000000000000000000000000"));
+
+    Files.createDirectories(repositoryDir.resolve("unrelated"));
+    Files.writeString(repositoryDir.resolve("unrelated/file.txt"), "unrelated");
+    String unrelatedRevision =
+        repository.commit("unrelated", "Unrelated", IDENTITY).orElseThrow().revision();
+    assertThrows(
+        IOException.class,
+        () -> repository.historyPage("parcel", 2, unrelatedRevision));
+  }
+
+  private static List<String> messages(GitRepo.HistoryPage page) {
+    return page.commits().stream().map(GitRepo.CommitInfo::message).toList();
+  }
 }

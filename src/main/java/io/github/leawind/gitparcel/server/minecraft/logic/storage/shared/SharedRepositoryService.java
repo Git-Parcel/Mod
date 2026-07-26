@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -147,6 +148,22 @@ public final class SharedRepositoryService {
     try {
       requireRegistered(name);
       return new RepositoryLease(name, content.getRepoDir(name), lock);
+    } catch (IOException | RuntimeException e) {
+      lock.unlock();
+      throw e;
+    }
+  }
+
+  /** Attempts to acquire a repository without blocking the Minecraft server thread. */
+  public Optional<RepositoryLease> tryAcquire(String name) throws IOException {
+    SharedContent.validateRepositoryName(name);
+    var lock = lock(name);
+    if (!lock.tryLock()) {
+      return Optional.empty();
+    }
+    try {
+      requireRegistered(name);
+      return Optional.of(new RepositoryLease(name, content.getRepoDir(name), lock));
     } catch (IOException | RuntimeException e) {
       lock.unlock();
       throw e;
