@@ -139,4 +139,50 @@ public class SharedContentTest {
     assertEquals("https://github.com/test/repo", info.remoteUrl());
     assertNotNull(info.lastSync());
   }
+
+  @Test
+  void rejectsRepositoryAndParcelPathTraversal() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> sharedContent.getRepoDir("../outside"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> sharedContent.saveRepoMeta("repo", List.of("../outside")));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> sharedContent.saveRepoMeta("repo", List.of("/absolute")));
+  }
+
+  @Test
+  void repositoryCatalogUpdatesDoNotOverwriteEntries() throws IOException {
+    sharedContent.addRepository("local", SharedContent.RepoInfo.local());
+
+    assertThrows(
+        IOException.class,
+        () -> sharedContent.addRepository("local", SharedContent.RepoInfo.local()));
+
+    var cloned =
+        new SharedContent.RepoInfo(
+            "cloned",
+            "https://example.com/repo.git",
+            "2000-01-01T00:00:00Z");
+    sharedContent.addRepository("remote", cloned);
+    var previousSync = cloned.lastSync();
+    var updated =
+        sharedContent.updateRepository(
+            "remote", SharedContent.RepoInfo::syncedNow);
+
+    assertEquals(2, sharedContent.loadReposIndex().size());
+    assertEquals("local", sharedContent.getRepository("local").orElseThrow().type());
+    assertNotEquals(previousSync, updated.lastSync());
+  }
+
+  @Test
+  void rejectsCorruptedCatalogPaths() throws IOException {
+    Files.writeString(
+        sharedContent.getReposIndexFile(),
+        "{\"repos\":{\"../outside\":{\"type\":\"local\"}}}");
+
+    assertThrows(IOException.class, sharedContent::loadReposIndex);
+  }
 }

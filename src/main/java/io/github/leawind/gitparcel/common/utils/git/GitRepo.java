@@ -13,13 +13,18 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.MergeCommand.FastForwardMode;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.lib.FileMode;
 import org.eclipse.jgit.lib.PersonIdent;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
+import org.eclipse.jgit.transport.CredentialsProvider;
+import org.eclipse.jgit.transport.RefSpec;
+import org.eclipse.jgit.transport.RemoteRefUpdate;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -51,6 +56,125 @@ public final class GitRepo {
 
   public boolean hasDotGit() {
     return Files.exists(path.resolve(".git"));
+  }
+
+  /** Initializes an empty working-tree repository if necessary. */
+  public synchronized void initialize() throws IOException, GitAPIException {
+    try (Git ignored = openOrInit()) {
+      // Initialization is performed by openOrInit.
+    }
+  }
+
+  /** Clones into a destination which must not already exist. */
+  public static GitRepo cloneRepository(
+      String remoteUri,
+      Path destination,
+      @Nullable CredentialsProvider credentialsProvider)
+      throws IOException, GitAPIException {
+    return GitRepo.get(destination).cloneFrom(remoteUri, credentialsProvider);
+  }
+
+  private synchronized GitRepo cloneFrom(
+      String remoteUri, @Nullable CredentialsProvider credentialsProvider)
+      throws IOException, GitAPIException {
+    if (remoteUri == null || remoteUri.isBlank()) {
+      throw new IllegalArgumentException("Remote URI must not be blank");
+    }
+    if (Files.exists(path)) {
+      throw new IOException("Clone destination already exists: " + path);
+    }
+
+    try {
+      var command = Git.cloneRepository().setURI(remoteUri).setDirectory(file);
+      if (credentialsProvider != null) {
+        command.setCredentialsProvider(credentialsProvider);
+      }
+      try (Git ignored = command.call()) {
+        return this;
+      }
+    } catch (GitAPIException | RuntimeException e) {
+      try {
+        deleteRecursivelyIfExists(path);
+      } catch (IOException cleanupFailure) {
+        e.addSuppressed(cleanupFailure);
+      }
+      throw e;
+    }
+  }
+
+  /** Fetches tracking references from {@code origin}. */
+  public synchronized int fetch(@Nullable CredentialsProvider credentialsProvider)
+      throws IOException, GitAPIException {
+    try (Git git = requireOpen()) {
+      var command = git.fetch().setRemote("origin");
+      if (credentialsProvider != null) {
+        command.setCredentialsProvider(credentialsProvider);
+      }
+      return command.call().getTrackingRefUpdates().size();
+    }
+  }
+
+  /** Pulls from {@code origin}, accepting only a fast-forward update. */
+  public synchronized String pull(@Nullable CredentialsProvider credentialsProvider)
+      throws IOException, GitAPIException {
+    try (Git git = requireOpen()) {
+      if (!git.status().call().isClean()) {
+        throw new IOException("Cannot pull with uncommitted repository changes: " + path);
+      }
+
+      var command = git.pull().setRemote("origin").setFastForward(FastForwardMode.FF_ONLY);
+      if (credentialsProvider != null) {
+        command.setCredentialsProvider(credentialsProvider);
+      }
+      var result = command.call();
+      if (!result.isSuccessful()) {
+        throw new IOException("Git pull was not successful: " + result);
+      }
+      if (result.getMergeResult() != null) {
+        return result.getMergeResult().getMergeStatus().toString();
+      }
+      if (result.getRebaseResult() != null) {
+        return result.getRebaseResult().getStatus().toString();
+      }
+      return "FETCHED";
+    }
+  }
+
+  /** Pushes the current branch to its configured upstream. */
+  public synchronized int push(@Nullable CredentialsProvider credentialsProvider)
+      throws IOException, GitAPIException {
+    try (Git git = requireOpen()) {
+      if (!git.status().call().isClean()) {
+        throw new IOException("Cannot push with uncommitted repository changes: " + path);
+      }
+
+      var command = git.push().setRemote("origin");
+      String fullBranch = git.getRepository().getFullBranch();
+      if (fullBranch == null || !fullBranch.startsWith("refs/heads/")) {
+        throw new IOException("Cannot push from a detached or unborn branch: " + path);
+      }
+      String branch = Repository.shortenRefName(fullBranch);
+      command.setRefSpecs(new RefSpec("HEAD:refs/heads/" + branch));
+      if (credentialsProvider != null) {
+        command.setCredentialsProvider(credentialsProvider);
+      }
+
+      int updates = 0;
+      for (var result : command.call()) {
+        for (RemoteRefUpdate update : result.getRemoteUpdates()) {
+          var status = update.getStatus();
+          if (status != RemoteRefUpdate.Status.OK
+              && status != RemoteRefUpdate.Status.UP_TO_DATE) {
+            throw new IOException(
+                "Git push rejected %s: %s".formatted(update.getRemoteName(), status));
+          }
+          if (status == RemoteRefUpdate.Status.OK) {
+            updates++;
+          }
+        }
+      }
+      return updates;
+    }
   }
 
   /**
@@ -213,6 +337,14 @@ public final class GitRepo {
       return null;
     }
     return Git.open(file);
+  }
+
+  private Git requireOpen() throws IOException {
+    Git git = open();
+    if (git == null) {
+      throw new IOException("Git repository does not exist: " + path);
+    }
+    return git;
   }
 
   private static String validateGitPath(String path) {

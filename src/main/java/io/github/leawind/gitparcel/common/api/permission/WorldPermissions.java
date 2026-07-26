@@ -24,4 +24,8 @@ public final class WorldPermissions {
       type("delete_parcel", PermissionLevel.OWNERS);
   public static final PermissionType<WorldPermissions> CONFIG_PARCEL =
       type("config_parcel", PermissionLevel.OWNERS);
+  public static final PermissionType<WorldPermissions> LIST_SHARED_REPOSITORIES =
+      type("list_shared_repositories", PermissionLevel.MODERATORS);
+  public static final PermissionType<WorldPermissions> MANAGE_SHARED_REPOSITORIES =
+      type("manage_shared_repositories", PermissionLevel.OWNERS);
 }

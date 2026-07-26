@@ -11,6 +11,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 @Mod(GitParcel.MOD_ID)
@@ -29,6 +30,7 @@ public class Entrypoint {
         PlayerEvent.PlayerLoggedInEvent.class, Entrypoint::onPlayerLoggedIn);
     NeoForge.EVENT_BUS.addListener(
         PlayerEvent.PlayerChangedDimensionEvent.class, Entrypoint::onPlayerChangedDimension);
+    NeoForge.EVENT_BUS.addListener(ServerStoppingEvent.class, Entrypoint::onServerStopping);
   }
 
   private static void onRegisterCommands(RegisterCommandsEvent event) {
@@ -55,6 +57,10 @@ public class Entrypoint {
     if (event.getEntity() instanceof ServerPlayer player) {
       ModEntrypoint.onPlayerChangeDimension(player);
     }
+  }
+
+  private static void onServerStopping(ServerStoppingEvent event) {
+    ModEntrypoint.onServerStopping(event.getServer());
   }
 }
 *//*?}*/

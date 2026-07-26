@@ -8,6 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.ConfigConstants;
+import org.eclipse.jgit.transport.RefSpec;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -88,5 +91,58 @@ class GitRepoTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> repository.history("/parcel", 10));
+  }
+
+  @Test
+  void clonesFetchesPullsAndPushesAgainstLocalRemote() throws Exception {
+    Path origin = tempDir.resolve("origin.git");
+    try (Git ignored =
+        Git.init()
+            .setBare(true)
+            .setInitialBranch("main")
+            .setDirectory(origin.toFile())
+            .call()) {}
+
+    Path seed = tempDir.resolve("seed");
+    try (Git ignored =
+        Git.init()
+            .setInitialBranch("main")
+            .setDirectory(seed.toFile())
+            .call()) {}
+    Files.createDirectories(seed.resolve("parcel"));
+    Files.writeString(seed.resolve("parcel/parcel.json"), "initial");
+    GitRepo.get(seed).commit("parcel", "Initial", IDENTITY).orElseThrow();
+    try (Git git = Git.open(seed.toFile())) {
+      var config = git.getRepository().getConfig();
+      config.setString(
+          ConfigConstants.CONFIG_REMOTE_SECTION,
+          "origin",
+          ConfigConstants.CONFIG_KEY_URL,
+          origin.toUri().toString());
+      config.save();
+      git.push()
+          .setRemote("origin")
+          .setRefSpecs(new RefSpec("HEAD:refs/heads/main"))
+          .call();
+    }
+
+    GitRepo first =
+        GitRepo.cloneRepository(
+            origin.toUri().toString(), tempDir.resolve("first"), null);
+    GitRepo second =
+        GitRepo.cloneRepository(
+            origin.toUri().toString(), tempDir.resolve("second"), null);
+
+    Files.writeString(first.path().resolve("parcel/parcel.json"), "updated");
+    first.commit("parcel", "Update", IDENTITY).orElseThrow();
+    assertEquals(1, first.push(null));
+
+    assertTrue(second.fetch(null) >= 1);
+    assertEquals("initial", Files.readString(second.path().resolve("parcel/parcel.json")));
+    second.pull(null);
+    assertEquals("updated", Files.readString(second.path().resolve("parcel/parcel.json")));
+
+    Files.writeString(second.path().resolve("parcel/dirty.txt"), "dirty");
+    assertThrows(IOException.class, () -> second.pull(null));
   }
 }

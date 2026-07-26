@@ -15,11 +15,13 @@ import io.github.leawind.gitparcel.common.platform.api.Services;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.ParcelCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parceldebug.ParcelDebugCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcels.ParcelsCommand;
+import io.github.leawind.gitparcel.server.minecraft.logic.git.GitOperationManager;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.synchronization.SingletonArgumentInfo;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.MinecraftServer;
 import org.slf4j.Logger;
 
 public final class ModEntrypoint {
@@ -49,6 +51,11 @@ public final class ModEntrypoint {
   /** Replaces client parcel state after the player moves to another dimension. */
   public static void onPlayerChangeDimension(ServerPlayer player) {
     ParcelService.get(player.level()).syncTo(player);
+  }
+
+  /** Cancels queued network work and releases Git worker threads for this server. */
+  public static void onServerStopping(MinecraftServer server) {
+    GitOperationManager.shutdown(server);
   }
 
   public static void registerCommands(
