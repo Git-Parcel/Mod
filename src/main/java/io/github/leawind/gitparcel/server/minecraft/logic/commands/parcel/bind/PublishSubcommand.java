@@ -10,8 +10,10 @@ import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.common.utils.git.GitRepo;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
+import io.github.leawind.gitparcel.server.minecraft.logic.network.ServerQueryHandler;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.server.level.ServerPlayer;
 
 public final class PublishSubcommand extends GitParcelBaseCommand {
   private static final String ARG_REPOSITORY = "repository";
@@ -79,6 +81,9 @@ public final class PublishSubcommand extends GitParcelBaseCommand {
               repository,
               path,
               abbreviate(result.revision())));
+      if (source.getEntity() instanceof ServerPlayer player) {
+        ServerQueryHandler.syncRepositories(player);
+      }
       return 1;
     } catch (Exception e) {
       LOGGER.error("Failed to publish parcel {} to {}/{}", parcel.uuid(), repository, path, e);

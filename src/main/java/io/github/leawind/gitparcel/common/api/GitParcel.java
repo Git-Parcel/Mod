@@ -6,5 +6,5 @@ public interface GitParcel {
   /** The mod ID for Git Parcel. */
   String MOD_ID = "gitparcel";
 
-  String PROTOCOL_VERSION = "1";
+  String PROTOCOL_VERSION = "2";
 }

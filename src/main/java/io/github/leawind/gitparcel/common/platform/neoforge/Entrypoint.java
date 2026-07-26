@@ -5,6 +5,7 @@ package io.github.leawind.gitparcel.common.platform.neoforge;
 import io.github.leawind.gitparcel.common.api.GitParcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.ModEntrypoint;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.payload.MinecraftPayloads;
+import io.github.leawind.gitparcel.server.minecraft.logic.network.ServerQueryHandler;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -45,6 +46,19 @@ public class Entrypoint {
     registrar.playToClient(
         MinecraftPayloads.PARCEL_FORMATS_TYPE, MinecraftPayloads.PARCEL_FORMATS_CODEC);
     registrar.playToClient(MinecraftPayloads.PARCELS_TYPE, MinecraftPayloads.PARCELS_CODEC);
+    registrar.playToClient(
+        MinecraftPayloads.SHARED_REPOSITORIES_TYPE,
+        MinecraftPayloads.SHARED_REPOSITORIES_CODEC);
+    registrar.playToClient(
+        MinecraftPayloads.GIT_OPERATIONS_TYPE, MinecraftPayloads.GIT_OPERATIONS_CODEC);
+    registrar.playToServer(
+        MinecraftPayloads.QUERY_SERVER_STATE_TYPE,
+        MinecraftPayloads.QUERY_SERVER_STATE_CODEC,
+        (payload, context) ->
+            context.enqueueWork(
+                () ->
+                    ServerQueryHandler.handle(
+                        payload.message(), (ServerPlayer) context.player())));
   }
 
   private static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {

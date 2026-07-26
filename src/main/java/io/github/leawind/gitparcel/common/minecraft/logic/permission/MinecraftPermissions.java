@@ -49,6 +49,11 @@ public final class MinecraftPermissions {
     return hasPermission(source, config.get(type));
   }
 
+  public static <T> boolean permits(
+      ServerPlayer player, PermissionConfig<T> config, PermissionType<T> type) {
+    return hasPermission(player, config.get(type));
+  }
+
   /*? if >=1.21.11 {*/
   private static PermissionCheck checker(PermissionLevel level) {
     return switch (level) {

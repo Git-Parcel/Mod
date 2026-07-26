@@ -30,6 +30,12 @@ public class ClientEntrypoint implements ClientModInitializer {
     ClientPlayNetworking.registerGlobalReceiver(
         MinecraftPayloads.PARCELS_TYPE,
         (payload, context) -> ClientPayloadHandler.handle(payload.message()));
+    ClientPlayNetworking.registerGlobalReceiver(
+        MinecraftPayloads.SHARED_REPOSITORIES_TYPE,
+        (payload, context) -> ClientPayloadHandler.handle(payload.message()));
+    ClientPlayNetworking.registerGlobalReceiver(
+        MinecraftPayloads.GIT_OPERATIONS_TYPE,
+        (payload, context) -> ClientPayloadHandler.handle(payload.message()));
     ClientPlayConnectionEvents.DISCONNECT.register(
         (listener, client) -> ModClientEntrypoint.onDisconnect());
 

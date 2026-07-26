@@ -10,6 +10,7 @@ import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.git.GitOperationManager;
+import io.github.leawind.gitparcel.server.minecraft.logic.network.ServerQueryHandler;
 import io.github.leawind.gitparcel.server.minecraft.logic.storage.shared.SharedRepositoryService;
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -17,6 +18,7 @@ import java.util.concurrent.CompletableFuture;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.server.level.ServerPlayer;
 
 public final class RepositoriesSubcommand extends GitParcelBaseCommand {
   private static final String ARG_NAME = "repository";
@@ -194,6 +196,10 @@ public final class RepositoriesSubcommand extends GitParcelBaseCommand {
                             completed.repository(),
                             completed.detail()));
                   }
+                  if (source.getEntity() instanceof ServerPlayer player) {
+                    ServerQueryHandler.syncRepositories(player);
+                    ServerQueryHandler.syncOperations(player);
+                  }
                 });
     source.sendSystemMessage(
         Translations.of(
@@ -201,6 +207,9 @@ public final class RepositoriesSubcommand extends GitParcelBaseCommand {
             operation.id(),
             type,
             repository));
+    if (source.getEntity() instanceof ServerPlayer player) {
+      ServerQueryHandler.syncOperations(player);
+    }
     return operation.status() == GitOperationManager.Status.FAILED ? 0 : 1;
   }
 

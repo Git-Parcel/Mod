@@ -41,6 +41,12 @@ public class ClientEntrypoint {
     event.register(
         MinecraftPayloads.PARCELS_TYPE,
         (payload, context) -> ClientPayloadHandler.handle(payload.message()));
+    event.register(
+        MinecraftPayloads.SHARED_REPOSITORIES_TYPE,
+        (payload, context) -> ClientPayloadHandler.handle(payload.message()));
+    event.register(
+        MinecraftPayloads.GIT_OPERATIONS_TYPE,
+        (payload, context) -> ClientPayloadHandler.handle(payload.message()));
   }
 
   private static void onClientTick(ClientTickEvent.Pre event) {
