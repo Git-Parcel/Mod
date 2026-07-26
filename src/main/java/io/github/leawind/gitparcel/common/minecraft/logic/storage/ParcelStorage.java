@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -66,16 +67,50 @@ public class ParcelStorage {
    */
   public static RepositoryLocation resolveRepositoryLocation(
       Parcel parcel, Path internalParcelsDir) {
+    return resolveRepositoryLocation(parcel, internalParcelsDir, null);
+  }
+
+  /** Resolves storage, including symbolic shared repository locations when a root is supplied. */
+  public static RepositoryLocation resolveRepositoryLocation(
+      Parcel parcel,
+      Path internalParcelsDir,
+      @Nullable Path sharedRepositoriesDir) {
     return parcel
         .location()
-        .map(location -> new RepositoryLocation(location.repo(), location.relative()))
+        .map(
+            location -> {
+              if (location.isShared()) {
+                if (sharedRepositoriesDir == null) {
+                  throw new IllegalArgumentException(
+                      "A shared repository root is required for this parcel");
+                }
+                String name = location.sharedRepository().orElseThrow();
+                return new RepositoryLocation(
+                    sharedRepositoriesDir.resolve(name),
+                    location.relative(),
+                    name);
+              }
+              return new RepositoryLocation(
+                  Objects.requireNonNull(location.repo()),
+                  location.relative(),
+                  null);
+            })
         .orElseGet(
             () ->
                 new RepositoryLocation(
-                    internalParcelsDir.resolve(parcel.uuid().toString()), Path.of("parcel")));
+                    internalParcelsDir.resolve(parcel.uuid().toString()),
+                    Path.of("parcel"),
+                    null));
   }
 
-  public record RepositoryLocation(Path repository, Path relative) {
+  public record RepositoryLocation(
+      Path repository,
+      Path relative,
+      @Nullable String sharedRepository) {
+    public RepositoryLocation(Path repository, Path relative) {
+      this(repository, relative, null);
+    }
+
     public RepositoryLocation {
       repository = repository.normalize();
       relative = relative.normalize();
@@ -83,6 +118,11 @@ public class ParcelStorage {
           || relative.toString().isEmpty()
           || relative.startsWith("..")) {
         throw new IllegalArgumentException("Parcel path must stay below the repository");
+      }
+      for (Path part : relative) {
+        if (part.toString().equals(".git")) {
+          throw new IllegalArgumentException("Parcel path must not contain .git");
+        }
       }
     }
 

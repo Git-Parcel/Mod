@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeSet;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -222,6 +223,25 @@ public final class SharedContent {
     writeAtomically(metaFile, GSON.toJson(json));
   }
 
+  public synchronized boolean containsParcelPath(String repoName, String parcelPath)
+      throws IOException {
+    String expected = getParcelGitPath(repoName, parcelPath);
+    return loadRepoMeta(repoName).stream()
+        .map(path -> getParcelGitPath(repoName, path))
+        .anyMatch(expected::equals);
+  }
+
+  /** Adds a normalized parcel path to repository metadata. */
+  public synchronized void addParcelPath(String repoName, String parcelPath)
+      throws IOException {
+    var paths = new TreeSet<String>();
+    loadRepoMeta(repoName).stream()
+        .map(path -> getParcelGitPath(repoName, path))
+        .forEach(paths::add);
+    paths.add(getParcelGitPath(repoName, parcelPath));
+    saveRepoMeta(repoName, List.copyOf(paths));
+  }
+
   /**
    * Gets the path to a repository directory.
    *
@@ -280,6 +300,14 @@ public final class SharedContent {
         || relative.startsWith("..")) {
       throw new IllegalArgumentException(
           "Parcel path must stay inside repository " + repoName + ": " + parcelPath);
+    }
+    for (Path part : relative) {
+      if (part.toString().equals(".git")) {
+        throw new IllegalArgumentException("Parcel path must not contain .git");
+      }
+    }
+    if (relative.getName(0).toString().equals(REPO_META_FILE)) {
+      throw new IllegalArgumentException("Parcel path conflicts with repository metadata");
     }
     return relative;
   }

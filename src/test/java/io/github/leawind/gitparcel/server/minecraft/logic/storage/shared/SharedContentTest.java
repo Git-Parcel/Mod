@@ -151,6 +151,12 @@ public class SharedContentTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> sharedContent.saveRepoMeta("repo", List.of("/absolute")));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> sharedContent.saveRepoMeta("repo", List.of(".git/objects")));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> sharedContent.saveRepoMeta("repo", List.of("meta.json/parcel")));
   }
 
   @Test
@@ -175,6 +181,20 @@ public class SharedContentTest {
     assertEquals(2, sharedContent.loadReposIndex().size());
     assertEquals("local", sharedContent.getRepository("local").orElseThrow().type());
     assertNotEquals(previousSync, updated.lastSync());
+  }
+
+  @Test
+  void parcelMetadataUsesNormalizedUniquePaths() throws IOException {
+    sharedContent.saveRepoMeta(
+        "repo", List.of("parcels/example/", "parcels/other"));
+
+    sharedContent.addParcelPath("repo", "parcels/example");
+    sharedContent.addParcelPath("repo", "parcels/new/../new");
+
+    assertEquals(
+        List.of("parcels/example", "parcels/new", "parcels/other"),
+        sharedContent.loadRepoMeta("repo"));
+    assertTrue(sharedContent.containsParcelPath("repo", "parcels/example/"));
   }
 
   @Test

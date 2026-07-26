@@ -5,12 +5,13 @@ import io.github.leawind.gitparcel.server.minecraft.logic.storage.StorageUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 import net.minecraft.server.MinecraftServer;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
@@ -25,7 +26,7 @@ public final class SharedRepositoryService {
   }
 
   private final SharedContent content;
-  private final ConcurrentHashMap<String, Object> repositoryLocks =
+  private final ConcurrentHashMap<String, ReentrantLock> repositoryLocks =
       new ConcurrentHashMap<>();
 
   public SharedRepositoryService(Path root) {
@@ -52,7 +53,9 @@ public final class SharedRepositoryService {
 
   public void create(String name) throws IOException, GitAPIException {
     SharedContent.validateRepositoryName(name);
-    synchronized (lock(name)) {
+    var lock = lock(name);
+    lock.lock();
+    try {
       ensureAvailable(name);
       Path repository = content.getRepoDir(name);
       try {
@@ -62,6 +65,8 @@ public final class SharedRepositoryService {
         cleanupCreatedDirectory(repository, e);
         throw e;
       }
+    } finally {
+      lock.unlock();
     }
   }
 
@@ -69,7 +74,9 @@ public final class SharedRepositoryService {
       throws IOException, GitAPIException {
     SharedContent.validateRepositoryName(name);
     String validatedUrl = GitRemoteAccess.validateRemoteUrl(remoteUrl);
-    synchronized (lock(name)) {
+    var lock = lock(name);
+    lock.lock();
+    try {
       ensureAvailable(name);
       Path repository = content.getRepoDir(name);
       try {
@@ -82,44 +89,72 @@ public final class SharedRepositoryService {
         cleanupCreatedDirectory(repository, e);
         throw e;
       }
+    } finally {
+      lock.unlock();
     }
   }
 
   public int fetch(String name) throws IOException, GitAPIException {
-    synchronized (lock(name)) {
+    var lock = lock(name);
+    lock.lock();
+    try {
       requireCloned(name);
       int updates =
           GitRepo.get(content.getRepoDir(name))
               .fetch(GitRemoteAccess.credentialsFromEnvironment());
       markSynced(name);
       return updates;
+    } finally {
+      lock.unlock();
     }
   }
 
   public String pull(String name) throws IOException, GitAPIException {
-    synchronized (lock(name)) {
+    var lock = lock(name);
+    lock.lock();
+    try {
       requireCloned(name);
       String result =
           GitRepo.get(content.getRepoDir(name))
               .pull(GitRemoteAccess.credentialsFromEnvironment());
       markSynced(name);
       return result;
+    } finally {
+      lock.unlock();
     }
   }
 
   public int push(String name) throws IOException, GitAPIException {
-    synchronized (lock(name)) {
+    var lock = lock(name);
+    lock.lock();
+    try {
       requireCloned(name);
       int updates =
           GitRepo.get(content.getRepoDir(name))
               .push(GitRemoteAccess.credentialsFromEnvironment());
       markSynced(name);
       return updates;
+    } finally {
+      lock.unlock();
     }
   }
 
-  private Object lock(String name) {
-    return repositoryLocks.computeIfAbsent(name, ignored -> new Object());
+  /** Acquires exclusive access shared with all remote synchronization operations. */
+  public RepositoryLease acquire(String name) throws IOException {
+    SharedContent.validateRepositoryName(name);
+    var lock = lock(name);
+    lock.lock();
+    try {
+      requireRegistered(name);
+      return new RepositoryLease(name, content.getRepoDir(name), lock);
+    } catch (IOException | RuntimeException e) {
+      lock.unlock();
+      throw e;
+    }
+  }
+
+  private ReentrantLock lock(String name) {
+    return repositoryLocks.computeIfAbsent(name, ignored -> new ReentrantLock());
   }
 
   private void ensureAvailable(String name) throws IOException {
@@ -167,6 +202,39 @@ public final class SharedRepositoryService {
       }
     } catch (IOException cleanupFailure) {
       original.addSuppressed(cleanupFailure);
+    }
+  }
+
+  public final class RepositoryLease implements AutoCloseable {
+    private final String name;
+    private final Path repository;
+    private final ReentrantLock lock;
+    private boolean closed;
+
+    private RepositoryLease(String name, Path repository, ReentrantLock lock) {
+      this.name = name;
+      this.repository = repository;
+      this.lock = lock;
+    }
+
+    public String name() {
+      return name;
+    }
+
+    public Path repository() {
+      return repository;
+    }
+
+    public SharedContent content() {
+      return content;
+    }
+
+    @Override
+    public void close() {
+      if (!closed) {
+        closed = true;
+        lock.unlock();
+      }
     }
   }
 }

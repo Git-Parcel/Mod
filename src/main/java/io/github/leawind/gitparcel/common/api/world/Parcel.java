@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.Vec3i;
@@ -158,6 +159,11 @@ public final class Parcel {
     return Optional.ofNullable(location);
   }
 
+  /** Changes where future save and Git operations resolve this parcel. */
+  public void setLocation(@Nullable ParcelLocation location) {
+    this.location = location;
+  }
+
   // ////////////////////////////////////////////////////////////////
   // Others
   // ////////////////////////////////////////////////////////////////
@@ -201,6 +207,15 @@ public final class Parcel {
       ParcelMeta meta,
       ParcelTransform transform,
       PermissionConfig<ParcelPermissions> permissions) {
+    return create(meta, transform, permissions, null);
+  }
+
+  /** Creates a parcel backed by the supplied storage location. */
+  public static Parcel create(
+      ParcelMeta meta,
+      ParcelTransform transform,
+      PermissionConfig<ParcelPermissions> permissions,
+      @Nullable ParcelLocation location) {
     return new Parcel(
         UUID.randomUUID(),
         meta,
@@ -208,7 +223,7 @@ public final class Parcel {
         new Visual(),
         permissions,
         Optional.empty(),
-        Optional.empty());
+        Optional.ofNullable(location));
   }
 
   public static BlockPos getPivotBlockPos(Mirror mirror, Rotation rotation, BoundingBox box) {
@@ -323,22 +338,47 @@ public final class Parcel {
   }
 
   /**
-   * @param repo Git repository path
-   * @param relative Parcel directory path relative to the repo path
+   * A parcel directory in either a direct repository path or a symbolically named shared
+   * repository. Exactly one repository reference is present.
+   *
+   * @param repo direct Git repository path, or {@code null} for a shared repository
+   * @param sharedRepositoryName shared catalog name, or {@code null} for a direct repository
+   * @param relative Parcel directory path relative to the repository
    */
-  public record ParcelLocation(Path repo, Path relative) {
+  public record ParcelLocation(
+      @Nullable Path repo,
+      @Nullable String sharedRepositoryName,
+      Path relative) {
+    private static final Pattern SHARED_REPOSITORY_NAME =
+        Pattern.compile("^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$");
+
     public static final Codec<ParcelLocation> CODEC =
         RecordCodecBuilder.create(
             inst ->
                 inst.group(
-                        Codec.STRING.fieldOf("repo").forGetter(ParcelLocation::getRepoPathString),
+                        Codec.STRING
+                            .optionalFieldOf("repo")
+                            .forGetter(ParcelLocation::getRepoPathString),
+                        Codec.STRING
+                            .optionalFieldOf("shared_repository")
+                            .forGetter(ParcelLocation::getSharedRepositoryName),
                         Codec.STRING
                             .fieldOf("relative")
                             .forGetter(ParcelLocation::getParcelPathString))
-                    .apply(inst, ParcelLocation::new));
+                    .apply(inst, ParcelLocation::fromSerialized));
 
     public ParcelLocation {
-      repo = Objects.requireNonNull(repo, "repo").normalize();
+      if ((repo == null) == (sharedRepositoryName == null)) {
+        throw new IllegalArgumentException(
+            "Parcel location must have exactly one repository reference");
+      }
+      if (repo != null) {
+        repo = repo.normalize();
+      }
+      if (sharedRepositoryName != null
+          && !SHARED_REPOSITORY_NAME.matcher(sharedRepositoryName).matches()) {
+        throw new IllegalArgumentException("Invalid shared repository name");
+      }
       relative = Objects.requireNonNull(relative, "relative").normalize();
       if (relative.isAbsolute()) {
         throw new IllegalArgumentException("Parcel path must be relative");
@@ -349,14 +389,54 @@ public final class Parcel {
       if (relative.startsWith("..")) {
         throw new IllegalArgumentException("Parcel path must stay inside the repository");
       }
+      for (Path part : relative) {
+        if (part.toString().equals(".git")) {
+          throw new IllegalArgumentException("Parcel path must not contain .git");
+        }
+      }
+      if (sharedRepositoryName != null
+          && relative.getName(0).toString().equals("meta.json")) {
+        throw new IllegalArgumentException(
+            "Shared parcel path conflicts with repository metadata");
+      }
+    }
+
+    public ParcelLocation(Path repo, Path relative) {
+      this(repo, null, relative);
     }
 
     public ParcelLocation(String repoPathString, String parcelPathString) {
       this(Path.of(repoPathString), Path.of(parcelPathString));
     }
 
-    private String getRepoPathString() {
-      return repo.toString();
+    public static ParcelLocation shared(String repositoryName, Path relative) {
+      return new ParcelLocation(null, repositoryName, relative);
+    }
+
+    public Optional<String> sharedRepository() {
+      return Optional.ofNullable(sharedRepositoryName);
+    }
+
+    public boolean isShared() {
+      return sharedRepositoryName != null;
+    }
+
+    private static ParcelLocation fromSerialized(
+        Optional<String> repo,
+        Optional<String> sharedRepository,
+        String relative) {
+      return new ParcelLocation(
+          repo.map(Path::of).orElse(null),
+          sharedRepository.orElse(null),
+          Path.of(relative));
+    }
+
+    private Optional<String> getRepoPathString() {
+      return Optional.ofNullable(repo).map(Path::toString);
+    }
+
+    private Optional<String> getSharedRepositoryName() {
+      return Optional.ofNullable(sharedRepositoryName);
     }
 
     private String getParcelPathString() {
@@ -364,6 +444,10 @@ public final class Parcel {
     }
 
     public Path getParcelPath() {
+      if (repo == null) {
+        throw new IllegalStateException(
+            "Shared parcel locations require a shared repository root");
+      }
       return repo.resolve(relative).normalize();
     }
   }

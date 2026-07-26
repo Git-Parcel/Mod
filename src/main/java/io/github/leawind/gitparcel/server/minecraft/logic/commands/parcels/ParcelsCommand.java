@@ -5,6 +5,7 @@ import io.github.leawind.gitparcel.common.api.permission.PermissionLevel;
 import io.github.leawind.gitparcel.common.minecraft.logic.permission.MinecraftPermissions;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcels.create.CreateSubcommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcels.formats.FormatsSubcommand;
+import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcels.importparcel.ImportSubcommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcels.repositories.OperationsSubcommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcels.repositories.RepositoriesSubcommand;
 import net.minecraft.commands.CommandBuildContext;
@@ -20,6 +21,7 @@ public class ParcelsCommand {
             .requires(MinecraftPermissions.require(PermissionLevel.ALL))
             .then(CreateSubcommand.build())
             .then(FormatsSubcommand.build())
+            .then(ImportSubcommand.build())
             .then(OperationsSubcommand.build())
             .then(RepositoriesSubcommand.build());
 

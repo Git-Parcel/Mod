@@ -24,13 +24,26 @@ public final class ParcelRepositoryService {
       GitRepo.CommitIdentity identity)
       throws IOException, ParcelException {
     var location = ParcelStorage.resolveRepositoryLocation(parcel, internalParcelsDir);
+    return commit(parcel, location, message, identity);
+  }
+
+  public static Optional<GitRepo.CommitInfo> commit(
+      Parcel parcel,
+      ParcelStorage.RepositoryLocation location,
+      String message,
+      GitRepo.CommitIdentity identity)
+      throws IOException, ParcelException {
     if (!Files.isRegularFile(location.parcelDirectory().resolve("parcel.json"))) {
       throw new ParcelException("Parcel has not been saved; run save before commit");
     }
 
     try {
+      List<String> commitPaths =
+          location.sharedRepository() == null
+              ? List.of(location.gitPath())
+              : List.of(location.gitPath(), "meta.json");
       return GitRepo.get(location.repository())
-          .commit(location.gitPath(), message, identity);
+          .commit(commitPaths, message, identity);
     } catch (GitAPIException e) {
       throw new ParcelException("Git commit failed", e);
     }
@@ -40,6 +53,12 @@ public final class ParcelRepositoryService {
       Parcel parcel, Path internalParcelsDir, int limit)
       throws IOException, ParcelException {
     var location = ParcelStorage.resolveRepositoryLocation(parcel, internalParcelsDir);
+    return history(location, limit);
+  }
+
+  public static List<GitRepo.CommitInfo> history(
+      ParcelStorage.RepositoryLocation location, int limit)
+      throws IOException, ParcelException {
     try {
       return GitRepo.get(location.repository()).history(location.gitPath(), limit);
     } catch (GitAPIException e) {
@@ -59,6 +78,16 @@ public final class ParcelRepositoryService {
       boolean ignoreEntities)
       throws IOException, ParcelException {
     var location = ParcelStorage.resolveRepositoryLocation(parcel, internalParcelsDir);
+    restore(level, parcel, location, revision, ignoreEntities);
+  }
+
+  public static void restore(
+      ServerLevel level,
+      Parcel parcel,
+      ParcelStorage.RepositoryLocation location,
+      String revision,
+      boolean ignoreEntities)
+      throws IOException, ParcelException {
     Path temporaryRoot = Files.createTempDirectory("gitparcel-restore-");
     Path snapshot = temporaryRoot.resolve("parcel");
 
@@ -91,7 +120,7 @@ public final class ParcelRepositoryService {
     }
   }
 
-  static void validateGeometry(ParcelMeta current, ParcelMeta restored)
+  public static void validateGeometry(ParcelMeta current, ParcelMeta restored)
       throws ParcelException {
     if (!current.size().equals(restored.size())
         || !current.anchor().equals(restored.anchor())) {

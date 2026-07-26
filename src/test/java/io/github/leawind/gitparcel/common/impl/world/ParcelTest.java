@@ -267,6 +267,12 @@ public class ParcelTest extends AbstractGitParcelTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> new Parcel.ParcelLocation(Path.of("repo"), Path.of("")));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new Parcel.ParcelLocation(Path.of("repo"), Path.of(".git", "parcel")));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Parcel.ParcelLocation.shared("shared", Path.of("meta.json", "parcel")));
   }
 
   @Test
@@ -281,5 +287,38 @@ public class ParcelTest extends AbstractGitParcelTest {
     assertEquals(
         Path.of("custom", "repository", "parcels", "example"),
         location.getParcelPath());
+  }
+
+  @Test
+  void serializesAndResolvesSymbolicSharedRepositoryLocation() {
+    var location =
+        Parcel.ParcelLocation.shared(
+            "community-builds", Path.of("villages", "spawn"));
+    var encoded =
+        Parcel.ParcelLocation.CODEC
+            .encodeStart(JsonOps.INSTANCE, location)
+            .getOrThrow();
+    var decoded =
+        Parcel.ParcelLocation.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow();
+
+    assertEquals(location, decoded);
+    assertEquals("community-builds", decoded.sharedRepository().orElseThrow());
+    assertThrows(IllegalStateException.class, decoded::getParcelPath);
+
+    var parcel =
+        ParcelFactory.create(
+            new BoundingBox(0, 0, 0, 1, 1, 1),
+            Mirror.NONE,
+            Rotation.NONE);
+    parcel.setLocation(decoded);
+    var resolved =
+        ParcelStorage.resolveRepositoryLocation(
+            parcel,
+            Path.of("internal"),
+            Path.of("shared"));
+    assertEquals(
+        Path.of("shared", "community-builds"), resolved.repository());
+    assertEquals(Path.of("villages", "spawn"), resolved.relative());
+    assertEquals("community-builds", resolved.sharedRepository());
   }
 }

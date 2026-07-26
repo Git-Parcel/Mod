@@ -8,6 +8,8 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -185,28 +187,47 @@ public final class GitRepo {
   public synchronized Optional<CommitInfo> commit(
       String repositoryRelativePath, String message, CommitIdentity identity)
       throws IOException, GitAPIException {
-    String gitPath = validateGitPath(repositoryRelativePath);
+    return commit(List.of(repositoryRelativePath), message, identity);
+  }
+
+  /** Stages and commits changes below one or more repository-relative paths. */
+  public synchronized Optional<CommitInfo> commit(
+      Collection<String> repositoryRelativePaths,
+      String message,
+      CommitIdentity identity)
+      throws IOException, GitAPIException {
+    if (repositoryRelativePaths == null || repositoryRelativePaths.isEmpty()) {
+      throw new IllegalArgumentException("At least one Git path is required");
+    }
+    var gitPaths = new LinkedHashSet<String>();
+    repositoryRelativePaths.forEach(path -> gitPaths.add(validateGitPath(path)));
     Objects.requireNonNull(identity, "identity");
     if (message == null || message.isBlank()) {
       throw new IllegalArgumentException("Commit message must not be blank");
     }
 
     try (Git git = openOrInit()) {
-      git.add().addFilepattern(gitPath).call();
-      git.add().setUpdate(true).addFilepattern(gitPath).call();
+      for (String gitPath : gitPaths) {
+        git.add().addFilepattern(gitPath).call();
+        git.add().setUpdate(true).addFilepattern(gitPath).call();
+      }
 
-      if (git.status().addPath(gitPath).call().isClean()) {
+      boolean clean = true;
+      for (String gitPath : gitPaths) {
+        clean &= git.status().addPath(gitPath).call().isClean();
+      }
+      if (clean) {
         return Optional.empty();
       }
 
       var person = new PersonIdent(identity.name(), identity.email());
-      RevCommit commit =
+      var command =
           git.commit()
-              .setOnly(gitPath)
               .setMessage(message)
               .setAuthor(person)
-              .setCommitter(person)
-              .call();
+              .setCommitter(person);
+      gitPaths.forEach(command::setOnly);
+      RevCommit commit = command.call();
       return Optional.of(toInfo(commit));
     }
   }

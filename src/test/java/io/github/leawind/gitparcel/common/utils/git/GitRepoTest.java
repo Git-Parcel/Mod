@@ -145,4 +145,29 @@ class GitRepoTest {
     Files.writeString(second.path().resolve("parcel/dirty.txt"), "dirty");
     assertThrows(IOException.class, () -> second.pull(null));
   }
+
+  @Test
+  void oneCommitCanAtomicallyIncludeParcelAndRepositoryMetadata() throws Exception {
+    Path repositoryDir = tempDir.resolve("shared");
+    Files.createDirectories(repositoryDir.resolve("parcels/example"));
+    Files.writeString(
+        repositoryDir.resolve("parcels/example/parcel.json"), "parcel");
+    Files.writeString(repositoryDir.resolve("meta.json"), "metadata");
+    GitRepo repository = GitRepo.get(repositoryDir);
+
+    var commit =
+        repository
+            .commit(
+                java.util.List.of("parcels/example", "meta.json"),
+                "Publish parcel",
+                IDENTITY)
+            .orElseThrow();
+
+    assertEquals(
+        commit.revision(),
+        repository.history("parcels/example", 1).getFirst().revision());
+    assertEquals(
+        commit.revision(),
+        repository.history("meta.json", 1).getFirst().revision());
+  }
 }
