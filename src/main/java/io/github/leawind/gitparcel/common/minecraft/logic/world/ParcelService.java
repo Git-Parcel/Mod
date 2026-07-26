@@ -11,6 +11,7 @@ import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
 import io.github.leawind.gitparcel.common.platform.api.Services;
 import io.github.leawind.gitparcel.common.utils.git.GitRepo;
 import io.github.leawind.gitparcel.server.minecraft.logic.storage.StorageUtils;
+import io.github.leawind.gitparcel.server.minecraft.logic.storage.shared.SharedContent;
 import io.github.leawind.gitparcel.server.minecraft.logic.storage.shared.SharedRepositoryService;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,6 +24,7 @@ import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.Block;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -211,11 +213,48 @@ public final class ParcelService {
         throw new ParcelException("Shared parcel path already exists: " + gitPath);
       }
 
-      ParcelStorage.save(level, parcel, location.parcelDirectory(), ignoreEntities);
-      lease.content().addParcelPath(repository, gitPath);
+      var metaSnapshot = lease.content().snapshotRepoMeta(repository);
+      GitRepo.CommitInfo commit;
+      try {
+        ParcelStorage.save(level, parcel, location.parcelDirectory(), ignoreEntities);
+        lease.content().addParcelPath(repository, gitPath);
+        commit =
+            ParcelRepositoryService.commit(parcel, location, message, identity)
+                .orElseThrow(
+                    () ->
+                        new ParcelException(
+                            "Published snapshot produced no Git changes"));
+      } catch (IOException | ParcelException | RuntimeException e) {
+        rollbackPublish(lease, repository, location, metaSnapshot, e);
+        throw e;
+      }
       parcel.setLocation(Parcel.ParcelLocation.shared(repository, relative));
       updateParcel(parcel);
-      return ParcelRepositoryService.commit(parcel, location, message, identity);
+      return Optional.of(commit);
+    }
+  }
+
+  private static void rollbackPublish(
+      SharedRepositoryService.RepositoryLease lease,
+      String repository,
+      ParcelStorage.RepositoryLocation location,
+      SharedContent.RepoMetaSnapshot metaSnapshot,
+      Exception original) {
+    try {
+      ParcelStorage.deleteRecursivelyIfExists(location.parcelDirectory());
+    } catch (IOException cleanupFailure) {
+      original.addSuppressed(cleanupFailure);
+    }
+    try {
+      lease.content().restoreRepoMeta(repository, metaSnapshot);
+    } catch (IOException cleanupFailure) {
+      original.addSuppressed(cleanupFailure);
+    }
+    try {
+      GitRepo.get(location.repository())
+          .resetIndexPaths(List.of(location.gitPath(), "meta.json"));
+    } catch (IOException | GitAPIException cleanupFailure) {
+      original.addSuppressed(cleanupFailure);
     }
   }
 

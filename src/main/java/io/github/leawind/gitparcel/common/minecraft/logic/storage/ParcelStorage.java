@@ -326,7 +326,8 @@ public class ParcelStorage {
     }
   }
 
-  static void deleteRecursivelyIfExists(Path directory) throws IOException {
+  /** Deletes a snapshot tree when cleaning up a temporary or rolled-back operation. */
+  public static void deleteRecursivelyIfExists(Path directory) throws IOException {
     if (Files.exists(directory)) {
       deleteRecursively(directory);
     }

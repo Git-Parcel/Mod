@@ -7,8 +7,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -18,6 +18,8 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.MergeCommand.FastForwardMode;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
+import org.eclipse.jgit.dircache.DirCacheEditor;
+import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.FileMode;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Repository;
@@ -188,6 +190,41 @@ public final class GitRepo {
       String repositoryRelativePath, String message, CommitIdentity identity)
       throws IOException, GitAPIException {
     return commit(List.of(repositoryRelativePath), message, identity);
+  }
+
+  /** Restores selected index entries to {@code HEAD} without changing the working tree. */
+  public synchronized void resetIndexPaths(Collection<String> repositoryRelativePaths)
+      throws IOException, GitAPIException {
+    if (repositoryRelativePaths == null || repositoryRelativePaths.isEmpty()) {
+      throw new IllegalArgumentException("At least one Git path is required");
+    }
+    var gitPaths = new LinkedHashSet<String>();
+    repositoryRelativePaths.forEach(path -> gitPaths.add(validateGitPath(path)));
+
+    try (Git git = requireOpen()) {
+      if (git.getRepository().resolve(Constants.HEAD) != null) {
+        var reset = git.reset();
+        gitPaths.forEach(reset::addPath);
+        reset.call();
+      } else {
+        var cache = git.getRepository().lockDirCache();
+        try {
+          var indexedPaths = new ArrayList<String>();
+          for (int i = 0; i < cache.getEntryCount(); i++) {
+            String indexedPath = cache.getEntry(i).getPathString();
+            if (gitPaths.stream()
+                .anyMatch(path -> indexedPath.equals(path) || indexedPath.startsWith(path + "/"))) {
+              indexedPaths.add(indexedPath);
+            }
+          }
+          var editor = cache.editor();
+          indexedPaths.forEach(path -> editor.add(new DirCacheEditor.DeletePath(path)));
+          editor.commit();
+        } finally {
+          cache.unlock();
+        }
+      }
+    }
   }
 
   /** Stages and commits changes below one or more repository-relative paths. */

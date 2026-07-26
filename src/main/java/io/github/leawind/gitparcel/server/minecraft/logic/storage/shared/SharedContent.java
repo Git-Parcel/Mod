@@ -6,11 +6,13 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -242,6 +244,26 @@ public final class SharedContent {
     saveRepoMeta(repoName, List.copyOf(paths));
   }
 
+  /** Captures repository metadata so a multi-file operation can restore it after failure. */
+  public synchronized RepoMetaSnapshot snapshotRepoMeta(String repoName) throws IOException {
+    Path file = getRepoMetaFile(repoName);
+    return Files.exists(file)
+        ? new RepoMetaSnapshot(Files.readAllBytes(file))
+        : new RepoMetaSnapshot(null);
+  }
+
+  /** Restores an exact metadata snapshot, including the absence of the metadata file. */
+  public synchronized void restoreRepoMeta(String repoName, RepoMetaSnapshot snapshot)
+      throws IOException {
+    validateRepositoryName(repoName);
+    var file = getRepoMetaFile(repoName);
+    if (snapshot.content() == null) {
+      Files.deleteIfExists(file);
+    } else {
+      writeAtomically(file, snapshot.content());
+    }
+  }
+
   /**
    * Gets the path to a repository directory.
    *
@@ -313,11 +335,15 @@ public final class SharedContent {
   }
 
   private static void writeAtomically(Path file, String content) throws IOException {
+    writeAtomically(file, content.getBytes(StandardCharsets.UTF_8));
+  }
+
+  private static void writeAtomically(Path file, byte[] content) throws IOException {
     Files.createDirectories(file.getParent());
     Path temporary =
         Files.createTempFile(file.getParent(), "." + file.getFileName() + ".", ".tmp");
     try {
-      Files.writeString(temporary, content);
+      Files.write(temporary, content);
       try {
         Files.move(
             temporary,
@@ -329,6 +355,17 @@ public final class SharedContent {
       }
     } finally {
       Files.deleteIfExists(temporary);
+    }
+  }
+
+  public record RepoMetaSnapshot(@Nullable byte[] content) {
+    public RepoMetaSnapshot {
+      content = content == null ? null : Arrays.copyOf(content, content.length);
+    }
+
+    @Override
+    public byte @Nullable [] content() {
+      return content == null ? null : Arrays.copyOf(content, content.length);
     }
   }
 

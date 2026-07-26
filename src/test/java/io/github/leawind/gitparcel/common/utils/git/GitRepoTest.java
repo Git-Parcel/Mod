@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.ConfigConstants;
 import org.eclipse.jgit.transport.RefSpec;
@@ -169,5 +170,44 @@ class GitRepoTest {
     assertEquals(
         commit.revision(),
         repository.history("meta.json", 1).getFirst().revision());
+  }
+
+  @Test
+  void resetsPublicationPathsInUnbornAndExistingRepositories() throws Exception {
+    Path unbornDir = tempDir.resolve("unborn");
+    GitRepo unborn = GitRepo.get(unbornDir);
+    unborn.initialize();
+    Files.createDirectories(unbornDir.resolve("parcel"));
+    Files.writeString(unbornDir.resolve("parcel/parcel.json"), "new");
+    Files.writeString(unbornDir.resolve("meta.json"), "new");
+    try (Git git = Git.open(unbornDir.toFile())) {
+      git.add().addFilepattern("parcel").call();
+      git.add().addFilepattern("meta.json").call();
+    }
+    Files.delete(unbornDir.resolve("parcel/parcel.json"));
+    Files.delete(unbornDir.resolve("meta.json"));
+    unborn.resetIndexPaths(List.of("parcel", "meta.json"));
+    try (Git git = Git.open(unbornDir.toFile())) {
+      assertFalse(git.status().call().hasUncommittedChanges());
+    }
+
+    Path existingDir = tempDir.resolve("existing");
+    Files.createDirectories(existingDir.resolve("parcel"));
+    Files.writeString(existingDir.resolve("parcel/parcel.json"), "old");
+    Files.writeString(existingDir.resolve("meta.json"), "old");
+    GitRepo existing = GitRepo.get(existingDir);
+    existing.commit(List.of("parcel", "meta.json"), "Initial", IDENTITY).orElseThrow();
+    Files.writeString(existingDir.resolve("parcel/parcel.json"), "new");
+    Files.writeString(existingDir.resolve("meta.json"), "new");
+    try (Git git = Git.open(existingDir.toFile())) {
+      git.add().addFilepattern("parcel").call();
+      git.add().addFilepattern("meta.json").call();
+    }
+    Files.writeString(existingDir.resolve("parcel/parcel.json"), "old");
+    Files.writeString(existingDir.resolve("meta.json"), "old");
+    existing.resetIndexPaths(List.of("parcel", "meta.json"));
+    try (Git git = Git.open(existingDir.toFile())) {
+      assertFalse(git.status().call().hasUncommittedChanges());
+    }
   }
 }
