@@ -1,8 +1,8 @@
 package io.github.leawind.gitparcel.common.minecraft.logic.portable;
 
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelDataProcessor;
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelProcessorContext;
+import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessor;
+import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.SemanticData;
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.painting.Painting;
 
 /** Preserves a painting's wall attachment and facing in parcel space. */
-public final class PaintingDataProcessor implements ParcelDataProcessor {
+public final class PaintingRecordProcessor implements ParcelRecordProcessor {
   public static final Identifier ID = Identifier.fromNamespaceAndPath("gitparcel", "painting");
 
   @Override
@@ -24,12 +24,12 @@ public final class PaintingDataProcessor implements ParcelDataProcessor {
 
   @Override
   public Set<Identifier> runAfter() {
-    return Set.of(MinecraftCoreDataProcessor.ID);
+    return Set.of(MinecraftCoreRecordProcessor.ID);
   }
 
   @Override
   public EntityRecord captureEntity(
-      ParcelProcessorContext context, Entity source, EntityRecord record) {
+      ParcelRecordProcessorContext context, Entity source, EntityRecord record) {
     if (!(source instanceof Painting painting)) {
       return record;
     }
@@ -42,7 +42,7 @@ public final class PaintingDataProcessor implements ParcelDataProcessor {
   }
 
   @Override
-  public EntityRecord restoreEntity(ParcelProcessorContext context, EntityRecord record)
+  public EntityRecord restoreEntity(ParcelRecordProcessorContext context, EntityRecord record)
       throws ParcelException {
     for (SemanticData semantic : record.semanticData()) {
       if (!semantic.processor().equals(ID)) {

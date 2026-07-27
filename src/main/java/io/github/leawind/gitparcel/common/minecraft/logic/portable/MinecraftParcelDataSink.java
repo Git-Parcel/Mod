@@ -2,13 +2,13 @@ package io.github.leawind.gitparcel.common.minecraft.logic.portable;
 
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentTypeRegistry;
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelDataProcessorRegistry;
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelProcessorContext;
+import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
+import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockSection;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
-import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentSink;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSink;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
 import io.github.leawind.gitparcel.common.minecraft.logic.transform.ParcelBlockTransform;
@@ -24,7 +24,7 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.storage.TagValueInput;
 
 /** Places portable parcel records into a server level. */
-public final class MinecraftParcelContentSink implements ParcelContentSink {
+public final class MinecraftParcelDataSink implements ParcelDataSink {
   private final ServerLevelAccessor level;
   private final ParcelSpace space;
   private final boolean ignoreBlocks;
@@ -33,11 +33,11 @@ public final class MinecraftParcelContentSink implements ParcelContentSink {
   private final int sourceDataVersion;
   private final ProblemReporter.ScopedCollector reporter =
       new ProblemReporter.ScopedCollector(ParcelStorage.LOGGER);
-  private final ParcelProcessorContext processorContext;
+  private final ParcelRecordProcessorContext processorContext;
   private final ParcelAttachmentSession attachments = new ParcelAttachmentSession();
   private boolean finished;
 
-  public MinecraftParcelContentSink(
+  public MinecraftParcelDataSink(
       ServerLevelAccessor level,
       ParcelSpace space,
       boolean ignoreBlocks,
@@ -50,7 +50,7 @@ public final class MinecraftParcelContentSink implements ParcelContentSink {
     this.ignoreEntities = ignoreEntities;
     this.blockUpdateFlags = blockUpdateFlags;
     this.sourceDataVersion = sourceDataVersion;
-    this.processorContext = new ParcelProcessorContext(level, space, attachments);
+    this.processorContext = new ParcelRecordProcessorContext(level, space, attachments);
   }
 
   @Override
@@ -104,7 +104,7 @@ public final class MinecraftParcelContentSink implements ParcelContentSink {
                   sourceDataVersion),
               original.semanticData());
       validateSemanticData(record.semanticData());
-      for (var processor : ParcelDataProcessorRegistry.get().orderedProcessors()) {
+      for (var processor : ParcelRecordProcessorRegistry.get().orderedProcessors()) {
         record = processor.restoreBlockEntity(processorContext, record);
       }
       var worldPos = space.toWorld(record.pos());
@@ -134,7 +134,7 @@ public final class MinecraftParcelContentSink implements ParcelContentSink {
                 sourceDataVersion),
             original.semanticData());
     validateSemanticData(record.semanticData());
-    for (var processor : ParcelDataProcessorRegistry.get().orderedProcessors()) {
+    for (var processor : ParcelRecordProcessorRegistry.get().orderedProcessors()) {
       record = processor.restoreEntity(processorContext, record);
     }
     CompoundTag data = record.data().copy();
@@ -165,7 +165,7 @@ public final class MinecraftParcelContentSink implements ParcelContentSink {
       java.util.List<io.github.leawind.gitparcel.common.api.parcel.content.SemanticData> semantics)
       throws ParcelException {
     for (var semantic : semantics) {
-      if (ParcelDataProcessorRegistry.get().get(semantic.processor()) == null) {
+      if (ParcelRecordProcessorRegistry.get().get(semantic.processor()) == null) {
         throw new ParcelException(
             "Missing required parcel data processor: " + semantic.processor());
       }

@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelProcessorContext;
+import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
@@ -21,7 +21,7 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 
-class PaintingDataProcessorTest extends AbstractMinecraftTest {
+class PaintingRecordProcessorTest extends AbstractMinecraftTest {
   @Test
   void restoresParcelRelativeFacing() throws Exception {
     var space =
@@ -31,12 +31,12 @@ class PaintingDataProcessorTest extends AbstractMinecraftTest {
             new BlockPos(3, 1, 7));
     var payload = new CompoundTag();
     payload.putString("direction", Direction.WEST.getName());
-    var record = record(new SemanticData(PaintingDataProcessor.ID, 0, payload));
+    var record = record(new SemanticData(PaintingRecordProcessor.ID, 0, payload));
 
     var restored =
-        new PaintingDataProcessor()
+        new PaintingRecordProcessor()
             .restoreEntity(
-                new ParcelProcessorContext(null, space, new ParcelAttachmentSession()),
+                new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession()),
                 record);
 
     assertEquals(
@@ -52,11 +52,11 @@ class PaintingDataProcessorTest extends AbstractMinecraftTest {
     assertThrows(
         ParcelException.class,
         () ->
-            new PaintingDataProcessor()
+            new PaintingRecordProcessor()
                 .restoreEntity(
-                    new ParcelProcessorContext(
+                    new ParcelRecordProcessorContext(
                         null, ParcelSpaceTestValues.IDENTITY, new ParcelAttachmentSession()),
-                    record(new SemanticData(PaintingDataProcessor.ID, 99, payload))));
+                    record(new SemanticData(PaintingRecordProcessor.ID, 99, payload))));
   }
 
   private static EntityRecord record(SemanticData semantic) {

@@ -1,16 +1,16 @@
 package io.github.leawind.gitparcel.common.minecraft.logic.portable;
 
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelDataProcessorRegistry;
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelProcessorContext;
+import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
+import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockSection;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
-import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentConsumer;
-import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentSource;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataConsumer;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSource;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
-import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.utils.ParcellaUtils;
+import io.github.leawind.gitparcel.common.impl.parcel.BlockSectionPartitioner;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
 import io.github.leawind.gitparcel.common.minecraft.logic.transform.ParcelBlockTransform;
 import io.github.leawind.gitparcel.common.impl.extension.attachment.ParcelAttachmentSession;
@@ -33,7 +33,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /** Lazily captures a level into portable parcel records. */
-public final class MinecraftParcelContentSource implements ParcelContentSource {
+public final class MinecraftParcelDataSource implements ParcelDataSource {
   private final Level level;
   private final Vec3i size;
   private final Vec3i anchor;
@@ -41,7 +41,7 @@ public final class MinecraftParcelContentSource implements ParcelContentSource {
   private final boolean ignoreEntities;
   private final ParcelAttachmentSession attachments = new ParcelAttachmentSession();
 
-  public MinecraftParcelContentSource(
+  public MinecraftParcelDataSource(
       Level level, Vec3i size, Vec3i anchor, ParcelSpace space, boolean ignoreEntities) {
     this.level = level;
     this.size = size;
@@ -52,24 +52,24 @@ public final class MinecraftParcelContentSource implements ParcelContentSource {
 
   @Override
   public void forEachBlockSection(
-      int sectionSize, ParcelContentConsumer<BlockSection> consumer)
+      int sectionSize, ParcelDataConsumer<BlockSection> consumer)
       throws IOException, ParcelException {
-    var processorContext = new ParcelProcessorContext(level, space, attachments);
-    var processors = ParcelDataProcessorRegistry.get().orderedProcessors();
-    for (var subparcel : ParcellaUtils.subdivideParcel(size, anchor, sectionSize)) {
+    var processorContext = new ParcelRecordProcessorContext(level, space, attachments);
+    var processors = ParcelRecordProcessorRegistry.get().orderedProcessors();
+    for (var section : BlockSectionPartitioner.partition(size, anchor, sectionSize)) {
       var states =
           new ArrayList<net.minecraft.world.level.block.state.BlockState>(
-              subparcel.sizeX * subparcel.sizeY * subparcel.sizeZ);
+              section.size().getX() * section.size().getY() * section.size().getZ());
       var blockEntities = new ArrayList<BlockEntityRecord>();
       BlockPos relativeOrigin =
           new BlockPos(
-              subparcel.originX - anchor.getX(),
-              subparcel.originY - anchor.getY(),
-              subparcel.originZ - anchor.getZ());
+              section.origin().getX() - anchor.getX(),
+              section.origin().getY() - anchor.getY(),
+              section.origin().getZ() - anchor.getZ());
 
-      for (int x = 0; x < subparcel.sizeX; x++) {
-        for (int y = 0; y < subparcel.sizeY; y++) {
-          for (int z = 0; z < subparcel.sizeZ; z++) {
+      for (int x = 0; x < section.size().getX(); x++) {
+        for (int y = 0; y < section.size().getY(); y++) {
+          for (int z = 0; z < section.size().getZ(); z++) {
             BlockPos relativePos = relativeOrigin.offset(x, y, z);
             BlockPos worldPos = space.toWorld(relativePos);
             states.add(
@@ -92,20 +92,20 @@ public final class MinecraftParcelContentSource implements ParcelContentSource {
       consumer.accept(
           new BlockSection(
               relativeOrigin,
-              new Vec3i(subparcel.sizeX, subparcel.sizeY, subparcel.sizeZ),
+              section.size(),
               states,
               blockEntities));
     }
   }
 
   @Override
-  public void forEachEntity(ParcelContentConsumer<EntityRecord> consumer)
+  public void forEachEntity(ParcelDataConsumer<EntityRecord> consumer)
       throws IOException, ParcelException {
     if (ignoreEntities) {
       return;
     }
-    var processorContext = new ParcelProcessorContext(level, space, attachments);
-    var processors = ParcelDataProcessorRegistry.get().orderedProcessors();
+    var processorContext = new ParcelRecordProcessorContext(level, space, attachments);
+    var processors = ParcelRecordProcessorRegistry.get().orderedProcessors();
     AABB bounds = worldBounds();
     List<Entity> entities =
         level.getEntities(
@@ -140,7 +140,7 @@ public final class MinecraftParcelContentSource implements ParcelContentSource {
   }
 
   @Override
-  public void forEachAttachment(ParcelContentConsumer<AttachmentRecord> consumer)
+  public void forEachAttachment(ParcelDataConsumer<AttachmentRecord> consumer)
       throws IOException, ParcelException {
     for (AttachmentRecord attachment : attachments.captured()) {
       consumer.accept(attachment);

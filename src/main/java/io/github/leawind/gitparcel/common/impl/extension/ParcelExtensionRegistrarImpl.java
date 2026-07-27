@@ -3,8 +3,8 @@ package io.github.leawind.gitparcel.common.impl.extension;
 import io.github.leawind.gitparcel.common.api.extension.ParcelExtensionRegistrar;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentType;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentTypeRegistry;
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelDataProcessor;
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelDataProcessorRegistry;
+import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessor;
+import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import java.util.Set;
 
 final class ParcelExtensionRegistrarImpl implements ParcelExtensionRegistrar {
   private final List<ParcelFormat.Impl<?>> formats = new ArrayList<>();
-  private final List<ParcelDataProcessor> processors = new ArrayList<>();
+  private final List<ParcelRecordProcessor> processors = new ArrayList<>();
   private final List<ParcelAttachmentType> attachmentTypes = new ArrayList<>();
 
   @Override
@@ -23,7 +23,7 @@ final class ParcelExtensionRegistrarImpl implements ParcelExtensionRegistrar {
   }
 
   @Override
-  public void registerProcessor(ParcelDataProcessor processor) {
+  public void registerProcessor(ParcelRecordProcessor processor) {
     processors.add(processor);
   }
 
@@ -59,7 +59,7 @@ final class ParcelExtensionRegistrarImpl implements ParcelExtensionRegistrar {
 
     for (var processor : processors) {
       if (!processorIds.add(processor.id())
-          || ParcelDataProcessorRegistry.get().get(processor.id()) != null) {
+          || ParcelRecordProcessorRegistry.get().get(processor.id()) != null) {
         throw new IllegalArgumentException("duplicate processor: " + processor.id());
       }
     }
@@ -73,7 +73,7 @@ final class ParcelExtensionRegistrarImpl implements ParcelExtensionRegistrar {
     for (var format : formats) {
       registerUnchecked(registry, format);
     }
-    processors.forEach(ParcelDataProcessorRegistry.get()::register);
+    processors.forEach(ParcelRecordProcessorRegistry.get()::register);
     attachmentTypes.forEach(ParcelAttachmentTypeRegistry.get()::register);
   }
 

@@ -276,7 +276,9 @@ config.json        # 格式无配置时可以不存在
 data/
 ```
 
-运行时负责 `parcel.json`、格式配置和根目录生命周期；具体 `ParcelFormat` 只在上下文提供的 `data/` 根路径下读写。写入器把世界无关的 `ParcelContentSource` 编码为文件树，读取器把文件树解码到 `ParcelContentSink`。
+运行时负责 `parcel.json`、格式配置和根目录生命周期；具体 `ParcelFormat` 只在上下文提供的 `data/` 根路径下读写。写入器把世界无关的 `ParcelDataSource` 编码为文件树，读取器把文件树解码到 `ParcelDataSink`。领域层以 `ParcelDataComponent` 标识方块、实体、附件等语义组件；格式实现负责把组件映射到自己的文件布局。
+
+Parcella 约定每个组件独占 `data/<type>/` 子树，但不规定子树内部必须按 section 或记录切分。方块可以按 section 流式存储，实体可以按记录存储，地图等数据也可以在自己的组件目录内集中存储。`ParcellaComponentCodec` 是这种映射的格式层实现，不能反向成为领域概念。
 
 格式上下文持有一个目标根 `Path`。该 `Path` 自带所属 `FileSystem`，因此 API 不需要额外接收默认文件系统。所有派生路径必须通过根路径的 `resolve` 或同一 `FileSystem` 创建。
 
@@ -288,7 +290,9 @@ data/
 - 只产生目录和普通文件，不产生符号链接、硬链接、设备或可执行语义。
 - 不依赖 POSIX 权限、文件锁、watch service、原子移动或提供者特有属性。
 - 关闭自己打开的流、channel 和目录迭代器。
-- 在给定的空工作区中写出完整、确定性的结果。
+- 接受空工作区，或者由明确基线提交物化得到的非空工作区；允许读取已有内容以维持稳定 ID 和文件布局。
+- 将工作区协调成完整结果：旧文件只有被组件明确保留或重新产生时才能进入新快照，不能残留已失效的数据。
+- 对相同的“基线树、当前 parcel 数据和配置”写出确定性的结果。
 
 支持目标的最低能力是创建目录、读写普通文件、列出目录、删除文件和顺序流式 I/O。只读文件系统只能作为读取源。原子替换是工作区或最终存储层的职责，不是格式能力。
 
@@ -300,6 +304,8 @@ JGit `FileRepository` 不支持任意 NIO `FileSystem`，格式也不应直接�
 世界内容 -> ParcelFormat -> NIO 临时文件树 -> 校验 -> Git blob/tree/commit
 世界内容 <- ParcelFormat <- NIO 临时文件树 <- 校验/导出 <- Git commit tree
 ```
+
+保存已有 parcel 时，运行时先把 `refs/gitparcel/current` 指向的 commit tree 导出到临时工作区，并记住该 commit 作为基线；格式随后在这个非空工作区上更新数据。提交阶段必须再次确认 current ref 仍等于该基线，新 commit 也必须以它为父提交。基线已经变化时丢弃本次工作区并报告并发更新，不能把基于旧树生成的结果改挂到新父提交。
 
 工作区可以来自默认文件系统、Jimfs、ZipFS 或其他满足契约的提供者。JGit 仓库始终留在其固定世界目录中；这里只把单次快照的普通文件流式写成 Git 对象，或者把一个 commit tree 流式导出到工作区，绝不复制、checkout 或重建整个仓库。
 
@@ -342,7 +348,7 @@ result/error summary
 
 保存和加载的顶层阶段由用例层报告，例如世界捕获、格式编码、Git 对象写入、Git tree 读取、格式解码和世界放置。不同单位不能直接相加成虚假的总百分比；只有用例明确知道各阶段权重时才提供整体百分比，否则 UI 展示当前阶段和不确定进度。
 
-`ParcelFormat.WriteContext` 和 `ParcelFormat.ReadContext` 始终提供非空 `ProgressReporter`，不需要跟踪时由调用者传入无操作实现。格式可以报告子阶段、已处理数量和可选总量，也可以完全忽略 reporter；未报告时操作仍正常执行，外层阶段显示为不确定进度。`ParcelContentSource`、`ParcelContentSink` 和 Git 工作区桥接器也可以使用同一 reporter 建立子任务。
+`ParcelFormat.WriteContext` 和 `ParcelFormat.ReadContext` 始终提供非空 `ProgressReporter`，不需要跟踪时由调用者传入无操作实现。格式可以报告子阶段、已处理数量和可选总量，也可以完全忽略 reporter；未报告时操作仍正常执行，外层阶段显示为不确定进度。`ParcelDataSource`、`ParcelDataSink` 和 Git 工作区桥接器也可以使用同一 reporter 建立子任务。
 
 进度回调必须满足：
 
@@ -521,7 +527,7 @@ pull 和 fetch 只更新外部仓库。把更新后的内容带入世界必须�
 当前架构中值得保留的方向包括：
 
 - 服务端权威和客户端只读镜像。
-- `ParcelContentSource` / `ParcelContentSink` 与格式编解码分离。
+- `ParcelDataSource` / `ParcelDataSink` 与格式编解码分离。
 - 格式上下文使用 `Path`，内置 Parcella 主要使用 `Files` API。
 - `GitRepo` 已经集中了一部分内部和共享仓库可复用的 JGit 操作。
 - 恢复 Git 历史时直接导出子树而不 checkout 工作树。

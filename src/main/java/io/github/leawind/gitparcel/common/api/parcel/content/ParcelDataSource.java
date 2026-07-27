@@ -9,13 +9,13 @@ import java.io.IOException;
  * <p>Attachments are enumerated after blocks and entities because processors may discover them
  * while those records are captured.
  */
-public interface ParcelContentSource {
-  void forEachBlockSection(int sectionSize, ParcelContentConsumer<BlockSection> consumer)
+public interface ParcelDataSource {
+  void forEachBlockSection(int sectionSize, ParcelDataConsumer<BlockSection> consumer)
       throws IOException, ParcelException;
 
-  void forEachEntity(ParcelContentConsumer<EntityRecord> consumer)
+  void forEachEntity(ParcelDataConsumer<EntityRecord> consumer)
       throws IOException, ParcelException;
 
-  void forEachAttachment(ParcelContentConsumer<AttachmentRecord> consumer)
+  void forEachAttachment(ParcelDataConsumer<AttachmentRecord> consumer)
       throws IOException, ParcelException;
 }

@@ -2,7 +2,7 @@ package io.github.leawind.gitparcel.common.minecraft.logic.storage;
 
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentTypeRegistry;
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelDataProcessorRegistry;
+import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
 import io.github.leawind.gitparcel.common.api.operation.ProgressReporter;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
@@ -13,13 +13,13 @@ import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockSection;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
-import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentSink;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSink;
 import io.github.leawind.gitparcel.common.api.parcel.content.SemanticData;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
 import io.github.leawind.gitparcel.common.utils.io.NioFileTree;
-import io.github.leawind.gitparcel.common.minecraft.logic.portable.MinecraftParcelContentSink;
-import io.github.leawind.gitparcel.common.minecraft.logic.portable.MinecraftParcelContentSource;
+import io.github.leawind.gitparcel.common.minecraft.logic.portable.MinecraftParcelDataSink;
+import io.github.leawind.gitparcel.common.minecraft.logic.portable.MinecraftParcelDataSource;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -199,16 +199,20 @@ public class ParcelStorage {
     C resolvedConfig = actualConfig;
     replaceDirectory(
         parcelDir,
-        stagingDir ->
-            writeSnapshot(
-                format,
-                level,
-                transform,
-                meta,
-                resolvedConfig,
-                stagingDir,
-                ignoreEntities || meta.getExcludeEntities(),
-                progress));
+        stagingDir -> {
+          if (Files.exists(parcelDir)) {
+            NioFileTree.copyRecursively(parcelDir, stagingDir);
+          }
+          writeSnapshot(
+              format,
+              level,
+              transform,
+              meta,
+              resolvedConfig,
+              stagingDir,
+              ignoreEntities || meta.getExcludeEntities(),
+              progress);
+        });
   }
 
   private static <C extends ParcelFormatConfig<C>> void writeSnapshot(
@@ -224,11 +228,13 @@ public class ParcelStorage {
     meta.save(getMetaFile(parcelDir));
     if (config != null) {
       config.save(getConfigFile(parcelDir));
+    } else {
+      Files.deleteIfExists(getConfigFile(parcelDir));
     }
 
     var space = new ParcelSpace(transform, meta.anchor());
     var source =
-        new MinecraftParcelContentSource(
+        new MinecraftParcelDataSource(
             level, meta.size(), meta.anchor(), space, ignoreEntities);
     format.write(
         new ParcelFormat.WriteContext<>(
@@ -239,9 +245,19 @@ public class ParcelStorage {
             config,
             progress),
         source);
+    try (var entries = Files.newDirectoryStream(parcelDir)) {
+      for (Path entry : entries) {
+        String name = entry.getFileName().toString();
+        if (!name.equals(META_FILE_NAME)
+            && !name.equals(CONFIG_FILE_NAME)
+            && !name.equals(DATA_DIR_NAME)) {
+          NioFileTree.deleteRecursivelyIfExists(entry);
+        }
+      }
+    }
   }
 
-  /** Writes one complete snapshot into an operation-owned empty NIO workspace. */
+  /** Updates an operation-owned NIO workspace into one complete snapshot. */
   @SuppressWarnings("unchecked")
   public static <C extends ParcelFormatConfig<C>> void captureSnapshot(
       Level level,
@@ -250,13 +266,6 @@ public class ParcelStorage {
       boolean ignoreEntities,
       ProgressReporter progress)
       throws IOException, ParcelException {
-    if (Files.exists(snapshotRoot)) {
-      try (var entries = Files.list(snapshotRoot)) {
-        if (entries.findAny().isPresent()) {
-          throw new IOException("Snapshot workspace must be empty: " + snapshotRoot);
-        }
-      }
-    }
     Files.createDirectories(snapshotRoot);
     ParcelFormat.Writer<C> format =
         (ParcelFormat.Writer<C>)
@@ -523,7 +532,7 @@ public class ParcelStorage {
           .forEach(Entity::discard);
     }
     var sink =
-        new MinecraftParcelContentSink(
+        new MinecraftParcelDataSink(
             level,
             space,
             ignoreBlocks,
@@ -586,7 +595,7 @@ public class ParcelStorage {
     return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
   }
 
-  private static final class SnapshotValidationSink implements ParcelContentSink {
+  private static final class SnapshotValidationSink implements ParcelDataSink {
     @Override
     public void acceptAttachment(AttachmentRecord attachment) throws ParcelException {
       var type = ParcelAttachmentTypeRegistry.get().get(attachment.type());
@@ -619,7 +628,7 @@ public class ParcelStorage {
     private static void validateSemanticData(java.util.List<SemanticData> semantics)
         throws ParcelException {
       for (var semantic : semantics) {
-        if (ParcelDataProcessorRegistry.get().get(semantic.processor()) == null) {
+        if (ParcelRecordProcessorRegistry.get().get(semantic.processor()) == null) {
           throw new ParcelException(
               "Missing required parcel data processor: " + semantic.processor());
         }

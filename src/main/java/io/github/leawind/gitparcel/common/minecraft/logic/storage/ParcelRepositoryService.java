@@ -68,6 +68,9 @@ public final class ParcelRepositoryService {
       throws IOException, ParcelException {
     try (var workspace = workspaceFactory.create()) {
       Path snapshotRoot = workspace.root().resolve("snapshot");
+      var repository = repository(parcel, internalParcelsDir);
+      Optional<SnapshotId> baseline =
+          repository.prepareSnapshotWorkspace(snapshotRoot, progress);
       captureSnapshot(level, parcel, snapshotRoot, ignoreEntities, progress);
       return saveWorkspaceSnapshot(
           parcel,
@@ -77,7 +80,8 @@ public final class ParcelRepositoryService {
           description,
           identity,
           source,
-          progress);
+          progress,
+          baseline);
     }
   }
 
@@ -103,6 +107,30 @@ public final class ParcelRepositoryService {
       SnapshotNode.Source source,
       ProgressReporter progress)
       throws IOException {
+    InternalRepository repository = repository(parcel, internalParcelsDir);
+    return saveWorkspaceSnapshot(
+        parcel,
+        internalParcelsDir,
+        snapshotRoot,
+        name,
+        description,
+        identity,
+        source,
+        progress,
+        repository.current());
+  }
+
+  public static SnapshotId saveWorkspaceSnapshot(
+      Parcel parcel,
+      Path internalParcelsDir,
+      Path snapshotRoot,
+      String name,
+      String description,
+      GitRepo.CommitIdentity identity,
+      SnapshotNode.Source source,
+      ProgressReporter progress,
+      Optional<SnapshotId> expectedParent)
+      throws IOException {
     var metadata =
         new InternalRepository.SaveMetadata(
             name,
@@ -111,7 +139,18 @@ public final class ParcelRepositoryService {
             SERVER_IDENTITY,
             source,
             Instant.now());
-    return repository(parcel, internalParcelsDir).saveSnapshot(snapshotRoot, metadata, progress);
+    return repository(parcel, internalParcelsDir)
+        .saveSnapshot(snapshotRoot, expectedParent, metadata, progress);
+  }
+
+  public static Optional<SnapshotId> prepareSnapshotWorkspace(
+      Parcel parcel,
+      Path internalParcelsDir,
+      Path snapshotRoot,
+      ProgressReporter progress)
+      throws IOException {
+    return repository(parcel, internalParcelsDir)
+        .prepareSnapshotWorkspace(snapshotRoot, progress);
   }
 
   public static SnapshotTreePage querySnapshotTree(

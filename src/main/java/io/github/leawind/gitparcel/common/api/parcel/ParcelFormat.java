@@ -4,11 +4,13 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.operation.ProgressReporter;
-import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentSink;
-import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentSource;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataComponent;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSink;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSource;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.EnumSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 import net.minecraft.core.Vec3i;
 import org.jspecify.annotations.NonNull;
@@ -54,18 +56,18 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
     }
   }
 
-  enum Capability {
-    BLOCKS,
-    BLOCK_ENTITIES,
-    ENTITIES,
-    ATTACHMENTS,
+  enum Feature {
     OPAQUE_ATTACHMENTS
   }
 
   Spec spec();
 
-  default EnumSet<Capability> capabilities() {
-    return EnumSet.noneOf(Capability.class);
+  default Set<ParcelDataComponent> dataComponents() {
+    return Set.of();
+  }
+
+  default EnumSet<Feature> features() {
+    return EnumSet.noneOf(Feature.class);
   }
 
   non-sealed interface Impl<C extends ParcelFormatConfig<C>> extends ParcelFormat {
@@ -91,12 +93,12 @@ public sealed interface ParcelFormat permits ParcelFormat.Impl {
     /** Preferred maximum edge length for block sections requested from the content source. */
     int blockSectionSize();
 
-    void write(WriteContext<C> context, ParcelContentSource source)
+    void write(WriteContext<C> context, ParcelDataSource source)
         throws IOException, ParcelException;
   }
 
   interface Reader<C extends ParcelFormatConfig<C>> extends Impl<C> {
-    void read(ReadContext<C> context, ParcelContentSink sink)
+    void read(ReadContext<C> context, ParcelDataSink sink)
         throws IOException, ParcelException;
   }
 

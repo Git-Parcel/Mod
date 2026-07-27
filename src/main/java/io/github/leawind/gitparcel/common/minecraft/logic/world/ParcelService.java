@@ -313,6 +313,9 @@ public final class ParcelService {
     ReentrantLock lock = acquireParcelLock(parcel.uuid());
     try (var workspace = TemporarySnapshotWorkspaceFactory.INSTANCE.create()) {
       Path snapshotRoot = workspace.root().resolve("snapshot");
+      Optional<SnapshotId> baseline =
+          ParcelRepositoryService.prepareSnapshotWorkspace(
+              parcel, internalParcelsDirectory(), snapshotRoot, progress);
       serverThread.run(
           () -> {
             requireRegistered(parcel);
@@ -327,7 +330,8 @@ public final class ParcelService {
           description,
           identity,
           SnapshotNode.Source.SAVED,
-          progress);
+          progress,
+          baseline);
     } finally {
       lock.unlock();
     }
@@ -349,6 +353,9 @@ public final class ParcelService {
       if (mode == RestoreSnapshotRequest.Mode.SAVE_THEN_RESTORE) {
         try (var workspace = TemporarySnapshotWorkspaceFactory.INSTANCE.create()) {
           Path snapshotRoot = workspace.root().resolve("snapshot");
+          Optional<SnapshotId> baseline =
+              ParcelRepositoryService.prepareSnapshotWorkspace(
+                  parcel, internalParcelsDirectory(), snapshotRoot, progress);
           serverThread.run(
               () ->
                   ParcelRepositoryService.captureSnapshot(
@@ -361,7 +368,8 @@ public final class ParcelService {
               "Automatically requested before restoring another snapshot.",
               identity,
               SnapshotNode.Source.SAVED,
-              progress);
+              progress,
+              baseline);
         }
       }
       return ParcelRepositoryService.restoreSnapshot(

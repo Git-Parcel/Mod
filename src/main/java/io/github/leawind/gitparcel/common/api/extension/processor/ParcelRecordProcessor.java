@@ -13,7 +13,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  *
  * <p>Implementations must be stateless. Methods are invoked on the server thread.
  */
-public interface ParcelDataProcessor {
+public interface ParcelRecordProcessor {
   Identifier id();
 
   default Set<Identifier> runAfter() {
@@ -25,23 +25,23 @@ public interface ParcelDataProcessor {
   }
 
   default BlockEntityRecord captureBlockEntity(
-      ParcelProcessorContext context, BlockEntity source, BlockEntityRecord record)
+      ParcelRecordProcessorContext context, BlockEntity source, BlockEntityRecord record)
       throws ParcelException {
     return record;
   }
 
   default BlockEntityRecord restoreBlockEntity(
-      ParcelProcessorContext context, BlockEntityRecord record) throws ParcelException {
+      ParcelRecordProcessorContext context, BlockEntityRecord record) throws ParcelException {
     return record;
   }
 
   default EntityRecord captureEntity(
-      ParcelProcessorContext context, Entity source, EntityRecord record) throws ParcelException {
+      ParcelRecordProcessorContext context, Entity source, EntityRecord record) throws ParcelException {
     return record;
   }
 
   default EntityRecord restoreEntity(
-      ParcelProcessorContext context, EntityRecord record) throws ParcelException {
+      ParcelRecordProcessorContext context, EntityRecord record) throws ParcelException {
     return record;
   }
 }

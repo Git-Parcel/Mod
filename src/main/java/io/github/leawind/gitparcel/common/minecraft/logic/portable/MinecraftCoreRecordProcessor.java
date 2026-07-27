@@ -1,7 +1,7 @@
 package io.github.leawind.gitparcel.common.minecraft.logic.portable;
 
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelDataProcessor;
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelProcessorContext;
+import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessor;
+import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
@@ -16,7 +16,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 
 /** Normalizes vanilla spatial fields shared by all block entities and entities. */
-public final class MinecraftCoreDataProcessor implements ParcelDataProcessor {
+public final class MinecraftCoreRecordProcessor implements ParcelRecordProcessor {
   public static final Identifier ID =
       Identifier.fromNamespaceAndPath("gitparcel", "minecraft_core");
 
@@ -27,7 +27,7 @@ public final class MinecraftCoreDataProcessor implements ParcelDataProcessor {
 
   @Override
   public BlockEntityRecord captureBlockEntity(
-      ParcelProcessorContext context, BlockEntity source, BlockEntityRecord record) {
+      ParcelRecordProcessorContext context, BlockEntity source, BlockEntityRecord record) {
     var data = record.data().copy();
     putBlockPos(data, record.pos());
     return new BlockEntityRecord(record.pos(), data, record.semanticData());
@@ -35,7 +35,7 @@ public final class MinecraftCoreDataProcessor implements ParcelDataProcessor {
 
   @Override
   public BlockEntityRecord restoreBlockEntity(
-      ParcelProcessorContext context, BlockEntityRecord record) {
+      ParcelRecordProcessorContext context, BlockEntityRecord record) {
     var data = record.data().copy();
     putBlockPos(data, context.space().toWorld(record.pos()));
     return new BlockEntityRecord(record.pos(), data, record.semanticData());
@@ -43,7 +43,7 @@ public final class MinecraftCoreDataProcessor implements ParcelDataProcessor {
 
   @Override
   public EntityRecord captureEntity(
-      ParcelProcessorContext context, Entity source, EntityRecord record) {
+      ParcelRecordProcessorContext context, Entity source, EntityRecord record) {
     var data = record.data().copy();
     transformEntityTree(data, context.space(), false);
     putVec3(data, "Pos", record.pos());
@@ -57,7 +57,7 @@ public final class MinecraftCoreDataProcessor implements ParcelDataProcessor {
   }
 
   @Override
-  public EntityRecord restoreEntity(ParcelProcessorContext context, EntityRecord record) {
+  public EntityRecord restoreEntity(ParcelRecordProcessorContext context, EntityRecord record) {
     var data = record.data().copy();
     transformEntityTree(data, context.space(), true);
     putVec3(data, "Pos", context.space().toWorld(record.pos()));

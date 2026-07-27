@@ -4,8 +4,8 @@ import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
-import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentSink;
-import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentSource;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSink;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSource;
 import java.io.IOException;
 import org.junit.jupiter.api.BeforeAll;
 
@@ -38,7 +38,7 @@ public class AbstractGitParcelTest extends AbstractMinecraftTest {
 
     @Override
     public void write(
-        WriteContext<ParcelFormatConfig.None> context, ParcelContentSource source)
+        WriteContext<ParcelFormatConfig.None> context, ParcelDataSource source)
         throws IOException, ParcelException {}
   }
 
@@ -49,7 +49,7 @@ public class AbstractGitParcelTest extends AbstractMinecraftTest {
     }
 
     @Override
-    public void read(ReadContext<ParcelFormatConfig.None> context, ParcelContentSink sink)
+    public void read(ReadContext<ParcelFormatConfig.None> context, ParcelDataSink sink)
         throws IOException, ParcelException {}
   }
 

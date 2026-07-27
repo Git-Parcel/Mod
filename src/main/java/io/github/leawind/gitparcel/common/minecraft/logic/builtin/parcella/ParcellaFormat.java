@@ -4,7 +4,10 @@ import io.github.leawind.gitparcel.common.api.config.ConfigItem;
 import io.github.leawind.gitparcel.common.api.config.ConfigItemBuilder;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataComponent;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataComponents;
 import java.util.EnumSet;
+import java.util.Set;
 import org.jspecify.annotations.NonNull;
 
 /** Configuration and storage conventions shared by all Parcella grid variants. */
@@ -13,13 +16,21 @@ public interface ParcellaFormat extends ParcelFormat.Impl<ParcellaFormat.Config>
   String ENTITIES_DIR_NAME = "entities";
   String ATTACHMENTS_DIR_NAME = "attachments";
   String PALETTE_FILE_NAME = "palette.txt";
-  String SUBPARCELS_DIR_NAME = "subparcels";
-  String SUBPARCEL_BLOCK_STATE_SUFFIX = ".txt";
-  String SUBPARCEL_BLOCK_ENTITY_SUFFIX = ".be.snbt";
+  String SECTIONS_DIR_NAME = "sections";
+  String SECTION_BLOCK_STATE_SUFFIX = ".txt";
+  String SECTION_BLOCK_ENTITY_SUFFIX = ".be.snbt";
 
   @Override
-  default EnumSet<Capability> capabilities() {
-    return EnumSet.allOf(Capability.class);
+  default Set<ParcelDataComponent> dataComponents() {
+    return Set.of(
+        ParcelDataComponents.BLOCKS,
+        ParcelDataComponents.ENTITIES,
+        ParcelDataComponents.ATTACHMENTS);
+  }
+
+  @Override
+  default EnumSet<Feature> features() {
+    return EnumSet.allOf(Feature.class);
   }
 
   @Override
@@ -45,8 +56,10 @@ public interface ParcellaFormat extends ParcelFormat.Impl<ParcellaFormat.Config>
         ConfigItemBuilder.ofEnum("blockEntityDataFormat", NbtFormat.TEXT).storeLocally().build();
     public final ConfigItem<NbtFormat> entityDataFormat =
         ConfigItemBuilder.ofEnum("entityDataFormat", NbtFormat.TEXT).storeLocally().build();
-    public final ConfigItem<SubparcelFormat> subparcelFormat =
-        ConfigItemBuilder.ofEnum("subparcelFormat", SubparcelFormat.RLE3D).storeLocally().build();
+    public final ConfigItem<BlockStateEncoding> blockStateEncoding =
+        ConfigItemBuilder.ofEnum("blockStateEncoding", BlockStateEncoding.RLE3D)
+            .storeLocally()
+            .build();
 
     /**
      * Whether block states are stored in a shared palette and referenced by short IDs.
@@ -57,7 +70,7 @@ public interface ParcellaFormat extends ParcelFormat.Impl<ParcellaFormat.Config>
     public Config() {
       register(blockEntityDataFormat);
       register(entityDataFormat);
-      register(subparcelFormat);
+      register(blockStateEncoding);
       register(usePalette);
     }
   }

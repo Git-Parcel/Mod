@@ -3,7 +3,7 @@ package io.github.leawind.gitparcel.common.minecraft.logic.portable;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelProcessorContext;
+import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
@@ -22,8 +22,8 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 
-class MinecraftCoreDataProcessorTest extends AbstractMinecraftTest {
-  private final MinecraftCoreDataProcessor processor = new MinecraftCoreDataProcessor();
+class MinecraftCoreRecordProcessorTest extends AbstractMinecraftTest {
+  private final MinecraftCoreRecordProcessor processor = new MinecraftCoreRecordProcessor();
   private final ParcelSpace space =
       new ParcelSpace(
           new ParcelTransform(
@@ -31,8 +31,8 @@ class MinecraftCoreDataProcessorTest extends AbstractMinecraftTest {
               Rotation.CLOCKWISE_90,
               new BlockPos(100, 20, -40)),
           new BlockPos(7, 3, -2));
-  private final ParcelProcessorContext context =
-      new ParcelProcessorContext(null, space, new ParcelAttachmentSession());
+  private final ParcelRecordProcessorContext context =
+      new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession());
 
   @Test
   void restoresBlockEntityCoordinatesFromAnchorRelativePosition() {

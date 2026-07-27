@@ -1,7 +1,7 @@
 package io.github.leawind.gitparcel.common.impl.extension.processor;
 
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelDataProcessor;
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelDataProcessorRegistry;
+import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessor;
+import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -13,18 +13,18 @@ import java.util.Set;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
 
-public final class ParcelDataProcessorRegistryImpl implements ParcelDataProcessorRegistry {
-  public static final ParcelDataProcessorRegistryImpl INSTANCE =
-      new ParcelDataProcessorRegistryImpl();
+public final class ParcelRecordProcessorRegistryImpl implements ParcelRecordProcessorRegistry {
+  public static final ParcelRecordProcessorRegistryImpl INSTANCE =
+      new ParcelRecordProcessorRegistryImpl();
 
-  private final Map<Identifier, ParcelDataProcessor> processors = new LinkedHashMap<>();
-  private List<ParcelDataProcessor> ordered = List.of();
+  private final Map<Identifier, ParcelRecordProcessor> processors = new LinkedHashMap<>();
+  private List<ParcelRecordProcessor> ordered = List.of();
   private boolean frozen;
 
-  ParcelDataProcessorRegistryImpl() {}
+  ParcelRecordProcessorRegistryImpl() {}
 
   @Override
-  public void register(ParcelDataProcessor processor) {
+  public void register(ParcelRecordProcessor processor) {
     ensureMutable();
     if (processors.putIfAbsent(processor.id(), processor) != null) {
       throw new IllegalArgumentException("duplicate parcel data processor: " + processor.id());
@@ -32,12 +32,12 @@ public final class ParcelDataProcessorRegistryImpl implements ParcelDataProcesso
   }
 
   @Override
-  public @Nullable ParcelDataProcessor get(Identifier id) {
+  public @Nullable ParcelRecordProcessor get(Identifier id) {
     return processors.get(id);
   }
 
   @Override
-  public List<ParcelDataProcessor> orderedProcessors() {
+  public List<ParcelRecordProcessor> orderedProcessors() {
     if (!frozen) {
       throw new IllegalStateException("Parcel data processor registry is not frozen");
     }
@@ -56,7 +56,7 @@ public final class ParcelDataProcessorRegistryImpl implements ParcelDataProcesso
     return frozen;
   }
 
-  private List<ParcelDataProcessor> topologicalOrder() {
+  private List<ParcelRecordProcessor> topologicalOrder() {
     Map<Identifier, Set<Identifier>> outgoing = new HashMap<>();
     Map<Identifier, Integer> incoming = new HashMap<>();
     processors.keySet().forEach(id -> {
@@ -80,7 +80,7 @@ public final class ParcelDataProcessorRegistryImpl implements ParcelDataProcesso
     incoming.forEach((id, count) -> {
       if (count == 0) ready.add(id);
     });
-    var result = new ArrayList<ParcelDataProcessor>(processors.size());
+    var result = new ArrayList<ParcelRecordProcessor>(processors.size());
     while (!ready.isEmpty()) {
       Identifier id = ready.remove();
       result.add(processors.get(id));

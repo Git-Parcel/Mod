@@ -145,22 +145,62 @@ public final class InternalRepository {
     }
   }
 
+  /** Materializes the current snapshot as an editable baseline and returns its identity. */
+  public Optional<SnapshotId> prepareSnapshotWorkspace(
+      Path workspace, ProgressReporter progress) throws IOException {
+    lock.lock();
+    try {
+      initialize();
+      requireHealthy();
+      Optional<SnapshotId> baseline = core.exactRef(CURRENT_REF);
+      if (baseline.isPresent()) {
+        core.exportCommitTree(baseline.orElseThrow(), workspace, limits, progress);
+      } else {
+        Files.createDirectories(workspace);
+      }
+      return baseline;
+    } finally {
+      lock.unlock();
+    }
+  }
+
   public SnapshotId saveSnapshot(Path workspace, SaveMetadata metadata, ProgressReporter progress)
       throws IOException {
     lock.lock();
     try {
       initialize();
       requireHealthy();
+      return saveSnapshot(workspace, core.exactRef(CURRENT_REF), metadata, progress);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  /** Saves a workspace derived from the declared parent, rejecting stale baselines. */
+  public SnapshotId saveSnapshot(
+      Path workspace,
+      Optional<SnapshotId> expectedParent,
+      SaveMetadata metadata,
+      ProgressReporter progress)
+      throws IOException {
+    lock.lock();
+    try {
+      initialize();
+      requireHealthy();
+      Optional<SnapshotId> current = core.exactRef(CURRENT_REF);
+      if (!current.equals(expectedParent)) {
+        throw new ConcurrentUpdateException(
+            "Current snapshot changed while the workspace was being edited");
+      }
       validateWorkspaceShape(workspace);
 
-      Optional<SnapshotId> parent = core.exactRef(CURRENT_REF);
       SnapshotId tree = core.writeTree(workspace, limits, progress);
       UUID operationId = UUID.randomUUID();
       String message = encodeMessage(metadata, operationId);
       SnapshotId commit =
           core.createCommit(
               tree,
-              parent.stream().toList(),
+              expectedParent.stream().toList(),
               message,
               metadata.author(),
               metadata.committer(),
@@ -171,7 +211,8 @@ public final class InternalRepository {
       if (!successful(retained)) {
         throw new IOException("Failed to retain new snapshot: " + retained);
       }
-      RefUpdate.Result activated = core.compareAndSetRef(CURRENT_REF, parent, commit, false);
+      RefUpdate.Result activated =
+          core.compareAndSetRef(CURRENT_REF, expectedParent, commit, false);
       if (!successful(activated)) {
         throw new ConcurrentUpdateException(
             "Current snapshot changed while saving; new snapshot remains retained (" + activated + ")");

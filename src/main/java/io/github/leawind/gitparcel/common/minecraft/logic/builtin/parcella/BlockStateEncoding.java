@@ -1,6 +1,6 @@
 package io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella;
 
-public enum SubparcelFormat {
+public enum BlockStateEncoding {
   /**
    * Flat format
    *

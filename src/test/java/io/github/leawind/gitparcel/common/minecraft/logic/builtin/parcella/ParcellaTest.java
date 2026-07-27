@@ -1,6 +1,8 @@
 package io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.jimfs.Jimfs;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
@@ -8,8 +10,8 @@ import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockSection;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.LocalAttachmentId;
-import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentSink;
-import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentSource;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSink;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSource;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d16.ParcellaD16Reader;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d16.ParcellaD16Writer;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d32.ParcellaD32Reader;
@@ -41,12 +43,58 @@ public class ParcellaTest extends AbstractMinecraftTest {
     roundTrip(new ParcellaD32Writer(), new ParcellaD32Reader());
   }
 
+  @Test
+  void updatesInheritedComponentTreesAndRemovesStaleFiles() throws Exception {
+    var writer = new ParcellaD16Writer();
+    var reader = new ParcellaD16Reader();
+    var config = new ParcellaFormat.Config();
+    Path data = tempDir.resolve("inherited-data");
+    var writeContext =
+        new ParcelFormat.WriteContext<>(
+            new Vec3i(2, 2, 2), Vec3i.ZERO, 0, data, config);
+    writer.write(writeContext, content());
+
+    Path palette = data.resolve("blocks/palette.txt");
+    Files.writeString(
+        palette,
+        Files.readString(palette) + "FF=minecraft:gold_block\n");
+    Path staleBlock = data.resolve("blocks/sections/stale.txt");
+    Path staleEntity = data.resolve("entities/stale.bin");
+    Path staleAttachment = data.resolve("attachments/stale.bin");
+    Path staleComponent = data.resolve("unknown/value.txt");
+    for (Path stale :
+        List.of(staleBlock, staleEntity, staleAttachment, staleComponent)) {
+      Files.createDirectories(stale.getParent());
+      Files.writeString(stale, "stale");
+    }
+
+    writer.write(writeContext, content());
+
+    assertTrue(Files.readString(palette).contains("FF=minecraft:gold_block"));
+    assertFalse(Files.exists(staleBlock));
+    assertFalse(Files.exists(staleEntity));
+    assertFalse(Files.exists(staleAttachment));
+    assertFalse(Files.exists(staleComponent));
+    var sink = new CollectingSink();
+    reader.read(
+        new ParcelFormat.ReadContext<>(
+            writeContext.parcelSize(),
+            writeContext.anchor(),
+            writeContext.dataVersion(),
+            data,
+            config),
+        sink);
+    assertEquals(1, sink.sections.size());
+    assertEquals(1, sink.entities.size());
+    assertEquals(1, sink.attachments.size());
+  }
+
   private void roundTrip(ParcellaWriter writer, ParcellaReader reader) throws Exception {
     for (boolean palette : List.of(false, true)) {
-      for (SubparcelFormat sectionFormat : SubparcelFormat.values()) {
+      for (BlockStateEncoding sectionFormat : BlockStateEncoding.values()) {
         var config = new ParcellaFormat.Config();
         config.usePalette.set(palette);
-        config.subparcelFormat.set(sectionFormat);
+        config.blockStateEncoding.set(sectionFormat);
         Path defaultData = Files.createTempDirectory(tempDir, "default-").resolve("data");
         String defaultDigest = roundTripAt(writer, reader, config, defaultData);
         try (var fs = Jimfs.newFileSystem()) {
@@ -125,7 +173,7 @@ public class ParcellaTest extends AbstractMinecraftTest {
     return java.util.HexFormat.of().formatHex(digest.digest());
   }
 
-  private static ParcelContentSource content() {
+  private static ParcelDataSource content() {
     var states =
         List.of(
             Blocks.AIR.defaultBlockState(),
@@ -155,11 +203,11 @@ public class ParcellaTest extends AbstractMinecraftTest {
             3,
             false,
             payload);
-    return new ParcelContentSource() {
+    return new ParcelDataSource() {
       @Override
       public void forEachBlockSection(
           int sectionSize,
-          io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentConsumer<BlockSection>
+          io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataConsumer<BlockSection>
               consumer)
           throws java.io.IOException,
               io.github.leawind.gitparcel.common.api.exceptions.ParcelException {
@@ -168,7 +216,7 @@ public class ParcellaTest extends AbstractMinecraftTest {
 
       @Override
       public void forEachEntity(
-          io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentConsumer<EntityRecord>
+          io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataConsumer<EntityRecord>
               consumer)
           throws java.io.IOException,
               io.github.leawind.gitparcel.common.api.exceptions.ParcelException {
@@ -177,7 +225,7 @@ public class ParcellaTest extends AbstractMinecraftTest {
 
       @Override
       public void forEachAttachment(
-          io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentConsumer<
+          io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataConsumer<
                   AttachmentRecord>
               consumer)
           throws java.io.IOException,
@@ -187,7 +235,7 @@ public class ParcellaTest extends AbstractMinecraftTest {
     };
   }
 
-  private static final class CollectingSink implements ParcelContentSink {
+  private static final class CollectingSink implements ParcelDataSink {
     final List<BlockSection> sections = new ArrayList<>();
     final List<EntityRecord> entities = new ArrayList<>();
     final List<AttachmentRecord> attachments = new ArrayList<>();

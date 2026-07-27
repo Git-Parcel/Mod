@@ -56,6 +56,34 @@ class InternalRepositoryTest {
   }
 
   @Test
+  void materializesAndChecksAnExplicitSnapshotBaseline() throws Exception {
+    var repository = InternalRepository.at(tempDir, UUID.randomUUID());
+    var first =
+        repository.saveSnapshot(workspace("one"), metadata("One"), ProgressReporter.NONE);
+    Path edit = tempDir.resolve("edit");
+
+    Optional<io.github.leawind.gitparcel.common.api.snapshot.SnapshotId> baseline =
+        repository.prepareSnapshotWorkspace(edit, ProgressReporter.NONE);
+
+    assertEquals(first, baseline.orElseThrow());
+    assertEquals("one", Files.readString(edit.resolve("data/content.txt")));
+    Files.writeString(edit.resolve("data/content.txt"), "two");
+    var second =
+        repository.saveSnapshot(edit, baseline, metadata("Two"), ProgressReporter.NONE);
+    assertEquals(second, repository.current().orElseThrow());
+
+    Path staleEdit = tempDir.resolve("stale-edit");
+    Optional<io.github.leawind.gitparcel.common.api.snapshot.SnapshotId> staleBaseline =
+        repository.prepareSnapshotWorkspace(staleEdit, ProgressReporter.NONE);
+    repository.saveSnapshot(workspace("three"), metadata("Three"), ProgressReporter.NONE);
+    assertThrows(
+        InternalRepository.ConcurrentUpdateException.class,
+        () ->
+            repository.saveSnapshot(
+                staleEdit, staleBaseline, metadata("Stale"), ProgressReporter.NONE));
+  }
+
+  @Test
   void restoringOlderSnapshotThenSavingCreatesAVisibleFork() throws Exception {
     var repository = InternalRepository.at(tempDir, UUID.randomUUID());
     var first = repository.saveSnapshot(workspace("one"), metadata("One"), ProgressReporter.NONE);
