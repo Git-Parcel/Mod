@@ -2,14 +2,9 @@ package io.github.leawind.gitparcel.gametest;
 
 import com.google.common.jimfs.Jimfs;
 import com.mojang.logging.LogUtils;
-import io.github.leawind.gitparcel.common.api.config.ConfigItem;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.common.api.snapshot.RestoreSnapshotRequest;
 import io.github.leawind.gitparcel.common.api.snapshot.SnapshotNode;
-import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d16.ParcellaD16Format;
-import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.d32.ParcellaD32Format;
+import io.github.leawind.gitparcel.common.impl.content.BlockContentType;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelWorldSavedData;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
@@ -17,12 +12,10 @@ import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.utils.git.GitRepo;
 import io.github.leawind.gitparcel.gametest.utils.ChannelFlags;
 import io.github.leawind.gitparcel.gametest.utils.GameTestHelpMore;
-import io.github.leawind.gitparcel.gametest.utils.GameTestUtils;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
@@ -31,7 +24,6 @@ import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
-import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
 public class GitParcelGameTest {
@@ -74,20 +66,18 @@ public class GitParcelGameTest {
   }
 
   public void testSaveAndLoad(GameTestHelpMore helper) throws Exception {
-    GameTestUtils.forEachFormatCombination(
-        ParcelFormatRegistry.get().streamWriters().toList(),
-        (writer, rotation, mirror) -> {
-          if (writer.getDefaultConfig() == null) {
-            LOGGER.info(
-                "Testing format {} with rotation={} mirror={} config=default",
-                writer.spec(),
-                rotation,
-                mirror);
-            doSaveAndLoad(helper, writer, rotation, mirror, null);
-          } else {
-            testAllConfigCombinations(helper, writer, rotation, mirror);
-          }
-        });
+    for (var sectionSize : BlockContentType.BlockSectionSize.values()) {
+      for (Rotation rotation : Rotation.values()) {
+        for (Mirror mirror : Mirror.values()) {
+          LOGGER.info(
+              "Testing content round trip with sectionSize={} rotation={} mirror={}",
+              sectionSize.edgeLength(),
+              rotation,
+              mirror);
+          doSaveAndLoad(helper, rotation, mirror, sectionSize);
+        }
+      }
+    }
 
     helper.succeed();
   }
@@ -152,28 +142,18 @@ public class GitParcelGameTest {
     helper.succeed();
   }
 
-  /** Round-trips the complete 30-block-tall fixture with D16, crossing a section boundary. */
+  /** Round-trips the complete 30-block-tall fixture with 16-block sections. */
   public void testLayeredD16RoundTrip(GameTestHelpMore helper) throws Exception {
     var box = helper.getRelativeBoundingBox();
-    requireDimensions(helper, box, 6, 30, 10, "D16 boundary fixture");
+    requireDimensions(helper, box, 6, 30, 10, "16-block section boundary fixture");
     var expected = captureBlocks(helper, box);
-    var rawWriter = ParcelFormatRegistry.get().getWriter(ParcellaD16Format.SPEC);
-    if (rawWriter == null) {
-      helper.fail("D16 writer is not registered");
-      return;
-    }
+    var parcel =
+        ParcelFactory.create(helper.absoluteBoundingBox(box), Mirror.NONE, Rotation.NONE);
+    configureBlockSectionSize(parcel, BlockContentType.BlockSectionSize.SIZE_16);
 
     try (var fs = Jimfs.newFileSystem()) {
       Path tempDir = fs.getPath("/parcel");
-      ParcelStorage.save(
-          rawWriter,
-          helper.getLevel(),
-          helper.absoluteBoundingBox(box),
-          Rotation.NONE,
-          Mirror.NONE,
-          null,
-          tempDir,
-          true);
+      ParcelStorage.save(helper.getLevel(), parcel, tempDir, true);
 
       fill(helper, box, Blocks.AIR.defaultBlockState());
       ParcelStorage.load(
@@ -199,8 +179,9 @@ public class GitParcelGameTest {
     var service = ParcelService.get(helper.getLevel());
     service.reset();
     var parcel = ParcelFactory.create(helper.getBoundingBox(), Mirror.NONE, Rotation.NONE);
-    if (!parcel.meta().formatSpec().equals(ParcellaD32Format.SPEC)) {
-      helper.fail("Representative snapshot test must use the default D32 format");
+    var blocksConfig = blockConfig(parcel);
+    if (blocksConfig.sectionSize.get() != BlockContentType.BlockSectionSize.SIZE_32) {
+      helper.fail("Representative snapshot test must use 32-block sections by default");
     }
     service.addNewParcel(parcel);
 
@@ -242,57 +223,12 @@ public class GitParcelGameTest {
     helper.succeed();
   }
 
-  /**
-   * Test a format with all combinations of its config item values.
-   *
-   * <p>For enum config items, all enum constants are tested. For booleans, both true and false are
-   * tested. Other types are left at their default value to avoid combinatorial explosion.
-   */
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  private void testAllConfigCombinations(
-      GameTestHelpMore helper, ParcelFormat.Writer<?> rawWriter, Rotation rotation, Mirror mirror)
-      throws Exception {
-
-    var writer = (ParcelFormat.Writer) rawWriter;
-    ParcelFormatConfig<?> config = writer.getDefaultConfig();
-
-    if (config == null) {
-      doSaveAndLoad(helper, writer, rotation, mirror, null);
-      return;
-    }
-
-    List<Map<String, ?>> combos = GameTestUtils.generateConfigCombinations(writer);
-    for (var combo : combos) {
-      config.resetToDefault();
-
-      for (var item : config.listConfigItems()) {
-        var val = combo.get(item.name());
-        if (val != null) {
-          ((ConfigItem<Object>) item).set(val);
-        }
-      }
-
-      LOGGER.info(
-          "Testing format {} with rotation={} mirror={} config={}",
-          writer.spec(),
-          rotation,
-          mirror,
-          config.toJson());
-
-      doSaveAndLoad(helper, writer, rotation, mirror, config);
-    }
-  }
-
-  @SuppressWarnings({"unchecked", "rawtypes"})
   private void doSaveAndLoad(
       GameTestHelpMore helper,
-      ParcelFormat.Writer<?> rawWriter,
       Rotation rotation,
       Mirror mirror,
-      @Nullable ParcelFormatConfig config)
+      BlockContentType.BlockSectionSize sectionSize)
       throws Exception {
-    var writer = (ParcelFormat.Writer) rawWriter;
-
     try (var fs = Jimfs.newFileSystem()) {
       Path tempDir = fs.getPath("/tmp");
       Files.createDirectories(tempDir);
@@ -318,21 +254,10 @@ public class GitParcelGameTest {
               box.maxY(),
               box.maxZ());
 
-      ParcelStorage.save(
-          writer,
-          helper.getLevel(),
-          helper.absoluteBoundingBox(bottomBox),
-          rotation,
-          mirror,
-          config,
-          tempDir,
-          true);
-
-      var reader = ParcelFormatRegistry.get().getReader(writer.spec());
-      if (reader == null) {
-        LOGGER.info("  Skipped: no reader for format {}", writer.spec());
-        return;
-      }
+      var parcel =
+          ParcelFactory.create(helper.absoluteBoundingBox(bottomBox), mirror, rotation);
+      configureBlockSectionSize(parcel, sectionSize);
+      ParcelStorage.save(helper.getLevel(), parcel, tempDir, true);
 
       ParcelStorage.load(
           helper.getLevel(),
@@ -351,6 +276,33 @@ public class GitParcelGameTest {
 
       LOGGER.info("  Passed: rotation={}, mirror={}", rotation, mirror);
     }
+  }
+
+  private static void configureBlockSectionSize(
+      io.github.leawind.gitparcel.common.api.world.Parcel parcel,
+      BlockContentType.BlockSectionSize sectionSize) {
+    var config = blockConfig(parcel);
+    config.sectionSize.set(sectionSize);
+    var contents = new java.util.LinkedHashMap<>(parcel.meta().contents());
+    var previous = contents.get(BlockContentType.ID);
+    contents.put(
+        BlockContentType.ID,
+        new io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentManifest(
+            previous.version(), config.toJson()));
+    parcel.meta().setContents(contents);
+  }
+
+  private static BlockContentType.Config blockConfig(
+      io.github.leawind.gitparcel.common.api.world.Parcel parcel) {
+    var manifest = parcel.meta().contents().get(BlockContentType.ID);
+    if (manifest == null) {
+      throw new IllegalStateException("Built-in blocks content is not registered");
+    }
+    var config = new BlockContentType.Config();
+    if (manifest.config() != null) {
+      config.setFromJson(manifest.config().getAsJsonObject());
+    }
+    return config;
   }
 
   private static void requireDimensions(

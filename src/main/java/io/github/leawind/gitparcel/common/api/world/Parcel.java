@@ -1,6 +1,5 @@
 package io.github.leawind.gitparcel.common.api.world;
 
-import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelMeta;
@@ -12,7 +11,6 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.Vec3i;
-import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
@@ -79,10 +77,7 @@ public final class Parcel {
                       Visual.CODEC.fieldOf("visual").forGetter(Parcel::visual),
                       ParcelPermissions.CONFIG_CODEC
                           .fieldOf("permissions")
-                          .forGetter(Parcel::permissions),
-                      ExtraCodecs.JSON
-                          .optionalFieldOf("formatConfig")
-                          .forGetter(Parcel::formatConfig))
+                          .forGetter(Parcel::permissions))
                   .apply(inst, Parcel::new));
 
   // ////////////////////////////////////////////////////////////////
@@ -95,7 +90,6 @@ public final class Parcel {
   private ParcelTransform transform;
   private Visual visual;
   private PermissionConfig<ParcelPermissions> permissions;
-  private @Nullable JsonElement formatConfig;
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   private Parcel(
@@ -104,15 +98,13 @@ public final class Parcel {
       ParcelMeta meta,
       ParcelTransform transform,
       Visual visual,
-      PermissionConfig<ParcelPermissions> permissions,
-      Optional<JsonElement> formatConfig) {
+      PermissionConfig<ParcelPermissions> permissions) {
     this.uuid = uuid;
     this.dimension = dimension.orElse(null);
     this.meta = meta;
     this.transform = transform;
     this.visual = visual;
     this.permissions = permissions;
-    this.formatConfig = formatConfig.orElse(null);
   }
 
   // ////////////////////////////////////////////////////////////////
@@ -153,10 +145,6 @@ public final class Parcel {
 
   public PermissionConfig<ParcelPermissions> permissions() {
     return permissions;
-  }
-
-  public Optional<JsonElement> formatConfig() {
-    return Optional.ofNullable(formatConfig);
   }
 
   // ////////////////////////////////////////////////////////////////
@@ -208,8 +196,7 @@ public final class Parcel {
         meta,
         transform,
         new Visual(),
-        permissions,
-        Optional.empty());
+        permissions);
   }
 
   public static BlockPos getPivotBlockPos(Mirror mirror, Rotation rotation, BoundingBox box) {

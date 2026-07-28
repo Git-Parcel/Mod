@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.github.leawind.gitparcel.common.minecraft.logic.builtin.parcella.utils.ZOrder3D;
+import io.github.leawind.gitparcel.common.impl.content.ZOrder3D;
 import io.github.leawind.gitparcel.common.testutils.GitParcelRandom;
 import java.util.HashSet;
 import java.util.Random;

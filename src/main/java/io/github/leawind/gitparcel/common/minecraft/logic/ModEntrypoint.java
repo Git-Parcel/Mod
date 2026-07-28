@@ -2,13 +2,12 @@ package io.github.leawind.gitparcel.common.minecraft.logic;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatCapabilities;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentCapabilities;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentTypeRegistry;
 import io.github.leawind.gitparcel.common.impl.extension.GitParcelExtensions;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
-import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelFormatArgument;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelFormatsMessage;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelContentsMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.platform.api.CommandArgumentTypeRegistrar;
 import io.github.leawind.gitparcel.common.platform.api.Services;
@@ -43,8 +42,8 @@ public final class ModEntrypoint {
 
   /** Synchronizes server-owned registries and parcel state after a player enters play state. */
   public static void onPlayerJoin(ServerPlayer player) {
-    var capabilities = ParcelFormatCapabilities.from(ParcelFormatRegistry.get());
-    Services.SERVER_NETWORKING.send(player, new UpdateParcelFormatsMessage(capabilities));
+    var capabilities = ParcelContentCapabilities.from(ParcelContentTypeRegistry.get());
+    Services.SERVER_NETWORKING.send(player, new UpdateParcelContentsMessage(capabilities));
 
     ParcelService.get(player.level()).syncTo(player);
     ServerQueryHandler.syncAvailableState(player);
@@ -100,16 +99,6 @@ public final class ModEntrypoint {
         "file_path",
         FilePathArgument.class,
         SingletonArgumentInfo.contextFree(FilePathArgument::new));
-
-    registrar.register(
-        "parcel_format_writer",
-        ParcelFormatArgument.Writer.class,
-        SingletonArgumentInfo.contextFree(ParcelFormatArgument::writer));
-
-    registrar.register(
-        "parcel_format_reader",
-        ParcelFormatArgument.Reader.class,
-        SingletonArgumentInfo.contextFree(ParcelFormatArgument::reader));
 
     registrar.register("parcel", ParcelArgument.class, new ParcelArgument.Info());
   }

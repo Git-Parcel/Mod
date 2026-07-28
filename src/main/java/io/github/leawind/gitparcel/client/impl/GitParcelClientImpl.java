@@ -6,7 +6,7 @@ import io.github.leawind.gitparcel.common.api.operation.OperationSnapshot;
 import io.github.leawind.gitparcel.common.api.snapshot.SnapshotId;
 import io.github.leawind.gitparcel.common.api.snapshot.SnapshotTreePage;
 import io.github.leawind.gitparcel.common.api.git.SharedRepositorySnapshot;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatCapabilities;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentCapabilities;
 import io.github.leawind.gitparcel.common.api.world.Parcels;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.QueryParcelHistoryMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.QueryServerStateMessage;
@@ -25,7 +25,7 @@ public final class GitParcelClientImpl implements GitParcelClient {
 
   private GitParcelClientImpl() {}
 
-  private volatile ParcelFormatCapabilities capabilities = ParcelFormatCapabilities.empty();
+  private volatile ParcelContentCapabilities capabilities = ParcelContentCapabilities.empty();
   private final Parcels parcels = new Parcels();
   private volatile List<SharedRepositorySnapshot> sharedRepositories = List.of();
   private volatile List<OperationSnapshot> operations = List.of();
@@ -35,7 +35,7 @@ public final class GitParcelClientImpl implements GitParcelClient {
       new ConcurrentHashMap<>();
 
   @Override
-  public ParcelFormatCapabilities getParcelFormatCapabilities() {
+  public ParcelContentCapabilities getParcelContentCapabilities() {
     return capabilities;
   }
 
@@ -80,7 +80,7 @@ public final class GitParcelClientImpl implements GitParcelClient {
         .send(new QueryParcelHistoryMessage(parcelUuid, cursor, limit));
   }
 
-  public void setParcelFormatCapabilities(@NonNull ParcelFormatCapabilities capabilities) {
+  public void setParcelContentCapabilities(@NonNull ParcelContentCapabilities capabilities) {
     this.capabilities = capabilities;
   }
 
@@ -107,7 +107,7 @@ public final class GitParcelClientImpl implements GitParcelClient {
   }
 
   public void reset() {
-    capabilities = ParcelFormatCapabilities.empty();
+    capabilities = ParcelContentCapabilities.empty();
     parcels.clear();
     sharedRepositories = List.of();
     operations = List.of();

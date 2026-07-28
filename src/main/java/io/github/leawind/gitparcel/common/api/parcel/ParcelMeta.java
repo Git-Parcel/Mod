@@ -6,6 +6,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.common.api.exceptions.InvalidParcelMetaException;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentManifest;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,7 +30,9 @@ public final class ParcelMeta {
       RecordCodecBuilder.create(
           inst ->
               inst.group(
-                      ParcelFormat.Spec.CODEC.fieldOf("format").forGetter(ParcelMeta::formatSpec),
+                      Codec.unboundedMap(Codec.STRING, ParcelContentManifest.CODEC)
+                          .fieldOf("contents")
+                          .forGetter(ParcelMeta::contents),
                       Codec.INT.fieldOf("dataVersion").forGetter(ParcelMeta::dataVersion),
                       Vec3i.CODEC.fieldOf("size").forGetter(ParcelMeta::size),
                       Vec3i.CODEC.fieldOf("anchor").forGetter(ParcelMeta::anchor),
@@ -62,7 +65,7 @@ public final class ParcelMeta {
     return NAME_PATTERN.matcher(name).matches();
   }
 
-  private ParcelFormat.Spec formatSpec;
+  private Map<String, ParcelContentManifest> contents;
   private int dataVersion;
   private Vec3i size;
   private Vec3i anchor;
@@ -82,7 +85,7 @@ public final class ParcelMeta {
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   private ParcelMeta(
-      ParcelFormat.Spec formatSpec,
+      Map<String, ParcelContentManifest> contents,
       Integer dataVersion,
       Vec3i size,
       Vec3i anchor,
@@ -92,7 +95,7 @@ public final class ParcelMeta {
       Optional<List<String>> tgs,
       Optional<Map<String, ModDependency>> mods,
       Optional<Boolean> excludeEntities) {
-    this.formatSpec = formatSpec;
+    this.contents = Map.copyOf(contents);
     this.dataVersion = dataVersion;
     this.size = size;
     this.anchor = anchor;
@@ -104,15 +107,19 @@ public final class ParcelMeta {
     this.excludeEntities = excludeEntities.orElse(true);
   }
 
-  public ParcelMeta(ParcelFormat.Spec formatSpec, int dataVersion, Vec3i parcelSize, Vec3i anchor) {
-    this.formatSpec = formatSpec;
+  public ParcelMeta(
+      Map<String, ParcelContentManifest> contents,
+      int dataVersion,
+      Vec3i parcelSize,
+      Vec3i anchor) {
+    this.contents = Map.copyOf(contents);
     this.dataVersion = dataVersion;
     this.size = parcelSize;
     this.anchor = anchor;
   }
 
-  public ParcelFormat.Spec formatSpec() {
-    return formatSpec;
+  public Map<String, ParcelContentManifest> contents() {
+    return contents;
   }
 
   public int dataVersion() {
@@ -139,8 +146,8 @@ public final class ParcelMeta {
     return Boolean.TRUE.equals(excludeEntities);
   }
 
-  public void setFormatSpec(ParcelFormat.Spec formatSpec) {
-    this.formatSpec = formatSpec;
+  public void setContents(Map<String, ParcelContentManifest> contents) {
+    this.contents = Map.copyOf(contents);
   }
 
   /** Sets the name. */

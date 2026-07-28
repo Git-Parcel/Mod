@@ -46,7 +46,7 @@ public class Entrypoint {
     var registrar = event.registrar(GitParcel.MOD_ID).versioned(GitParcel.PROTOCOL_VERSION);
 
     registrar.playToClient(
-        MinecraftPayloads.PARCEL_FORMATS_TYPE, MinecraftPayloads.PARCEL_FORMATS_CODEC);
+        MinecraftPayloads.PARCEL_CONTENTS_TYPE, MinecraftPayloads.PARCEL_CONTENTS_CODEC);
     registrar.playToClient(MinecraftPayloads.PARCELS_TYPE, MinecraftPayloads.PARCELS_CODEC);
     registrar.playToClient(
         MinecraftPayloads.SHARED_REPOSITORIES_TYPE,

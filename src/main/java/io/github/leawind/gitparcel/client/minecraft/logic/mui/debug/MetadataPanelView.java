@@ -55,9 +55,9 @@ public class MetadataPanelView extends ScrollView {
   }
 
   public void refresh() {
-    var specs = GitParcelClient.get().getParcelFormatCapabilities();
+    var specs = GitParcelClient.get().getParcelContentCapabilities();
     if (specs == null) {
-      mMarkflow.setMarkdown(mPreview, "Parcel formats unavailable\n");
+      mMarkflow.setMarkdown(mPreview, "Parcel content types unavailable\n");
       return;
     }
 
@@ -70,32 +70,23 @@ public class MetadataPanelView extends ScrollView {
         .append("\n");
 
     sb.append("\n");
-    sb.append(getFormatsText());
+    sb.append(getContentTypesText());
 
     mMarkflow.setMarkdown(mPreview, sb);
   }
 
-  private String getFormatsText() {
-    var specs = GitParcelClient.get().getParcelFormatCapabilities();
+  private String getContentTypesText() {
+    var specs = GitParcelClient.get().getParcelContentCapabilities();
     if (specs == null) {
-      return "Parcel formats unavailable\n";
+      return "Parcel content types unavailable\n";
     }
 
     var sb = new StringBuilder();
-    sb.append("### Registered Parcel Formats\n\n");
+    sb.append("### Registered Parcel Content Types\n\n");
 
-    for (var spec : specs.toSet().stream().sorted().toList()) {
+    for (var spec : specs.registered()) {
       sb.append("- `").append(spec).append("`: ");
-
-      if (specs.hasWriter(spec)) {
-        if (specs.hasReader(spec)) {
-          sb.append("Save and Load");
-        } else {
-          sb.append("Save only");
-        }
-      } else {
-        sb.append("Load only");
-      }
+      sb.append(specs.isActive(spec) ? "Active" : "Legacy reader");
       sb.append("\n");
     }
 

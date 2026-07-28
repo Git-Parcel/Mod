@@ -58,7 +58,7 @@ public class ParcelCardView extends LinearLayout {
     var name = meta.name() != null ? meta.name() : "Unnamed";
 
     var title = new TextView(context);
-    title.setText(name + "    " + meta.formatSpec());
+    title.setText(name + "    " + meta.contents().size() + " contents");
     title.setTextSize(16);
     title.setTextColor(0xFFFFFFFF);
     title.setClickable(true);
@@ -128,7 +128,7 @@ public class ParcelCardView extends LinearLayout {
     var transform = mParcel.transform();
 
     appendDetailLine(detail, "UUID", mParcel.uuid().toString());
-    appendDetailLine(detail, "Format", meta.formatSpec().toString());
+    appendDetailLine(detail, "Contents", meta.contents().keySet().toString());
     appendDetailLine(
         detail,
         "Size",

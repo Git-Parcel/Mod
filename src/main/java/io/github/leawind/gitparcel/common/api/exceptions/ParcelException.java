@@ -1,6 +1,6 @@
 package io.github.leawind.gitparcel.common.api.exceptions;
 
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentType;
 
 /** Custom exception for parcel-related errors. */
 public class ParcelException extends Exception {
@@ -12,17 +12,17 @@ public class ParcelException extends Exception {
     super(message, cause);
   }
 
-  /** Exception thrown when a parcel format is not supported */
-  public static class UnsupportedFormat extends ParcelException {
-    public final ParcelFormat.Spec formatSpec;
+  /** Exception thrown when a snapshot references an unavailable parcel content implementation. */
+  public static class UnsupportedContent extends ParcelException {
+    public final ParcelContentType.Spec contentSpec;
 
-    public UnsupportedFormat(ParcelFormat.Spec formatSpec) {
-      super(String.format("Unsupported format: %s", formatSpec));
-      this.formatSpec = formatSpec;
+    public UnsupportedContent(ParcelContentType.Spec contentSpec) {
+      super("Unsupported parcel content: " + contentSpec);
+      this.contentSpec = contentSpec;
     }
   }
 
-  /** Exception thrown when a parcel format has fatal errors that cannot be recovered from */
+  /** Exception thrown when parcel content has fatal errors that cannot be recovered from. */
   public static class CorruptedParcelException extends ParcelException {
     public CorruptedParcelException(String message) {
       super(message);

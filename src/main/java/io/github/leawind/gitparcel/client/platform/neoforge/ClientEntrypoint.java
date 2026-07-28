@@ -36,7 +36,7 @@ public class ClientEntrypoint {
 
   private static void onRegisterPayloadHandlers(RegisterClientPayloadHandlersEvent event) {
     event.register(
-        MinecraftPayloads.PARCEL_FORMATS_TYPE,
+        MinecraftPayloads.PARCEL_CONTENTS_TYPE,
         (payload, context) -> ClientPayloadHandler.handle(payload.message()));
     event.register(
         MinecraftPayloads.PARCELS_TYPE,

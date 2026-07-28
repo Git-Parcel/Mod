@@ -55,7 +55,7 @@ val checkArchitectureBoundaries by tasks.registering {
 
                 if (relativePath.endsWith("/common/api/parcel/ParcelMeta.java") &&
                     (
-                        content.contains("ParcelFormatRegistry") ||
+                        content.contains("ParcelContentTypeRegistry") ||
                             content.contains("import net.minecraft.SharedConstants;") ||
                             content.contains("import net.minecraft.world.level.block.Rotation;") ||
                             content.contains(
@@ -67,9 +67,9 @@ val checkArchitectureBoundaries by tasks.registering {
                 }
 
                 if (relativePath.endsWith("/common/api/world/Parcel.java") &&
-                    content.contains("ParcelFormatRegistry")
+                    content.contains("ParcelContentTypeRegistry")
                 ) {
-                    violations += "$relativePath creates models through the runtime format registry"
+                    violations += "$relativePath creates models through the runtime content registry"
                 }
 
                 val minecraftVersionAdapter =
@@ -148,16 +148,17 @@ val checkArchitectureBoundaries by tasks.registering {
                     violations += "$relativePath exposes runtime-specific transform operations"
                 }
 
-                if (relativePath.endsWith("/common/api/parcel/ParcelFormat.java") &&
+                if (relativePath.endsWith(
+                        "/common/api/parcel/content/ParcelContentType.java",
+                    ) &&
                     content.contains("import net.minecraft.world.level.block.Block;")
                 ) {
                     violations += "$relativePath exposes version-specific block update annotations"
                 }
 
-                val isContextFormat =
-                    content.contains("ParcelFormat.ContextSaver") ||
-                        content.contains("ParcelFormat.ContextLoader")
-                if (isContextFormat &&
+                val isContentOperation =
+                    content.contains("implements ParcelContentType<")
+                if (isContentOperation &&
                     (
                         content.contains("import net.minecraft.world.level.Level;") ||
                             content.contains(
@@ -166,7 +167,7 @@ val checkArchitectureBoundaries by tasks.registering {
                             content.contains("import net.minecraft.world.level.block.Block;")
                     )
                 ) {
-                    violations += "$relativePath bypasses its format operation context"
+                    violations += "$relativePath bypasses its content operation context"
                 }
 
                 if (relativePath.contains("/testutils/")) {

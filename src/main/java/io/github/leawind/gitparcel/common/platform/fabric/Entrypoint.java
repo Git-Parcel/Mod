@@ -38,7 +38,7 @@ public class Entrypoint implements ModInitializer {
     /*? if >= 26.1 {*/
     PayloadTypeRegistry.clientboundPlay()
         .register(
-            MinecraftPayloads.PARCEL_FORMATS_TYPE, MinecraftPayloads.PARCEL_FORMATS_CODEC);
+            MinecraftPayloads.PARCEL_CONTENTS_TYPE, MinecraftPayloads.PARCEL_CONTENTS_CODEC);
     PayloadTypeRegistry.clientboundPlay()
         .register(MinecraftPayloads.PARCELS_TYPE, MinecraftPayloads.PARCELS_CODEC);
     PayloadTypeRegistry.clientboundPlay()
@@ -60,7 +60,7 @@ public class Entrypoint implements ModInitializer {
     /*?} else {*/
     /*PayloadTypeRegistry.playS2C()
                        .register(
-                         MinecraftPayloads.PARCEL_FORMATS_TYPE, MinecraftPayloads.PARCEL_FORMATS_CODEC);
+                         MinecraftPayloads.PARCEL_CONTENTS_TYPE, MinecraftPayloads.PARCEL_CONTENTS_CODEC);
     PayloadTypeRegistry.playS2C()
                        .register(MinecraftPayloads.PARCELS_TYPE, MinecraftPayloads.PARCELS_CODEC);
     */

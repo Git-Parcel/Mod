@@ -10,6 +10,6 @@ public interface GitParcelExtension {
   /** A stable, namespaced identifier such as {@code examplemod:integration}. */
   String id();
 
-  /** Contributes formats, data processors, and attachment types in one registration transaction. */
+  /** Contributes content types, record processors, and attachment types in one transaction. */
   void register(ParcelExtensionRegistrar registrar);
 }

@@ -14,8 +14,8 @@ public final class WorldPermissions {
     return REGISTRY.register(new PermissionType<>(id, defaultLevel));
   }
 
-  public static final PermissionType<WorldPermissions> LIST_FORMATS =
-      type("list_formats", PermissionLevel.MODERATORS);
+  public static final PermissionType<WorldPermissions> LIST_CONTENT_TYPES =
+      type("list_content_types", PermissionLevel.MODERATORS);
   public static final PermissionType<WorldPermissions> LIST_PARCELS =
       type("list_parcels", PermissionLevel.MODERATORS);
   public static final PermissionType<WorldPermissions> CREATE_PARCEL =

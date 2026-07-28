@@ -5,7 +5,7 @@ import io.github.leawind.gitparcel.common.api.operation.OperationSnapshot;
 import io.github.leawind.gitparcel.common.api.snapshot.SnapshotId;
 import io.github.leawind.gitparcel.common.api.snapshot.SnapshotTreePage;
 import io.github.leawind.gitparcel.common.api.git.SharedRepositorySnapshot;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatCapabilities;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentCapabilities;
 import io.github.leawind.gitparcel.common.api.world.Parcels;
 import java.util.List;
 import java.util.Optional;
@@ -13,11 +13,11 @@ import java.util.UUID;
 
 public interface GitParcelClient {
   /**
-   * Parcel format specs supported by the server.
+   * Parcel content implementations registered by the server.
    *
    * <p>Automatically updated when joining a server.
    */
-  ParcelFormatCapabilities getParcelFormatCapabilities();
+  ParcelContentCapabilities getParcelContentCapabilities();
 
   /**
    * Parcels in the server world.

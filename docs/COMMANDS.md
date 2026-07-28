@@ -50,7 +50,7 @@
 
 ```text
 /parcels create <from> <to> <name> [mirror] [rotation]
-/parcels formats
+/parcels contents
 /parcel <selector>
 /parcel <selector> teleport [players]
 /parcel <selector> delete
@@ -65,7 +65,7 @@
 /parcel <selector> save [name]
 ```
 
-该命令原子地执行“捕获世界内容、按格式写入临时 NIO 工作区、校验文件树、写入 Git
+该命令原子地执行“捕获世界内容、按内容类型写入临时 NIO 工作区、校验文件树、写入 Git
 对象并创建 commit、更新保留 ref 和当前基准”。不再存在 `save`/`commit` 两步流程。
 
 即使内容和父快照相同，显式保存也会创建一个新快照。当前基准若是较早节点，新快照
@@ -114,9 +114,10 @@
 /parcel <selector> config set <key> <value>
 ```
 
-现有 key 包括 `meta.format`、`meta.name`、`meta.author`、`meta.description`、
-`meta.excludeEntities`、`visual.showWireframe` 和 `visual.showAnchor`。权限、视觉设置、变换
-以及所属维度是运行时 parcel 属性，不会因恢复内容快照而回退。
+现有 key 包括 `content.blocks.sectionSize`（仅接受 `16` 或 `32`）、`meta.name`、
+`meta.author`、`meta.description`、`meta.excludeEntities`、`visual.showWireframe` 和
+`visual.showAnchor`。权限、视觉设置、变换以及所属维度是运行时 parcel 属性，不会因恢复
+内容快照而回退。
 
 ## 共享仓库
 

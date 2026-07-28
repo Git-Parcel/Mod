@@ -5,8 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.mojang.serialization.JsonOps;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelMeta;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentManifest;
+import java.util.Map;
 import net.minecraft.core.Vec3i;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +28,7 @@ public class ParcelMetaTest {
   void roundTripsExplicitDataVersion() {
     var original =
         new ParcelMeta(
-            new ParcelFormat.Spec("test", 0),
+            Map.of("blocks", new ParcelContentManifest(2, null)),
             4321,
             new Vec3i(3, 5, 7),
             new Vec3i(1, 2, 3));
@@ -36,7 +37,7 @@ public class ParcelMetaTest {
     var decoded = ParcelMeta.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow();
 
     assertEquals(4321, encoded.getAsJsonObject().get("dataVersion").getAsInt());
-    assertEquals(original.formatSpec(), decoded.formatSpec());
+    assertEquals(original.contents(), decoded.contents());
     assertEquals(original.dataVersion(), decoded.dataVersion());
     assertEquals(original.size(), decoded.size());
     assertEquals(original.anchor(), decoded.anchor());

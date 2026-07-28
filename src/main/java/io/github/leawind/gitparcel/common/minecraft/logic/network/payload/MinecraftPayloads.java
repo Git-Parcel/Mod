@@ -6,7 +6,7 @@ import io.github.leawind.gitparcel.common.minecraft.logic.network.message.QueryP
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.QueryServerStateMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.ServerMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateOperationsMessage;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelFormatsMessage;
+import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelContentsMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelHistoryMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelsMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateSharedRepositoriesMessage;
@@ -27,8 +27,8 @@ import org.jspecify.annotations.NonNull;
  */
 @VersionSensitive("Minecraft custom payload and stream codec API")
 public final class MinecraftPayloads {
-  public static final Identifier PARCEL_FORMATS_ID =
-      GitParcelUtils.identifier("update_parcel_formats");
+  public static final Identifier PARCEL_CONTENTS_ID =
+      GitParcelUtils.identifier("update_parcel_contents");
   public static final Identifier PARCELS_ID = GitParcelUtils.identifier("update_parcels");
   public static final Identifier SHARED_REPOSITORIES_ID =
       GitParcelUtils.identifier("update_shared_repositories");
@@ -41,8 +41,8 @@ public final class MinecraftPayloads {
   public static final Identifier PARCEL_HISTORY_ID =
       GitParcelUtils.identifier("update_parcel_history");
 
-  public static final CustomPacketPayload.Type<ParcelFormatsPayload> PARCEL_FORMATS_TYPE =
-      new CustomPacketPayload.Type<>(PARCEL_FORMATS_ID);
+  public static final CustomPacketPayload.Type<ParcelContentsPayload> PARCEL_CONTENTS_TYPE =
+      new CustomPacketPayload.Type<>(PARCEL_CONTENTS_ID);
   public static final CustomPacketPayload.Type<ParcelsPayload> PARCELS_TYPE =
       new CustomPacketPayload.Type<>(PARCELS_ID);
   public static final CustomPacketPayload.Type<SharedRepositoriesPayload> SHARED_REPOSITORIES_TYPE =
@@ -56,10 +56,10 @@ public final class MinecraftPayloads {
   public static final CustomPacketPayload.Type<ParcelHistoryPayload> PARCEL_HISTORY_TYPE =
       new CustomPacketPayload.Type<>(PARCEL_HISTORY_ID);
 
-  public static final StreamCodec<RegistryFriendlyByteBuf, ParcelFormatsPayload>
-      PARCEL_FORMATS_CODEC =
-          ByteBufCodecs.fromCodecWithRegistries(UpdateParcelFormatsMessage.CODEC)
-              .map(ParcelFormatsPayload::new, ParcelFormatsPayload::message);
+  public static final StreamCodec<RegistryFriendlyByteBuf, ParcelContentsPayload>
+      PARCEL_CONTENTS_CODEC =
+          ByteBufCodecs.fromCodecWithRegistries(UpdateParcelContentsMessage.CODEC)
+              .map(ParcelContentsPayload::new, ParcelContentsPayload::message);
   public static final StreamCodec<RegistryFriendlyByteBuf, ParcelsPayload> PARCELS_CODEC =
       ByteBufCodecs.fromCodecWithRegistries(UpdateParcelsMessage.CODEC)
           .map(ParcelsPayload::new, ParcelsPayload::message);
@@ -87,8 +87,8 @@ public final class MinecraftPayloads {
   private MinecraftPayloads() {}
 
   public static CustomPacketPayload encode(ServerMessage message) {
-    if (message instanceof UpdateParcelFormatsMessage update) {
-      return new ParcelFormatsPayload(update);
+    if (message instanceof UpdateParcelContentsMessage update) {
+      return new ParcelContentsPayload(update);
     }
     if (message instanceof UpdateParcelsMessage update) {
       return new ParcelsPayload(update);
@@ -115,11 +115,11 @@ public final class MinecraftPayloads {
     throw new IllegalArgumentException("Unsupported client message: " + message.getClass());
   }
 
-  public record ParcelFormatsPayload(UpdateParcelFormatsMessage message)
+  public record ParcelContentsPayload(UpdateParcelContentsMessage message)
       implements CustomPacketPayload {
     @Override
-    public @NonNull Type<ParcelFormatsPayload> type() {
-      return PARCEL_FORMATS_TYPE;
+    public @NonNull Type<ParcelContentsPayload> type() {
+      return PARCEL_CONTENTS_TYPE;
     }
   }
 

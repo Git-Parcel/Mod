@@ -8,9 +8,10 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
 import io.github.leawind.gitparcel.common.api.permission.ParcelPermissions;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentManifest;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
+import io.github.leawind.gitparcel.common.impl.content.BlockContentType;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
-import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelFormatArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
@@ -18,6 +19,7 @@ import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.Parcel
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import java.util.LinkedHashMap;
 
 public class ConfigSubcommand extends GitParcelBaseCommand {
 
@@ -28,7 +30,7 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
     var set =
         Commands.literal("set")
-            .then(buildMetaFormat())
+            .then(buildBlockSectionSize())
             .then(buildMetaName())
             .then(buildMetaAuthor())
             .then(buildMetaDescription())
@@ -85,19 +87,41 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
     T read(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException;
   }
 
-  private static ArgumentBuilder<CommandSourceStack, ?> buildMetaFormat() {
-    return Commands.literal("meta.format")
+  private static ArgumentBuilder<CommandSourceStack, ?> buildBlockSectionSize() {
+    return Commands.literal("content.blocks.sectionSize")
         .then(
-            Commands.argument("save_format", ParcelFormatArgument.writer())
+            Commands.literal("16")
                 .executes(
-                    ctx -> {
-                      var writer = ParcelFormatArgument.getWriter(ctx, "save_format");
-                      return handle(
-                          ctx,
-                          "meta.format",
-                          c -> writer,
-                          (p, w) -> p.meta().setFormatSpec(w.spec()));
-                    }));
+                    ctx ->
+                        handle(
+                            ctx,
+                            "content.blocks.sectionSize",
+                            ignored -> BlockContentType.BlockSectionSize.SIZE_16,
+                            ConfigSubcommand::setBlockSectionSize)))
+        .then(
+            Commands.literal("32")
+                .executes(
+                    ctx ->
+                        handle(
+                            ctx,
+                            "content.blocks.sectionSize",
+                            ignored -> BlockContentType.BlockSectionSize.SIZE_32,
+                            ConfigSubcommand::setBlockSectionSize)));
+  }
+
+  private static void setBlockSectionSize(
+      Parcel parcel, BlockContentType.BlockSectionSize sectionSize) {
+    var config = new BlockContentType.Config();
+    ParcelContentManifest previous = parcel.meta().contents().get(BlockContentType.ID);
+    if (previous != null && previous.config() != null && previous.config().isJsonObject()) {
+      config.setFromJson(previous.config().getAsJsonObject());
+    }
+    config.sectionSize.set(sectionSize);
+    var contents = new LinkedHashMap<>(parcel.meta().contents());
+    contents.put(
+        BlockContentType.ID,
+        new ParcelContentManifest(BlockContentType.SPEC.version(), config.toJson()));
+    parcel.meta().setContents(contents);
   }
 
   private static ArgumentBuilder<CommandSourceStack, ?> buildMetaName() {

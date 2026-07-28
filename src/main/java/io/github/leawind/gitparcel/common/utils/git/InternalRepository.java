@@ -487,7 +487,7 @@ public final class InternalRepository {
     try (var entries = Files.newDirectoryStream(workspace)) {
       for (Path entry : entries) {
         String name = entry.getFileName().toString();
-        if (!name.equals("parcel.json") && !name.equals("config.json") && !name.equals("data")) {
+        if (!name.equals("parcel.json") && !name.equals("data")) {
           throw new IOException("Unexpected snapshot root entry: " + name);
         }
       }

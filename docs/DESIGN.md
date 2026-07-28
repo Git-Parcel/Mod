@@ -74,15 +74,15 @@ Minecraft 世界适配       InternalRepository      SharedRepository
 捕获、校验、放置          受限的内部快照操作         完整的共享 Git 能力
         |                      |                       |
         v                      +-----------+-----------+
-ParcelFormat + NIO 工作区              GitRepositoryCore
+内容类型 + NIO 工作区                  GitRepositoryCore
                                          JGit 原语
 ```
 
 各层职责如下：
 
 - 领域层以适合普通玩家的名称投影 Git commit、父子关系、作者、操作请求和结构化结果，不依赖具体加载器。
-- 用例层编排权限、锁、世界捕获、格式编解码、Git 对象与 ref 更新、恢复和网络同步。
-- 格式层只负责在内容记录与一个 NIO 文件树之间转换，不拥有世界、仓库或事务生命周期。
+- 用例层编排权限、锁、世界捕获、内容编解码、Git 对象与 ref 更新、恢复和网络同步。
+- 内容类型各自负责一种可保存和加载的 parcel 内容，不拥有世界、仓库或事务生命周期。
 - `GitRepositoryCore` 封装内部和共享仓库共用的 JGit 原语、安全校验、锁和结果模型。
 - `InternalRepository` 在公共实现上施加更严格的能力策略，并强制执行单父快照树和模组私有 ref 规则。
 - `SharedRepository` 复用同一实现，另外开放工作树、branch、tag、remote 和多父历史等能力。
@@ -264,25 +264,36 @@ refs/gitparcel/operations/<operation-id>
 - 世界备份需要先阻止新的 ref 更新，再复制完整仓库目录；只复制部分 loose objects 或 refs 不是有效备份。
 - 服务器关闭时完成或取消排队任务，关闭 JGit repository handle，并保留未完成 operation ref 供下次诊断。
 
-## 格式与任意 NIO FileSystem
+## 内容类型与任意 NIO FileSystem
 
-### 格式边界
+### 内容存储边界
 
 快照的可移植文件树采用以下逻辑结构：
 
 ```text
 parcel.json
-config.json        # 格式无配置时可以不存在
 data/
+  blocks/
+  entities/
+  attachments/
+  <extension-id>/
 ```
 
-运行时负责 `parcel.json`、格式配置和根目录生命周期；具体 `ParcelFormat` 只在上下文提供的 `data/` 根路径下读写。写入器把世界无关的 `ParcelDataSource` 编码为文件树，读取器把文件树解码到 `ParcelDataSink`。领域层以 `ParcelDataComponent` 标识方块、实体、附件等语义组件；格式实现负责把组件映射到自己的文件布局。
+运行时负责 `parcel.json`、`data/` 根目录和事务生命周期。领域层的
+`ParcelContentType` 表示一种可独立保存、加载和版本化的内容。其字符串 ID 同时是唯一
+目录名，每个类型只在 `data/<id>/` 下读写；同 ID 注册多个版本时，最高版本用于新快照，
+旧版本仍可读取对应历史快照。`parcel.json` 的 `contents` 清单记录每个目录的版本和可选
+配置。
 
-Parcella 约定每个组件独占 `data/<type>/` 子树，但不规定子树内部必须按 section 或记录切分。方块可以按 section 流式存储，实体可以按记录存储，地图等数据也可以在自己的组件目录内集中存储。`ParcellaComponentCodec` 是这种映射的格式层实现，不能反向成为领域概念。
+内置类型包括 `blocks`、`entities` 和 `attachments`，扩展可注册任意其他类型。方块类型
+固定使用调色板、空间 RLE 和独立方块实体记录；仅 section 边长可配置为 16 或 32。实体
+和附件按记录保存。类型可声明加载依赖，保存时采用反向顺序。
 
-格式上下文持有一个目标根 `Path`。该 `Path` 自带所属 `FileSystem`，因此 API 不需要额外接收默认文件系统。所有派生路径必须通过根路径的 `resolve` 或同一 `FileSystem` 创建。
+内容操作上下文持有该类型独占的目标根 `Path`。该 `Path` 自带所属 `FileSystem`，因此
+API 不需要额外接收默认文件系统。所有派生路径必须通过根路径的 `resolve` 或同一
+`FileSystem` 创建。
 
-格式实现必须遵守：
+内容类型实现必须遵守：
 
 - 只使用 `java.nio.file.Path`、`Files`、流或 channel，不使用 `java.io.File`、`Path#toFile()` 或默认文件系统的 `Path.of(...)`。
 - 不创建、缓存或关闭调用者拥有的 `FileSystem`。
@@ -291,27 +302,27 @@ Parcella 约定每个组件独占 `data/<type>/` 子树，但不规定子树内�
 - 不依赖 POSIX 权限、文件锁、watch service、原子移动或提供者特有属性。
 - 关闭自己打开的流、channel 和目录迭代器。
 - 接受空工作区，或者由明确基线提交物化得到的非空工作区；允许读取已有内容以维持稳定 ID 和文件布局。
-- 将工作区协调成完整结果：旧文件只有被组件明确保留或重新产生时才能进入新快照，不能残留已失效的数据。
+- 将独占目录协调成完整结果：旧文件只有被该类型明确保留或重新产生时才能进入新快照，不能残留已失效的数据。
 - 对相同的“基线树、当前 parcel 数据和配置”写出确定性的结果。
 
-支持目标的最低能力是创建目录、读写普通文件、列出目录、删除文件和顺序流式 I/O。只读文件系统只能作为读取源。原子替换是工作区或最终存储层的职责，不是格式能力。
+支持目标的最低能力是创建目录、读写普通文件、列出目录、删除文件和顺序流式 I/O。只读文件系统只能作为读取源。原子替换是工作区或最终存储层的职责，不是内容类型能力。
 
 ### 工作区与 Git 对象之间的桥接
 
-JGit `FileRepository` 不支持任意 NIO `FileSystem`，格式也不应直接依赖 JGit。用例层通过 `SnapshotWorkspaceFactory` 获得临时根路径：
+JGit `FileRepository` 不支持任意 NIO `FileSystem`，内容类型也不应直接依赖 JGit。用例层通过 `SnapshotWorkspaceFactory` 获得临时根路径：
 
 ```text
-世界内容 -> ParcelFormat -> NIO 临时文件树 -> 校验 -> Git blob/tree/commit
-世界内容 <- ParcelFormat <- NIO 临时文件树 <- 校验/导出 <- Git commit tree
+世界内容 -> 内容类型 -> NIO 临时文件树 -> 校验 -> Git blob/tree/commit
+世界内容 <- 内容类型 <- NIO 临时文件树 <- 校验/导出 <- Git commit tree
 ```
 
-保存已有 parcel 时，运行时先把 `refs/gitparcel/current` 指向的 commit tree 导出到临时工作区，并记住该 commit 作为基线；格式随后在这个非空工作区上更新数据。提交阶段必须再次确认 current ref 仍等于该基线，新 commit 也必须以它为父提交。基线已经变化时丢弃本次工作区并报告并发更新，不能把基于旧树生成的结果改挂到新父提交。
+保存已有 parcel 时，运行时先把 `refs/gitparcel/current` 指向的 commit tree 导出到临时工作区，并记住该 commit 作为基线；各内容类型随后在这个非空工作区上更新自己的目录。提交阶段必须再次确认 current ref 仍等于该基线，新 commit 也必须以它为父提交。基线已经变化时丢弃本次工作区并报告并发更新，不能把基于旧树生成的结果改挂到新父提交。
 
 工作区可以来自默认文件系统、Jimfs、ZipFS 或其他满足契约的提供者。JGit 仓库始终留在其固定世界目录中；这里只把单次快照的普通文件流式写成 Git 对象，或者把一个 commit tree 流式导出到工作区，绝不复制、checkout 或重建整个仓库。
 
 临时工作区的成本只与当前 parcel 快照大小相关，不与历史大小或 Git 仓库大小相关。若磁盘临时工作区仍成为性能瓶颈，可以让 `SnapshotWorkspaceFactory` 选择内存文件系统或未来提供直接构造文件树的实现，但不能通过来回复制 Git 仓库解决。
 
-测试至少覆盖默认文件系统、Jimfs 和 ZipFS。针对每个内置格式，同一测试向不同提供者写入并读取，验证逻辑内容和规范化文件摘要一致。还要用自定义提供者或故障注入验证不支持 `ATOMIC_MOVE`、部分写入和关闭失败时的行为。
+测试至少覆盖默认文件系统、Jimfs 和 ZipFS。针对每个内置内容类型，同一测试向不同提供者写入并读取，验证逻辑内容和规范化文件摘要一致。还要用自定义提供者或故障注入验证不支持 `ATOMIC_MOVE`、部分写入和关闭失败时的行为。
 
 ## 大规模 Parcel 与操作进度
 
@@ -319,11 +330,11 @@ Parcel 可能小至 `1×1×1`，也可能达到 `512×384×512`，即超过一�
 
 ### 有界资源使用
 
-- 世界内容、格式记录和 Git blob 必须按 section、实体或文件流式处理，不能把完整 parcel 同时保存在堆内存中。
-- 格式读取器和写入器应维持有文档说明的内存上限；配置中的 section size 也要考虑峰值内存，而不只考虑压缩率。
+- 世界内容、内容记录和 Git blob 必须按 section、实体或文件流式处理，不能把完整 parcel 同时保存在堆内存中。
+- 内容类型的读取和写入应维持有文档说明的内存上限；配置中的 section size 也要考虑峰值内存，而不只考虑压缩率。
 - NIO 工作区只包含当前一次操作的数据，成本与当前 parcel 大小相关，不随 Git 历史长度增长。
 - Git 对象写入、tree 遍历和导出使用流或 channel，不使用 `readAllBytes` 处理潜在的大文件。
-- 世界访问必须遵守 Minecraft 线程规则；可以安全移出主线程的格式编码、文件 I/O 和 Git 对象操作应在有界后台执行器中运行。
+- 世界访问必须遵守 Minecraft 线程规则；可以安全移出主线程的内容编码、文件 I/O 和 Git 对象操作应在有界后台执行器中运行。
 
 如果世界读取或放置需要跨多个 tick 分批进行，进度机制必须能够持续报告。这样的捕获表示一段时间内观察到的内容，不能谎称是 Minecraft 世界的原子瞬时快照；若未来实现区域冻结或一致性捕获，应作为单独能力明确声明。
 
@@ -346,9 +357,9 @@ updatedAt
 result/error summary
 ```
 
-保存和加载的顶层阶段由用例层报告，例如世界捕获、格式编码、Git 对象写入、Git tree 读取、格式解码和世界放置。不同单位不能直接相加成虚假的总百分比；只有用例明确知道各阶段权重时才提供整体百分比，否则 UI 展示当前阶段和不确定进度。
+保存和加载的顶层阶段由用例层报告，例如世界捕获、内容编码、Git 对象写入、Git tree 读取、内容解码和世界放置。不同单位不能直接相加成虚假的总百分比；只有用例明确知道各阶段权重时才提供整体百分比，否则 UI 展示当前阶段和不确定进度。
 
-`ParcelFormat.WriteContext` 和 `ParcelFormat.ReadContext` 始终提供非空 `ProgressReporter`，不需要跟踪时由调用者传入无操作实现。格式可以报告子阶段、已处理数量和可选总量，也可以完全忽略 reporter；未报告时操作仍正常执行，外层阶段显示为不确定进度。`ParcelDataSource`、`ParcelDataSink` 和 Git 工作区桥接器也可以使用同一 reporter 建立子任务。
+`ParcelContentType.SaveContext` 和 `ParcelContentType.LoadContext` 始终提供非空 `ProgressReporter`，不需要跟踪时由调用者传入无操作实现。内容类型可以报告子阶段、已处理数量和可选总量，也可以完全忽略 reporter；未报告时操作仍正常执行，外层阶段显示为不确定进度。`ParcelDataSource`、`ParcelDataSink` 和 Git 工作区桥接器也可以使用同一 reporter 建立子任务。
 
 进度回调必须满足：
 
@@ -510,7 +521,7 @@ pull 和 fetch 只更新外部仓库。把更新后的内容带入世界必须�
 
 系统优先显式失败，不静默猜测或覆盖：
 
-- 格式生成失败不创建快照。
+- 任一内容类型保存失败时不创建快照。
 - Git 对象或 ref 更新失败不覆盖旧的当前基准。
 - 玩家明确保存时允许创建 tree 未变化的新 commit，不在保存前额外扫描世界。
 - 恢复校验失败时不开始修改世界。
@@ -527,8 +538,8 @@ pull 和 fetch 只更新外部仓库。把更新后的内容带入世界必须�
 当前架构中值得保留的方向包括：
 
 - 服务端权威和客户端只读镜像。
-- `ParcelDataSource` / `ParcelDataSink` 与格式编解码分离。
-- 格式上下文使用 `Path`，内置 Parcella 主要使用 `Files` API。
+- `ParcelDataSource` / `ParcelDataSink` 与内容类型的编解码分离。
+- 内容操作上下文使用 `Path`，内置内容类型主要使用 `Files` API。
 - `GitRepo` 已经集中了一部分内部和共享仓库可复用的 JGit 操作。
 - 恢复 Git 历史时直接导出子树而不 checkout 工作树。
 - 共享仓库锁、异步远程任务、路径校验和结构化历史查询。
@@ -543,10 +554,10 @@ pull 和 fetch 只更新外部仓库。把更新后的内容带入世界必须�
 - 恢复固定在默认临时文件系统创建工作区。
 - 在非默认文件系统路径旁使用默认 `Path.of(...)`，存在 provider mismatch 风险。
 - JGit `FileRepository` 依赖 `Path#toFile()`，不能代表任意 NIO 文件系统能力。
-- 长时间保存和加载没有贯穿格式与世界读写阶段的统一进度模型。
+- 长时间保存和加载没有贯穿内容编解码与世界读写阶段的统一进度模型。
 - 恢复前若要判断未保存变化只能额外完整捕获，当前架构不应继续引入这类 dirty 查询。
 
-因此，当前代码适合作为格式、世界读写、Git 交换和安全规则的原型，但不适合继续把 Git 工作树作为内部快照领域的中心。下一步应先替换领域用例和存储边界，再继续扩充命令或最终 UI。
+因此，当前代码适合作为内容存储、世界读写、Git 交换和安全规则的原型，但不适合继续把 Git 工作树作为内部快照领域的中心。下一步应先替换领域用例和存储边界，再继续扩充命令或最终 UI。
 
 ## 实施顺序
 
@@ -554,10 +565,10 @@ pull 和 fetch 只更新外部仓库。把更新后的内容带入世界必须�
 
 - 定义不向普通 UI 暴露 Git 细节的 `SnapshotId`、`SnapshotNode`、树查询、保存/恢复请求和结构化结果。
 - 拆分 `Parcel` 当前定义、快照清单和外部发布关系，删除 `ParcelLocation` 的权威存储职责。
-- 明确 `ParcelFormat` 的 NIO 契约，修复跨 provider 路径构造，并为内置格式增加 Jimfs/ZipFS 一致性测试。
+- 明确 `ParcelContentType` 的 NIO 契约，修复跨 provider 路径构造，并为内置内容类型增加 Jimfs/ZipFS 一致性测试。
 - 从现有 `GitRepo` 提取 `GitRepositoryCore` 和服务端能力策略，由内部与共享仓库共同使用。
 - 实现内部 bare repository 布局、私有 refs、`ObjectInserter` tree/commit 写入和启动完整性检查。
-- 将 `GitOperationManager` 泛化为所有长时间用例共用的 `OperationManager`，并把可选 `ProgressReporter` 接入格式上下文。
+- 将 `GitOperationManager` 泛化为所有长时间用例共用的 `OperationManager`，并把可选 `ProgressReporter` 接入内容操作上下文。
 - 实现原子的 `SaveSnapshot`，替换普通 `save`/`commit` 两步命令。
 - 实现树查询、当前基准、显式“先保存再恢复”、未完成恢复日志和分叉测试。
 - 更新网络 DTO 与基础命令，再以同一用例实现 Modern UI。

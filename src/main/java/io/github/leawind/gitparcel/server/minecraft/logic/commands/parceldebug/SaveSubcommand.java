@@ -5,12 +5,9 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.FilePathArgument;
-import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelFormatArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
 import io.github.leawind.gitparcel.common.utils.Translations;
@@ -43,13 +40,10 @@ public class SaveSubcommand {
             .executes(SaveSubcommand::save3)
             .then(save_mirror);
 
-    var save_format =
-        Commands.argument("format", ParcelFormatArgument.writer())
-            .executes(SaveSubcommand::save2)
-            .then(save_ignore_entities);
-
     var save_path =
-        FilePathArgument.argOfDir("path", true).executes(SaveSubcommand::save1).then(save_format);
+        FilePathArgument.argOfDir("path", true)
+            .executes(SaveSubcommand::save1)
+            .then(save_ignore_entities);
 
     var save_to = Commands.argument("to", BlockPosArgument.blockPos()).then(save_path);
 
@@ -64,19 +58,6 @@ public class SaveSubcommand {
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         FilePathArgument.getPath(ctx, "path"),
-        ParcelFormatRegistry.get().defaultWriter(),
-        true,
-        Mirror.NONE,
-        Rotation.NONE);
-  }
-
-  private static int save2(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-    return save(
-        ctx.getSource(),
-        BlockPosArgument.getLoadedBlockPos(ctx, "from"),
-        BlockPosArgument.getLoadedBlockPos(ctx, "to"),
-        FilePathArgument.getPath(ctx, "path"),
-        ParcelFormatArgument.getWriter(ctx, "format"),
         true,
         Mirror.NONE,
         Rotation.NONE);
@@ -88,7 +69,6 @@ public class SaveSubcommand {
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         FilePathArgument.getPath(ctx, "path"),
-        ParcelFormatArgument.getWriter(ctx, "format"),
         BoolArgumentType.getBool(ctx, "ignore_entities"),
         Mirror.NONE,
         Rotation.NONE);
@@ -100,7 +80,6 @@ public class SaveSubcommand {
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         FilePathArgument.getPath(ctx, "path"),
-        ParcelFormatArgument.getWriter(ctx, "format"),
         BoolArgumentType.getBool(ctx, "ignore_entities"),
         TemplateMirrorArgument.getMirror(ctx, "mirror"),
         Rotation.NONE);
@@ -112,7 +91,6 @@ public class SaveSubcommand {
         BlockPosArgument.getLoadedBlockPos(ctx, "from"),
         BlockPosArgument.getLoadedBlockPos(ctx, "to"),
         FilePathArgument.getPath(ctx, "path"),
-        ParcelFormatArgument.getWriter(ctx, "format"),
         BoolArgumentType.getBool(ctx, "ignore_entities"),
         TemplateMirrorArgument.getMirror(ctx, "mirror"),
         TemplateRotationArgument.getRotation(ctx, "rotation"));
@@ -123,7 +101,6 @@ public class SaveSubcommand {
       BlockPos corner1,
       BlockPos corner2,
       Path parcelDir,
-      ParcelFormat.Writer<?> format,
       boolean ignoreEntities,
       Mirror mirror,
       Rotation rotation) {
@@ -132,9 +109,9 @@ public class SaveSubcommand {
       var pivot = Parcel.getPivotBlockPos(mirror, rotation, boundingBox);
       ParcelTransform transform = new ParcelTransform(mirror, rotation, pivot);
 
-      var meta = ParcelFactory.createMetadata(format.spec(), boundingBox, rotation);
+      var meta = ParcelFactory.createMetadata(boundingBox, rotation);
 
-      ParcelStorage.save(source.getLevel(), transform, meta, null, parcelDir, ignoreEntities);
+      ParcelStorage.save(source.getLevel(), transform, meta, parcelDir, ignoreEntities);
 
       source.sendSuccess(
           () -> Translations.of("command.gitparcel.parcel_debug.save.success"), ignoreEntities);

@@ -35,7 +35,7 @@ public final class ParcelFormatter {
     }
 
     component
-        .append(Component.literal(linePrefix + "Format: " + meta.formatSpec()))
+        .append(Component.literal(linePrefix + "Contents: " + meta.contents().keySet()))
         .append(Component.literal("\n"))
         .append(
             Component.literal(

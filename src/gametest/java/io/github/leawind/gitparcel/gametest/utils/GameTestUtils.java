@@ -1,60 +1,17 @@
 package io.github.leawind.gitparcel.gametest.utils;
 
 import io.github.leawind.gitparcel.common.api.config.ConfigItem;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.world.level.block.Mirror;
-import net.minecraft.world.level.block.Rotation;
 import org.jspecify.annotations.Nullable;
 
 public final class GameTestUtils {
   private GameTestUtils() {}
-
-  public interface ParcelFormatCombinationConsumer<F extends ParcelFormat> {
-    void accept(F format, Rotation rotation, Mirror mirror) throws Exception;
-  }
-
-  public static <F extends ParcelFormat> void forEachFormatCombination(
-      Collection<F> formats, ParcelFormatCombinationConsumer<F> consumer) throws Exception {
-    for (var format : formats) {
-      for (Rotation rotation : Rotation.values()) {
-        for (Mirror mirror : Mirror.values()) {
-          consumer.accept(format, rotation, mirror);
-        }
-      }
-    }
-  }
-
-  public static <C extends ParcelFormatConfig<C>> List<Map<String, ?>> generateConfigCombinations(
-      ParcelFormat.Impl<C> format) {
-    Map<String, List<?>> options = new HashMap<>();
-    var defaultConfig = format.getDefaultConfig();
-
-    if (defaultConfig == null) {
-      return List.of(Map.of());
-    }
-
-    for (var item : defaultConfig.listConfigItems()) {
-      List<?> testValues = getTestValues(item);
-      if (testValues.size() > 1) {
-        options.putIfAbsent(item.name(), testValues);
-      }
-    }
-
-    if (options.isEmpty()) {
-      return List.of(Map.of());
-    }
-
-    return cartesianProduct(options);
-  }
 
   public static List<Map<String, ?>> cartesianProduct(Map<String, List<?>> map) {
     if (map.isEmpty()) {

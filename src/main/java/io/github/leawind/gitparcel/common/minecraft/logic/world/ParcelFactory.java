@@ -1,9 +1,10 @@
 package io.github.leawind.gitparcel.common.minecraft.logic.world;
 
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentManifest;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentType;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentTypeRegistry;
 import io.github.leawind.gitparcel.common.api.permission.ParcelPermissions;
 import io.github.leawind.gitparcel.common.api.permission.PermissionConfig;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
@@ -12,27 +13,38 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import java.util.stream.Collectors;
 
-/** Creates parcel models using the active Minecraft runtime and format registry. */
+/** Creates parcel models using the active Minecraft runtime and content registry. */
 public final class ParcelFactory {
   private ParcelFactory() {}
 
   /** Creates metadata stamped with the active Minecraft data version. */
-  public static ParcelMeta createMetadata(
-      ParcelFormat.Spec format, Vec3i parcelSize, Vec3i anchor) {
-    return new ParcelMeta(format, MinecraftVersion.currentDataVersion(), parcelSize, anchor);
+  public static ParcelMeta createMetadata(Vec3i parcelSize, Vec3i anchor) {
+    var contents =
+        ParcelContentTypeRegistry.get().latestTypes().stream()
+            .collect(
+                Collectors.toUnmodifiableMap(
+                    type -> type.spec().id(),
+                    type -> defaultManifest(type)));
+    return new ParcelMeta(contents, MinecraftVersion.currentDataVersion(), parcelSize, anchor);
   }
 
   /** Creates metadata from a world-space box and converts its size to parcel-local space. */
-  public static ParcelMeta createMetadata(
-      ParcelFormat.Spec format, BoundingBox boundingBox, Rotation rotation) {
+  public static ParcelMeta createMetadata(BoundingBox boundingBox, Rotation rotation) {
     var sizeWorldSpace =
         new Vec3i(boundingBox.getXSpan(), boundingBox.getYSpan(), boundingBox.getZSpan());
     var sizeParcelSpace = ParcelTransform.rotateSize(rotation, sizeWorldSpace);
-    return createMetadata(format, sizeParcelSpace, Vec3i.ZERO);
+    return createMetadata(sizeParcelSpace, Vec3i.ZERO);
   }
 
-  /** Creates a parcel using the active default format writer. */
+  private static ParcelContentManifest defaultManifest(ParcelContentType<?> type) {
+    var config = type.defaultConfig();
+    return new ParcelContentManifest(
+        type.spec().version(), config == null ? null : config.toJson());
+  }
+
+  /** Creates a parcel using the active content types. */
   public static Parcel create(BoundingBox boundingBox, Mirror mirror, Rotation rotation) {
     return create(
         boundingBox,
@@ -41,7 +53,7 @@ public final class ParcelFactory {
         new PermissionConfig<>(ParcelPermissions.REGISTRY));
   }
 
-  /** Creates a parcel using the active default format writer and supplied permissions. */
+  /** Creates a parcel using the active content types and supplied permissions. */
   public static Parcel create(
       BoundingBox boundingBox,
       Mirror mirror,
@@ -52,8 +64,7 @@ public final class ParcelFactory {
         new ParcelTransform(
             mirror, rotation, new Vec3i((int) pivot.x, (int) pivot.y, (int) pivot.z));
 
-    var format = ParcelFormatRegistry.get().defaultWriter().spec();
-    var meta = createMetadata(format, boundingBox, rotation);
+    var meta = createMetadata(boundingBox, rotation);
 
     return Parcel.create(meta, transform, permissions);
   }

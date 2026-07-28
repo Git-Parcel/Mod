@@ -20,6 +20,9 @@ public record BlockSection(
     size = new Vec3i(size.getX(), size.getY(), size.getZ());
     states = List.copyOf(states);
     blockEntities = List.copyOf(blockEntities);
+    if (size.getX() <= 0 || size.getY() <= 0 || size.getZ() <= 0) {
+      throw new IllegalArgumentException("Block section dimensions must be positive: " + size);
+    }
     int expected = Math.multiplyExact(Math.multiplyExact(size.getX(), size.getY()), size.getZ());
     if (states.size() != expected) {
       throw new IllegalArgumentException(

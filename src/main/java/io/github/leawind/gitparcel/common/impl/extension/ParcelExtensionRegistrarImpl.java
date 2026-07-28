@@ -5,21 +5,21 @@ import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachm
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentTypeRegistry;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessor;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentType;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentTypeRegistry;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 final class ParcelExtensionRegistrarImpl implements ParcelExtensionRegistrar {
-  private final List<ParcelFormat.Impl<?>> formats = new ArrayList<>();
+  private final List<ParcelContentType<?>> contentTypes = new ArrayList<>();
   private final List<ParcelRecordProcessor> processors = new ArrayList<>();
   private final List<ParcelAttachmentType> attachmentTypes = new ArrayList<>();
 
   @Override
-  public void registerFormat(ParcelFormat.Impl<?> format) {
-    formats.add(format);
+  public void registerContentType(ParcelContentType<?> type) {
+    contentTypes.add(type);
   }
 
   @Override
@@ -32,28 +32,14 @@ final class ParcelExtensionRegistrarImpl implements ParcelExtensionRegistrar {
     attachmentTypes.add(type);
   }
 
-  void commit(ParcelFormatRegistry registry) {
-    Set<ParcelFormat.Spec> writerSpecs = new HashSet<>();
-    Set<ParcelFormat.Spec> readerSpecs = new HashSet<>();
+  void commit(ParcelContentTypeRegistry registry) {
+    Set<ParcelContentType.Spec> contentSpecs = new HashSet<>();
     Set<net.minecraft.resources.Identifier> processorIds = new HashSet<>();
     Set<net.minecraft.resources.Identifier> attachmentTypeIds = new HashSet<>();
 
-    for (var format : formats) {
-      boolean valid = false;
-      if (format instanceof ParcelFormat.Writer<?> writer) {
-        valid = true;
-        if (!writerSpecs.add(writer.spec()) || registry.getWriter(writer.spec()) != null) {
-          throw new IllegalArgumentException("duplicate writer: " + writer.spec());
-        }
-      }
-      if (format instanceof ParcelFormat.Reader<?> reader) {
-        valid = true;
-        if (!readerSpecs.add(reader.spec()) || registry.getReader(reader.spec()) != null) {
-          throw new IllegalArgumentException("duplicate reader: " + reader.spec());
-        }
-      }
-      if (!valid) {
-        throw new IllegalArgumentException("format must be either writer or reader: " + format);
+    for (var type : contentTypes) {
+      if (!contentSpecs.add(type.spec()) || registry.get(type.spec()) != null) {
+        throw new IllegalArgumentException("duplicate parcel content type: " + type.spec());
       }
     }
 
@@ -70,16 +56,8 @@ final class ParcelExtensionRegistrarImpl implements ParcelExtensionRegistrar {
       }
     }
 
-    for (var format : formats) {
-      registerUnchecked(registry, format);
-    }
+    contentTypes.forEach(registry::register);
     processors.forEach(ParcelRecordProcessorRegistry.get()::register);
     attachmentTypes.forEach(ParcelAttachmentTypeRegistry.get()::register);
-  }
-
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  private static void registerUnchecked(
-      ParcelFormatRegistry registry, ParcelFormat.Impl<?> format) {
-    registry.register((ParcelFormat.Impl) format);
   }
 }

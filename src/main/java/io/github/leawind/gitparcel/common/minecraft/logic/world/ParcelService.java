@@ -337,7 +337,7 @@ public final class ParcelService {
     }
   }
 
-  /** Background restore orchestration with Git and format validation off the server thread. */
+  /** Background restore orchestration with Git and content validation off the server thread. */
   public InternalRepository.RestoreResult restoreSnapshotInBackground(
       Parcel parcel,
       SnapshotId snapshotId,
@@ -573,7 +573,7 @@ public final class ParcelService {
     }
   }
 
-  /** Performs shared Git and format I/O off-thread, crossing over only for world state. */
+  /** Performs shared Git and content I/O off-thread, crossing over only for world state. */
   public Parcel importSharedSnapshotInBackground(
       String repository,
       String revision,

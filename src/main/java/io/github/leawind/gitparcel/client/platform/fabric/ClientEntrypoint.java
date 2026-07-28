@@ -25,7 +25,7 @@ public class ClientEntrypoint implements ClientModInitializer {
 
     ClientTickEvents.START_CLIENT_TICK.register(ModClientEntrypoint::onClientTick);
     ClientPlayNetworking.registerGlobalReceiver(
-        MinecraftPayloads.PARCEL_FORMATS_TYPE,
+        MinecraftPayloads.PARCEL_CONTENTS_TYPE,
         (payload, context) -> ClientPayloadHandler.handle(payload.message()));
     ClientPlayNetworking.registerGlobalReceiver(
         MinecraftPayloads.PARCELS_TYPE,

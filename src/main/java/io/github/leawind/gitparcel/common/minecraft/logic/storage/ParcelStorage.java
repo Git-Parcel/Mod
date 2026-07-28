@@ -4,19 +4,21 @@ import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentTypeRegistry;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
 import io.github.leawind.gitparcel.common.api.operation.ProgressReporter;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormat;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatConfig;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockSection;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentConfig;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentManifest;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentType;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentTypeRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSink;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSource;
 import io.github.leawind.gitparcel.common.api.parcel.content.SemanticData;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
-import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
+import io.github.leawind.gitparcel.common.impl.content.ParcelContentTypeOrder;
 import io.github.leawind.gitparcel.common.utils.io.NioFileTree;
 import io.github.leawind.gitparcel.common.minecraft.logic.portable.MinecraftParcelDataSink;
 import io.github.leawind.gitparcel.common.minecraft.logic.portable.MinecraftParcelDataSource;
@@ -24,6 +26,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -46,15 +52,10 @@ public class ParcelStorage {
 
   private static final String META_FILE_NAME = "parcel.json";
 
-  private static final String CONFIG_FILE_NAME = "config.json";
   private static final String DATA_DIR_NAME = "data";
 
   private static Path getMetaFile(Path parcelDir) {
     return parcelDir.resolve(META_FILE_NAME);
-  }
-
-  private static Path getConfigFile(Path parcelDir) {
-    return parcelDir.resolve(CONFIG_FILE_NAME);
   }
 
   private static Path getDataDir(Path parcelDir) {
@@ -97,41 +98,23 @@ public class ParcelStorage {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  public static <C extends ParcelFormatConfig<C>> void save(
+  public static void save(
       Level level, Parcel parcel, Path parcelDir, boolean ignoreEntities)
       throws IOException, ParcelException {
     save(level, parcel, parcelDir, ignoreEntities, ProgressReporter.NONE);
   }
 
-  public static <C extends ParcelFormatConfig<C>> void save(
+  public static void save(
       Level level,
       Parcel parcel,
       Path parcelDir,
       boolean ignoreEntities,
       ProgressReporter progress)
       throws IOException, ParcelException {
-    C config = null;
-    var serializedConfig = parcel.formatConfig().orElse(null);
-    if (serializedConfig != null) {
-      ParcelFormat.Writer<C> format =
-          (ParcelFormat.Writer<C>)
-              ParcelFormatRegistry.get().getWriter(parcel.meta().formatSpec());
-      if (format == null) {
-        throw new ParcelException.UnsupportedFormat(parcel.meta().formatSpec());
-      }
-
-      config = format.getDefaultConfig();
-      if (config != null) {
-        config.setFromJson(serializedConfig.getAsJsonObject());
-      }
-    }
-
     save(
         level,
         parcel.transform(),
         parcel.meta(),
-        config,
         parcelDir,
         ignoreEntities,
         progress);
@@ -144,14 +127,12 @@ public class ParcelStorage {
    *     {@value #DATA_DIR_NAME} directory. Will be created if not exists.
    * @throws IOException If an I/O error occurs while saving the parcel
    * @throws ParcelException If other error occurs while saving the parcel
-   * @throws ParcelException.UnsupportedFormat If the format is not supported
+   * @throws ParcelException.UnsupportedContent If a content implementation is unavailable
    */
-  @SuppressWarnings("unchecked")
-  public static <C extends ParcelFormatConfig<C>> void save(
+  public static void save(
       Level level,
       ParcelTransform transform,
       ParcelMeta meta,
-      @Nullable C config,
       Path parcelDir,
       boolean ignoreEntities)
       throws IOException, ParcelException {
@@ -159,44 +140,20 @@ public class ParcelStorage {
         level,
         transform,
         meta,
-        config,
         parcelDir,
         ignoreEntities,
         ProgressReporter.NONE);
   }
 
-  @SuppressWarnings("unchecked")
-  public static <C extends ParcelFormatConfig<C>> void save(
+  public static void save(
       Level level,
       ParcelTransform transform,
       ParcelMeta meta,
-      @Nullable C config,
       Path parcelDir,
       boolean ignoreEntities,
       ProgressReporter progress)
       throws IOException, ParcelException {
-    ParcelFormat.Writer<C> format =
-        (ParcelFormat.Writer<C>) ParcelFormatRegistry.get().getWriter(meta.formatSpec());
-    if (format == null) {
-      throw new ParcelException.UnsupportedFormat(meta.formatSpec());
-    }
-
-    C actualConfig = config;
-    if (actualConfig == null) {
-      actualConfig = format.getDefaultConfig();
-      var existingConfigFile = getConfigFile(parcelDir);
-      if (actualConfig != null && Files.exists(existingConfigFile)) {
-        try {
-          actualConfig.load(existingConfigFile);
-        } catch (Exception e) {
-          LOGGER.error(
-              "Failed to load format config, use default and overwrite: {}", e.getMessage(), e);
-          actualConfig.resetToDefault();
-        }
-      }
-    }
-
-    C resolvedConfig = actualConfig;
+    Map<String, ParcelContentManifest> refreshedContents = refreshedContents(meta);
     replaceDirectory(
         parcelDir,
         stagingDir -> {
@@ -204,52 +161,49 @@ public class ParcelStorage {
             NioFileTree.copyRecursively(parcelDir, stagingDir);
           }
           writeSnapshot(
-              format,
               level,
               transform,
               meta,
-              resolvedConfig,
+              refreshedContents,
               stagingDir,
               ignoreEntities || meta.getExcludeEntities(),
               progress);
         });
+    meta.setContents(refreshedContents);
   }
 
-  private static <C extends ParcelFormatConfig<C>> void writeSnapshot(
-      ParcelFormat.Writer<C> format,
+  private static void writeSnapshot(
       Level level,
       ParcelTransform transform,
       ParcelMeta meta,
-      @Nullable C config,
+      Map<String, ParcelContentManifest> contents,
       Path parcelDir,
       boolean ignoreEntities,
       ProgressReporter progress)
       throws IOException, ParcelException {
-    meta.save(getMetaFile(parcelDir));
-    if (config != null) {
-      config.save(getConfigFile(parcelDir));
-    } else {
-      Files.deleteIfExists(getConfigFile(parcelDir));
+    Map<String, ParcelContentManifest> previousContents = meta.contents();
+    try {
+      meta.setContents(contents);
+      meta.save(getMetaFile(parcelDir));
+    } finally {
+      meta.setContents(previousContents);
     }
 
     var space = new ParcelSpace(transform, meta.anchor());
     var source =
         new MinecraftParcelDataSource(
             level, meta.size(), meta.anchor(), space, ignoreEntities);
-    format.write(
-        new ParcelFormat.WriteContext<>(
-            meta.size(),
-            meta.anchor(),
-            meta.dataVersion(),
-            getDataDir(parcelDir),
-            config,
-            progress),
-        source);
+    Path dataDirectory = getDataDir(parcelDir);
+    var types = ParcelContentTypeOrder.forSave(ParcelContentTypeRegistry.get().latestTypes());
+    for (ParcelContentType<?> type : types) {
+      ParcelContentManifest manifest = contents.get(type.spec().id());
+      saveContent(type, manifest, meta, dataDirectory.resolve(type.spec().id()), source, progress);
+    }
+    reconcileContentRoot(dataDirectory, contents.keySet());
     try (var entries = Files.newDirectoryStream(parcelDir)) {
       for (Path entry : entries) {
         String name = entry.getFileName().toString();
         if (!name.equals(META_FILE_NAME)
-            && !name.equals(CONFIG_FILE_NAME)
             && !name.equals(DATA_DIR_NAME)) {
           NioFileTree.deleteRecursivelyIfExists(entry);
         }
@@ -258,8 +212,7 @@ public class ParcelStorage {
   }
 
   /** Updates an operation-owned NIO workspace into one complete snapshot. */
-  @SuppressWarnings("unchecked")
-  public static <C extends ParcelFormatConfig<C>> void captureSnapshot(
+  public static void captureSnapshot(
       Level level,
       Parcel parcel,
       Path snapshotRoot,
@@ -267,26 +220,90 @@ public class ParcelStorage {
       ProgressReporter progress)
       throws IOException, ParcelException {
     Files.createDirectories(snapshotRoot);
-    ParcelFormat.Writer<C> format =
-        (ParcelFormat.Writer<C>)
-            ParcelFormatRegistry.get().getWriter(parcel.meta().formatSpec());
-    if (format == null) {
-      throw new ParcelException.UnsupportedFormat(parcel.meta().formatSpec());
-    }
-    C config = format.getDefaultConfig();
-    var serialized = parcel.formatConfig().orElse(null);
-    if (config != null && serialized != null) {
-      config.setFromJson(serialized.getAsJsonObject());
-    }
+    Map<String, ParcelContentManifest> refreshedContents = refreshedContents(parcel.meta());
     writeSnapshot(
-        format,
         level,
         parcel.transform(),
         parcel.meta(),
-        config,
+        refreshedContents,
         snapshotRoot,
         ignoreEntities || parcel.meta().getExcludeEntities(),
         progress);
+    parcel.meta().setContents(refreshedContents);
+  }
+
+  private static Map<String, ParcelContentManifest> refreshedContents(ParcelMeta meta)
+      throws ParcelException {
+    for (var entry : meta.contents().entrySet()) {
+      if (ParcelContentTypeRegistry.get().latest(entry.getKey()) == null) {
+        throw new ParcelException.UnsupportedContent(entry.getValue().spec(entry.getKey()));
+      }
+    }
+    var refreshed = new LinkedHashMap<String, ParcelContentManifest>();
+    for (ParcelContentType<?> type : ParcelContentTypeRegistry.get().latestTypes()) {
+      ParcelContentManifest previous = meta.contents().get(type.spec().id());
+      var defaultConfig = type.defaultConfig();
+      var config = previous == null ? null : previous.config();
+      if (config == null && defaultConfig != null) {
+        config = defaultConfig.toJson();
+      }
+      refreshed.put(
+          type.spec().id(), new ParcelContentManifest(type.spec().version(), config));
+    }
+    return Map.copyOf(refreshed);
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private static void saveContent(
+      ParcelContentType type,
+      ParcelContentManifest manifest,
+      ParcelMeta meta,
+      Path directory,
+      ParcelDataSource source,
+      ProgressReporter progress)
+      throws IOException, ParcelException {
+    ParcelContentConfig config = parseConfig(type, manifest);
+    type.save(
+        new ParcelContentType.SaveContext<>(
+            meta.size(), meta.anchor(), meta.dataVersion(), directory, config, progress),
+        source);
+  }
+
+  private static ParcelContentConfig<?> parseConfig(
+      ParcelContentType<?> type, ParcelContentManifest manifest) throws ParcelException {
+    ParcelContentConfig<?> config = type.defaultConfig();
+    var serialized = manifest.config();
+    if (config == null) {
+      if (serialized != null) {
+        throw new ParcelException(
+            "Parcel content type %s does not accept configuration".formatted(type.spec()));
+      }
+      return null;
+    }
+    if (serialized == null) {
+      return config;
+    }
+    if (!serialized.isJsonObject()) {
+      throw new ParcelException("Invalid configuration for parcel content " + type.spec());
+    }
+    try {
+      config.setFromJson(serialized.getAsJsonObject());
+    } catch (IllegalStateException e) {
+      throw new ParcelException("Invalid configuration for parcel content " + type.spec(), e);
+    }
+    return config;
+  }
+
+  private static void reconcileContentRoot(Path dataRoot, Set<String> contentIds)
+      throws IOException {
+    Files.createDirectories(dataRoot);
+    try (var entries = Files.newDirectoryStream(dataRoot)) {
+      for (Path entry : entries) {
+        if (!contentIds.contains(entry.getFileName().toString())) {
+          NioFileTree.deleteRecursivelyIfExists(entry);
+        }
+      }
+    }
   }
 
   @FunctionalInterface
@@ -376,25 +393,6 @@ public class ParcelStorage {
     NioFileTree.deleteRecursivelyIfExists(directory);
   }
 
-  public static <C extends ParcelFormatConfig<C>> void save(
-      ParcelFormat.Writer<C> writer,
-      Level level,
-      BoundingBox boundingBox,
-      Rotation rotation,
-      Mirror mirror,
-      @Nullable C config,
-      Path parcelDir,
-      boolean ignoreEntities)
-      throws IOException, ParcelException {
-
-    var pivot = Parcel.getPivotBlockPos(mirror, rotation, boundingBox);
-    ParcelTransform transform = new ParcelTransform(mirror, rotation, pivot);
-
-    ParcelMeta meta = ParcelFactory.createMetadata(writer.spec(), boundingBox, rotation);
-
-    ParcelStorage.save(level, transform, meta, config, parcelDir, ignoreEntities);
-  }
-
   /**
    * Loads a parcel at the specified position in the specified level.
    *
@@ -407,10 +405,9 @@ public class ParcelStorage {
    * @param flags Flags to pass to {@link Level#setBlock} when loading blocks
    * @throws IOException If an I/O error occurs while loading the parcel
    * @throws ParcelException.CorruptedParcelException If the parcel is invalid and cannot be loaded
-   * @throws ParcelException.UnsupportedFormat If the format is not supported
+   * @throws ParcelException.UnsupportedContent If a content implementation is unavailable
    */
-  @SuppressWarnings("unchecked")
-  public static <C extends ParcelFormatConfig<C>> void load(
+  public static void load(
       ServerLevel level,
       ParcelTransform transform,
       Path parcelDir,
@@ -429,50 +426,31 @@ public class ParcelStorage {
   }
 
   /** Fully decodes a portable snapshot without touching a world. */
-  @SuppressWarnings("unchecked")
-  public static <C extends ParcelFormatConfig<C>> ParcelMeta validateSnapshot(
+  public static ParcelMeta validateSnapshot(
       Path parcelDir, ProgressReporter progress) throws IOException, ParcelException {
     ParcelMeta meta = ParcelMeta.load(getMetaFile(parcelDir));
-    ParcelFormat.Reader<C> reader =
-        (ParcelFormat.Reader<C>) ParcelFormatRegistry.get().getReader(meta.formatSpec());
-    if (reader == null) {
-      throw new ParcelException.UnsupportedFormat(meta.formatSpec());
-    }
     Path dataDir = getDataDir(parcelDir);
     if (!Files.isDirectory(dataDir)) {
       throw new ParcelException.CorruptedParcelException(
           "Snapshot data directory not found: " + dataDir);
     }
 
-    C config = reader.getDefaultConfig();
-    Path configFile = getConfigFile(parcelDir);
-    if (Files.exists(configFile)) {
-      if (config == null) {
-        throw new ParcelException.CorruptedParcelException(
-            "Snapshot has configuration for a format that does not accept it");
-      }
-      try {
-        config.load(configFile);
-      } catch (Exception e) {
-        throw new ParcelException.CorruptedParcelException(
-            "Invalid snapshot format configuration", e);
-      }
+    var types = resolveSnapshotContentTypes(meta, dataDir);
+    var sink = new SnapshotValidationSink(meta);
+    for (ParcelContentType<?> type : ParcelContentTypeOrder.forLoad(types)) {
+      loadContent(
+          type,
+          meta.contents().get(type.spec().id()),
+          meta,
+          dataDir.resolve(type.spec().id()),
+          sink,
+          ProgressReporter.prefixed("validate_", progress));
     }
-
-    reader.read(
-        new ParcelFormat.ReadContext<>(
-            meta.size(),
-            meta.anchor(),
-            meta.dataVersion(),
-            dataDir,
-            config,
-            ProgressReporter.prefixed("validate_", progress)),
-        new SnapshotValidationSink());
+    sink.finish();
     return meta;
   }
 
-  @SuppressWarnings("unchecked")
-  public static <C extends ParcelFormatConfig<C>> void load(
+  public static void load(
       ServerLevel level,
       ParcelTransform transform,
       Path parcelDir,
@@ -493,8 +471,7 @@ public class ParcelStorage {
   }
 
   /** Applies a snapshot whose complete portable tree was already decoded and validated. */
-  @SuppressWarnings("unchecked")
-  public static <C extends ParcelFormatConfig<C>> void applyValidatedSnapshot(
+  public static void applyValidatedSnapshot(
       ServerLevel level,
       ParcelTransform transform,
       Path parcelDir,
@@ -504,24 +481,8 @@ public class ParcelStorage {
       ProgressReporter progress)
       throws IOException, ParcelException {
     var meta = ParcelMeta.load(parcelDir.resolve(META_FILE_NAME));
-    ParcelFormat.Reader<C> reader =
-        (ParcelFormat.Reader<C>) ParcelFormatRegistry.get().getReader(meta.formatSpec());
-    if (reader == null) {
-      throw new ParcelException.UnsupportedFormat(meta.formatSpec());
-    }
-
-    Path configFile = getConfigFile(parcelDir);
-    C config = reader.getDefaultConfig();
-    if (config != null && Files.exists(configFile)) {
-      try {
-        config.load(configFile);
-      } catch (Exception e) {
-        LOGGER.error(
-            "Failed to load format config, use default and continue: {}", e.getMessage(), e);
-      }
-    }
-
     Path dataDir = parcelDir.resolve(DATA_DIR_NAME);
+    var types = resolveSnapshotContentTypes(meta, dataDir);
     var space = new ParcelSpace(transform, meta.anchor());
     if (!ignoreEntities) {
       level
@@ -540,18 +501,75 @@ public class ParcelStorage {
             flags,
             meta.dataVersion());
     try {
-      reader.read(
-          new ParcelFormat.ReadContext<>(
-              meta.size(),
-              meta.anchor(),
-              meta.dataVersion(),
-              dataDir,
-              config,
-              progress),
-          sink);
+      for (ParcelContentType<?> type : ParcelContentTypeOrder.forLoad(types)) {
+        loadContent(
+            type,
+            meta.contents().get(type.spec().id()),
+            meta,
+            dataDir.resolve(type.spec().id()),
+            sink,
+            progress);
+      }
     } finally {
       sink.finish();
     }
+  }
+
+  private static java.util.List<ParcelContentType<?>> resolveSnapshotContentTypes(
+      ParcelMeta meta, Path dataDir) throws IOException, ParcelException {
+    validateContentRoot(dataDir, meta.contents().keySet());
+    var types = new java.util.ArrayList<ParcelContentType<?>>(meta.contents().size());
+    for (var entry : meta.contents().entrySet()) {
+      ParcelContentType.Spec spec = entry.getValue().spec(entry.getKey());
+      ParcelContentType<?> type = ParcelContentTypeRegistry.get().get(spec);
+      if (type == null) {
+        throw new ParcelException.UnsupportedContent(spec);
+      }
+      types.add(type);
+    }
+    return List.copyOf(types);
+  }
+
+  private static void validateContentRoot(Path dataRoot, Set<String> contentIds)
+      throws IOException, ParcelException.CorruptedParcelException {
+    try (var entries = Files.newDirectoryStream(dataRoot)) {
+      var found = new java.util.HashSet<String>();
+      for (Path entry : entries) {
+        String id = entry.getFileName().toString();
+        if (!contentIds.contains(id) || !Files.isDirectory(entry)) {
+          throw new ParcelException.CorruptedParcelException(
+              "Unexpected snapshot content entry: " + entry);
+        }
+        found.add(id);
+      }
+      if (!found.equals(contentIds)) {
+        var missing = new java.util.HashSet<>(contentIds);
+        missing.removeAll(found);
+        throw new ParcelException.CorruptedParcelException(
+            "Missing snapshot content directories: " + missing);
+      }
+    }
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private static void loadContent(
+      ParcelContentType type,
+      ParcelContentManifest manifest,
+      ParcelMeta meta,
+      Path directory,
+      ParcelDataSink sink,
+      ProgressReporter progress)
+      throws IOException, ParcelException {
+    ParcelContentConfig config;
+    try {
+      config = parseConfig(type, manifest);
+    } catch (ParcelException e) {
+      throw new ParcelException.CorruptedParcelException(e.getMessage(), e);
+    }
+    type.load(
+        new ParcelContentType.LoadContext<>(
+            meta.size(), meta.anchor(), meta.dataVersion(), directory, config, progress),
+        sink);
   }
 
   public static void load(
@@ -596,6 +614,22 @@ public class ParcelStorage {
   }
 
   private static final class SnapshotValidationSink implements ParcelDataSink {
+    private final int minX;
+    private final int minY;
+    private final int minZ;
+    private final int maxXExclusive;
+    private final int maxYExclusive;
+    private final int maxZExclusive;
+
+    private SnapshotValidationSink(ParcelMeta meta) {
+      minX = -meta.anchor().getX();
+      minY = -meta.anchor().getY();
+      minZ = -meta.anchor().getZ();
+      maxXExclusive = Math.addExact(minX, meta.size().getX());
+      maxYExclusive = Math.addExact(minY, meta.size().getY());
+      maxZExclusive = Math.addExact(minZ, meta.size().getZ());
+    }
+
     @Override
     public void acceptAttachment(AttachmentRecord attachment) throws ParcelException {
       var type = ParcelAttachmentTypeRegistry.get().get(attachment.type());
@@ -615,14 +649,57 @@ public class ParcelStorage {
 
     @Override
     public void acceptBlockSection(BlockSection section) throws ParcelException {
+      var origin = section.origin();
+      int endX = Math.addExact(origin.getX(), section.size().getX());
+      int endY = Math.addExact(origin.getY(), section.size().getY());
+      int endZ = Math.addExact(origin.getZ(), section.size().getZ());
+      if (!contains(origin.getX(), origin.getY(), origin.getZ())
+          || endX > maxXExclusive
+          || endY > maxYExclusive
+          || endZ > maxZExclusive) {
+        throw new ParcelException.CorruptedParcelException(
+            "Block section lies outside the parcel: " + section.origin());
+      }
       for (var blockEntity : section.blockEntities()) {
+        var pos = blockEntity.pos();
+        if (pos.getX() < origin.getX()
+            || pos.getY() < origin.getY()
+            || pos.getZ() < origin.getZ()
+            || pos.getX() >= endX
+            || pos.getY() >= endY
+            || pos.getZ() >= endZ) {
+          throw new ParcelException.CorruptedParcelException(
+              "Block entity lies outside its section: " + pos);
+        }
         validateSemanticData(blockEntity.semanticData());
       }
     }
 
     @Override
     public void acceptEntity(EntityRecord entity) throws ParcelException {
+      var pos = entity.pos();
+      if (!Double.isFinite(pos.x)
+          || !Double.isFinite(pos.y)
+          || !Double.isFinite(pos.z)
+          || pos.x < minX
+          || pos.y < minY
+          || pos.z < minZ
+          || pos.x >= maxXExclusive
+          || pos.y >= maxYExclusive
+          || pos.z >= maxZExclusive) {
+        throw new ParcelException.CorruptedParcelException(
+            "Entity lies outside the parcel: " + pos);
+      }
       validateSemanticData(entity.semanticData());
+    }
+
+    private boolean contains(int x, int y, int z) {
+      return x >= minX
+          && y >= minY
+          && z >= minZ
+          && x < maxXExclusive
+          && y < maxYExclusive
+          && z < maxZExclusive;
     }
 
     private static void validateSemanticData(java.util.List<SemanticData> semantics)

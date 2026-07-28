@@ -21,7 +21,7 @@ import sun.misc.Unsafe;
 
 /**
  * Minimal base class for tests that need Minecraft runtime classes but don't need
- * ParcelFormatRegistry or other GitParcel-specific initialization.
+ * ParcelContentTypeRegistry or other GitParcel-specific initialization.
  */
 public class AbstractMinecraftTest {
   protected GitParcelRandom random;
