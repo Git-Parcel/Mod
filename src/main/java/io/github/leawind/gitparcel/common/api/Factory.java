@@ -1,6 +1,8 @@
 package io.github.leawind.gitparcel.common.api;
 
 import io.github.leawind.gitparcel.common.api.parcel.ParcelFormatRegistry;
+import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentTypeRegistry;
+import io.github.leawind.gitparcel.common.impl.parcel.ParcelContentTypeRegistryImpl;
 import io.github.leawind.gitparcel.common.impl.parcel.ParcelFormatRegistryImpl;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -10,5 +12,9 @@ public final class Factory {
 
   public static ParcelFormatRegistry getParcelFormatRegistry() {
     return ParcelFormatRegistryImpl.INSTANCE;
+  }
+
+  public static ParcelContentTypeRegistry getParcelContentTypeRegistry() {
+    return ParcelContentTypeRegistryImpl.INSTANCE;
   }
 }
