@@ -6,6 +6,7 @@ import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentType;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSink;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSource;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
 
@@ -36,6 +37,9 @@ public final class EntityContentType implements ParcelContentType<ParcelContentC
               path, ParcelRecordCodecs.encode(ParcelRecordCodecs.ENTITY, entity));
           context.progress().report("content_entities", index[0], "entities");
         });
+    if (index[0] == 0) {
+      Files.writeString(output.file(ParcelContentFileSupport.EMPTY_DIRECTORY_MARKER), "");
+    }
     output.finish();
   }
 

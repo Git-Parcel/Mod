@@ -259,11 +259,10 @@ public class GitParcelGameTest {
       configureBlockSectionSize(parcel, sectionSize);
       ParcelStorage.save(helper.getLevel(), parcel, tempDir, true);
 
+      var target = ParcelFactory.create(helper.absoluteBoundingBox(topBox), mirror, rotation);
       ParcelStorage.load(
           helper.getLevel(),
-          helper.absoluteBoundingBox(topBox),
-          rotation,
-          mirror,
+          target.transform(),
           tempDir,
           false,
           true,

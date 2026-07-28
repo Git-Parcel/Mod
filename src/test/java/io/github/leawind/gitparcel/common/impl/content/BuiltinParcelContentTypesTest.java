@@ -90,6 +90,8 @@ class BuiltinParcelContentTypesTest extends AbstractMinecraftTest {
 
     assertTrue(Files.isDirectory(data.resolve("entities")));
     assertTrue(Files.isDirectory(data.resolve("attachments")));
+    assertTrue(Files.isRegularFile(data.resolve("entities/.empty")));
+    assertTrue(Files.isRegularFile(data.resolve("attachments/.empty")));
   }
 
   private static String roundTripAt(BlockContentType.Config config, Path data) throws Exception {

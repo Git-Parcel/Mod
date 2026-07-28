@@ -6,6 +6,7 @@ import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentType;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSink;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSource;
 import java.io.IOException;
+import java.nio.file.Files;
 
 /** Built-in storage and streaming behavior for operation-scoped attachments. */
 public final class AttachmentContentType implements ParcelContentType<ParcelContentConfig.None> {
@@ -30,6 +31,9 @@ public final class AttachmentContentType implements ParcelContentType<ParcelCont
               ParcelRecordCodecs.encode(ParcelRecordCodecs.ATTACHMENT, attachment));
           context.progress().report("content_attachments", index[0], "attachments");
         });
+    if (index[0] == 0) {
+      Files.writeString(output.file(ParcelContentFileSupport.EMPTY_DIRECTORY_MARKER), "");
+    }
     output.finish();
   }
 

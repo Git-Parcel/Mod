@@ -18,6 +18,7 @@ final class ParcelContentFileSupport {
   static final int MAX_DIRECTORY_RECORDS = 100_000;
   static final long MAX_SECTION_FILE_BYTES = 16L * 1024 * 1024;
   static final long MAX_RECORD_FILE_BYTES = 64L * 1024 * 1024;
+  static final String EMPTY_DIRECTORY_MARKER = ".empty";
 
   private ParcelContentFileSupport() {}
 
@@ -53,10 +54,17 @@ final class ParcelContentFileSupport {
           "Expected content directory: " + directory);
     }
     var matching = new ArrayList<Path>();
+    boolean hasEmptyMarker = false;
     try (var paths = Files.list(directory)) {
       var iterator = paths.iterator();
       while (iterator.hasNext()) {
         Path path = iterator.next();
+        if (path.getFileName().toString().equals(EMPTY_DIRECTORY_MARKER)
+            && Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)
+            && Files.size(path) == 0) {
+          hasEmptyMarker = true;
+          continue;
+        }
         if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)
             || !path.getFileName().toString().endsWith(suffix)) {
           throw new ParcelException.CorruptedParcelException(
@@ -68,6 +76,10 @@ final class ParcelContentFileSupport {
         }
         matching.add(path);
       }
+    }
+    if (hasEmptyMarker && !matching.isEmpty()) {
+      throw new ParcelException.CorruptedParcelException(
+          "Empty marker accompanies records in directory: " + directory);
     }
     matching.sort(Comparator.comparing(item -> item.getFileName().toString()));
     for (Path path : matching) {
