@@ -12,6 +12,7 @@ import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelWorldSa
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
 import io.github.leawind.gitparcel.common.utils.git.GitRepositoryCore;
 import io.github.leawind.gitparcel.common.utils.git.SharedRepository;
+import io.github.leawind.gitparcel.gametest.ext.MarkerRecordProcessor;
 import io.github.leawind.gitparcel.gametest.utils.ChannelFlags;
 import io.github.leawind.gitparcel.gametest.utils.GameTestHelpMore;
 import java.nio.file.Files;
@@ -427,6 +428,36 @@ public class GitParcelGameTest {
       helper.fail("The original map data instance must remain untouched");
     }
 
+    helper.succeed();
+  }
+
+  /**
+   * Round-trips world-external data through the extension attachment channel: the game-test
+   * extension collects a marker attachment during capture and restores it as a custom name.
+   */
+  public void testAttachmentRoundTrip(GameTestHelpMore helper) throws Exception {
+    var level = helper.getLevel();
+    var registry = ParcelRegistry.get(level);
+    var service = SnapshotService.get(level);
+    registry.reset();
+    var parcel = ParcelFactory.create(helper.getBoundingBox(), Mirror.NONE, Rotation.NONE);
+    registry.addNewParcel(parcel);
+
+    helper.spawn(EntityType.COW, new BlockPos(2, 1, 4));
+
+    var snapshot = service.saveSnapshot(parcel, "Attachment", "", GAMETEST_IDENTITY, false);
+    service.restoreSnapshot(
+        parcel, snapshot, RestoreSnapshotRequest.Mode.DIRECT, false, GAMETEST_IDENTITY);
+
+    var cows = level.getEntities(EntityType.COW, entityQueryArea(helper), e -> true);
+    if (cows.size() != 1) {
+      helper.fail("Restored parcel must contain exactly one cow, got " + cows.size());
+    }
+    var name = cows.getFirst().getCustomName();
+    if (name == null || !MarkerRecordProcessor.MARKER_VALUE.equals(name.getString())) {
+      helper.fail(
+          "Restored cow must carry the marker custom name from the attachment, got " + name);
+    }
     helper.succeed();
   }
 

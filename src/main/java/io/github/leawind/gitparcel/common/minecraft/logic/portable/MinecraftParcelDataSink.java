@@ -50,7 +50,7 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
     this.ignoreEntities = ignoreEntities;
     this.blockUpdateFlags = blockUpdateFlags;
     this.sourceDataVersion = sourceDataVersion;
-    this.processorContext = new ParcelRecordProcessorContext(level, space, attachments);
+    this.processorContext = new ParcelRecordProcessorContext(level, space, attachments, null);
   }
 
   @Override

@@ -58,4 +58,9 @@ public class GitParcelGameTestFabric extends GitParcelGameTest implements Custom
   public void testMapItemCharacteristics(GameTestHelper helper) throws Exception {
     Tester.test(helper, super::testMapItemCharacteristics);
   }
+
+  @GameTest(structure = "gametest:swamp_hut-7x8x9", maxTicks = 200)
+  public void testAttachmentRoundTrip(GameTestHelper helper) throws Exception {
+    Tester.test(helper, super::testAttachmentRoundTrip);
+  }
 }

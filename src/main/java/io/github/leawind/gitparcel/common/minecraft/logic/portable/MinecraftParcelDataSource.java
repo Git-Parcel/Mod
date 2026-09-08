@@ -54,7 +54,7 @@ public final class MinecraftParcelDataSource implements ParcelDataSource {
   public void forEachBlockSection(
       int sectionSize, ParcelDataConsumer<BlockSection> consumer)
       throws IOException, ParcelException {
-    var processorContext = new ParcelRecordProcessorContext(level, space, attachments);
+    var processorContext = new ParcelRecordProcessorContext(level, space, attachments, attachments);
     var processors = ParcelRecordProcessorRegistry.get().orderedProcessors();
     for (var section : BlockSectionPartitioner.partition(size, anchor, sectionSize)) {
       var states =
@@ -104,7 +104,7 @@ public final class MinecraftParcelDataSource implements ParcelDataSource {
     if (ignoreEntities) {
       return;
     }
-    var processorContext = new ParcelRecordProcessorContext(level, space, attachments);
+    var processorContext = new ParcelRecordProcessorContext(level, space, attachments, attachments);
     var processors = ParcelRecordProcessorRegistry.get().orderedProcessors();
     AABB bounds = worldBounds();
     List<Entity> entities =
