@@ -18,6 +18,8 @@ public final class GitParcelTestExtension implements GitParcelExtension {
   @Override
   public void register(ParcelExtensionRegistrar registrar) {
     registrar.registerAttachmentType(MarkerAttachmentType.INSTANCE);
+    registrar.registerAttachmentType(RegionDataAttachmentType.INSTANCE);
     registrar.registerProcessor(MarkerRecordProcessor.INSTANCE);
+    registrar.registerContributor(RegionMarkerContributor.INSTANCE);
   }
 }

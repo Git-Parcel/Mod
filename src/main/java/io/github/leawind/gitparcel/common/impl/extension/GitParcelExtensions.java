@@ -67,6 +67,7 @@ public final class GitParcelExtensions {
     ParcelAttachmentTypeRegistry.get().freeze();
     io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateFieldRegistry.get().freeze();
     io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFieldRegistry.get().freeze();
+    io.github.leawind.gitparcel.common.api.extension.contributor.ParcelCaptureContributorRegistry.get().freeze();
     registry.freeze();
   }
 }

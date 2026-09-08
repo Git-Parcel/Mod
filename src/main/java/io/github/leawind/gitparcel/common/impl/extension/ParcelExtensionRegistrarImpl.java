@@ -3,6 +3,8 @@ package io.github.leawind.gitparcel.common.impl.extension;
 import io.github.leawind.gitparcel.common.api.extension.ParcelExtensionRegistrar;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentType;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentTypeRegistry;
+import io.github.leawind.gitparcel.common.api.extension.contributor.ParcelCaptureContributor;
+import io.github.leawind.gitparcel.common.api.extension.contributor.ParcelCaptureContributorRegistry;
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateField;
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateFieldRegistry;
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefField;
@@ -22,6 +24,7 @@ final class ParcelExtensionRegistrarImpl implements ParcelExtensionRegistrar {
   private final List<ParcelAttachmentType> attachmentTypes = new ArrayList<>();
   private final List<ParcelCoordinateField> coordinateFields = new ArrayList<>();
   private final List<ParcelEntityRefField> entityRefFields = new ArrayList<>();
+  private final List<ParcelCaptureContributor> contributors = new ArrayList<>();
 
   @Override
   public void registerContentType(ParcelContentType<?> type) {
@@ -46,6 +49,11 @@ final class ParcelExtensionRegistrarImpl implements ParcelExtensionRegistrar {
   @Override
   public void registerEntityRefField(ParcelEntityRefField field) {
     entityRefFields.add(field);
+  }
+
+  @Override
+  public void registerContributor(ParcelCaptureContributor contributor) {
+    contributors.add(contributor);
   }
 
   void commit(ParcelContentTypeRegistry registry) {
@@ -77,5 +85,6 @@ final class ParcelExtensionRegistrarImpl implements ParcelExtensionRegistrar {
     attachmentTypes.forEach(ParcelAttachmentTypeRegistry.get()::register);
     coordinateFields.forEach(ParcelCoordinateFieldRegistry.get()::register);
     entityRefFields.forEach(ParcelEntityRefFieldRegistry.get()::register);
+    contributors.forEach(ParcelCaptureContributorRegistry.get()::register);
   }
 }

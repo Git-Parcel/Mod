@@ -1,6 +1,8 @@
 package io.github.leawind.gitparcel.common.minecraft.logic.portable;
 
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
+import io.github.leawind.gitparcel.common.api.extension.contributor.ParcelCaptureContext;
+import io.github.leawind.gitparcel.common.api.extension.contributor.ParcelCaptureContributorRegistry;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
@@ -142,6 +144,15 @@ public final class MinecraftParcelDataSource implements ParcelDataSource {
   @Override
   public void forEachAttachment(ParcelDataConsumer<AttachmentRecord> consumer)
       throws IOException, ParcelException {
+    var contributorContext = new ParcelCaptureContext(level, space, worldBounds(), attachments);
+    for (var contributor : ParcelCaptureContributorRegistry.get().contributors()) {
+      try {
+        contributor.capture(contributorContext);
+      } catch (Exception e) {
+        throw new ParcelException(
+            "Parcel capture contributor failed: " + contributor.id(), e);
+      }
+    }
     for (AttachmentRecord attachment : attachments.captured()) {
       consumer.accept(attachment);
     }

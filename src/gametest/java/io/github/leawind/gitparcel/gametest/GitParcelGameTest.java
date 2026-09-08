@@ -13,6 +13,7 @@ import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
 import io.github.leawind.gitparcel.common.utils.git.GitRepositoryCore;
 import io.github.leawind.gitparcel.common.utils.git.SharedRepository;
 import io.github.leawind.gitparcel.gametest.ext.MarkerRecordProcessor;
+import io.github.leawind.gitparcel.gametest.ext.RegionMarkerContributor;
 import io.github.leawind.gitparcel.gametest.utils.ChannelFlags;
 import io.github.leawind.gitparcel.gametest.utils.GameTestHelpMore;
 import java.nio.file.Files;
@@ -548,6 +549,44 @@ public class GitParcelGameTest {
       helper.fail(
           "flower_pos must follow the parcel: expected %s, got %s"
               .formatted(expectedFlower.toShortString(), restoredFlower.toShortString()));
+    }
+    helper.succeed();
+  }
+
+  /**
+   * Capture contributors round-trip world-external regional data: the contributor's capture hook
+   * runs during save, its attachment travels in the snapshot, and its restore hook sees the payload
+   * after the parcel content was applied.
+   */
+  public void testCaptureContributorRoundTrip(GameTestHelpMore helper) throws Exception {
+    var level = helper.getLevel();
+    var registry = ParcelRegistry.get(level);
+    var service = SnapshotService.get(level);
+    registry.reset();
+    var parcel = ParcelFactory.create(helper.getBoundingBox(), Mirror.NONE, Rotation.NONE);
+    registry.addNewParcel(parcel);
+
+    RegionMarkerContributor.resetObservations();
+
+    var snapshot = service.saveSnapshot(parcel, "Contributor", "", GAMETEST_IDENTITY, true);
+    service.restoreSnapshot(
+        parcel, snapshot, RestoreSnapshotRequest.Mode.DIRECT, true, GAMETEST_IDENTITY);
+
+    var dimension = level.dimension().identifier().toString();
+    if (RegionMarkerContributor.restoreCalls != 1) {
+      helper.fail(
+          "Contributor restore hook must run exactly once, got "
+              + RegionMarkerContributor.restoreCalls);
+    }
+    if (RegionMarkerContributor.restoredAttachmentCount != 1) {
+      helper.fail(
+          "Contributor must see exactly its own attachment, got "
+              + RegionMarkerContributor.restoredAttachmentCount);
+    }
+    if (!dimension.equals(RegionMarkerContributor.restoredDimension)) {
+      helper.fail(
+          "Contributor payload must carry the capture-time dimension, got "
+              + RegionMarkerContributor.restoredDimension);
     }
     helper.succeed();
   }

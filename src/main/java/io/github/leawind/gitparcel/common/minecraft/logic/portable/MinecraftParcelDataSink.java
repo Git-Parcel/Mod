@@ -2,6 +2,8 @@ package io.github.leawind.gitparcel.common.minecraft.logic.portable;
 
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentTypeRegistry;
+import io.github.leawind.gitparcel.common.api.extension.contributor.ParcelCaptureContributorRegistry;
+import io.github.leawind.gitparcel.common.api.extension.contributor.ParcelRestoreContext;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
@@ -42,6 +44,7 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
   private final ParcelRecordProcessorContext processorContext;
   private final ParcelAttachmentSession attachments = new ParcelAttachmentSession();
   private final List<BufferedEntity> bufferedEntities = new ArrayList<>();
+  private final List<AttachmentRecord> restoredAttachments = new ArrayList<>();
   private boolean finished;
 
   public MinecraftParcelDataSink(
@@ -62,6 +65,7 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
 
   @Override
   public void acceptAttachment(AttachmentRecord attachment) throws ParcelException {
+    restoredAttachments.add(attachment);
     var type = ParcelAttachmentTypeRegistry.get().get(attachment.type());
     if (type == null) {
       if (attachment.required()) {
@@ -150,35 +154,46 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
 
   /**
    * Summons the whole entity batch with fresh UUIDs, rewriting declared references so intra-parcel
-   * links (leashes and mod-owned fields) survive the restore.
+   * links (leashes and mod-owned fields) survive the restore, then lets capture contributors
+   * re-apply their regional data.
    */
   @Override
   public void commit() throws ParcelException {
-    if (ignoreEntities) {
-      return;
-    }
-    var remap =
-        EntityUuidRemapper.assignFreshIds(
-            bufferedEntities.stream().map(BufferedEntity::originalId).flatMap(Optional::stream).toList());
-    for (BufferedEntity buffered : bufferedEntities) {
-      CompoundTag data = buffered.record().data().copy();
-      buffered
-          .originalId()
-          .ifPresent(id -> data.put("UUID", encodeUuid(remap.getOrDefault(id, id))));
-      EntityUuidRemapper.rewriteReferences(data, buffered.record().type(), remap);
-      data.putString("id", buffered.record().type().toString());
-      var entity =
-          EntityType.loadEntityRecursive(
-              data, level.getLevel(), EntitySpawnReason.LOAD, EntityProcessor.NOP);
-      if (entity == null) {
-        throw new ParcelException("Failed to create entity " + buffered.record().type());
+    if (!ignoreEntities) {
+      var remap =
+          EntityUuidRemapper.assignFreshIds(
+              bufferedEntities.stream()
+                  .map(BufferedEntity::originalId)
+                  .flatMap(Optional::stream)
+                  .toList());
+      for (BufferedEntity buffered : bufferedEntities) {
+        CompoundTag data = buffered.record().data().copy();
+        buffered
+            .originalId()
+            .ifPresent(id -> data.put("UUID", encodeUuid(remap.getOrDefault(id, id))));
+        EntityUuidRemapper.rewriteReferences(data, buffered.record().type(), remap);
+        data.putString("id", buffered.record().type().toString());
+        var entity =
+            EntityType.loadEntityRecursive(
+                data, level.getLevel(), EntitySpawnReason.LOAD, EntityProcessor.NOP);
+        if (entity == null) {
+          throw new ParcelException("Failed to create entity " + buffered.record().type());
+        }
+        var worldPosition = space.toWorld(buffered.record().pos());
+        entity.snapTo(
+            worldPosition,
+            space.toWorldYaw(entity.getYRot()),
+            entity.getXRot());
+        level.addFreshEntityWithPassengers(entity);
       }
-      var worldPosition = space.toWorld(buffered.record().pos());
-      entity.snapTo(
-          worldPosition,
-          space.toWorldYaw(entity.getYRot()),
-          entity.getXRot());
-      level.addFreshEntityWithPassengers(entity);
+    }
+    var contributorContext = new ParcelRestoreContext(level, space, List.copyOf(restoredAttachments));
+    for (var contributor : ParcelCaptureContributorRegistry.get().contributors()) {
+      try {
+        contributor.restore(contributorContext);
+      } catch (Exception e) {
+        throw new ParcelException("Parcel restore contributor failed: " + contributor.id(), e);
+      }
     }
   }
 
