@@ -29,18 +29,28 @@ build/
 run
 runs
 
-# AI tools
+# AI Tools
 /.ai/
+.agents/
 .claude/
 .clinerules/
 .codebuddy/
+.codex/
 .cursorrules/
+.devin/
 .kilo/
 .kilocode/
 .lingma/
 .marscode/
+.mimocode/
 .opencode/
+.qoder/
 .trae/
+.windsurf/
+.zcode/
+
+AGENTS-*.md
+
 
 # logs
 **/logs/*.log
