@@ -38,4 +38,14 @@ public class GitParcelGameTestFabric extends GitParcelGameTest implements Custom
   public void testNormalSnapshotRoundTrip(GameTestHelper helper) throws Exception {
     Tester.test(helper, super::testNormalSnapshotRoundTrip);
   }
+
+  @GameTest(structure = "gametest:swamp_hut-7x8x9", maxTicks = 200)
+  public void testSaveThenRestoreKeepsProtectiveSnapshot(GameTestHelper helper) throws Exception {
+    Tester.test(helper, super::testSaveThenRestoreKeepsProtectiveSnapshot);
+  }
+
+  @GameTest(structure = "gametest:swamp_hut-7x8x9", maxTicks = 200)
+  public void testIdenticalContentResaveStillCommits(GameTestHelper helper) throws Exception {
+    Tester.test(helper, super::testIdenticalContentResaveStillCommits);
+  }
 }

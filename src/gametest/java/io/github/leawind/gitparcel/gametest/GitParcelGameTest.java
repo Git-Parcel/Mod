@@ -227,6 +227,95 @@ public class GitParcelGameTest {
     helper.succeed();
   }
 
+  /** A SAVE_THEN_RESTORE must persist a protective snapshot before rewinding the world. */
+  public void testSaveThenRestoreKeepsProtectiveSnapshot(GameTestHelpMore helper)
+      throws Exception {
+    var registry = ParcelRegistry.get(helper.getLevel());
+    var service = SnapshotService.get(helper.getLevel());
+    registry.reset();
+    var parcel = ParcelFactory.create(helper.getBoundingBox(), Mirror.NONE, Rotation.NONE);
+    registry.addNewParcel(parcel);
+
+    var probe = BlockPos.ZERO;
+    BlockState original = helper.getBlockState(probe);
+    BlockState replacement =
+        original.is(Blocks.GOLD_BLOCK)
+            ? Blocks.DIAMOND_BLOCK.defaultBlockState()
+            : Blocks.GOLD_BLOCK.defaultBlockState();
+
+    var root = service.saveSnapshot(parcel, "Base", "", GAMETEST_IDENTITY, true);
+    helper.getLevel().setBlock(helper.absolutePos(probe), replacement, WORLD_UPDATE_FLAGS);
+    if (helper.getBlockState(probe) == original) {
+      helper.fail("Test mutation did not change the probe block");
+    }
+
+    var result =
+        service.restoreSnapshot(
+            parcel, root, RestoreSnapshotRequest.Mode.SAVE_THEN_RESTORE, true, GAMETEST_IDENTITY);
+    if (!result.restored().equals(root)) {
+      helper.fail("Save-then-restore reported an unexpected restored snapshot");
+    }
+    if (helper.getBlockState(probe) != original) {
+      helper.fail("Save-then-restore did not rewind the world to the target snapshot");
+    }
+
+    var page = service.querySnapshotTree(parcel, 10, Optional.empty());
+    if (page.nodes().size() != 2) {
+      helper.fail("Save-then-restore must leave the base and the protective snapshot");
+    }
+    if (!page.current().orElseThrow().equals(root)) {
+      helper.fail("Save-then-restore must end with the target as the current baseline");
+    }
+    boolean hasProtective =
+        page.nodes().stream()
+            .anyMatch(
+                node ->
+                    !node.id().equals(root) && node.name().startsWith("Before restore"));
+    if (!hasProtective) {
+      helper.fail("Save-then-restore did not retain a protective pre-restore snapshot");
+    }
+    if (!service.pendingRestoreOperations(parcel).isEmpty()) {
+      helper.fail("Completed save-then-restore left a pending recovery operation");
+    }
+
+    registry.deleteParcel(parcel.uuid());
+    helper.succeed();
+  }
+
+  /** Saving identical world content twice must still create a second, parented commit. */
+  public void testIdenticalContentResaveStillCommits(GameTestHelpMore helper) throws Exception {
+    var registry = ParcelRegistry.get(helper.getLevel());
+    var service = SnapshotService.get(helper.getLevel());
+    registry.reset();
+    var parcel = ParcelFactory.create(helper.getBoundingBox(), Mirror.NONE, Rotation.NONE);
+    registry.addNewParcel(parcel);
+
+    var first = service.saveSnapshot(parcel, "First", "", GAMETEST_IDENTITY, true);
+    var second = service.saveSnapshot(parcel, "Second", "", GAMETEST_IDENTITY, true);
+    if (first.equals(second)) {
+      helper.fail("Re-saving identical content must still create a new snapshot commit");
+    }
+
+    var page = service.querySnapshotTree(parcel, 10, Optional.empty());
+    if (page.nodes().size() != 2) {
+      helper.fail("Identical re-save must grow the snapshot history by one node");
+    }
+    var secondNode =
+        page.nodes().stream()
+            .filter(node -> node.id().equals(second))
+            .findFirst()
+            .orElseThrow();
+    if (!secondNode.parentId().orElseThrow().equals(first)) {
+      helper.fail("The re-saved snapshot must be a child of the first snapshot");
+    }
+    if (!page.current().orElseThrow().equals(second)) {
+      helper.fail("The re-saved snapshot must become the current baseline");
+    }
+
+    registry.deleteParcel(parcel.uuid());
+    helper.succeed();
+  }
+
   private void doSaveAndLoad(
       GameTestHelpMore helper,
       Rotation rotation,

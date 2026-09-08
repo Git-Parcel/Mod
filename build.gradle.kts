@@ -360,7 +360,10 @@ rootProject.tasks.named<Sync>("buildAndCollect") {
 
 // read changelog
 val changelogFile = rootProject.file("CHANGELOG.md")
-val changelogText = if (changelogFile.exists()) changelogFile.readText() else ""
+val changelogText =
+    (if (changelogFile.exists()) changelogFile.readText() else "").ifBlank {
+      "Unreleased development build"
+    }
 
 if (supportsUnitTesting) {
     tasks.register<JavaExec>("benchmarkRle") {

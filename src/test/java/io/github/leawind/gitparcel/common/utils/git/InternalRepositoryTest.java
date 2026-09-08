@@ -13,7 +13,9 @@ import com.google.common.jimfs.Jimfs;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -111,6 +113,31 @@ class InternalRepositoryTest {
     assertEquals(first, byId.get(fork).parentId().orElseThrow());
     assertEquals(fork, page.current().orElseThrow());
     assertEquals(3, page.nodes().size());
+  }
+
+  @Test
+  void commitMessageTrailersRoundTripAndRejectMalformedInput() throws Exception {
+    var repository = InternalRepository.at(tempDir, UUID.randomUUID());
+    repository.saveSnapshot(workspace("one"), metadata("One"), ProgressReporter.NONE);
+
+    var page = repository.queryTree(UUID.randomUUID(), 10, Optional.empty());
+    assertEquals("One", page.nodes().getFirst().name());
+    assertEquals("Description", page.nodes().getFirst().description());
+    assertEquals(SnapshotNode.Source.SAVED, page.nodes().getFirst().source());
+
+    var core = new GitRepositoryCore(repository.path(), RepositoryPolicy.INTERNAL);
+    var tree =
+        core.writeSmallTree(
+            java.util.Map.of("parcel.json", "{}".getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+            io.github.leawind.gitparcel.common.utils.git.SnapshotTreeLimits.DEFAULT);
+    var commit =
+        core.createCommit(
+            tree, List.of(), "Bad\n\nGit-Parcel-Source\n", SERVER, SERVER, Instant.now());
+    core.compareAndSetRef(
+        "refs/gitparcel/snapshots/" + commit.value(), Optional.empty(), commit, false);
+    core.compareAndSetRef("refs/gitparcel/current", Optional.empty(), commit, false);
+    assertThrows(
+        IOException.class, () -> repository.queryTree(UUID.randomUUID(), 10, Optional.empty()));
   }
 
   @Test

@@ -253,8 +253,7 @@ public final class BlockContentType implements ParcelContentType<BlockContentTyp
         int separator = findSeparator(line);
         if (separator != 3 && separator != 6) {
           throw new ParcelException.CorruptedParcelException("Invalid RLE line in " + path);
-        }
-        int x0 = parseDigit(digitCodec, line.charAt(0), path);
+        }        int x0 = parseDigit(digitCodec, line.charAt(0), path);
         int y0 = parseDigit(digitCodec, line.charAt(1), path);
         int z0 = parseDigit(digitCodec, line.charAt(2), path);
         int x1 = separator == 3 ? x0 : parseDigit(digitCodec, line.charAt(3), path);
@@ -296,11 +295,7 @@ public final class BlockContentType implements ParcelContentType<BlockContentTyp
   }
 
   private static int findSeparator(String line) {
-    int palette = line.indexOf('~');
-    int inline = line.indexOf('=');
-    if (palette < 0) return inline;
-    if (inline < 0) return palette;
-    return Math.min(palette, inline);
+    return line.indexOf('~');
   }
 
   private static int parseDigit(BlockStateDigitCodec digitCodec, char value, Path path)

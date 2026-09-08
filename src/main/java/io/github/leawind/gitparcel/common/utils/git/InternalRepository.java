@@ -32,7 +32,8 @@ public final class InternalRepository {
   public static final String OPERATIONS_PREFIX = "refs/gitparcel/operations/";
 
   private static final String OPERATION_FILE = "operation.json";
-  private static final String MESSAGE_MARKER = "\n\n-- gitparcel --\n";
+  /** Machine-readable snapshot metadata travels as trailing {@code Git-Parcel-*: value} lines. */
+  private static final String TRAILER_PREFIX = "Git-Parcel-";
   private static final Gson GSON = new Gson();
 
   /**
@@ -574,29 +575,64 @@ public final class InternalRepository {
     String description = metadata.description().strip();
     return name
         + (description.isEmpty() ? "" : "\n\n" + description)
-        + MESSAGE_MARKER
-        + "source="
-        + metadata.source().name().toLowerCase()
-        + "\noperation="
+        + "\n\n"
+        + TRAILER_PREFIX
+        + "Source: "
+        + metadata.source().name().toLowerCase(Locale.ROOT)
+        + "\n"
+        + TRAILER_PREFIX
+        + "Operation: "
         + operationId
         + "\n";
   }
 
-  private static Message decodeMessage(String value) {
-    int marker = value.lastIndexOf(MESSAGE_MARKER);
-    String playerText = marker < 0 ? value : value.substring(0, marker);
-    String metadata = marker < 0 ? "" : value.substring(marker + MESSAGE_MARKER.length());
-    String[] text = playerText.strip().split("\\R\\R", 2);
+  /**
+   * Splits a commit message into its player-facing text and machine trailers. Trailer lines are
+   * {@code Git-Parcel-Key: value} entries in the final paragraph; a trailer-like line that does
+   * not parse is corruption instead of being silently ignored.
+   */
+  private static Message decodeMessage(String value) throws IOException {
+    String[] lines = value.split("\\R", -1);
+    int trailerStart = lines.length;
+    while (trailerStart > 0 && lines[trailerStart - 1].isBlank()) {
+      trailerStart--;
+    }
+    while (trailerStart > 0 && lines[trailerStart - 1].startsWith(TRAILER_PREFIX)) {
+      trailerStart--;
+    }
     SnapshotNode.Source source = SnapshotNode.Source.SAVED;
-    for (String line : metadata.split("\\R")) {
-      if (line.startsWith("source=")) {
-        try {
-          source = SnapshotNode.Source.valueOf(line.substring(7).toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException ignored) {
-          // Unknown future source values remain readable as a regular saved snapshot.
+    for (int i = trailerStart; i < lines.length; i++) {
+      String line = lines[i];
+      if (line.isBlank()) {
+        continue;
+      }
+      if (!line.startsWith(TRAILER_PREFIX)) {
+        throw new RepositoryCorruptException("Snapshot commit message has a malformed trailer: " + line);
+      }
+      int separator = line.indexOf(':', TRAILER_PREFIX.length());
+      if (separator < 0) {
+        throw new RepositoryCorruptException("Snapshot commit message has a malformed trailer: " + line);
+      }
+      String key = line.substring(TRAILER_PREFIX.length(), separator);
+      String trailerValue = line.substring(separator + 1).strip();
+      if (trailerValue.isBlank()) {
+        throw new RepositoryCorruptException("Snapshot commit message has a blank trailer: " + line);
+      }
+      switch (key) {
+        case "Source" -> {
+          try {
+            source = SnapshotNode.Source.valueOf(trailerValue.toUpperCase(Locale.ROOT));
+          } catch (IllegalArgumentException ignored) {
+            // Unknown future source values remain readable as a regular saved snapshot.
+          }
+        }
+        default -> {
+          // Unknown future trailer keys are ignored so newer snapshots stay queryable.
         }
       }
     }
+    String playerText = String.join("\n", java.util.Arrays.asList(lines).subList(0, trailerStart)).strip();
+    String[] text = playerText.split("\\R\\R", 2);
     String name = text.length == 0 || text[0].isBlank() ? "Snapshot" : oneLine(text[0]);
     String description = text.length > 1 ? text[1].strip() : "";
     return new Message(name, description, source);

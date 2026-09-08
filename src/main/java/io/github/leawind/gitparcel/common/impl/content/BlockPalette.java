@@ -46,20 +46,6 @@ public class BlockPalette extends IntIdPalette<BlockState> {
     visited.add(id);
   }
 
-  /** Clears all visited blocks. */
-  public void clearVisited() {
-    visited.clear();
-  }
-
-  /** Removes all unvisited blocks from this palette. */
-  public void clearUnvisited() {
-    for (int id : byId.keySet()) {
-      if (!visited.contains(id)) {
-        removeById(id);
-      }
-    }
-  }
-
   /**
    * Saves this block palette to the specified file.
    *
