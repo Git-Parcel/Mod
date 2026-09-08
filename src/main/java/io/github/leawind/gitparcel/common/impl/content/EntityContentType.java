@@ -32,7 +32,24 @@ public final class EntityContentType implements ParcelContentType<ParcelContentC
     int[] index = {0};
     source.forEachEntity(
         entity -> {
-          Path path = output.file("%08X.snbt".formatted(index[0]++));
+          // Name files by the entity's persistent UUID so a capture whose enumeration order
+          // shifted still produces byte-identical files and keeps Git object deduplication.
+          String name = null;
+          var uuidParts = entity.data().getIntArray("UUID");
+          if (uuidParts.isPresent() && uuidParts.orElseThrow().length == 4) {
+            int[] parts = uuidParts.orElseThrow();
+            long mostSignificant = ((long) parts[0] << 32) | (parts[1] & 0xFFFFFFFFL);
+            long leastSignificant = ((long) parts[2] << 32) | (parts[3] & 0xFFFFFFFFL);
+            name =
+                new java.util.UUID(mostSignificant, leastSignificant)
+                    .toString()
+                    .replace("-", "");
+          }
+          if (name == null) {
+            name = "%08X".formatted(index[0]);
+          }
+          index[0]++;
+          Path path = output.file(name + ".snbt");
           NbtFormat.TEXT.write(
               path, ParcelRecordCodecs.encode(ParcelRecordCodecs.ENTITY, entity));
           context.progress().report("content_entities", index[0], "entities");

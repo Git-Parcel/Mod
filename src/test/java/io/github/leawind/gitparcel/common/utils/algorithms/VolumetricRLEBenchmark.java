@@ -30,7 +30,7 @@ public class VolumetricRLEBenchmark {
   @Param({"2", "4", "8"})
   private int variance;
 
-  @Param({"16", "32", "64"})
+  @Param({"16", "32", "64", "128"})
   private int size;
 
   private VolumetricRLE.ValueGetter values;

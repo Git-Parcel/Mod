@@ -362,6 +362,18 @@ rootProject.tasks.named<Sync>("buildAndCollect") {
 val changelogFile = rootProject.file("CHANGELOG.md")
 val changelogText = if (changelogFile.exists()) changelogFile.readText() else ""
 
+if (supportsUnitTesting) {
+    tasks.register<JavaExec>("benchmarkRle") {
+        group = "verification"
+        description = "Runs the VolumetricRLE JMH benchmark on the test runtime classpath."
+        classpath = sourceSets["test"].runtimeClasspath
+        mainClass.set("org.openjdk.jmh.Main")
+        args(
+            "io.github.leawind.gitparcel.common.utils.algorithms.VolumetricRLEBenchmark",
+            "-foe", "true")
+    }
+}
+
 afterEvaluate {
     publishMods {
         dryRun.set(System.getenv("DRY_RUN") != "false")

@@ -220,7 +220,7 @@ public final class PublishImportService {
         }
         SharedRepository.get(lease.repository()).exportRevision(sharedCommit.value(), gitPath, snapshot);
       }
-      ParcelMeta meta = ParcelStorage.validateSnapshot(snapshot, progress);
+      ParcelMeta meta = ParcelStorage.validateSnapshotCached(snapshot, sharedCommit, progress);
       var parcel =
           serverThread.call(
               () -> {
@@ -287,7 +287,7 @@ public final class PublishImportService {
           }
           SharedRepository.get(lease.repository()).exportRevision(sharedCommit.value(), gitPath, snapshot);
         }
-        ParcelMeta restored = ParcelStorage.validateSnapshot(snapshot, ProgressReporter.NONE);
+        ParcelMeta restored = ParcelStorage.validateSnapshotCached(snapshot, sharedCommit, ProgressReporter.NONE);
         ParcelRepositoryService.validateGeometry(parcel.meta(), restored);
         return ParcelRepositoryService.saveWorkspaceSnapshot(
             parcel,

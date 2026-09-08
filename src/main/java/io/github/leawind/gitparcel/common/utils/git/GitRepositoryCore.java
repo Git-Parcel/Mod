@@ -52,6 +52,12 @@ public final class GitRepositoryCore {
   private static final ConcurrentMap<Path, ReentrantLock> LOCKS =
       new com.google.common.collect.MapMaker().weakValues().makeMap();
 
+  private static final com.github.benmanes.caffeine.cache.Cache<SnapshotId, CommitData>
+      COMMIT_CACHE =
+          com.github.benmanes.caffeine.cache.Caffeine.newBuilder()
+              .maximumSize(4096)
+              .build();
+
   private final Path path;
   private final RepositoryPolicy policy;
   private final ReentrantLock lock;
@@ -302,22 +308,33 @@ public final class GitRepositoryCore {
 
   public CommitData readCommit(SnapshotId id) throws IOException {
     policy.require(RepositoryCapability.READ_HISTORY);
-    return locked(
-        () -> {
-          try (Repository repository = open(); var walk = new org.eclipse.jgit.revwalk.RevWalk(repository)) {
-            var commit = walk.parseCommit(ObjectId.fromString(id.value()));
-            walk.parseTree(commit.getTree().getId());
-            return new CommitData(
-                id,
-                new SnapshotId(commit.getTree().getId().name()),
-                java.util.Arrays.stream(commit.getParents())
-                    .map(parent -> new SnapshotId(parent.getId().name()))
-                    .toList(),
-                commit.getFullMessage(),
-                commit.getAuthorIdent().getName(),
-                Instant.ofEpochSecond(commit.getCommitTime()));
-          }
-        });
+    // Git object IDs are content-addressed, so a parsed commit is immutable and shareable across
+    // repositories. Caching keeps health inspections and tree queries from re-reading every
+    // commit object on each operation.
+    var cached = COMMIT_CACHE.getIfPresent(id);
+    if (cached != null) {
+      return cached;
+    }
+    CommitData data =
+        locked(
+            () -> {
+              try (Repository repository = open();
+                  var walk = new org.eclipse.jgit.revwalk.RevWalk(repository)) {
+                var commit = walk.parseCommit(ObjectId.fromString(id.value()));
+                walk.parseTree(commit.getTree().getId());
+                return new CommitData(
+                    id,
+                    new SnapshotId(commit.getTree().getId().name()),
+                    java.util.Arrays.stream(commit.getParents())
+                        .map(parent -> new SnapshotId(parent.getId().name()))
+                        .toList(),
+                    commit.getFullMessage(),
+                    commit.getAuthorIdent().getName(),
+                    Instant.ofEpochSecond(commit.getCommitTime()));
+              }
+            });
+    COMMIT_CACHE.put(id, data);
+    return data;
   }
 
   public ContentSummary summarizeTree(SnapshotId treeId) throws IOException {

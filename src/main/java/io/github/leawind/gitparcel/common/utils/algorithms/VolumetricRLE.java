@@ -32,10 +32,12 @@ public interface VolumetricRLE {
         final int sizeXZ = sizeX * sizeZ;
         final int totalSize = sizeY * sizeXZ;
 
-        ArrayList<Run> result = new ArrayList<>(totalSize / 2 + 1);
+        // Most sections encode to few runs; grow on demand instead of preallocating half the
+        // volume, which dominated allocation cost for uniform terrain.
+        ArrayList<Run> result = new ArrayList<>(16);
 
         final int[] valueGrid = new int[totalSize];
-        final boolean[] visited = new boolean[totalSize];
+        final java.util.BitSet visited = new java.util.BitSet(totalSize);
         for (int y = 0; y < sizeY; y++) {
           final int yOffset = y * sizeXZ;
           for (int x = 0; x < sizeX; x++) {
@@ -60,7 +62,7 @@ public interface VolumetricRLE {
             for (int z = 0; z < sizeZ; z++) {
               final int idx = xOffset + z;
 
-              if (visited[idx]) continue;
+              if (visited.get(idx)) continue;
               groupIndicesSize = 0;
 
               final int value = valueGrid[idx];
@@ -72,8 +74,8 @@ public interface VolumetricRLE {
               // Y
               while (boundY < sizeY) {
                 final int tryIdx = boundY * sizeXZ + xSizeZ + z;
-                if (visited[tryIdx] || valueGrid[tryIdx] != value) break;
-                visited[tryIdx] = true;
+                if (visited.get(tryIdx) || valueGrid[tryIdx] != value) break;
+                visited.set(tryIdx);
 
                 groupIndices[groupIndicesSize++] = tryIdx;
                 boundY++;
@@ -85,7 +87,7 @@ public interface VolumetricRLE {
                 int i = 0;
                 for (int tryY = y; tryY < boundY; tryY++) {
                   final int tryIdx = tryY * sizeXZ + boundX * sizeZ + z;
-                  if (visited[tryIdx] || valueGrid[tryIdx] != value) break extendX;
+                  if (visited.get(tryIdx) || valueGrid[tryIdx] != value) break extendX;
                   groupIndices[groupIndicesSize + i++] = tryIdx;
                 }
                 groupIndicesSize += i;
@@ -99,7 +101,7 @@ public interface VolumetricRLE {
                 for (int tryY = y; tryY < boundY; tryY++) {
                   for (int tryX = x; tryX < boundX; tryX++) {
                     final int tryIdx = tryY * sizeXZ + tryX * sizeZ + boundZ;
-                    if (visited[tryIdx] || valueGrid[tryIdx] != value) break extendZ;
+                    if (visited.get(tryIdx) || valueGrid[tryIdx] != value) break extendZ;
                     groupIndices[groupIndicesSize + i++] = tryIdx;
                   }
                 }
@@ -109,7 +111,7 @@ public interface VolumetricRLE {
 
               // Mark as visited
               for (int i = 0; i < groupIndicesSize; i++) {
-                visited[groupIndices[i]] = true;
+                visited.set(groupIndices[i]);
               }
               result.add(new Run(value, x, y, z, boundX - 1, boundY - 1, boundZ - 1));
             }

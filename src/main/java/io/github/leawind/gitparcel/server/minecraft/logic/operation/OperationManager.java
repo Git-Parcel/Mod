@@ -386,10 +386,14 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
   }
 
   private static final class MutableOperation {
+    /** Minimum spacing between published progress updates; intermediate ones are merged away. */
+    private static final long PROGRESS_EMISSION_INTERVAL_NANOS = 100_000_000L;
+
     private volatile OperationSnapshot snapshot;
     private final Consumer<OperationSnapshot> completion;
     private final ProgressReporter reporter = this::report;
     private boolean completionClaimed;
+    private long lastEmissionNanos;
 
     private MutableOperation(
         OperationSnapshot snapshot, Consumer<OperationSnapshot> completion) {
@@ -445,6 +449,14 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
       if (snapshot.phase().equals(update.phase()) && update.completed() < snapshot.completed()) {
         return;
       }
+      boolean phaseChange = !snapshot.phase().equals(update.phase());
+      long now = System.nanoTime();
+      if (!phaseChange && now - lastEmissionNanos < PROGRESS_EMISSION_INTERVAL_NANOS) {
+        // High-frequency updates are merged into the next emission instead of copying the
+        // snapshot under the monitor for every section or entity.
+        return;
+      }
+      lastEmissionNanos = now;
       Optional<Long> total =
           update.total().isPresent()
               ? Optional.of(update.total().getAsLong())

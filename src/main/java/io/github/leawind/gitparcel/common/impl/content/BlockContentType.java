@@ -160,8 +160,7 @@ public final class BlockContentType implements ParcelContentType<BlockContentTyp
         output.file(
             RadixTreePathGenerator.toPath(
                 sectionsDirectory, index, SECTION_BLOCK_STATE_SUFFIX));
-    String encoded = encodeRle(digitCodec, section, palette);
-    Files.writeString(stateFile, encoded, StandardCharsets.UTF_8);
+    encodeRle(digitCodec, section, palette, stateFile);
 
     if (!section.blockEntities().isEmpty()) {
       Path blockEntityFile =
@@ -180,35 +179,33 @@ public final class BlockContentType implements ParcelContentType<BlockContentTyp
     }
   }
 
-  private String encodeRle(
-      BlockStateDigitCodec digitCodec, BlockSection section, BlockPalette palette) {
+  private void encodeRle(
+      BlockStateDigitCodec digitCodec, BlockSection section, BlockPalette palette, Path stateFile)
+      throws IOException {
     var runs =
         VolumetricRLE.IMPL.encode(
             section.size().getX(),
             section.size().getY(),
             section.size().getZ(),
-            (x, y, z) -> {
-              BlockState state = section.state(x, y, z);
-              return palette.collect(state);
-            });
-    var output = new StringBuilder();
-    for (var run : runs) {
-      output
-          .append(digitCodec.format(run.minX()))
-          .append(digitCodec.format(run.minY()))
-          .append(digitCodec.format(run.minZ()));
-      if (run.minX() != run.maxX()
-          || run.minY() != run.maxY()
-          || run.minZ() != run.maxZ()) {
-        output
-            .append(digitCodec.format(run.maxX()))
-            .append(digitCodec.format(run.maxY()))
-            .append(digitCodec.format(run.maxZ()));
+            (x, y, z) -> palette.collect(section.state(x, y, z)));
+    try (var writer =
+        java.nio.file.Files.newBufferedWriter(stateFile, java.nio.charset.StandardCharsets.UTF_8)) {
+      for (var run : runs) {
+        writer.write(digitCodec.format(run.minX()));
+        writer.write(digitCodec.format(run.minY()));
+        writer.write(digitCodec.format(run.minZ()));
+        if (run.minX() != run.maxX()
+            || run.minY() != run.maxY()
+            || run.minZ() != run.maxZ()) {
+          writer.write(digitCodec.format(run.maxX()));
+          writer.write(digitCodec.format(run.maxY()));
+          writer.write(digitCodec.format(run.maxZ()));
+        }
+        writer.write('~');
+        writer.write(HexUtils.toHexUpperCase(run.value()));
+        writer.write('\n');
       }
-      output.append('~').append(HexUtils.toHexUpperCase(run.value()));
-      output.append('\n');
     }
-    return output.toString();
   }
 
   private static BlockPalette loadPreviousPalette(Path path) {

@@ -269,12 +269,15 @@ class BuiltinParcelContentTypesTest extends AbstractMinecraftTest {
             Blocks.DIRT.defaultBlockState(),
             Blocks.COBBLESTONE.defaultBlockState());
     var section = new BlockSection(BlockPos.ZERO, PARCEL_SIZE, states, List.of());
+    var entityData = new CompoundTag();
+    // Entities carry their UUID as an int[4] tag; stable file names derive from it.
+    entityData.putIntArray("UUID", new int[] {0x12345678, 0x11223344, (int) 0x89ABCDEFL, 0x56781234});
     var entity =
         new EntityRecord(
             Identifier.fromNamespaceAndPath("minecraft", "armor_stand"),
             new Vec3(0.5, 1, 0.5),
             BlockPos.ZERO,
-            new CompoundTag(),
+            entityData,
             List.of());
     CompoundTag payload = new CompoundTag();
     payload.putString("value", "opaque");

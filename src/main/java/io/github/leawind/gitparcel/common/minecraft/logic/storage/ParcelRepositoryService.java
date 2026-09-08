@@ -197,7 +197,7 @@ public final class ParcelRepositoryService {
         .restoreSnapshot(
             snapshotId,
             workspaceFactory,
-            snapshotRestorer(level, parcel, ignoreEntities, progress, serverThread),
+            snapshotRestorer(level, parcel, Optional.of(snapshotId), ignoreEntities, progress, serverThread),
             progress);
   }
 
@@ -218,20 +218,24 @@ public final class ParcelRepositoryService {
             operationId,
             rollback,
             workspaceFactory,
-            snapshotRestorer(level, parcel, ignoreEntities, progress, serverThread),
+            snapshotRestorer(level, parcel, Optional.empty(), ignoreEntities, progress, serverThread),
             progress);
   }
 
   private static InternalRepository.SnapshotRestorer snapshotRestorer(
       ServerLevel level,
       Parcel parcel,
+      Optional<SnapshotId> validatedCommit,
       boolean ignoreEntities,
       ProgressReporter progress,
       ServerThreadBridge serverThread) {
     return new InternalRepository.SnapshotRestorer() {
       @Override
       public void validate(Path snapshotRoot) throws Exception {
-        ParcelMeta restored = ParcelStorage.validateSnapshot(snapshotRoot, progress);
+        ParcelMeta restored =
+            validatedCommit.isPresent()
+                ? ParcelStorage.validateSnapshotCached(snapshotRoot, validatedCommit.orElseThrow(), progress)
+                : ParcelStorage.validateSnapshot(snapshotRoot, progress);
         validateGeometry(parcel.meta(), restored);
       }
 

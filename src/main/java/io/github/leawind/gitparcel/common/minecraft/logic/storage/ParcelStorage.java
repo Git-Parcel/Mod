@@ -54,6 +54,18 @@ public class ParcelStorage {
 
   private static final String DATA_DIR_NAME = "data";
 
+  /**
+   * Snapshots whose portable trees were fully decoded and validated, keyed by the content-addressed
+   * commit they were exported from. Full validation must precede every world write, but a tree
+   * decoded from the same immutable commit once does not need decoding again; repeated restores,
+   * retries, and restore-after-save flows reuse the recorded result. Structural checks still run
+   * on every access, and corruption introduced after export still fails the apply-side decode.
+   */
+  private static final com.github.benmanes.caffeine.cache.Cache<
+          io.github.leawind.gitparcel.common.api.snapshot.SnapshotId, Boolean>
+      VALIDATED_SNAPSHOT_TREES =
+          com.github.benmanes.caffeine.cache.Caffeine.newBuilder().maximumSize(128).build();
+
   private static Path getMetaFile(Path parcelDir) {
     return parcelDir.resolve(META_FILE_NAME);
   }
@@ -447,6 +459,30 @@ public class ParcelStorage {
           ProgressReporter.prefixed("validate_", progress));
     }
     sink.finish();
+    return meta;
+  }
+
+  /**
+   * Validates a snapshot materialized from one immutable Git commit, skipping the full decode when
+   * that commit's tree was already validated in this process. Structural checks always run.
+   */
+  public static ParcelMeta validateSnapshotCached(
+      Path parcelDir,
+      io.github.leawind.gitparcel.common.api.snapshot.SnapshotId commitId,
+      ProgressReporter progress)
+      throws IOException, ParcelException {
+    if (VALIDATED_SNAPSHOT_TREES.getIfPresent(commitId) != null) {
+      ParcelMeta meta = ParcelMeta.load(getMetaFile(parcelDir));
+      Path dataDir = getDataDir(parcelDir);
+      if (!Files.isDirectory(dataDir)) {
+        throw new ParcelException.CorruptedParcelException(
+            "Snapshot data directory not found: " + dataDir);
+      }
+      resolveSnapshotContentTypes(meta, dataDir);
+      return meta;
+    }
+    ParcelMeta meta = validateSnapshot(parcelDir, progress);
+    VALIDATED_SNAPSHOT_TREES.put(commitId, Boolean.TRUE);
     return meta;
   }
 
