@@ -15,6 +15,10 @@ import io.github.leawind.gitparcel.common.minecraft.logic.transform.ParcelBlockT
 import io.github.leawind.gitparcel.common.minecraft.logic.version.MinecraftDataMigration;
 import io.github.leawind.gitparcel.common.impl.extension.attachment.ParcelAttachmentSession;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.EntityProcessor;
@@ -25,6 +29,8 @@ import net.minecraft.world.level.storage.TagValueInput;
 
 /** Places portable parcel records into a server level. */
 public final class MinecraftParcelDataSink implements ParcelDataSink {
+  private record BufferedEntity(Optional<UUID> originalId, EntityRecord record) {}
+
   private final ServerLevelAccessor level;
   private final ParcelSpace space;
   private final boolean ignoreBlocks;
@@ -35,6 +41,7 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
       new ProblemReporter.ScopedCollector(ParcelStorage.LOGGER);
   private final ParcelRecordProcessorContext processorContext;
   private final ParcelAttachmentSession attachments = new ParcelAttachmentSession();
+  private final List<BufferedEntity> bufferedEntities = new ArrayList<>();
   private boolean finished;
 
   public MinecraftParcelDataSink(
@@ -122,6 +129,7 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
     if (ignoreEntities) {
       return;
     }
+    Optional<UUID> originalId = readEntityUuid(original.data());
     EntityRecord record =
         new EntityRecord(
             original.type(),
@@ -137,20 +145,59 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
     for (var processor : ParcelRecordProcessorRegistry.get().orderedProcessors()) {
       record = processor.restoreEntity(processorContext, record);
     }
-    CompoundTag data = record.data().copy();
-    data.putString("id", record.type().toString());
-    var entity =
-        EntityType.loadEntityRecursive(
-            data, level.getLevel(), EntitySpawnReason.LOAD, EntityProcessor.NOP);
-    if (entity == null) {
-      throw new ParcelException("Failed to create entity " + record.type());
+    bufferedEntities.add(new BufferedEntity(originalId, record));
+  }
+
+  /**
+   * Summons the whole entity batch with fresh UUIDs, rewriting declared references so intra-parcel
+   * links (leashes and mod-owned fields) survive the restore.
+   */
+  @Override
+  public void commit() throws ParcelException {
+    if (ignoreEntities) {
+      return;
     }
-    var worldPosition = space.toWorld(record.pos());
-    entity.snapTo(
-        worldPosition,
-        space.toWorldYaw(entity.getYRot()),
-        entity.getXRot());
-    level.addFreshEntityWithPassengers(entity);
+    var remap =
+        EntityUuidRemapper.assignFreshIds(
+            bufferedEntities.stream().map(BufferedEntity::originalId).flatMap(Optional::stream).toList());
+    for (BufferedEntity buffered : bufferedEntities) {
+      CompoundTag data = buffered.record().data().copy();
+      buffered
+          .originalId()
+          .ifPresent(id -> data.put("UUID", encodeUuid(remap.getOrDefault(id, id))));
+      EntityUuidRemapper.rewriteReferences(data, buffered.record().type(), remap);
+      data.putString("id", buffered.record().type().toString());
+      var entity =
+          EntityType.loadEntityRecursive(
+              data, level.getLevel(), EntitySpawnReason.LOAD, EntityProcessor.NOP);
+      if (entity == null) {
+        throw new ParcelException("Failed to create entity " + buffered.record().type());
+      }
+      var worldPosition = space.toWorld(buffered.record().pos());
+      entity.snapTo(
+          worldPosition,
+          space.toWorldYaw(entity.getYRot()),
+          entity.getXRot());
+      level.addFreshEntityWithPassengers(entity);
+    }
+  }
+
+  private static Optional<UUID> readEntityUuid(CompoundTag data) {
+    var uuid = data.getIntArray("UUID");
+    if (uuid.isEmpty() || uuid.orElseThrow().length != 4) {
+      return Optional.empty();
+    }
+    int[] parts = uuid.orElseThrow();
+    return Optional.of(
+        new UUID(
+            ((long) parts[0] << 32) | (parts[1] & 0xFFFFFFFFL),
+            ((long) parts[2] << 32) | (parts[3] & 0xFFFFFFFFL)));
+  }
+
+  private static net.minecraft.nbt.Tag encodeUuid(UUID uuid) {
+    return net.minecraft.core.UUIDUtil.CODEC
+        .encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, uuid)
+        .getOrThrow();
   }
 
   @Override

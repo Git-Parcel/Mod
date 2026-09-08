@@ -546,6 +546,7 @@ public class ParcelStorage {
             sink,
             progress);
       }
+      sink.commit();
     } finally {
       sink.finish();
     }

@@ -4,6 +4,7 @@ import com.google.auto.service.AutoService;
 import io.github.leawind.gitparcel.common.api.extension.GitParcelExtension;
 import io.github.leawind.gitparcel.common.api.extension.ParcelExtensionRegistrar;
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateField;
+import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefField;
 import io.github.leawind.gitparcel.common.impl.content.AttachmentContentType;
 import io.github.leawind.gitparcel.common.impl.content.BlockContentType;
 import io.github.leawind.gitparcel.common.impl.content.EntityContentType;
@@ -40,5 +41,10 @@ public final class BuiltinExtension implements GitParcelExtension {
               "flower_pos",
               ParcelCoordinateField.Encoding.BLOCK_POS));
     }
+    // The vanilla leash stores either a holder UUID or a fence position under "leash".
+    registrar.registerCoordinateField(
+        ParcelCoordinateField.forAny(
+            ParcelCoordinateField.Target.ENTITY, "leash", ParcelCoordinateField.Encoding.BLOCK_POS));
+    registrar.registerEntityRefField(ParcelEntityRefField.forAny("leash.UUID"));
   }
 }

@@ -336,9 +336,9 @@ public class GitParcelGameTest {
   }
 
   /**
-   * Pins current entity round-trip behavior: entities respawn with fresh UUIDs, passenger relations
-   * survive, but leashes break because the leash NBT references the pre-restore UUID. The leash
-   * assertion flips once entity references are remapped during restore.
+   * Entity round-trip contract: entities respawn with fresh UUIDs, passenger relations survive,
+   * and intra-parcel entity references (the leash) are remapped to the fresh UUIDs so the link
+   * survives restore.
    */
   public void testEntityRoundTripCharacteristics(GameTestHelpMore helper) throws Exception {
     var level = helper.getLevel();
@@ -386,9 +386,14 @@ public class GitParcelGameTest {
             20,
             () -> {
               var leashed = level.getEntities(EntityType.COW, area, Leashable::isLeashed);
-              if (!leashed.isEmpty()) {
+              if (leashed.size() != 1) {
                 helper.fail(
-                    "Leash must currently break across restore (documents pre-remap behavior)");
+                    "Exactly one cow must be leashed after reference remapping, got "
+                        + leashed.size());
+              }
+              var leashHolder = leashed.getFirst().getLeashHolder();
+              if (!(leashHolder instanceof Cow)) {
+                helper.fail("The leash must still point at the other cow, got " + leashHolder);
               }
             })
         .thenSucceed();
