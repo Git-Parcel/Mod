@@ -649,7 +649,7 @@ public class ParcelStorage {
     return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
   }
 
-  private static final class SnapshotValidationSink implements ParcelDataSink {
+  static final class SnapshotValidationSink implements ParcelDataSink {
     private final int minX;
     private final int minY;
     private final int minZ;
@@ -657,7 +657,7 @@ public class ParcelStorage {
     private final int maxYExclusive;
     private final int maxZExclusive;
 
-    private SnapshotValidationSink(ParcelMeta meta) {
+    SnapshotValidationSink(ParcelMeta meta) {
       minX = -meta.anchor().getX();
       minY = -meta.anchor().getY();
       minZ = -meta.anchor().getZ();

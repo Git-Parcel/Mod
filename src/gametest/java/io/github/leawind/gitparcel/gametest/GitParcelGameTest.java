@@ -20,12 +20,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Leashable;
+import net.minecraft.world.entity.animal.chicken.Chicken;
+import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.saveddata.maps.MapId;
+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
+import net.minecraft.world.phys.AABB;
 import org.slf4j.Logger;
 
 public class GitParcelGameTest {
@@ -314,6 +326,119 @@ public class GitParcelGameTest {
 
     registry.deleteParcel(parcel.uuid());
     helper.succeed();
+  }
+
+  /**
+   * Pins current entity round-trip behavior: entities respawn with fresh UUIDs, passenger relations
+   * survive, but leashes break because the leash NBT references the pre-restore UUID. The leash
+   * assertion flips once entity references are remapped during restore.
+   */
+  public void testEntityRoundTripCharacteristics(GameTestHelpMore helper) throws Exception {
+    var level = helper.getLevel();
+    var registry = ParcelRegistry.get(level);
+    var service = SnapshotService.get(level);
+    registry.reset();
+    var parcel = ParcelFactory.create(helper.getBoundingBox(), Mirror.NONE, Rotation.NONE);
+    registry.addNewParcel(parcel);
+
+    var cow = helper.spawn(EntityType.COW, new BlockPos(2, 1, 4));
+    var holder = helper.spawn(EntityType.COW, new BlockPos(4, 1, 4));
+    var chicken = helper.spawn(EntityType.CHICKEN, new BlockPos(2, 1, 4));
+    chicken.startRiding(cow);
+    cow.setLeashedTo(holder, true);
+    if (!cow.isLeashed() || !chicken.isPassenger()) {
+      helper.fail("Entity fixture must start leashed and riding");
+    }
+    var originalCowId = cow.getUUID();
+    var originalHolderId = holder.getUUID();
+
+    var snapshot = service.saveSnapshot(parcel, "Entities", "", GAMETEST_IDENTITY, false);
+    service.restoreSnapshot(
+        parcel, snapshot, RestoreSnapshotRequest.Mode.DIRECT, false, GAMETEST_IDENTITY);
+
+    var area = entityQueryArea(helper);
+    var cows = level.getEntities(EntityType.COW, area, e -> true);
+    var chickens = level.getEntities(EntityType.CHICKEN, area, e -> true);
+    if (cows.size() != 2 || chickens.size() != 1) {
+      helper.fail(
+          "Restored parcel must contain exactly two cows and one chicken, got %d/%d"
+              .formatted(cows.size(), chickens.size()));
+    }
+    if (cows.stream()
+        .anyMatch(e -> e.getUUID().equals(originalCowId) || e.getUUID().equals(originalHolderId))) {
+      helper.fail("Restored entities must receive fresh UUIDs");
+    }
+    var restoredChicken = chickens.getFirst();
+    if (!restoredChicken.isPassenger() || !(restoredChicken.getVehicle() instanceof Cow)) {
+      helper.fail("Restored chicken must still ride a cow");
+    }
+
+    helper
+        .startSequence()
+        .thenExecuteAfter(
+            20,
+            () -> {
+              var leashed = level.getEntities(EntityType.COW, area, Leashable::isLeashed);
+              if (!leashed.isEmpty()) {
+                helper.fail(
+                    "Leash must currently break across restore (documents pre-remap behavior)");
+              }
+            })
+        .thenSucceed();
+  }
+
+  /**
+   * Pins current filled-map behavior: the item survives with its original map id and the referenced
+   * map data is not copied. Flips once map data travels through parcel attachments.
+   */
+  public void testMapItemCharacteristics(GameTestHelpMore helper) throws Exception {
+    var level = helper.getLevel();
+    var registry = ParcelRegistry.get(level);
+    var service = SnapshotService.get(level);
+    registry.reset();
+    var parcel = ParcelFactory.create(helper.getBoundingBox(), Mirror.NONE, Rotation.NONE);
+    registry.addNewParcel(parcel);
+
+    var chestPos = new BlockPos(2, 0, 2);
+    level.setBlock(
+        helper.absolutePos(chestPos), Blocks.CHEST.defaultBlockState(), WORLD_UPDATE_FLAGS);
+    var chest = (ChestBlockEntity) helper.getBlockEntity(chestPos);
+    var mapId = level.getFreeMapId();
+    var mapData =
+        MapItemSavedData.createFresh(0.5, 0.5, (byte) 0, false, true, Level.OVERWORLD);
+    level.setMapData(mapId, mapData);
+    var map = new ItemStack(Items.FILLED_MAP);
+    map.set(DataComponents.MAP_ID, mapId);
+    chest.setItem(0, map);
+
+    var snapshot = service.saveSnapshot(parcel, "Maps", "", GAMETEST_IDENTITY, true);
+    service.restoreSnapshot(
+        parcel, snapshot, RestoreSnapshotRequest.Mode.DIRECT, true, GAMETEST_IDENTITY);
+
+    var restoredChest = (ChestBlockEntity) helper.getBlockEntity(chestPos);
+    var restoredMap = restoredChest.getItem(0);
+    if (!restoredMap.is(Items.FILLED_MAP)) {
+      helper.fail("Filled map must survive the snapshot round trip");
+    }
+    if (!mapId.equals(restoredMap.get(DataComponents.MAP_ID))) {
+      helper.fail("Map item must currently keep its original map id (documents pre-attachment behavior)");
+    }
+    if (level.getMapData(mapId) != mapData) {
+      helper.fail("The original map data instance must remain untouched");
+    }
+
+    helper.succeed();
+  }
+
+  private static AABB entityQueryArea(GameTestHelpMore helper) {
+    var box = helper.getBoundingBox();
+    return new AABB(
+        box.minX() - 4,
+        box.minY() - 4,
+        box.minZ() - 4,
+        box.maxX() + 5,
+        box.maxY() + 5,
+        box.maxZ() + 5);
   }
 
   private void doSaveAndLoad(

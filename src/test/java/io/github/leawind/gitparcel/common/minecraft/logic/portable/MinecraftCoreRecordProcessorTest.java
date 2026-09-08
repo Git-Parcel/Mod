@@ -113,6 +113,119 @@ class MinecraftCoreRecordProcessorTest extends AbstractMinecraftTest {
     assertFalse(restoredPassenger.contains("UUID"));
   }
 
+  @Test
+  void capturesBlockEntityRootCoordinatesAsAnchorRelative() {
+    var data = new CompoundTag();
+    data.putInt("x", 999);
+    data.putInt("y", 999);
+    data.putInt("z", 999);
+    var relative = new BlockPos(2, -1, 4);
+
+    var captured =
+        processor.captureBlockEntity(context, null, new BlockEntityRecord(relative, data, List.of()));
+
+    assertEquals(relative.getX(), captured.data().getInt("x").orElseThrow());
+    assertEquals(relative.getY(), captured.data().getInt("y").orElseThrow());
+    assertEquals(relative.getZ(), captured.data().getInt("z").orElseThrow());
+  }
+
+  @Test
+  void restoresEntitySpatialFieldsForEveryTransform() {
+    for (Mirror mirror : Mirror.values()) {
+      for (Rotation rotation : Rotation.values()) {
+        var transform = new ParcelTransform(mirror, rotation, new BlockPos(-30, 64, 11));
+        var anchor = new BlockPos(5, -2, 9);
+        var space = new ParcelSpace(transform, anchor);
+        var context = new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession());
+        var relativePos = new Vec3(1.5, 2.25, -3.75);
+        var localMotion = new Vec3(0.25, -0.5, 1.5);
+        var relativeBlockPos = new BlockPos(1, -1, 2);
+        var data = new CompoundTag();
+        data.put("Pos", doubles(relativePos));
+        data.put("Motion", doubles(localMotion));
+        data.put("Rotation", floats(37.5F, -12F));
+        data.put("block_pos", blockPosList(relativeBlockPos));
+
+        var restored =
+            processor.restoreEntity(
+                context,
+                new EntityRecord(
+                    Identifier.fromNamespaceAndPath("minecraft", "armor_stand"),
+                    relativePos,
+                    relativeBlockPos,
+                    data,
+                    List.of()));
+
+        assertVecEquals(space.toWorld(relativePos), readVec(restored.data(), "Pos"));
+        assertVecEquals(space.toWorldVector(localMotion), readVec(restored.data(), "Motion"));
+        assertEquals(
+            space.toWorldYaw(37.5F),
+            restored.data().getList("Rotation").orElseThrow().getFloat(0).orElseThrow(),
+            1.0E-5F,
+            "yaw for mirror=%s rotation=%s".formatted(mirror, rotation));
+        assertEquals(
+            space.toWorld(relativeBlockPos),
+            restored
+                .data()
+                .read("block_pos", BlockPos.CODEC)
+                .orElseThrow(() -> new AssertionError("block_pos lost for " + rotation)));
+      }
+    }
+  }
+
+  /**
+   * Documents the current behavior: only the whitelisted spatial fields are rebased. Nested position
+   * fields inside entity or block-entity NBT travel verbatim. This flips once declarative
+   * coordinate fields (e.g. the beehive {@code flower_pos}) are registered.
+   */
+  @Test
+  void leavesNestedPositionFieldsUntouched() {
+    var flowerPos = blockPosList(new BlockPos(120, 64, -35));
+    var beData = new CompoundTag();
+    beData.putInt("x", 5);
+    beData.putInt("y", 64);
+    beData.putInt("z", -30);
+    beData.put("flower_pos", flowerPos);
+
+    var restoredBe =
+        processor.restoreBlockEntity(
+            context, new BlockEntityRecord(new BlockPos(1, 2, 3), beData, List.of()));
+
+    assertEquals(
+        flowerPos, restoredBe.data().getList("flower_pos").orElseThrow(), "flower_pos must travel verbatim");
+
+    var leashPos = new CompoundTag();
+    leashPos.putInt("X", 120);
+    leashPos.putInt("Y", 64);
+    leashPos.putInt("Z", -35);
+    var entityData = new CompoundTag();
+    entityData.put("Pos", doubles(new Vec3(1, 1, 1)));
+    entityData.put("leash", leashPos);
+
+    var restoredEntity =
+        processor.restoreEntity(
+            context,
+            new EntityRecord(
+                Identifier.fromNamespaceAndPath("minecraft", "cow"),
+                new Vec3(1, 1, 1),
+                new BlockPos(1, 1, 1),
+                entityData,
+                List.of()));
+
+    assertEquals(
+        leashPos,
+        restoredEntity.data().getCompound("leash").orElseThrow(),
+        "leash position variant must travel verbatim");
+  }
+
+  private static ListTag blockPosList(BlockPos pos) {
+    var list = new ListTag();
+    list.add(net.minecraft.nbt.IntTag.valueOf(pos.getX()));
+    list.add(net.minecraft.nbt.IntTag.valueOf(pos.getY()));
+    list.add(net.minecraft.nbt.IntTag.valueOf(pos.getZ()));
+    return list;
+  }
+
   private static ListTag doubles(Vec3 value) {
     var list = new ListTag();
     list.add(DoubleTag.valueOf(value.x));

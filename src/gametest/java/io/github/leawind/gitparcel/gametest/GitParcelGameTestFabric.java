@@ -48,4 +48,14 @@ public class GitParcelGameTestFabric extends GitParcelGameTest implements Custom
   public void testIdenticalContentResaveStillCommits(GameTestHelper helper) throws Exception {
     Tester.test(helper, super::testIdenticalContentResaveStillCommits);
   }
+
+  @GameTest(structure = "gametest:swamp_hut-7x8x9", maxTicks = 200)
+  public void testEntityRoundTripCharacteristics(GameTestHelper helper) throws Exception {
+    Tester.test(helper, super::testEntityRoundTripCharacteristics);
+  }
+
+  @GameTest(structure = "gametest:swamp_hut-7x8x9", maxTicks = 200)
+  public void testMapItemCharacteristics(GameTestHelper helper) throws Exception {
+    Tester.test(helper, super::testMapItemCharacteristics);
+  }
 }
