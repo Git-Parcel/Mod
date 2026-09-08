@@ -400,8 +400,8 @@ public class GitParcelGameTest {
   }
 
   /**
-   * Pins current filled-map behavior: the item survives with its original map id and the referenced
-   * map data is not copied. Flips once map data travels through parcel attachments.
+   * Filled maps travel with their artwork: after a round trip the item points at a fresh map id
+   * whose data equals the original, while the original map data stays untouched.
    */
   public void testMapItemCharacteristics(GameTestHelpMore helper) throws Exception {
     var level = helper.getLevel();
@@ -432,8 +432,23 @@ public class GitParcelGameTest {
     if (!restoredMap.is(Items.FILLED_MAP)) {
       helper.fail("Filled map must survive the snapshot round trip");
     }
-    if (!mapId.equals(restoredMap.get(DataComponents.MAP_ID))) {
-      helper.fail("Map item must currently keep its original map id (documents pre-attachment behavior)");
+    var restoredMapId = restoredMap.get(DataComponents.MAP_ID);
+    if (restoredMapId == null) {
+      helper.fail("Restored filled map must keep a map id component");
+    }
+    if (restoredMapId.equals(mapId)) {
+      helper.fail("Map item must receive a fresh map id through its attachment");
+    }
+    var restoredData = level.getMapData(restoredMapId);
+    if (restoredData == null) {
+      helper.fail("The map artwork must be copied into the level under the fresh id");
+    }
+    if (restoredData.centerX != mapData.centerX
+        || restoredData.centerZ != mapData.centerZ
+        || restoredData.scale != mapData.scale
+        || restoredData.locked != mapData.locked
+        || !java.util.Arrays.equals(restoredData.colors, mapData.colors)) {
+      helper.fail("The copied map data must equal the original artwork");
     }
     if (level.getMapData(mapId) != mapData) {
       helper.fail("The original map data instance must remain untouched");
