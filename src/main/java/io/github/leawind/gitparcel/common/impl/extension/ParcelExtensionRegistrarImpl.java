@@ -3,6 +3,8 @@ package io.github.leawind.gitparcel.common.impl.extension;
 import io.github.leawind.gitparcel.common.api.extension.ParcelExtensionRegistrar;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentType;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentTypeRegistry;
+import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateField;
+import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateFieldRegistry;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessor;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentType;
@@ -16,6 +18,7 @@ final class ParcelExtensionRegistrarImpl implements ParcelExtensionRegistrar {
   private final List<ParcelContentType<?>> contentTypes = new ArrayList<>();
   private final List<ParcelRecordProcessor> processors = new ArrayList<>();
   private final List<ParcelAttachmentType> attachmentTypes = new ArrayList<>();
+  private final List<ParcelCoordinateField> coordinateFields = new ArrayList<>();
 
   @Override
   public void registerContentType(ParcelContentType<?> type) {
@@ -30,6 +33,11 @@ final class ParcelExtensionRegistrarImpl implements ParcelExtensionRegistrar {
   @Override
   public void registerAttachmentType(ParcelAttachmentType type) {
     attachmentTypes.add(type);
+  }
+
+  @Override
+  public void registerCoordinateField(ParcelCoordinateField field) {
+    coordinateFields.add(field);
   }
 
   void commit(ParcelContentTypeRegistry registry) {
@@ -59,5 +67,6 @@ final class ParcelExtensionRegistrarImpl implements ParcelExtensionRegistrar {
     contentTypes.forEach(registry::register);
     processors.forEach(ParcelRecordProcessorRegistry.get()::register);
     attachmentTypes.forEach(ParcelAttachmentTypeRegistry.get()::register);
+    coordinateFields.forEach(ParcelCoordinateFieldRegistry.get()::register);
   }
 }

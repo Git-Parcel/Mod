@@ -22,6 +22,10 @@ import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Leashable;
 import net.minecraft.world.entity.animal.chicken.Chicken;
@@ -33,11 +37,13 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.entity.BeehiveBlockEntity;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
+import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.phys.AABB;
 import org.slf4j.Logger;
 
@@ -457,6 +463,71 @@ public class GitParcelGameTest {
     if (name == null || !MarkerRecordProcessor.MARKER_VALUE.equals(name.getString())) {
       helper.fail(
           "Restored cow must carry the marker custom name from the attachment, got " + name);
+    }
+    helper.succeed();
+  }
+
+  /**
+   * Declared coordinate fields must follow the parcel: a beehive's {@code flower_pos} is rebased
+   * when the snapshot is loaded into a parcel at a different world position.
+   */
+  public void testBeehiveFlowerPosFollowsParcel(GameTestHelpMore helper) throws Exception {
+    var level = helper.getLevel();
+    var box = helper.getRelativeBoundingBox();
+    int halfHeight = box.getYSpan() / 2;
+    var bottomBox =
+        new BoundingBox(
+            box.minX(), box.minY(), box.minZ(), box.maxX(), box.minY() + halfHeight - 1, box.maxZ());
+    var topBox =
+        new BoundingBox(
+            box.minX(),
+            box.maxY() + 1 - halfHeight,
+            box.minZ(),
+            box.maxX(),
+            box.maxY(),
+            box.maxZ());
+
+    var hivePos = new BlockPos(2, 0, 2);
+    var flowerWorld = helper.absolutePos(new BlockPos(4, 1, 5));
+    level.setBlock(helper.absolutePos(hivePos), Blocks.BEEHIVE.defaultBlockState(), WORLD_UPDATE_FLAGS);
+    var hive = (BeehiveBlockEntity) helper.getBlockEntity(hivePos);
+    var hiveWorld = helper.absolutePos(hivePos);
+    var injected = new CompoundTag();
+    injected.putString("id", "minecraft:beehive");
+    injected.putInt("x", hiveWorld.getX());
+    injected.putInt("y", hiveWorld.getY());
+    injected.putInt("z", hiveWorld.getZ());
+    injected.put(
+        "flower_pos", BlockPos.CODEC.encodeStart(NbtOps.INSTANCE, flowerWorld).getOrThrow());
+    injected.put("bees", new ListTag());
+    try (var reporter = new ProblemReporter.ScopedCollector(LOGGER)) {
+      hive.loadWithComponents(TagValueInput.create(reporter, level.registryAccess(), injected));
+    }
+    hive.setChanged();
+
+    var source = ParcelFactory.create(helper.absoluteBoundingBox(bottomBox), Mirror.NONE, Rotation.NONE);
+    var target = ParcelFactory.create(helper.absoluteBoundingBox(topBox), Mirror.NONE, Rotation.NONE);
+    try (var fs = Jimfs.newFileSystem()) {
+      Path tempDir = fs.getPath("/tmp");
+      Files.createDirectories(tempDir);
+      ParcelStorage.save(level, source, tempDir, true);
+      ParcelStorage.load(
+          level, target.transform(), tempDir, false, true,
+          WORLD_UPDATE_FLAGS);
+    }
+
+    var restoredHive = (BeehiveBlockEntity) helper.getBlockEntity(hivePos.offset(0, halfHeight, 0));
+    var restoredData = restoredHive.saveWithFullMetadata(level.registryAccess());
+    var restoredFlower =
+        BlockPos.CODEC
+            .parse(NbtOps.INSTANCE, restoredData.get("flower_pos"))
+            .result()
+            .orElseThrow(() -> new AssertionError("Restored beehive lost its flower_pos"));
+    var expectedFlower = flowerWorld.offset(0, halfHeight, 0);
+    if (!expectedFlower.equals(restoredFlower)) {
+      helper.fail(
+          "flower_pos must follow the parcel: expected %s, got %s"
+              .formatted(expectedFlower.toShortString(), restoredFlower.toShortString()));
     }
     helper.succeed();
   }

@@ -174,25 +174,25 @@ class MinecraftCoreRecordProcessorTest extends AbstractMinecraftTest {
   }
 
   /**
-   * Documents the current behavior: only the whitelisted spatial fields are rebased. Nested position
-   * fields inside entity or block-entity NBT travel verbatim. This flips once declarative
-   * coordinate fields (e.g. the beehive {@code flower_pos}) are registered.
+   * Documents the core processor's scope: only whitelisted spatial fields are rebased. Nested
+   * fields inside entity or block-entity NBT are the declared-field processor's job; keys without
+   * a declaration travel verbatim.
    */
   @Test
   void leavesNestedPositionFieldsUntouched() {
-    var flowerPos = blockPosList(new BlockPos(120, 64, -35));
+    var customPos = blockPosList(new BlockPos(120, 64, -35));
     var beData = new CompoundTag();
     beData.putInt("x", 5);
     beData.putInt("y", 64);
     beData.putInt("z", -30);
-    beData.put("flower_pos", flowerPos);
+    beData.put("custom_pos", customPos);
 
     var restoredBe =
         processor.restoreBlockEntity(
             context, new BlockEntityRecord(new BlockPos(1, 2, 3), beData, List.of()));
 
     assertEquals(
-        flowerPos, restoredBe.data().getList("flower_pos").orElseThrow(), "flower_pos must travel verbatim");
+        customPos, restoredBe.data().getList("custom_pos").orElseThrow(), "undeclared nested fields must travel verbatim");
 
     var leashPos = new CompoundTag();
     leashPos.putInt("X", 120);
