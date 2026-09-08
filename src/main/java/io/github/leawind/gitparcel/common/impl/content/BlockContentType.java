@@ -110,6 +110,8 @@ public final class BlockContentType implements ParcelContentType<BlockContentTyp
               section.origin().getX() - anchor.getX(),
               section.origin().getY() - anchor.getY(),
               section.origin().getZ() - anchor.getZ());
+      // Load partitions are parcel-relative, so the anchor shift belongs in the grid index; this
+      // matches the save path, whose sections already arrive anchor-relative.
       long index = ZOrder3D.coordToIndexSigned(section.gridCoordinate(sectionSize, anchor));
       Path stateFile =
           RadixTreePathGenerator.toPath(
@@ -146,6 +148,8 @@ public final class BlockContentType implements ParcelContentType<BlockContentTyp
       BlockSection section,
       ParcelContentFileSupport.ManagedOutput output)
       throws IOException {
+    // Sections arrive with anchor-relative origins, so their coordinates are already aligned to
+    // the same lattice as the load path's floorDiv(origin - anchor, sectionSize) grid index.
     Vec3i coordinate =
         new Vec3i(
             Math.floorDiv(section.origin().getX(), sectionSize),

@@ -40,6 +40,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.Block;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -161,6 +162,11 @@ public final class ParcelService {
         level, UpdateParcelsMessage.incremental(parcel));
   }
 
+  /**
+   * Server-thread entry point: performs blocking world capture on the calling thread. Intended for
+   * GameTests; production commands must use {@link #saveSnapshotInBackground}.
+   */
+  @ApiStatus.Internal
   public SnapshotId saveSnapshot(
       Parcel parcel,
       String name,
@@ -177,6 +183,11 @@ public final class ParcelService {
         ProgressReporter.NONE);
   }
 
+  /**
+   * Server-thread entry point: performs blocking world capture on the calling thread. Intended for
+   * GameTests; production commands must use {@link #saveSnapshotInBackground}.
+   */
+  @ApiStatus.Internal
   public SnapshotId saveSnapshot(
       Parcel parcel,
       String name,
@@ -204,6 +215,11 @@ public final class ParcelService {
     }
   }
 
+  /**
+   * Server-thread entry point: blocks on the repository lock while acquiring the tree page.
+   * Intended for GameTests; production queries must use {@link #querySnapshotTreeInBackground}.
+   */
+  @ApiStatus.Internal
   public SnapshotTreePage querySnapshotTree(
       Parcel parcel, int limit, Optional<SnapshotId> cursor) throws IOException {
     requireRegistered(parcel);
@@ -223,6 +239,11 @@ public final class ParcelService {
         parcel, internalParcelsDirectory(), limit, cursor);
   }
 
+  /**
+   * Server-thread entry point: writes the world synchronously on the calling thread. Intended for
+   * GameTests; production commands must use {@link #restoreSnapshotInBackground}.
+   */
+  @ApiStatus.Internal
   public InternalRepository.RestoreResult restoreSnapshot(
       Parcel parcel,
       SnapshotId snapshotId,
@@ -239,6 +260,11 @@ public final class ParcelService {
         ProgressReporter.NONE);
   }
 
+  /**
+   * Server-thread entry point: writes the world synchronously on the calling thread. Intended for
+   * GameTests; production commands must use {@link #restoreSnapshotInBackground}.
+   */
+  @ApiStatus.Internal
   public InternalRepository.RestoreResult restoreSnapshot(
       Parcel parcel,
       SnapshotId snapshotId,
@@ -272,13 +298,16 @@ public final class ParcelService {
     }
   }
 
-  public List<InternalRepository.RestoreOperation> pendingRestoreOperations(Parcel parcel)
+  /** Server-thread entry point for listing durable restore records. */
+  @ApiStatus.Internal
+  public InternalRepository.PendingRestoreReport pendingRestoreOperations(Parcel parcel)
       throws IOException {
     requireRegistered(parcel);
     return internalRepository(parcel).pendingRestores();
   }
 
   /** Resolves a durable restore record synchronously. Prefer the background entry point in-game. */
+  @ApiStatus.Internal
   public InternalRepository.RestoreResult resolvePendingRestore(
       Parcel parcel, UUID operationId, boolean rollback, boolean ignoreEntities)
       throws IOException, ParcelException {
@@ -430,11 +459,15 @@ public final class ParcelService {
       }
       try {
         var pending = repository.pendingRestores();
-        if (!pending.isEmpty()) {
+        for (var problem : pending.diagnostics()) {
+          LOGGER.error(
+              "Parcel {} has an unreadable restore operation record: {}", parcel.uuid(), problem);
+        }
+        if (!pending.operations().isEmpty()) {
           LOGGER.warn(
               "Parcel {} has {} unfinished restore operation(s) and requires recovery",
               parcel.uuid(),
-              pending.size());
+              pending.operations().size());
         }
       } catch (IOException e) {
         LOGGER.error("Failed to inspect restore operations for parcel {}", parcel.uuid(), e);
@@ -442,7 +475,8 @@ public final class ParcelService {
     }
   }
 
-  /** Publishes an already-saved internal snapshot; it never captures the live world. */
+  /** Server-thread entry point. Prefer {@link #publishCurrentSnapshotInBackground} in-game. */
+  @ApiStatus.Internal
   public Optional<GitRepo.CommitInfo> publishSnapshot(
       Parcel parcel,
       SnapshotId snapshotId,
@@ -514,7 +548,8 @@ public final class ParcelService {
     }
   }
 
-  /** Publishes the current baseline, if one exists. */
+  /** Server-thread entry point: publishes the current baseline, if one exists. */
+  @ApiStatus.Internal
   public Optional<GitRepo.CommitInfo> publishCurrentSnapshot(
       Parcel parcel,
       String repository,
@@ -549,7 +584,8 @@ public final class ParcelService {
         .orElseThrow(() -> new IOException("Publishing produced no shared repository commit"));
   }
 
-  /** Imports one explicit shared-repository commit and registers a new local parcel. */
+  /** Server-thread entry point: applies imported content to the world on the calling thread. */
+  @ApiStatus.Internal
   public Parcel importSharedSnapshot(
       String repository,
       String revision,
@@ -634,7 +670,11 @@ public final class ParcelService {
     }
   }
 
-  /** Imports external content as a new child snapshot without implicitly writing the live world. */
+  /**
+   * Imports external content as a new child snapshot without implicitly writing the live world.
+   * Performs repository I/O on the calling thread; schedule it on a worker before using in-game.
+   */
+  @ApiStatus.Internal
   public SnapshotId importSharedSnapshotIntoParcel(
       Parcel parcel,
       String repository,
@@ -677,7 +717,8 @@ public final class ParcelService {
     }
   }
 
-  /** Compatibility entry point for commands that mean the shared repository's current commit. */
+  /** Server-thread compatibility entry point for commands using the shared repository's HEAD. */
+  @ApiStatus.Internal
   public Parcel importSharedParcel(
       String repository, String parcelPath, ParcelTransform transform)
       throws IOException, ParcelException {

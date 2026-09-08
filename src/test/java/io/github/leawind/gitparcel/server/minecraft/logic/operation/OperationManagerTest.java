@@ -72,7 +72,9 @@ class OperationManagerTest {
           manager.submit("pull", "third", "tester", () -> "done", ignored -> {});
 
       assertEquals(OperationSnapshot.State.FAILED, rejected.state());
-      assertEquals("Operation queue is full", rejected.error().orElseThrow());
+      assertEquals(
+          io.github.leawind.gitparcel.common.api.operation.OperationErrorCode.QUEUE_FULL,
+          rejected.errorCode().orElseThrow());
       release.countDown();
     }
   }
@@ -136,6 +138,53 @@ class OperationManagerTest {
       assertTrue(completed.await(5, TimeUnit.SECONDS));
       assertEquals(OperationSnapshot.State.SUCCEEDED, result.get().state());
       assertEquals("test-server-thread", result.get().result().orElseThrow());
+    }
+  }
+
+  @Test
+  void serverCallbackTimeoutFailsTheOperationWithStructuredError() throws Exception {
+    var gate = new CountDownLatch(1);
+    var completed = new CountDownLatch(1);
+    var result = new AtomicReference<OperationSnapshot>();
+    try (var callbackExecutor =
+            Executors.newSingleThreadExecutor(
+                runnable -> new Thread(runnable, "test-server-thread"));
+        var manager = new OperationManager(callbackExecutor, 1, 1, 1)) {
+      // Hold the callback thread so the queued world phase cannot run, like a wedged server thread.
+      callbackExecutor.execute(
+          () -> {
+            try {
+              gate.await(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+            }
+          });
+      var submitted =
+          manager.submit(
+              "restore_snapshot",
+              "parcel",
+              "tester",
+              ignored -> manager.call(() -> "late"),
+              snapshot -> {
+                result.set(snapshot);
+                completed.countDown();
+              });
+
+      // The one-second callback timeout fires while the phase is stuck behind the held thread.
+      var snapshot = submitted;
+      var deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+      while (!snapshot.state().isTerminal() && System.nanoTime() < deadline) {
+        TimeUnit.MILLISECONDS.sleep(20);
+        snapshot = manager.get(submitted.operationId()).orElseThrow();
+      }
+      assertEquals(OperationSnapshot.State.FAILED, snapshot.state());
+      assertEquals(
+          io.github.leawind.gitparcel.common.api.operation.OperationErrorCode.SERVER_THREAD_TIMEOUT,
+          snapshot.errorCode().orElseThrow());
+
+      gate.countDown();
+      assertTrue(completed.await(5, TimeUnit.SECONDS));
+      assertEquals(OperationSnapshot.State.FAILED, result.get().state());
     }
   }
 }

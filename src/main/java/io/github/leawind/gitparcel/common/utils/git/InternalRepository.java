@@ -21,11 +21,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import org.eclipse.jgit.lib.RefUpdate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** A parcel-owned bare repository enforcing the immutable, single-parent snapshot tree. */
 public final class InternalRepository {
+  private static final Logger LOGGER = LoggerFactory.getLogger(InternalRepository.class);
   public static final String CURRENT_REF = "refs/gitparcel/current";
   public static final String SNAPSHOTS_PREFIX = "refs/gitparcel/snapshots/";
   public static final String OPERATIONS_PREFIX = "refs/gitparcel/operations/";
@@ -34,6 +38,13 @@ public final class InternalRepository {
   private static final String MESSAGE_MARKER = "\n\n-- gitparcel --\n";
   private static final Gson GSON = new Gson();
   private static final ConcurrentHashMap<Path, ReentrantLock> LOCKS = new ConcurrentHashMap<>();
+
+  /**
+   * Read paths acquire the repository lock with a bounded timeout. A background save or restore
+   * can hold the lock for a long time while waiting on the server thread, so an unbounded wait
+   * here could freeze a server tick forever if a caller ignores the threading contract.
+   */
+  private static final long READ_LOCK_TIMEOUT_SECONDS = 5;
 
   public static InternalRepository at(Path parcelsRoot, UUID parcelUuid) {
     return new InternalRepository(parcelsRoot.resolve(parcelUuid + ".git"));
@@ -228,7 +239,7 @@ public final class InternalRepository {
     if (limit < 1) {
       throw new IllegalArgumentException("Snapshot tree page limit must be positive");
     }
-    lock.lock();
+    lockForRead();
     try {
       if (!exists()) {
         return new SnapshotTreePage(
@@ -372,30 +383,36 @@ public final class InternalRepository {
         }
         throw incomplete;
       }
-      deleteOperation(operationId, operationCommit);
+      deleteOperationQuietly(operationId, operationCommit);
       return new RestoreResult(operationId, target, before);
     } finally {
       lock.unlock();
     }
   }
 
-  public List<RestoreOperation> pendingRestores() throws IOException {
-    lock.lock();
+  /**
+   * Lists durable restore records. A single damaged operation ref becomes a diagnostic instead of
+   * failing the whole listing, so one unreadable record cannot hide other recoverable operations.
+   */
+  public PendingRestoreReport pendingRestores() throws IOException {
+    lockForRead();
     try {
       if (!exists()) {
-        return List.of();
+        return new PendingRestoreReport(List.of(), List.of());
       }
       var result = new ArrayList<RestoreOperation>();
+      var diagnostics = new ArrayList<String>();
       for (var ref : core.refsByPrefix(OPERATIONS_PREFIX)) {
         try {
           byte[] bytes = core.readSmallFile(ref.target(), OPERATION_FILE, 64 * 1024);
           result.add(decodeOperation(bytes));
         } catch (Exception e) {
-          throw new IOException("Invalid recovery operation " + ref.name(), e);
+          LOGGER.error("Unreadable restore operation ref {} in {}", ref.name(), path, e);
+          diagnostics.add(ref.name() + ": " + describe(e));
         }
       }
       result.sort(Comparator.comparing(RestoreOperation::operationId));
-      return List.copyOf(result);
+      return new PendingRestoreReport(List.copyOf(result), List.copyOf(diagnostics));
     } finally {
       lock.unlock();
     }
@@ -429,7 +446,7 @@ public final class InternalRepository {
               : pending.target();
       RestoreResult result =
           restoreSnapshot(selected, workspaceFactory, restorer, progress);
-      deleteOperation(pendingOperationId, Optional.of(operationCommit));
+      deleteOperationQuietly(pendingOperationId, Optional.of(operationCommit));
       return result;
     } finally {
       lock.unlock();
@@ -514,6 +531,24 @@ public final class InternalRepository {
     RefUpdate.Result result = core.deleteRef(operationRef(operationId), expected);
     if (result != RefUpdate.Result.NO_CHANGE && result != RefUpdate.Result.FORCED) {
       throw new IOException("Failed to clear completed restore operation: " + result);
+    }
+  }
+
+  /**
+   * Clears the durable record after a fully successful restore. The world and the current baseline
+   * are already correct at this point, so a cleanup failure must not surface as a restore failure;
+   * it only leaves a stale operation ref behind and logs a warning.
+   */
+  private void deleteOperationQuietly(UUID operationId, Optional<SnapshotId> expected) {
+    try {
+      deleteOperation(operationId, expected);
+    } catch (IOException e) {
+      LOGGER.warn(
+          "Failed to clear completed restore operation {} in {}; a stale operation ref remains"
+              + " and will be reported by the next audit",
+          operationId,
+          path,
+          e);
     }
   }
 
@@ -602,6 +637,18 @@ public final class InternalRepository {
         || result == RefUpdate.Result.NO_CHANGE;
   }
 
+  private void lockForRead() throws IOException {
+    try {
+      if (!lock.tryLock(READ_LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+        throw new RepositoryBusyException(
+            "Repository is busy with a long operation; retry later: " + path);
+      }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException("Interrupted while acquiring repository access: " + path, e);
+    }
+  }
+
   private static String describe(Exception exception) {
     String message = exception.getMessage();
     return exception.getClass().getSimpleName()
@@ -658,6 +705,19 @@ public final class InternalRepository {
     }
   }
 
+  /** Durable restore records plus diagnostics for operation refs that could not be decoded. */
+  public record PendingRestoreReport(
+      List<RestoreOperation> operations, List<String> diagnostics) {
+    public PendingRestoreReport {
+      operations = List.copyOf(operations);
+      diagnostics = List.copyOf(diagnostics);
+    }
+
+    public boolean isEmpty() {
+      return operations.isEmpty() && diagnostics.isEmpty();
+    }
+  }
+
   public record RestoreResult(
       UUID operationId, SnapshotId restored, Optional<SnapshotId> previous) {
     public RestoreResult {
@@ -681,6 +741,13 @@ public final class InternalRepository {
 
   public static class ConcurrentUpdateException extends IOException {
     public ConcurrentUpdateException(String message) {
+      super(message);
+    }
+  }
+
+  /** The repository lock is held by a long-running operation; the read can be retried later. */
+  public static class RepositoryBusyException extends IOException {
+    public RepositoryBusyException(String message) {
       super(message);
     }
   }

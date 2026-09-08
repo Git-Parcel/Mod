@@ -94,6 +94,105 @@ class BuiltinParcelContentTypesTest extends AbstractMinecraftTest {
     assertTrue(Files.isRegularFile(data.resolve("attachments/.empty")));
   }
 
+  /**
+   * Section file indices must agree between save and load even when the parcel anchor is nonzero.
+   * Save-side sections arrive anchor-relative while load-side partitions are parcel-relative, so
+   * this test pins that subtle contract for both section sizes and aligned/unaligned anchors.
+   */
+  @Test
+  void nonZeroAnchorsRoundTripBlockSections() throws Exception {
+    Vec3i size = new Vec3i(20, 3, 5);
+    for (Vec3i anchor :
+        List.of(new Vec3i(32, 16, 0), new Vec3i(33, 5, 7))) {
+      for (var sectionSize : BlockContentType.BlockSectionSize.values()) {
+        Path data = Files.createTempDirectory(tempDir, "anchor-");
+        var config = new BlockContentType.Config();
+        config.sectionSize.set(sectionSize);
+        var type = new BlockContentType();
+
+        type.save(
+            saveContext(data.resolve("blocks"), config, size, anchor),
+            blockSourceFor(size, anchor));
+        var sink = new CollectingSink();
+        type.load(loadContext(data.resolve("blocks"), config, size, anchor), sink);
+
+        var loaded = new java.util.TreeMap<String, net.minecraft.world.level.block.state.BlockState>();
+        for (var section : sink.sections) {
+          for (int x = 0; x < section.size().getX(); x++) {
+            for (int y = 0; y < section.size().getY(); y++) {
+              for (int z = 0; z < section.size().getZ(); z++) {
+                BlockPos pos =
+                    section.origin().offset(x, y, z);
+                loaded.put(
+                    pos.getX() + "," + pos.getY() + "," + pos.getZ(), section.state(x, y, z));
+              }
+            }
+          }
+        }
+        assertEquals(expectedPattern(size, anchor), loaded);
+      }
+    }
+  }
+
+  /** Emits anchor-relative sections the same way {@code MinecraftParcelDataSource} does. */
+  private static ParcelDataSource blockSourceFor(Vec3i size, Vec3i anchor) {
+    return new ParcelDataSource() {
+      @Override
+      public void forEachBlockSection(
+          int sectionSize, ParcelDataConsumer<BlockSection> consumer)
+          throws IOException, io.github.leawind.gitparcel.common.api.exceptions.ParcelException {
+        for (var region :
+            io.github.leawind.gitparcel.common.impl.parcel.BlockSectionPartitioner.partition(
+                size, anchor, sectionSize)) {
+          BlockPos origin =
+              region.origin().offset(-anchor.getX(), -anchor.getY(), -anchor.getZ());
+          var states =
+              new ArrayList<net.minecraft.world.level.block.state.BlockState>(
+                  region.size().getX() * region.size().getY() * region.size().getZ());
+          for (int x = 0; x < region.size().getX(); x++) {
+            for (int y = 0; y < region.size().getY(); y++) {
+              for (int z = 0; z < region.size().getZ(); z++) {
+                states.add(
+                    patternAt(origin.getX() + x, origin.getY() + y, origin.getZ() + z));
+              }
+            }
+          }
+          consumer.accept(new BlockSection(origin, region.size(), states, List.of()));
+        }
+      }
+
+      @Override
+      public void forEachEntity(ParcelDataConsumer<EntityRecord> consumer) {}
+
+      @Override
+      public void forEachAttachment(ParcelDataConsumer<AttachmentRecord> consumer) {}
+    };
+  }
+
+  private static java.util.TreeMap<String, net.minecraft.world.level.block.state.BlockState>
+      expectedPattern(Vec3i size, Vec3i anchor) {
+    var expected =
+        new java.util.TreeMap<String, net.minecraft.world.level.block.state.BlockState>();
+    // Anchor-relative coordinates span [-anchor, size - anchor).
+    for (int x = -anchor.getX(); x < size.getX() - anchor.getX(); x++) {
+      for (int y = -anchor.getY(); y < size.getY() - anchor.getY(); y++) {
+        for (int z = -anchor.getZ(); z < size.getZ() - anchor.getZ(); z++) {
+          expected.put(x + "," + y + "," + z, patternAt(x, y, z));
+        }
+      }
+    }
+    return expected;
+  }
+
+  private static net.minecraft.world.level.block.state.BlockState patternAt(int x, int y, int z) {
+    return switch (Math.floorMod(x * 31 + y * 7 + z, 4)) {
+      case 0 -> Blocks.AIR.defaultBlockState();
+      case 1 -> Blocks.STONE.defaultBlockState();
+      case 2 -> Blocks.DIRT.defaultBlockState();
+      default -> Blocks.COBBLESTONE.defaultBlockState();
+    };
+  }
+
   private static String roundTripAt(BlockContentType.Config config, Path data) throws Exception {
     Files.createDirectories(data);
     saveAll(data, config);
@@ -119,14 +218,26 @@ class BuiltinParcelContentTypesTest extends AbstractMinecraftTest {
 
   private static <C extends io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentConfig<C>>
       ParcelContentType.SaveContext<C> saveContext(Path directory, C config) {
+    return saveContext(directory, config, PARCEL_SIZE, Vec3i.ZERO);
+  }
+
+  private static <C extends io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentConfig<C>>
+      ParcelContentType.SaveContext<C> saveContext(
+          Path directory, C config, Vec3i size, Vec3i anchor) {
     return new ParcelContentType.SaveContext<>(
-        PARCEL_SIZE, Vec3i.ZERO, 0, directory, config, ProgressReporter.NONE);
+        size, anchor, 0, directory, config, ProgressReporter.NONE);
   }
 
   private static <C extends io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentConfig<C>>
       ParcelContentType.LoadContext<C> loadContext(Path directory, C config) {
+    return loadContext(directory, config, PARCEL_SIZE, Vec3i.ZERO);
+  }
+
+  private static <C extends io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentConfig<C>>
+      ParcelContentType.LoadContext<C> loadContext(
+          Path directory, C config, Vec3i size, Vec3i anchor) {
     return new ParcelContentType.LoadContext<>(
-        PARCEL_SIZE, Vec3i.ZERO, 0, directory, config, ProgressReporter.NONE);
+        size, anchor, 0, directory, config, ProgressReporter.NONE);
   }
 
   private static void assertRoundTrip(CollectingSink sink) {

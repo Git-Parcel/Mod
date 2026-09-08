@@ -66,7 +66,8 @@ class ServerStateMessagesTest {
             "2026-07-26T00:00:02Z",
             Optional.of("2026-07-26T00:00:02Z"),
             Optional.empty(),
-            Optional.of("Non-fast-forward"));
+            Optional.of("Non-fast-forward"),
+            Optional.of(io.github.leawind.gitparcel.common.api.operation.OperationErrorCode.INTERNAL));
     var expected =
         new UpdateOperationsMessage(
             List.of(operation), Optional.of("example error"));

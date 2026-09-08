@@ -23,7 +23,8 @@ public record OperationSnapshot(
     String updatedAt,
     Optional<String> completedAt,
     Optional<String> result,
-    Optional<String> error) {
+    Optional<String> error,
+    Optional<OperationErrorCode> errorCode) {
   public static final Codec<OperationSnapshot> CODEC =
       RecordCodecBuilder.create(
           instance ->
@@ -43,7 +44,10 @@ public record OperationSnapshot(
                       Codec.STRING.fieldOf("updated_at").forGetter(OperationSnapshot::updatedAt),
                       Codec.STRING.optionalFieldOf("completed_at").forGetter(OperationSnapshot::completedAt),
                       Codec.STRING.optionalFieldOf("result").forGetter(OperationSnapshot::result),
-                      Codec.STRING.optionalFieldOf("error").forGetter(OperationSnapshot::error))
+                      Codec.STRING.optionalFieldOf("error").forGetter(OperationSnapshot::error),
+                      OperationErrorCode.CODEC
+                          .optionalFieldOf("error_code")
+                          .forGetter(OperationSnapshot::errorCode))
                   .apply(instance, OperationSnapshot::new));
 
   public OperationSnapshot {
@@ -65,6 +69,7 @@ public record OperationSnapshot(
     completedAt = completedAt == null ? Optional.empty() : completedAt;
     result = result == null ? Optional.empty() : result;
     error = error == null ? Optional.empty() : error;
+    errorCode = errorCode == null ? Optional.empty() : errorCode;
     if (total.isPresent() && (total.orElseThrow() < 0 || total.orElseThrow() < completed)) {
       throw new IllegalArgumentException("Operation total must be at least completed");
     }

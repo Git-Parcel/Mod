@@ -1,5 +1,6 @@
 package io.github.leawind.gitparcel.server.minecraft.logic.operation;
 
+import io.github.leawind.gitparcel.common.api.operation.OperationErrorCode;
 import io.github.leawind.gitparcel.common.api.operation.OperationSnapshot;
 import io.github.leawind.gitparcel.common.api.operation.ProgressReporter;
 import io.github.leawind.gitparcel.common.api.operation.ServerThreadBridge;
@@ -30,12 +31,21 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
   private static final Logger LOGGER = LoggerFactory.getLogger(OperationManager.class);
   private static final int RETAINED_OPERATIONS = 100;
   private static final int QUEUE_CAPACITY = 32;
+  /**
+   * Upper bound for waiting on a server-thread phase. A wedged server thread would otherwise hang
+   * a worker (and its repository locks) forever; the durable restore records handle recovery after
+   * a timeout, so failing the operation is safer than waiting indefinitely.
+   */
+  private static final long DEFAULT_SERVER_CALLBACK_TIMEOUT_SECONDS = 120;
   private static final ConcurrentHashMap<MinecraftServer, OperationManager> INSTANCES =
       new ConcurrentHashMap<>();
 
   public static OperationManager get(MinecraftServer server) {
     return INSTANCES.computeIfAbsent(
-        server, ignored -> new OperationManager(server::execute, 2, QUEUE_CAPACITY));
+        server,
+        ignored ->
+            new OperationManager(
+                server::execute, 2, QUEUE_CAPACITY, DEFAULT_SERVER_CALLBACK_TIMEOUT_SECONDS));
   }
 
   public static void shutdown(MinecraftServer server) {
@@ -47,10 +57,24 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
 
   private final Executor callbackExecutor;
   private final ThreadPoolExecutor executor;
+  private final long serverCallbackTimeoutSeconds;
   private final ConcurrentHashMap<UUID, MutableOperation> operations = new ConcurrentHashMap<>();
 
   public OperationManager(Executor callbackExecutor, int workerCount, int queueCapacity) {
+    this(
+        callbackExecutor,
+        workerCount,
+        queueCapacity,
+        DEFAULT_SERVER_CALLBACK_TIMEOUT_SECONDS);
+  }
+
+  public OperationManager(
+      Executor callbackExecutor,
+      int workerCount,
+      int queueCapacity,
+      long serverCallbackTimeoutSeconds) {
     this.callbackExecutor = callbackExecutor;
+    this.serverCallbackTimeoutSeconds = serverCallbackTimeoutSeconds;
     this.executor =
         new ThreadPoolExecutor(
             workerCount,
@@ -72,7 +96,12 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
     try {
       executor.execute(() -> execute(operation, action));
     } catch (RejectedExecutionException e) {
-      var failed = operation.finish(OperationSnapshot.State.FAILED, null, "Operation queue is full");
+      var failed =
+          operation.finish(
+              OperationSnapshot.State.FAILED,
+              null,
+              "Operation queue is full",
+              OperationErrorCode.QUEUE_FULL);
       dispatchCompletion(operation, failed);
     }
     return operation.snapshot();
@@ -103,22 +132,34 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
   @Override
   public <T> T call(Callable<T> action) throws Exception {
     var result = new CompletableFuture<T>();
+    var abandoned = new java.util.concurrent.atomic.AtomicBoolean(false);
     try {
       callbackExecutor.execute(
           () -> {
             try {
-              result.complete(action.call());
+              T value = action.call();
+              if (abandoned.get()) {
+                LOGGER.error(
+                    "A server-thread phase completed after its operation already timed out; "
+                        + "the operation was reported as failed but the phase has now taken effect");
+              }
+              result.complete(value);
             } catch (Throwable failure) {
+              if (abandoned.get()) {
+                LOGGER.error(
+                    "A server-thread phase failed after its operation already timed out", failure);
+              }
               result.completeExceptionally(failure);
             }
           });
     } catch (RuntimeException e) {
       throw new RejectedExecutionException("Server callback was rejected", e);
     }
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(serverCallbackTimeoutSeconds);
     boolean interrupted = false;
     for (; ; ) {
       try {
-        T value = result.get();
+        T value = result.get(Math.max(1, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
         if (interrupted) {
           Thread.currentThread().interrupt();
           throw new InterruptedException("Interrupted while a server-thread phase completed");
@@ -128,6 +169,8 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
         // A world callback may already be mutating the level. Wait for its terminal result before
         // allowing the worker to close its workspace or unwind the durable restore record.
         interrupted = true;
+      } catch (java.util.concurrent.TimeoutException e) {
+        throwServerCallbackTimeout(abandoned);
       } catch (ExecutionException e) {
         if (interrupted) {
           Thread.currentThread().interrupt();
@@ -181,6 +224,7 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
             now.toString(),
             Optional.empty(),
             Optional.empty(),
+            Optional.empty(),
             Optional.empty());
     var operation = new MutableOperation(snapshot, completion);
     operations.put(snapshot.operationId(), operation);
@@ -198,10 +242,15 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
     OperationSnapshot completed;
     try {
       String result = action.run(operation.reporter());
-      completed = operation.finish(OperationSnapshot.State.SUCCEEDED, result, null);
+      completed = operation.finish(OperationSnapshot.State.SUCCEEDED, result, null, null);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      completed = operation.finish(OperationSnapshot.State.CANCELED, null, "Canceled while stopping server");
+      completed =
+          operation.finish(
+              OperationSnapshot.State.CANCELED,
+              null,
+              "Canceled while stopping server",
+              OperationErrorCode.SHUTDOWN_CANCELED);
     } catch (Exception e) {
       LOGGER.error(
           "Operation {} ({}) failed for {}",
@@ -209,7 +258,14 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
           operation.snapshot().kind(),
           operation.snapshot().target(),
           e);
-      completed = operation.finish(OperationSnapshot.State.FAILED, null, describe(e));
+      completed =
+          operation.finish(
+              OperationSnapshot.State.FAILED,
+              null,
+              describe(e),
+              e instanceof ServerCallbackTimeoutException
+                  ? OperationErrorCode.SERVER_THREAD_TIMEOUT
+                  : OperationErrorCode.INTERNAL);
     }
     dispatchCompletion(operation, completed);
   }
@@ -248,6 +304,18 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
     }
   }
 
+  private void throwServerCallbackTimeout(
+      java.util.concurrent.atomic.AtomicBoolean abandoned) throws ServerCallbackTimeoutException {
+    abandoned.set(true);
+    LOGGER.error(
+        "A server-thread phase did not complete within {} s; failing the operation. The phase may"
+            + " still run later, and durable restore records will handle recovery",
+        serverCallbackTimeoutSeconds);
+    throw new ServerCallbackTimeoutException(
+        "Server thread did not process a world phase within " + serverCallbackTimeoutSeconds
+            + " s");
+  }
+
   private static String requireText(String value, String label) {
     if (value == null || value.isBlank()) {
       throw new IllegalArgumentException(label + " must not be blank");
@@ -264,6 +332,13 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
   @FunctionalInterface
   public interface OperationAction {
     String run(ProgressReporter progress) throws Exception;
+  }
+
+  /** A server-thread phase never completed within the configured callback timeout. */
+  public static class ServerCallbackTimeoutException extends Exception {
+    public ServerCallbackTimeoutException(String message) {
+      super(message);
+    }
   }
 
   public final class OperationHandle implements AutoCloseable {
@@ -288,12 +363,18 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
 
     public OperationSnapshot succeed(String result) {
       terminal = true;
-      return operation.finish(OperationSnapshot.State.SUCCEEDED, result, null);
+      return operation.finish(OperationSnapshot.State.SUCCEEDED, result, null, null);
     }
 
     public OperationSnapshot fail(Exception exception) {
       terminal = true;
-      return operation.finish(OperationSnapshot.State.FAILED, null, describe(exception));
+      return operation.finish(
+          OperationSnapshot.State.FAILED,
+          null,
+          describe(exception),
+          exception instanceof ServerCallbackTimeoutException
+              ? OperationErrorCode.SERVER_THREAD_TIMEOUT
+              : OperationErrorCode.INTERNAL);
     }
 
     @Override
@@ -352,6 +433,7 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
               now,
               Optional.empty(),
               Optional.empty(),
+              Optional.empty(),
               Optional.empty());
       return true;
     }
@@ -378,11 +460,15 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
               Instant.now(),
               snapshot.completedAt(),
               snapshot.result(),
-              snapshot.error());
+              snapshot.error(),
+              snapshot.errorCode());
     }
 
     private synchronized OperationSnapshot finish(
-        OperationSnapshot.State state, String result, String error) {
+        OperationSnapshot.State state,
+        String result,
+        String error,
+        OperationErrorCode errorCode) {
       if (snapshot.state().isTerminal()) {
         return snapshot;
       }
@@ -398,7 +484,8 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
               now,
               Optional.of(now.toString()),
               Optional.ofNullable(result),
-              Optional.ofNullable(error));
+              Optional.ofNullable(error),
+              Optional.ofNullable(errorCode));
       return snapshot;
     }
 
@@ -406,7 +493,11 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
       if (snapshot.state().isTerminal()) {
         return null;
       }
-      return finish(OperationSnapshot.State.CANCELED, null, "Canceled while stopping server");
+      return finish(
+          OperationSnapshot.State.CANCELED,
+          null,
+          "Canceled while stopping server",
+          OperationErrorCode.SHUTDOWN_CANCELED);
     }
 
     private OperationSnapshot copy(
@@ -419,7 +510,8 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
         Instant updatedAt,
         Optional<String> completedAt,
         Optional<String> result,
-        Optional<String> error) {
+        Optional<String> error,
+        Optional<OperationErrorCode> errorCode) {
       return new OperationSnapshot(
           snapshot.operationId(),
           snapshot.kind(),
@@ -435,7 +527,8 @@ public final class OperationManager implements AutoCloseable, ServerThreadBridge
           updatedAt.toString(),
           completedAt,
           result,
-          error);
+          error,
+          errorCode);
     }
   }
 

@@ -45,6 +45,7 @@ class GitParcelClientImplTest {
             "2026-07-26T00:00:01Z",
             Optional.of("2026-07-26T00:00:01Z"),
             Optional.of("Created"),
+            Optional.empty(),
             Optional.empty());
 
     client.setSharedRepositories(

@@ -1,6 +1,7 @@
 package io.github.leawind.gitparcel.server.minecraft.logic.network;
 
 import com.mojang.logging.LogUtils;
+import io.github.leawind.gitparcel.common.api.operation.OperationErrorCode;
 import io.github.leawind.gitparcel.common.api.operation.OperationSnapshot;
 import io.github.leawind.gitparcel.common.api.git.SharedRepositorySnapshot;
 import io.github.leawind.gitparcel.common.api.permission.ParcelPermissions;
@@ -90,8 +91,9 @@ public final class ServerQueryHandler {
             sendHistoryFailure(
                 player,
                 request,
-                completed.error().filter("Operation queue is full"::equals)
-                    .orElse("Failed to read parcel history"));
+                completed.errorCode().filter(OperationErrorCode.QUEUE_FULL::equals).isPresent()
+                    ? "Server is busy; try again shortly"
+                    : "Failed to read parcel history");
           }
         });
   }

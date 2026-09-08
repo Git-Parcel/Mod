@@ -138,7 +138,7 @@ class InternalRepositoryTest {
                     ProgressReporter.NONE));
 
     assertEquals(second, repository.current().orElseThrow());
-    var pending = new InternalRepository(repository.path()).pendingRestores();
+    var pending = new InternalRepository(repository.path()).pendingRestores().operations();
     assertEquals(1, pending.size());
     assertEquals(failure.operationId(), pending.getFirst().operationId());
     assertEquals(InternalRepository.RestoreStage.FAILED, pending.getFirst().stage());
