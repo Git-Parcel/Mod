@@ -6,7 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.github.leawind.gitparcel.common.utils.git.GitRepo;
+import io.github.leawind.gitparcel.common.utils.git.GitRepositoryCore;
+import io.github.leawind.gitparcel.common.utils.git.SharedRepository;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,8 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class SharedRepositoryServiceTest {
-  private static final GitRepo.CommitIdentity IDENTITY =
-      new GitRepo.CommitIdentity("Tester", "tester@gitparcel.local");
+  private static final GitRepositoryCore.Identity IDENTITY =
+      new GitRepositoryCore.Identity("Tester", "tester@gitparcel.local");
 
   @TempDir Path tempDir;
 
@@ -29,11 +30,11 @@ class SharedRepositoryServiceTest {
 
     service.create("builds");
 
-    assertTrue(GitRepo.get(tempDir.resolve("builds")).hasDotGit());
+    assertTrue(SharedRepository.get(tempDir.resolve("builds")).hasDotGit());
     assertEquals("local", service.list().get("builds").type());
     assertEquals(tempDir.resolve("builds"), service.repositoryPath("builds"));
     assertThrows(IOException.class, () -> service.create("builds"));
-    assertTrue(GitRepo.get(tempDir.resolve("builds")).hasDotGit());
+    assertTrue(SharedRepository.get(tempDir.resolve("builds")).hasDotGit());
   }
 
   @Test
@@ -110,7 +111,7 @@ class SharedRepositoryServiceTest {
     Files.writeString(repository.resolve("house/data/blocks.txt"), "stone");
     service.content().saveRepoMeta("builds", List.of("house"));
     var first =
-        GitRepo.get(repository)
+        SharedRepository.get(repository)
             .commit(
                 List.of("house", SharedContent.REPOSITORY_MANIFEST_FILE),
                 "Add house",
@@ -123,7 +124,7 @@ class SharedRepositoryServiceTest {
     Files.writeString(repository.resolve("unlisted/parcel.json"), "{}");
     Files.writeString(repository.resolve("unlisted/data/blocks.txt"), "dirt");
     var inconsistent =
-        GitRepo.get(repository)
+        SharedRepository.get(repository)
             .commit("unlisted", "Add unlisted parcel", IDENTITY)
             .orElseThrow();
     assertThrows(

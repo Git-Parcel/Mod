@@ -45,9 +45,9 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 public final class GitRepositoryCore {
   /**
    * One lock per repository path, shared by every core, {@link InternalRepository}, and {@link
-   * GitRepo} instance. Values are weak so entries for abandoned repositories (for example after a
-   * parcel is deleted) are collected instead of accumulating forever; an entry stays alive while
-   * any instance still references its lock.
+   * SharedRepository} instance. Values are weak so entries for abandoned repositories (for example
+   * after a parcel is deleted) are collected instead of accumulating forever; an entry stays alive
+   * while any instance still references its lock.
    */
   private static final ConcurrentMap<Path, ReentrantLock> LOCKS =
       new com.google.common.collect.MapMaker().weakValues().makeMap();

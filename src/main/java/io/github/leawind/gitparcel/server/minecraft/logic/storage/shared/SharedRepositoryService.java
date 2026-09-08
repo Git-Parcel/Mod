@@ -1,7 +1,6 @@
 package io.github.leawind.gitparcel.server.minecraft.logic.storage.shared;
 
-import io.github.leawind.gitparcel.common.utils.git.GitRepo;
-import io.github.leawind.gitparcel.common.utils.git.SnapshotTreeLimits;
+import io.github.leawind.gitparcel.common.utils.git.SharedRepository;
 import io.github.leawind.gitparcel.common.utils.io.NioFileTree;
 import io.github.leawind.gitparcel.server.minecraft.logic.storage.StorageUtils;
 import java.io.IOException;
@@ -34,7 +33,13 @@ public final class SharedRepositoryService {
       new ConcurrentHashMap<>();
 
   public SharedRepositoryService(Path root) {
-    this.content = new SharedContent(root);
+    Path normalized = root.toAbsolutePath().normalize();
+    // The cache is keyed by normalized roots; accepting anything else could create two
+    // independently locked instances for one physical directory.
+    if (!normalized.equals(root)) {
+      throw new IllegalArgumentException("Shared repository root must be normalized: " + root);
+    }
+    this.content = new SharedContent(normalized);
   }
 
   public SharedContent content() {
@@ -59,18 +64,13 @@ public final class SharedRepositoryService {
   public List<String> parcelPaths(String name, String revision) throws IOException {
     requireRegistered(name);
     byte[] manifest =
-        GitRepo.get(content.getRepoDir(name))
-            .core()
-            .readResolvedSmallFile(
-                revision, SharedContent.REPOSITORY_MANIFEST_FILE, 1024 * 1024);
+        SharedRepository.get(content.getRepoDir(name))
+            .readSmallFile(revision, SharedContent.REPOSITORY_MANIFEST_FILE, 1024 * 1024);
     List<String> paths = content.parseRepositoryManifest(
         name, new String(manifest, StandardCharsets.UTF_8));
     var declared = new TreeSet<>(paths);
     var actual = new TreeSet<String>();
-    for (String file :
-        GitRepo.get(content.getRepoDir(name))
-            .core()
-            .listResolvedFiles(revision, SnapshotTreeLimits.DEFAULT)) {
+    for (String file : SharedRepository.get(content.getRepoDir(name)).listFiles(revision)) {
       if (file.equals("parcel.json")) {
         actual.add("");
       } else if (file.endsWith("/parcel.json")) {
@@ -95,7 +95,7 @@ public final class SharedRepositoryService {
       ensureAvailable(name);
       Path repository = content.getRepoDir(name);
       try {
-        GitRepo.get(repository).initialize();
+        SharedRepository.get(repository).initialize();
         content.addRepository(name, SharedContent.RepoInfo.local());
       } catch (IOException | GitAPIException | RuntimeException e) {
         cleanupCreatedDirectory(repository, e);
@@ -116,7 +116,7 @@ public final class SharedRepositoryService {
       ensureAvailable(name);
       Path repository = content.getRepoDir(name);
       try {
-        GitRepo.cloneRepository(
+        SharedRepository.cloneRepository(
             validatedUrl,
             repository,
             GitRemoteAccess.credentialsFromEnvironment());
@@ -136,7 +136,7 @@ public final class SharedRepositoryService {
     try {
       requireCloned(name);
       int updates =
-          GitRepo.get(content.getRepoDir(name))
+          SharedRepository.get(content.getRepoDir(name))
               .fetch(GitRemoteAccess.credentialsFromEnvironment());
       markSynced(name);
       return updates;
@@ -151,7 +151,7 @@ public final class SharedRepositoryService {
     try {
       requireCloned(name);
       String result =
-          GitRepo.get(content.getRepoDir(name))
+          SharedRepository.get(content.getRepoDir(name))
               .pull(GitRemoteAccess.credentialsFromEnvironment());
       markSynced(name);
       return result;
@@ -166,7 +166,7 @@ public final class SharedRepositoryService {
     try {
       requireCloned(name);
       int updates =
-          GitRepo.get(content.getRepoDir(name))
+          SharedRepository.get(content.getRepoDir(name))
               .push(GitRemoteAccess.credentialsFromEnvironment());
       markSynced(name);
       return updates;
@@ -226,7 +226,7 @@ public final class SharedRepositoryService {
             .getRepository(name)
             .orElseThrow(() -> new IOException("Unknown shared repository: " + name));
     Path repository = content.getRepoDir(name);
-    if (!GitRepo.get(repository).hasDotGit()) {
+    if (!SharedRepository.get(repository).hasDotGit()) {
       throw new IOException("Shared repository is missing or invalid: " + repository);
     }
     return info;

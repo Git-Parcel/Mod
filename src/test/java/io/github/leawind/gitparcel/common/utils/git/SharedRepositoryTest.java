@@ -15,11 +15,22 @@ import org.eclipse.jgit.transport.RefSpec;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class GitRepoTest {
-  private static final GitRepo.CommitIdentity IDENTITY =
-      new GitRepo.CommitIdentity("Test Player", "gitparcel@localhost");
+class SharedRepositoryTest {
+  private static final GitRepositoryCore.Identity IDENTITY =
+      new GitRepositoryCore.Identity("Test Player", "gitparcel@localhost");
 
   @TempDir Path tempDir;
+
+  @Test
+  void coreOperationsEnforceTheirPolicyIndependentlyOfCommandVisibility() throws Exception {
+    var denied = new RepositoryPolicy(java.util.Set.of());
+    var core = new GitRepositoryCore(tempDir.resolve("repo"), denied);
+    assertThrows(SecurityException.class, () -> core.exactRef("refs/heads/main"));
+    assertThrows(
+        SecurityException.class,
+        () -> core.readSmallFile(new io.github.leawind.gitparcel.common.api.snapshot.SnapshotId(
+            "0123456789abcdef0123456789abcdef01234567"), "parcel.json", 1024));
+  }
 
   @Test
   void commitsHistoryAndExportsOnlyTheParcelPath() throws Exception {
@@ -31,7 +42,7 @@ class GitRepoTest {
     Files.writeString(parcel.resolve("parcel.json"), "first");
     Files.writeString(unrelated.resolve("keep.txt"), "not part of the commit");
 
-    GitRepo repository = GitRepo.get(repositoryDir);
+    SharedRepository repository = SharedRepository.get(repositoryDir);
     var first = repository.commit("parcel", "First snapshot", IDENTITY).orElseThrow();
 
     Files.writeString(parcel.resolve("parcel.json"), "second");
@@ -43,7 +54,7 @@ class GitRepoTest {
     Files.delete(parcel.resolve("new.txt"));
     var third = repository.commit("parcel", "Remove file", IDENTITY).orElseThrow();
 
-    var history = repository.history("parcel", 10);
+    var history = repository.historyPage("parcel", 10, null).commits();
     assertEquals(3, history.size());
     assertEquals(third.revision(), history.get(0).revision());
     assertEquals("Remove file", history.get(0).message());
@@ -51,7 +62,7 @@ class GitRepoTest {
     assertEquals("Second snapshot", history.get(1).message());
     assertEquals(first.revision(), history.get(2).revision());
     assertEquals("Test Player", history.get(2).author());
-    assertTrue(repository.history("unrelated", 10).isEmpty());
+    assertTrue(repository.historyPage("unrelated", 10, null).commits().isEmpty());
 
     Path firstExport = tempDir.resolve("first-export");
     repository.exportRevision(first.revision(), "parcel", firstExport);
@@ -72,9 +83,9 @@ class GitRepoTest {
 
   @Test
   void missingRepositoryHasNoHistoryAndCannotBeExported() throws Exception {
-    GitRepo repository = GitRepo.get(tempDir.resolve("missing"));
+    SharedRepository repository = SharedRepository.get(tempDir.resolve("missing"));
 
-    assertTrue(repository.history("parcel", 10).isEmpty());
+    assertTrue(repository.historyPage("parcel", 10, null).commits().isEmpty());
     assertThrows(
         IOException.class,
         () ->
@@ -84,14 +95,14 @@ class GitRepoTest {
 
   @Test
   void rejectsPathsOutsideTheRepository() {
-    GitRepo repository = GitRepo.get(tempDir);
+    SharedRepository repository = SharedRepository.get(tempDir);
 
     assertThrows(
         IllegalArgumentException.class,
         () -> repository.commit("../parcel", "Invalid", IDENTITY));
     assertThrows(
         IllegalArgumentException.class,
-        () -> repository.history("/parcel", 10));
+        () -> repository.historyPage("/parcel", 10, null));
   }
 
   @Test
@@ -112,7 +123,7 @@ class GitRepoTest {
             .call()) {}
     Files.createDirectories(seed.resolve("parcel"));
     Files.writeString(seed.resolve("parcel/parcel.json"), "initial");
-    GitRepo.get(seed).commit("parcel", "Initial", IDENTITY).orElseThrow();
+    SharedRepository.get(seed).commit("parcel", "Initial", IDENTITY).orElseThrow();
     try (Git git = Git.open(seed.toFile())) {
       var config = git.getRepository().getConfig();
       config.setString(
@@ -127,11 +138,11 @@ class GitRepoTest {
           .call();
     }
 
-    GitRepo first =
-        GitRepo.cloneRepository(
+    SharedRepository first =
+        SharedRepository.cloneRepository(
             origin.toUri().toString(), tempDir.resolve("first"), null);
-    GitRepo second =
-        GitRepo.cloneRepository(
+    SharedRepository second =
+        SharedRepository.cloneRepository(
             origin.toUri().toString(), tempDir.resolve("second"), null);
 
     Files.writeString(first.path().resolve("parcel/parcel.json"), "updated");
@@ -154,7 +165,7 @@ class GitRepoTest {
     Files.writeString(
         repositoryDir.resolve("parcels/example/parcel.json"), "parcel");
     Files.writeString(repositoryDir.resolve("meta.json"), "metadata");
-    GitRepo repository = GitRepo.get(repositoryDir);
+    SharedRepository repository = SharedRepository.get(repositoryDir);
 
     var commit =
         repository
@@ -166,16 +177,16 @@ class GitRepoTest {
 
     assertEquals(
         commit.revision(),
-        repository.history("parcels/example", 1).getFirst().revision());
+        repository.historyPage("parcels/example", 1, null).commits().getFirst().revision());
     assertEquals(
         commit.revision(),
-        repository.history("meta.json", 1).getFirst().revision());
+        repository.historyPage("meta.json", 1, null).commits().getFirst().revision());
   }
 
   @Test
   void resetsPublicationPathsInUnbornAndExistingRepositories() throws Exception {
     Path unbornDir = tempDir.resolve("unborn");
-    GitRepo unborn = GitRepo.get(unbornDir);
+    SharedRepository unborn = SharedRepository.get(unbornDir);
     unborn.initialize();
     Files.createDirectories(unbornDir.resolve("parcel"));
     Files.writeString(unbornDir.resolve("parcel/parcel.json"), "new");
@@ -195,7 +206,7 @@ class GitRepoTest {
     Files.createDirectories(existingDir.resolve("parcel"));
     Files.writeString(existingDir.resolve("parcel/parcel.json"), "old");
     Files.writeString(existingDir.resolve("meta.json"), "old");
-    GitRepo existing = GitRepo.get(existingDir);
+    SharedRepository existing = SharedRepository.get(existingDir);
     existing.commit(List.of("parcel", "meta.json"), "Initial", IDENTITY).orElseThrow();
     Files.writeString(existingDir.resolve("parcel/parcel.json"), "new");
     Files.writeString(existingDir.resolve("meta.json"), "new");
@@ -216,7 +227,7 @@ class GitRepoTest {
     Path repositoryDir = tempDir.resolve("history-pages");
     Path parcelFile = repositoryDir.resolve("parcel/parcel.json");
     Files.createDirectories(parcelFile.getParent());
-    GitRepo repository = GitRepo.get(repositoryDir);
+    SharedRepository repository = SharedRepository.get(repositoryDir);
 
     for (int i = 1; i <= 5; i++) {
       Files.writeString(parcelFile, "version " + i);
@@ -253,7 +264,7 @@ class GitRepoTest {
         () -> repository.historyPage("parcel", 2, unrelatedRevision));
   }
 
-  private static List<String> messages(GitRepo.HistoryPage page) {
-    return page.commits().stream().map(GitRepo.CommitInfo::message).toList();
+  private static List<String> messages(SharedRepository.HistoryPage page) {
+    return page.commits().stream().map(SharedRepository.CommitInfo::message).toList();
   }
 }

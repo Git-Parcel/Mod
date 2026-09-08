@@ -9,7 +9,8 @@ import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelWorldSavedData;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
-import io.github.leawind.gitparcel.common.utils.git.GitRepo;
+import io.github.leawind.gitparcel.common.utils.git.GitRepositoryCore;
+import io.github.leawind.gitparcel.common.utils.git.SharedRepository;
 import io.github.leawind.gitparcel.gametest.utils.ChannelFlags;
 import io.github.leawind.gitparcel.gametest.utils.GameTestHelpMore;
 import java.nio.file.Files;
@@ -33,8 +34,8 @@ public class GitParcelGameTest {
           | Block.UPDATE_IMMEDIATE
           | Block.UPDATE_KNOWN_SHAPE
           | Block.UPDATE_SKIP_ALL_SIDEEFFECTS;
-  private static final GitRepo.CommitIdentity GAMETEST_IDENTITY =
-      new GitRepo.CommitIdentity("GameTest", "gametest@gitparcel.local");
+  private static final GitRepositoryCore.Identity GAMETEST_IDENTITY =
+      new GitRepositoryCore.Identity("GameTest", "gametest@gitparcel.local");
 
   public void testParcelLifecycle(GameTestHelpMore helper) throws Exception {
     var level = helper.getLevel();

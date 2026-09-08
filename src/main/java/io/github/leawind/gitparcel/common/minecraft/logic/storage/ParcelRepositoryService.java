@@ -10,7 +10,7 @@ import io.github.leawind.gitparcel.common.api.snapshot.SnapshotTreePage;
 import io.github.leawind.gitparcel.common.api.snapshot.SnapshotWorkspaceFactory;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.impl.snapshot.TemporarySnapshotWorkspaceFactory;
-import io.github.leawind.gitparcel.common.utils.git.GitRepo;
+import io.github.leawind.gitparcel.common.utils.git.SharedRepository;
 import io.github.leawind.gitparcel.common.utils.git.GitRepositoryCore;
 import io.github.leawind.gitparcel.common.utils.git.InternalRepository;
 import java.io.IOException;
@@ -38,7 +38,7 @@ public final class ParcelRepositoryService {
       Path internalParcelsDir,
       String name,
       String description,
-      GitRepo.CommitIdentity identity,
+      GitRepositoryCore.Identity identity,
       boolean ignoreEntities)
       throws IOException, ParcelException {
     return saveSnapshot(
@@ -60,7 +60,7 @@ public final class ParcelRepositoryService {
       Path internalParcelsDir,
       String name,
       String description,
-      GitRepo.CommitIdentity identity,
+      GitRepositoryCore.Identity identity,
       boolean ignoreEntities,
       SnapshotWorkspaceFactory workspaceFactory,
       ProgressReporter progress,
@@ -103,7 +103,7 @@ public final class ParcelRepositoryService {
       Path snapshotRoot,
       String name,
       String description,
-      GitRepo.CommitIdentity identity,
+      GitRepositoryCore.Identity identity,
       SnapshotNode.Source source,
       ProgressReporter progress)
       throws IOException {
@@ -126,7 +126,7 @@ public final class ParcelRepositoryService {
       Path snapshotRoot,
       String name,
       String description,
-      GitRepo.CommitIdentity identity,
+      GitRepositoryCore.Identity identity,
       SnapshotNode.Source source,
       ProgressReporter progress,
       Optional<SnapshotId> expectedParent)

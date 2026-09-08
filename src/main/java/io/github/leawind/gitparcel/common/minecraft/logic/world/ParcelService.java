@@ -16,7 +16,8 @@ import io.github.leawind.gitparcel.common.minecraft.logic.network.message.Update
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelRepositoryService;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
 import io.github.leawind.gitparcel.common.platform.api.Services;
-import io.github.leawind.gitparcel.common.utils.git.GitRepo;
+import io.github.leawind.gitparcel.common.utils.git.GitRepositoryCore;
+import io.github.leawind.gitparcel.common.utils.git.SharedRepository;
 import io.github.leawind.gitparcel.common.utils.git.InternalRepository;
 import io.github.leawind.gitparcel.server.minecraft.logic.storage.StorageUtils;
 import io.github.leawind.gitparcel.server.minecraft.logic.storage.shared.SharedContent;
@@ -175,7 +176,7 @@ public final class ParcelService {
       Parcel parcel,
       String name,
       String description,
-      GitRepo.CommitIdentity identity,
+      GitRepositoryCore.Identity identity,
       boolean ignoreEntities)
       throws IOException, ParcelException {
     return saveSnapshot(
@@ -196,7 +197,7 @@ public final class ParcelService {
       Parcel parcel,
       String name,
       String description,
-      GitRepo.CommitIdentity identity,
+      GitRepositoryCore.Identity identity,
       boolean ignoreEntities,
       ProgressReporter progress)
       throws IOException, ParcelException {
@@ -253,7 +254,7 @@ public final class ParcelService {
       SnapshotId snapshotId,
       RestoreSnapshotRequest.Mode mode,
       boolean ignoreEntities,
-      GitRepo.CommitIdentity identity)
+      GitRepositoryCore.Identity identity)
       throws IOException, ParcelException {
     return restoreSnapshot(
         parcel,
@@ -274,7 +275,7 @@ public final class ParcelService {
       SnapshotId snapshotId,
       RestoreSnapshotRequest.Mode mode,
       boolean ignoreEntities,
-      GitRepo.CommitIdentity identity,
+      GitRepositoryCore.Identity identity,
       ProgressReporter progress)
       throws IOException, ParcelException {
     ReentrantLock lock = acquireParcelLock(parcel.uuid());
@@ -338,7 +339,7 @@ public final class ParcelService {
       Parcel parcel,
       String name,
       String description,
-      GitRepo.CommitIdentity identity,
+      GitRepositoryCore.Identity identity,
       boolean ignoreEntities,
       ProgressReporter progress,
       ServerThreadBridge serverThread)
@@ -376,7 +377,7 @@ public final class ParcelService {
       SnapshotId snapshotId,
       RestoreSnapshotRequest.Mode mode,
       boolean ignoreEntities,
-      GitRepo.CommitIdentity identity,
+      GitRepositoryCore.Identity identity,
       ProgressReporter progress,
       ServerThreadBridge serverThread)
       throws Exception {
@@ -481,13 +482,13 @@ public final class ParcelService {
 
   /** Server-thread entry point. Prefer {@link #publishCurrentSnapshotInBackground} in-game. */
   @ApiStatus.Internal
-  public Optional<GitRepo.CommitInfo> publishSnapshot(
+  public Optional<SharedRepository.CommitInfo> publishSnapshot(
       Parcel parcel,
       SnapshotId snapshotId,
       String repository,
       String parcelPath,
       String message,
-      GitRepo.CommitIdentity identity)
+      GitRepositoryCore.Identity identity)
       throws IOException, ParcelException {
     requireRegistered(parcel);
     return publishSnapshotUnchecked(
@@ -500,13 +501,13 @@ public final class ParcelService {
         ProgressReporter.NONE);
   }
 
-  private Optional<GitRepo.CommitInfo> publishSnapshotUnchecked(
+  private Optional<SharedRepository.CommitInfo> publishSnapshotUnchecked(
       Parcel parcel,
       SnapshotId snapshotId,
       String repository,
       String parcelPath,
       String message,
-      GitRepo.CommitIdentity identity,
+      GitRepositoryCore.Identity identity,
       ProgressReporter progress)
       throws IOException, ParcelException {
     ProgressReporter reporter = ProgressReporter.safe(progress);
@@ -529,8 +530,8 @@ public final class ParcelService {
         try {
           copySnapshot(exported, location.parcelDirectory(), reporter);
           lease.content().addParcelPath(repository, gitPath);
-          GitRepo.CommitInfo result =
-              GitRepo.get(location.repository())
+          SharedRepository.CommitInfo result =
+              SharedRepository.get(location.repository())
                   .commit(
                       List.of(location.gitPath(), SharedContent.REPOSITORY_MANIFEST_FILE),
                       message,
@@ -554,12 +555,12 @@ public final class ParcelService {
 
   /** Server-thread entry point: publishes the current baseline, if one exists. */
   @ApiStatus.Internal
-  public Optional<GitRepo.CommitInfo> publishCurrentSnapshot(
+  public Optional<SharedRepository.CommitInfo> publishCurrentSnapshot(
       Parcel parcel,
       String repository,
       String parcelPath,
       String message,
-      GitRepo.CommitIdentity identity)
+      GitRepositoryCore.Identity identity)
       throws IOException, ParcelException {
     SnapshotId current =
         internalRepository(parcel)
@@ -569,12 +570,12 @@ public final class ParcelService {
   }
 
   /** Publishes the current saved baseline with all repository I/O on the calling worker. */
-  public GitRepo.CommitInfo publishCurrentSnapshotInBackground(
+  public SharedRepository.CommitInfo publishCurrentSnapshotInBackground(
       Parcel parcel,
       String repository,
       String parcelPath,
       String message,
-      GitRepo.CommitIdentity identity,
+      GitRepositoryCore.Identity identity,
       ProgressReporter progress,
       ServerThreadBridge serverThread)
       throws Exception {
@@ -595,7 +596,7 @@ public final class ParcelService {
       String revision,
       String parcelPath,
       ParcelTransform transform,
-      GitRepo.CommitIdentity identity)
+      GitRepositoryCore.Identity identity)
       throws IOException, ParcelException {
     try {
       return importSharedSnapshotInBackground(
@@ -619,7 +620,7 @@ public final class ParcelService {
       String revision,
       String parcelPath,
       ParcelTransform transform,
-      GitRepo.CommitIdentity identity,
+      GitRepositoryCore.Identity identity,
       ProgressReporter progress,
       ServerThreadBridge serverThread)
       throws Exception {
@@ -629,13 +630,13 @@ public final class ParcelService {
       Path snapshot = workspace.root().resolve("snapshot");
       try (var lease = SharedRepositoryService.get(level.getServer()).acquire(repository)) {
         gitPath = lease.content().getParcelGitPath(repository, parcelPath);
-        sharedCommit = GitRepo.get(lease.repository()).core().resolveCommit(revision);
+        sharedCommit = SharedRepository.get(lease.repository()).resolveCommit(revision);
         if (!SharedRepositoryService.get(level.getServer())
             .parcelPaths(repository, sharedCommit.value())
             .contains(gitPath)) {
           throw new ParcelException("Parcel path is not listed by shared repository: " + gitPath);
         }
-        GitRepo.get(lease.repository()).exportRevision(sharedCommit.value(), gitPath, snapshot);
+        SharedRepository.get(lease.repository()).exportRevision(sharedCommit.value(), gitPath, snapshot);
       }
       ParcelMeta meta = ParcelStorage.validateSnapshot(snapshot, progress);
       var parcel =
@@ -684,7 +685,7 @@ public final class ParcelService {
       String repository,
       String revision,
       String parcelPath,
-      GitRepo.CommitIdentity identity)
+      GitRepositoryCore.Identity identity)
       throws IOException, ParcelException {
     ReentrantLock lock = acquireParcelLock(parcel.uuid());
     try {
@@ -695,14 +696,14 @@ public final class ParcelService {
         Path snapshot = workspace.root().resolve("snapshot");
         try (var lease = SharedRepositoryService.get(level.getServer()).acquire(repository)) {
           gitPath = lease.content().getParcelGitPath(repository, parcelPath);
-          sharedCommit = GitRepo.get(lease.repository()).core().resolveCommit(revision);
+          sharedCommit = SharedRepository.get(lease.repository()).resolveCommit(revision);
           if (!SharedRepositoryService.get(level.getServer())
               .parcelPaths(repository, sharedCommit.value())
               .contains(gitPath)) {
             throw new ParcelException(
                 "Parcel path is not listed by shared repository: " + gitPath);
           }
-          GitRepo.get(lease.repository()).exportRevision(sharedCommit.value(), gitPath, snapshot);
+          SharedRepository.get(lease.repository()).exportRevision(sharedCommit.value(), gitPath, snapshot);
         }
         ParcelMeta restored = ParcelStorage.validateSnapshot(snapshot, ProgressReporter.NONE);
         ParcelRepositoryService.validateGeometry(parcel.meta(), restored);
@@ -731,7 +732,7 @@ public final class ParcelService {
         "HEAD",
         parcelPath,
         transform,
-        new GitRepo.CommitIdentity("Git Parcel Server", "server@gitparcel.local"));
+        new GitRepositoryCore.Identity("Git Parcel Server", "server@gitparcel.local"));
   }
 
   public void syncTo(ServerPlayer player) {
@@ -818,7 +819,7 @@ public final class ParcelService {
       original.addSuppressed(cleanupFailure);
     }
     try {
-      GitRepo.get(location.repository())
+      SharedRepository.get(location.repository())
           .resetIndexPaths(
               List.of(location.gitPath(), SharedContent.REPOSITORY_MANIFEST_FILE));
     } catch (IOException | GitAPIException cleanupFailure) {

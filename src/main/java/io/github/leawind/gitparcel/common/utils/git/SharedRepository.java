@@ -1,6 +1,7 @@
 package io.github.leawind.gitparcel.common.utils.git;
 
 import io.github.leawind.gitparcel.common.api.operation.ProgressReporter;
+import io.github.leawind.gitparcel.common.api.snapshot.SnapshotId;
 import io.github.leawind.gitparcel.common.utils.io.NioFileTree;
 import java.io.File;
 import java.io.IOException;
@@ -23,45 +24,51 @@ import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.RemoteRefUpdate;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Serialized access to one on-disk Git repository.
- *
- * <p>Instances are cached by normalized absolute path, and every operation runs under the same
- * per-path lock as {@link GitRepositoryCore} and {@link InternalRepository}, so all users of one
- * repository directory mutually exclude each other.
+ * Working-tree Git repository for shared content exchange, symmetric to {@link
+ * InternalRepository}: both reuse {@link GitRepositoryCore} primitives and the same per-path lock,
+ * while this facade additionally allows worktree and remote operations that the internal policy
+ * denies. Capabilities are enforced at every method entry, not by hiding commands.
  */
-public final class GitRepo {
+public final class SharedRepository {
 
-  private static final ConcurrentHashMap<Path, GitRepo> CACHE = new ConcurrentHashMap<>();
+  private static final ConcurrentHashMap<Path, SharedRepository> CACHE = new ConcurrentHashMap<>();
 
-  public static GitRepo get(Path path) {
+  public static SharedRepository get(Path path) {
     Path normalized = path.toAbsolutePath().normalize();
     InternalParcelRoots.assertShareable(normalized);
-    return CACHE.computeIfAbsent(normalized, GitRepo::new);
+    return CACHE.computeIfAbsent(normalized, SharedRepository::new);
+  }
+
+  /** Clones into a destination which must not already exist. */
+  public static SharedRepository cloneRepository(
+      String remoteUri,
+      Path destination,
+      @Nullable CredentialsProvider credentialsProvider)
+      throws IOException, GitAPIException {
+    InternalParcelRoots.assertShareable(destination);
+    return SharedRepository.get(destination).cloneFrom(remoteUri, credentialsProvider);
   }
 
   private final Path path;
   private final File file;
   private final GitRepositoryCore core;
+  private final RepositoryPolicy policy;
 
-  private GitRepo(Path path) {
+  private SharedRepository(Path path) {
     this.path = path;
     this.file = path.toFile();
     this.core = new GitRepositoryCore(path, RepositoryPolicy.SHARED);
+    this.policy = RepositoryPolicy.SHARED;
   }
 
   public Path path() {
     return path;
-  }
-
-  public GitRepositoryCore core() {
-    return core;
   }
 
   public boolean hasDotGit() {
@@ -70,6 +77,7 @@ public final class GitRepo {
 
   /** Initializes an empty working-tree repository if necessary. */
   public void initialize() throws IOException, GitAPIException {
+    policy.require(RepositoryCapability.WORKTREE);
     core.withLock(
         () -> {
           try (Git ignored = openOrInit()) {
@@ -79,19 +87,11 @@ public final class GitRepo {
         });
   }
 
-  /** Clones into a destination which must not already exist. */
-  public static GitRepo cloneRepository(
-      String remoteUri,
-      Path destination,
-      @Nullable CredentialsProvider credentialsProvider)
-      throws IOException, GitAPIException {
-    InternalParcelRoots.assertShareable(destination);
-    return GitRepo.get(destination).cloneFrom(remoteUri, credentialsProvider);
-  }
-
-  private GitRepo cloneFrom(
+  private SharedRepository cloneFrom(
       String remoteUri, @Nullable CredentialsProvider credentialsProvider)
       throws IOException, GitAPIException {
+    policy.require(RepositoryCapability.WORKTREE);
+    policy.require(RepositoryCapability.REMOTES);
     if (remoteUri == null || remoteUri.isBlank()) {
       throw new IllegalArgumentException("Remote URI must not be blank");
     }
@@ -107,11 +107,11 @@ public final class GitRepo {
               command.setCredentialsProvider(credentialsProvider);
             }
             try (Git ignored = command.call()) {
-              return GitRepo.this;
+              return SharedRepository.this;
             }
           } catch (GitAPIException | RuntimeException e) {
             try {
-              deleteRecursivelyIfExists(path);
+              NioFileTree.deleteRecursivelyIfExists(path);
             } catch (IOException cleanupFailure) {
               e.addSuppressed(cleanupFailure);
             }
@@ -123,6 +123,7 @@ public final class GitRepo {
   /** Fetches tracking references from {@code origin}. */
   public int fetch(@Nullable CredentialsProvider credentialsProvider)
       throws IOException, GitAPIException {
+    policy.require(RepositoryCapability.REMOTES);
     return core.withLock(
         () -> {
           try (Git git = requireOpen()) {
@@ -138,6 +139,7 @@ public final class GitRepo {
   /** Pulls from {@code origin}, accepting only a fast-forward update. */
   public String pull(@Nullable CredentialsProvider credentialsProvider)
       throws IOException, GitAPIException {
+    policy.require(RepositoryCapability.REMOTES);
     return core.withLock(
         () -> {
           try (Git git = requireOpen()) {
@@ -167,6 +169,7 @@ public final class GitRepo {
   /** Pushes the current branch to its configured upstream. */
   public int push(@Nullable CredentialsProvider credentialsProvider)
       throws IOException, GitAPIException {
+    policy.require(RepositoryCapability.REMOTES);
     return core.withLock(
         () -> {
           try (Git git = requireOpen()) {
@@ -210,7 +213,7 @@ public final class GitRepo {
    * @return the new commit, or an empty result when that directory has no changes
    */
   public Optional<CommitInfo> commit(
-      String repositoryRelativePath, String message, CommitIdentity identity)
+      String repositoryRelativePath, String message, GitRepositoryCore.Identity identity)
       throws IOException, GitAPIException {
     return commit(List.of(repositoryRelativePath), message, identity);
   }
@@ -218,6 +221,7 @@ public final class GitRepo {
   /** Restores selected index entries to {@code HEAD} without changing the working tree. */
   public void resetIndexPaths(Collection<String> repositoryRelativePaths)
       throws IOException, GitAPIException {
+    policy.require(RepositoryCapability.WORKTREE);
     if (repositoryRelativePaths == null || repositoryRelativePaths.isEmpty()) {
       throw new IllegalArgumentException("At least one Git path is required");
     }
@@ -238,7 +242,8 @@ public final class GitRepo {
                 for (int i = 0; i < cache.getEntryCount(); i++) {
                   String indexedPath = cache.getEntry(i).getPathString();
                   if (gitPaths.stream()
-                      .anyMatch(path -> indexedPath.equals(path) || indexedPath.startsWith(path + "/"))) {
+                      .anyMatch(
+                          path -> indexedPath.equals(path) || indexedPath.startsWith(path + "/"))) {
                     indexedPaths.add(indexedPath);
                   }
                 }
@@ -258,8 +263,10 @@ public final class GitRepo {
   public Optional<CommitInfo> commit(
       Collection<String> repositoryRelativePaths,
       String message,
-      CommitIdentity identity)
+      GitRepositoryCore.Identity identity)
       throws IOException, GitAPIException {
+    policy.require(RepositoryCapability.WORKTREE);
+    policy.require(RepositoryCapability.CREATE_COMMIT);
     if (repositoryRelativePaths == null || repositoryRelativePaths.isEmpty()) {
       throw new IllegalArgumentException("At least one Git path is required");
     }
@@ -287,11 +294,7 @@ public final class GitRepo {
             }
 
             var person = new PersonIdent(identity.name(), identity.email());
-            var command =
-                git.commit()
-                    .setMessage(message)
-                    .setAuthor(person)
-                    .setCommitter(person);
+            var command = git.commit().setMessage(message).setAuthor(person).setCommitter(person);
             gitPaths.forEach(command::setOnly);
             RevCommit commit = command.call();
             return Optional.of(toInfo(commit));
@@ -299,16 +302,11 @@ public final class GitRepo {
         });
   }
 
-  /** Lists newest-first commits which changed the specified parcel directory. */
-  public List<CommitInfo> history(String repositoryRelativePath, int limit)
-      throws IOException, GitAPIException {
-    return historyPage(repositoryRelativePath, limit, null).commits();
-  }
-
   /** Lists one cursor-based page of newest-first commits for a repository-relative path. */
   public HistoryPage historyPage(
       String repositoryRelativePath, int limit, @Nullable String beforeRevision)
       throws IOException, GitAPIException {
+    policy.require(RepositoryCapability.READ_HISTORY);
     String gitPath = validateGitPath(repositoryRelativePath);
     if (limit < 1) {
       throw new IllegalArgumentException("History limit must be positive");
@@ -370,6 +368,24 @@ public final class GitRepo {
         });
   }
 
+  /** Resolves an advanced revision string to one exact commit object ID. */
+  public SnapshotId resolveCommit(String revision) throws IOException {
+    policy.require(RepositoryCapability.READ_HISTORY);
+    return core.resolveCommit(revision);
+  }
+
+  /** Reads one small file from the tree of the resolved revision. */
+  public byte[] readSmallFile(String revision, String path, long maxBytes) throws IOException {
+    policy.require(RepositoryCapability.READ_TREE);
+    return core.readResolvedSmallFile(revision, path, maxBytes);
+  }
+
+  /** Lists repository-relative file paths present in the resolved revision. */
+  public List<String> listFiles(String revision) throws IOException {
+    policy.require(RepositoryCapability.READ_TREE);
+    return core.listResolvedFiles(revision, SnapshotTreeLimits.DEFAULT);
+  }
+
   /**
    * Exports the parcel directory from a commit without changing HEAD, the index, or the working
    * tree.
@@ -377,8 +393,8 @@ public final class GitRepo {
    * @param destination a path which must not already exist
    */
   public void exportRevision(
-      String revision, String repositoryRelativePath, Path destination)
-      throws IOException {
+      String revision, String repositoryRelativePath, Path destination) throws IOException {
+    policy.require(RepositoryCapability.READ_TREE);
     String gitPath = validateGitPath(repositoryRelativePath);
     if (revision == null || revision.isBlank()) {
       throw new IllegalArgumentException("Revision must not be blank");
@@ -453,21 +469,6 @@ public final class GitRepo {
         Instant.ofEpochSecond(commit.getCommitTime()),
         commit.getAuthorIdent().getName(),
         commit.getShortMessage());
-  }
-
-  private static void deleteRecursivelyIfExists(Path directory) throws IOException {
-    NioFileTree.deleteRecursivelyIfExists(directory);
-  }
-
-  public record CommitIdentity(String name, String email) {
-    public CommitIdentity {
-      if (name == null || name.isBlank()) {
-        throw new IllegalArgumentException("Commit author name must not be blank");
-      }
-      if (email == null || email.isBlank()) {
-        throw new IllegalArgumentException("Commit author email must not be blank");
-      }
-    }
   }
 
   public record CommitInfo(

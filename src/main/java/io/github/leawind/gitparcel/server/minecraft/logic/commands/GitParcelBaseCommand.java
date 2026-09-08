@@ -8,7 +8,8 @@ import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.permission.MinecraftPermissions;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelWorldSavedData;
 import io.github.leawind.gitparcel.common.utils.Translations;
-import io.github.leawind.gitparcel.common.utils.git.GitRepo;
+import io.github.leawind.gitparcel.common.utils.git.GitRepositoryCore;
+import io.github.leawind.gitparcel.common.utils.git.SharedRepository;
 import net.minecraft.commands.CommandSourceStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +45,7 @@ public abstract class GitParcelBaseCommand {
     return true;
   }
 
-  protected static GitRepo.CommitIdentity snapshotIdentity(CommandSourceStack source) {
+  protected static GitRepositoryCore.Identity snapshotIdentity(CommandSourceStack source) {
     String name =
         source
             .getTextName()
@@ -58,7 +59,7 @@ public abstract class GitParcelBaseCommand {
     var entity = source.getEntity();
     String email =
         entity == null ? "server@gitparcel.local" : entity.getUUID() + "@gitparcel.local";
-    return new GitRepo.CommitIdentity(name, email);
+    return new GitRepositoryCore.Identity(name, email);
   }
 
   /** Stable operation ownership for permission-filtered status queries. */

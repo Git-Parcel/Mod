@@ -122,11 +122,11 @@ class RepositoryLockingTest {
   @Test
   void sharedFacadeRefusesInternalParcelRepositories() throws Exception {
     var repository = InternalRepository.at(tempDir, UUID.randomUUID());
-    assertThrows(IllegalArgumentException.class, () -> GitRepo.get(repository.path()));
+    assertThrows(IllegalArgumentException.class, () -> SharedRepository.get(repository.path()));
     assertThrows(
         IllegalArgumentException.class,
         () ->
-            GitRepo.cloneRepository(
+            SharedRepository.cloneRepository(
                 "https://example.com/repo.git", repository.path(), null));
   }
 
