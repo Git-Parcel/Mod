@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReentrantLock;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -48,8 +48,12 @@ import org.slf4j.LoggerFactory;
 /** Coordinates authoritative parcel state, internal snapshots, and explicit content exchange. */
 public final class ParcelService {
   private static final Logger LOGGER = LoggerFactory.getLogger(ParcelService.class);
-  private static final ConcurrentHashMap<UUID, ReentrantLock> PARCEL_LOCKS =
-      new ConcurrentHashMap<>();
+  /**
+   * One lock per parcel UUID, held only while an operation is in flight. Weak values let entries
+   * for deleted parcels be collected instead of accumulating for the server's lifetime.
+   */
+  private static final ConcurrentMap<UUID, ReentrantLock> PARCEL_LOCKS =
+      new com.google.common.collect.MapMaker().weakValues().makeMap();
   private static final int LOAD_FLAGS =
       Block.UPDATE_CLIENTS
           | Block.UPDATE_IMMEDIATE

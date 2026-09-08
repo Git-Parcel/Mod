@@ -23,7 +23,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -42,7 +43,14 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 
 /** Shared JGit primitives for policy-constrained internal and full shared repositories. */
 public final class GitRepositoryCore {
-  private static final ConcurrentHashMap<Path, ReentrantLock> LOCKS = new ConcurrentHashMap<>();
+  /**
+   * One lock per repository path, shared by every core, {@link InternalRepository}, and {@link
+   * GitRepo} instance. Values are weak so entries for abandoned repositories (for example after a
+   * parcel is deleted) are collected instead of accumulating forever; an entry stays alive while
+   * any instance still references its lock.
+   */
+  private static final ConcurrentMap<Path, ReentrantLock> LOCKS =
+      new com.google.common.collect.MapMaker().weakValues().makeMap();
 
   private final Path path;
   private final RepositoryPolicy policy;
@@ -593,19 +601,55 @@ public final class GitRepositoryCore {
     NioFileTree.deleteRecursivelyIfExists(root);
   }
 
-  private <T> T locked(IoAction<T> action) throws IOException {
+  private <T> T locked(LockedAction<T> action) throws IOException {
+    try {
+      return withLock(action);
+    } catch (GitAPIException e) {
+      throw new IOException("Git operation failed for " + path, e);
+    }
+  }
+
+  /**
+   * Runs an action while holding this repository's path lock, making multi-step sequences atomic
+   * against other users of the same repository. Nesting on one thread is reentrant.
+   */
+  public <T> T withLock(LockedAction<T> action) throws IOException, GitAPIException {
     lock.lock();
     try {
       return action.run();
-    } catch (GitAPIException e) {
-      throw new IOException("Git operation failed for " + path, e);
     } finally {
       lock.unlock();
     }
   }
 
+  /**
+   * Runs an action after acquiring the path lock within the given timeout. Read-style access must
+   * use this entry point so a caller that ignores threading contracts fails fast with {@link
+   * RepositoryBusyException} instead of blocking a server tick indefinitely.
+   */
+  public <T> T tryWithLock(long timeout, TimeUnit unit, LockedAction<T> action)
+      throws IOException, GitAPIException {
+    boolean acquired;
+    try {
+      acquired = lock.tryLock(timeout, unit);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException("Interrupted while acquiring repository access: " + path, e);
+    }
+    if (!acquired) {
+      throw new RepositoryBusyException(
+          "Repository is busy with a long operation; retry later: " + path);
+    }
+    try {
+      return action.run();
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  /** An action run under this repository's path lock. */
   @FunctionalInterface
-  private interface IoAction<T> {
+  public interface LockedAction<T> {
     T run() throws IOException, GitAPIException;
   }
 

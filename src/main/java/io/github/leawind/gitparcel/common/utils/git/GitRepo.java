@@ -32,8 +32,9 @@ import org.jspecify.annotations.Nullable;
 /**
  * Serialized access to one on-disk Git repository.
  *
- * <p>Instances are cached by normalized absolute path so operations targeting the same repository
- * cannot concurrently mutate its index.
+ * <p>Instances are cached by normalized absolute path, and every operation runs under the same
+ * per-path lock as {@link GitRepositoryCore} and {@link InternalRepository}, so all users of one
+ * repository directory mutually exclude each other.
  */
 public final class GitRepo {
 
@@ -41,6 +42,7 @@ public final class GitRepo {
 
   public static GitRepo get(Path path) {
     Path normalized = path.toAbsolutePath().normalize();
+    InternalParcelRoots.assertShareable(normalized);
     return CACHE.computeIfAbsent(normalized, GitRepo::new);
   }
 
@@ -67,10 +69,14 @@ public final class GitRepo {
   }
 
   /** Initializes an empty working-tree repository if necessary. */
-  public synchronized void initialize() throws IOException, GitAPIException {
-    try (Git ignored = openOrInit()) {
-      // Initialization is performed by openOrInit.
-    }
+  public void initialize() throws IOException, GitAPIException {
+    core.withLock(
+        () -> {
+          try (Git ignored = openOrInit()) {
+            // Initialization is performed by openOrInit.
+          }
+          return null;
+        });
   }
 
   /** Clones into a destination which must not already exist. */
@@ -79,10 +85,11 @@ public final class GitRepo {
       Path destination,
       @Nullable CredentialsProvider credentialsProvider)
       throws IOException, GitAPIException {
+    InternalParcelRoots.assertShareable(destination);
     return GitRepo.get(destination).cloneFrom(remoteUri, credentialsProvider);
   }
 
-  private synchronized GitRepo cloneFrom(
+  private GitRepo cloneFrom(
       String remoteUri, @Nullable CredentialsProvider credentialsProvider)
       throws IOException, GitAPIException {
     if (remoteUri == null || remoteUri.isBlank()) {
@@ -92,97 +99,109 @@ public final class GitRepo {
       throw new IOException("Clone destination already exists: " + path);
     }
 
-    try {
-      var command = Git.cloneRepository().setURI(remoteUri).setDirectory(file);
-      if (credentialsProvider != null) {
-        command.setCredentialsProvider(credentialsProvider);
-      }
-      try (Git ignored = command.call()) {
-        return this;
-      }
-    } catch (GitAPIException | RuntimeException e) {
-      try {
-        deleteRecursivelyIfExists(path);
-      } catch (IOException cleanupFailure) {
-        e.addSuppressed(cleanupFailure);
-      }
-      throw e;
-    }
+    return core.withLock(
+        () -> {
+          try {
+            var command = Git.cloneRepository().setURI(remoteUri).setDirectory(file);
+            if (credentialsProvider != null) {
+              command.setCredentialsProvider(credentialsProvider);
+            }
+            try (Git ignored = command.call()) {
+              return GitRepo.this;
+            }
+          } catch (GitAPIException | RuntimeException e) {
+            try {
+              deleteRecursivelyIfExists(path);
+            } catch (IOException cleanupFailure) {
+              e.addSuppressed(cleanupFailure);
+            }
+            throw e;
+          }
+        });
   }
 
   /** Fetches tracking references from {@code origin}. */
-  public synchronized int fetch(@Nullable CredentialsProvider credentialsProvider)
+  public int fetch(@Nullable CredentialsProvider credentialsProvider)
       throws IOException, GitAPIException {
-    try (Git git = requireOpen()) {
-      var command = git.fetch().setRemote("origin");
-      if (credentialsProvider != null) {
-        command.setCredentialsProvider(credentialsProvider);
-      }
-      return command.call().getTrackingRefUpdates().size();
-    }
+    return core.withLock(
+        () -> {
+          try (Git git = requireOpen()) {
+            var command = git.fetch().setRemote("origin");
+            if (credentialsProvider != null) {
+              command.setCredentialsProvider(credentialsProvider);
+            }
+            return command.call().getTrackingRefUpdates().size();
+          }
+        });
   }
 
   /** Pulls from {@code origin}, accepting only a fast-forward update. */
-  public synchronized String pull(@Nullable CredentialsProvider credentialsProvider)
+  public String pull(@Nullable CredentialsProvider credentialsProvider)
       throws IOException, GitAPIException {
-    try (Git git = requireOpen()) {
-      if (!git.status().call().isClean()) {
-        throw new IOException("Cannot pull with uncommitted repository changes: " + path);
-      }
+    return core.withLock(
+        () -> {
+          try (Git git = requireOpen()) {
+            if (!git.status().call().isClean()) {
+              throw new IOException("Cannot pull with uncommitted repository changes: " + path);
+            }
 
-      var command = git.pull().setRemote("origin").setFastForward(FastForwardMode.FF_ONLY);
-      if (credentialsProvider != null) {
-        command.setCredentialsProvider(credentialsProvider);
-      }
-      var result = command.call();
-      if (!result.isSuccessful()) {
-        throw new IOException("Git pull was not successful: " + result);
-      }
-      if (result.getMergeResult() != null) {
-        return result.getMergeResult().getMergeStatus().toString();
-      }
-      if (result.getRebaseResult() != null) {
-        return result.getRebaseResult().getStatus().toString();
-      }
-      return "FETCHED";
-    }
+            var command = git.pull().setRemote("origin").setFastForward(FastForwardMode.FF_ONLY);
+            if (credentialsProvider != null) {
+              command.setCredentialsProvider(credentialsProvider);
+            }
+            var result = command.call();
+            if (!result.isSuccessful()) {
+              throw new IOException("Git pull was not successful: " + result);
+            }
+            if (result.getMergeResult() != null) {
+              return result.getMergeResult().getMergeStatus().toString();
+            }
+            if (result.getRebaseResult() != null) {
+              return result.getRebaseResult().getStatus().toString();
+            }
+            return "FETCHED";
+          }
+        });
   }
 
   /** Pushes the current branch to its configured upstream. */
-  public synchronized int push(@Nullable CredentialsProvider credentialsProvider)
+  public int push(@Nullable CredentialsProvider credentialsProvider)
       throws IOException, GitAPIException {
-    try (Git git = requireOpen()) {
-      if (!git.status().call().isClean()) {
-        throw new IOException("Cannot push with uncommitted repository changes: " + path);
-      }
+    return core.withLock(
+        () -> {
+          try (Git git = requireOpen()) {
+            if (!git.status().call().isClean()) {
+              throw new IOException("Cannot push with uncommitted repository changes: " + path);
+            }
 
-      var command = git.push().setRemote("origin");
-      String fullBranch = git.getRepository().getFullBranch();
-      if (fullBranch == null || !fullBranch.startsWith("refs/heads/")) {
-        throw new IOException("Cannot push from a detached or unborn branch: " + path);
-      }
-      String branch = Repository.shortenRefName(fullBranch);
-      command.setRefSpecs(new RefSpec("HEAD:refs/heads/" + branch));
-      if (credentialsProvider != null) {
-        command.setCredentialsProvider(credentialsProvider);
-      }
+            var command = git.push().setRemote("origin");
+            String fullBranch = git.getRepository().getFullBranch();
+            if (fullBranch == null || !fullBranch.startsWith("refs/heads/")) {
+              throw new IOException("Cannot push from a detached or unborn branch: " + path);
+            }
+            String branch = Repository.shortenRefName(fullBranch);
+            command.setRefSpecs(new RefSpec("HEAD:refs/heads/" + branch));
+            if (credentialsProvider != null) {
+              command.setCredentialsProvider(credentialsProvider);
+            }
 
-      int updates = 0;
-      for (var result : command.call()) {
-        for (RemoteRefUpdate update : result.getRemoteUpdates()) {
-          var status = update.getStatus();
-          if (status != RemoteRefUpdate.Status.OK
-              && status != RemoteRefUpdate.Status.UP_TO_DATE) {
-            throw new IOException(
-                "Git push rejected %s: %s".formatted(update.getRemoteName(), status));
+            int updates = 0;
+            for (var result : command.call()) {
+              for (RemoteRefUpdate update : result.getRemoteUpdates()) {
+                var status = update.getStatus();
+                if (status != RemoteRefUpdate.Status.OK
+                    && status != RemoteRefUpdate.Status.UP_TO_DATE) {
+                  throw new IOException(
+                      "Git push rejected %s: %s".formatted(update.getRemoteName(), status));
+                }
+                if (status == RemoteRefUpdate.Status.OK) {
+                  updates++;
+                }
+              }
+            }
+            return updates;
           }
-          if (status == RemoteRefUpdate.Status.OK) {
-            updates++;
-          }
-        }
-      }
-      return updates;
-    }
+        });
   }
 
   /**
@@ -190,14 +209,14 @@ public final class GitRepo {
    *
    * @return the new commit, or an empty result when that directory has no changes
    */
-  public synchronized Optional<CommitInfo> commit(
+  public Optional<CommitInfo> commit(
       String repositoryRelativePath, String message, CommitIdentity identity)
       throws IOException, GitAPIException {
     return commit(List.of(repositoryRelativePath), message, identity);
   }
 
   /** Restores selected index entries to {@code HEAD} without changing the working tree. */
-  public synchronized void resetIndexPaths(Collection<String> repositoryRelativePaths)
+  public void resetIndexPaths(Collection<String> repositoryRelativePaths)
       throws IOException, GitAPIException {
     if (repositoryRelativePaths == null || repositoryRelativePaths.isEmpty()) {
       throw new IllegalArgumentException("At least one Git path is required");
@@ -205,34 +224,38 @@ public final class GitRepo {
     var gitPaths = new LinkedHashSet<String>();
     repositoryRelativePaths.forEach(path -> gitPaths.add(validateGitPath(path)));
 
-    try (Git git = requireOpen()) {
-      if (git.getRepository().resolve(Constants.HEAD) != null) {
-        var reset = git.reset();
-        gitPaths.forEach(reset::addPath);
-        reset.call();
-      } else {
-        var cache = git.getRepository().lockDirCache();
-        try {
-          var indexedPaths = new ArrayList<String>();
-          for (int i = 0; i < cache.getEntryCount(); i++) {
-            String indexedPath = cache.getEntry(i).getPathString();
-            if (gitPaths.stream()
-                .anyMatch(path -> indexedPath.equals(path) || indexedPath.startsWith(path + "/"))) {
-              indexedPaths.add(indexedPath);
+    core.withLock(
+        () -> {
+          try (Git git = requireOpen()) {
+            if (git.getRepository().resolve(Constants.HEAD) != null) {
+              var reset = git.reset();
+              gitPaths.forEach(reset::addPath);
+              reset.call();
+            } else {
+              var cache = git.getRepository().lockDirCache();
+              try {
+                var indexedPaths = new ArrayList<String>();
+                for (int i = 0; i < cache.getEntryCount(); i++) {
+                  String indexedPath = cache.getEntry(i).getPathString();
+                  if (gitPaths.stream()
+                      .anyMatch(path -> indexedPath.equals(path) || indexedPath.startsWith(path + "/"))) {
+                    indexedPaths.add(indexedPath);
+                  }
+                }
+                var editor = cache.editor();
+                indexedPaths.forEach(path -> editor.add(new DirCacheEditor.DeletePath(path)));
+                editor.commit();
+              } finally {
+                cache.unlock();
+              }
             }
           }
-          var editor = cache.editor();
-          indexedPaths.forEach(path -> editor.add(new DirCacheEditor.DeletePath(path)));
-          editor.commit();
-        } finally {
-          cache.unlock();
-        }
-      }
-    }
+          return null;
+        });
   }
 
   /** Stages and commits changes below one or more repository-relative paths. */
-  public synchronized Optional<CommitInfo> commit(
+  public Optional<CommitInfo> commit(
       Collection<String> repositoryRelativePaths,
       String message,
       CommitIdentity identity)
@@ -247,40 +270,43 @@ public final class GitRepo {
       throw new IllegalArgumentException("Commit message must not be blank");
     }
 
-    try (Git git = openOrInit()) {
-      for (String gitPath : gitPaths) {
-        git.add().addFilepattern(gitPath).call();
-        git.add().setUpdate(true).addFilepattern(gitPath).call();
-      }
+    return core.withLock(
+        () -> {
+          try (Git git = openOrInit()) {
+            for (String gitPath : gitPaths) {
+              git.add().addFilepattern(gitPath).call();
+              git.add().setUpdate(true).addFilepattern(gitPath).call();
+            }
 
-      boolean clean = true;
-      for (String gitPath : gitPaths) {
-        clean &= git.status().addPath(gitPath).call().isClean();
-      }
-      if (clean) {
-        return Optional.empty();
-      }
+            boolean clean = true;
+            for (String gitPath : gitPaths) {
+              clean &= git.status().addPath(gitPath).call().isClean();
+            }
+            if (clean) {
+              return Optional.<CommitInfo>empty();
+            }
 
-      var person = new PersonIdent(identity.name(), identity.email());
-      var command =
-          git.commit()
-              .setMessage(message)
-              .setAuthor(person)
-              .setCommitter(person);
-      gitPaths.forEach(command::setOnly);
-      RevCommit commit = command.call();
-      return Optional.of(toInfo(commit));
-    }
+            var person = new PersonIdent(identity.name(), identity.email());
+            var command =
+                git.commit()
+                    .setMessage(message)
+                    .setAuthor(person)
+                    .setCommitter(person);
+            gitPaths.forEach(command::setOnly);
+            RevCommit commit = command.call();
+            return Optional.of(toInfo(commit));
+          }
+        });
   }
 
   /** Lists newest-first commits which changed the specified parcel directory. */
-  public synchronized List<CommitInfo> history(String repositoryRelativePath, int limit)
+  public List<CommitInfo> history(String repositoryRelativePath, int limit)
       throws IOException, GitAPIException {
     return historyPage(repositoryRelativePath, limit, null).commits();
   }
 
   /** Lists one cursor-based page of newest-first commits for a repository-relative path. */
-  public synchronized HistoryPage historyPage(
+  public HistoryPage historyPage(
       String repositoryRelativePath, int limit, @Nullable String beforeRevision)
       throws IOException, GitAPIException {
     String gitPath = validateGitPath(repositoryRelativePath);
@@ -291,54 +317,57 @@ public final class GitRepo {
       throw new IllegalArgumentException("History cursor must not be blank");
     }
 
-    try (Git git = open()) {
-      if (git == null) {
-        return new HistoryPage(List.of(), Optional.empty());
-      }
-
-      var result = new ArrayList<CommitInfo>();
-      try {
-        var command = git.log().addPath(gitPath);
-        org.eclipse.jgit.lib.ObjectId cursorId = null;
-        if (beforeRevision != null) {
-          cursorId = git.getRepository().resolve(beforeRevision + "^{commit}");
-          if (cursorId == null) {
-            throw new IOException("Unknown Git history cursor: " + beforeRevision);
-          }
-          command.add(cursorId);
-        }
-
-        boolean cursorSeen = beforeRevision == null;
-        for (RevCommit commit : command.call()) {
-          if (!cursorSeen) {
-            if (!commit.getId().equals(cursorId)) {
-              throw new IOException(
-                  "Git history cursor does not belong to parcel path: " + beforeRevision);
+    return core.withLock(
+        () -> {
+          try (Git git = open()) {
+            if (git == null) {
+              return new HistoryPage(List.of(), Optional.empty());
             }
-            cursorSeen = true;
-            continue;
-          }
-          result.add(toInfo(commit));
-          if (result.size() > limit) {
-            break;
-          }
-        }
-        if (!cursorSeen) {
-          throw new IOException(
-              "Git history cursor does not belong to parcel path: " + beforeRevision);
-        }
-      } catch (NoHeadException ignored) {
-        return new HistoryPage(List.of(), Optional.empty());
-      }
 
-      boolean hasMore = result.size() > limit;
-      if (hasMore) {
-        result.removeLast();
-      }
-      Optional<String> nextCursor =
-          hasMore ? Optional.of(result.getLast().revision()) : Optional.empty();
-      return new HistoryPage(List.copyOf(result), nextCursor);
-    }
+            var result = new ArrayList<CommitInfo>();
+            try {
+              var command = git.log().addPath(gitPath);
+              org.eclipse.jgit.lib.ObjectId cursorId = null;
+              if (beforeRevision != null) {
+                cursorId = git.getRepository().resolve(beforeRevision + "^{commit}");
+                if (cursorId == null) {
+                  throw new IOException("Unknown Git history cursor: " + beforeRevision);
+                }
+                command.add(cursorId);
+              }
+
+              boolean cursorSeen = beforeRevision == null;
+              for (RevCommit commit : command.call()) {
+                if (!cursorSeen) {
+                  if (!commit.getId().equals(cursorId)) {
+                    throw new IOException(
+                        "Git history cursor does not belong to parcel path: " + beforeRevision);
+                  }
+                  cursorSeen = true;
+                  continue;
+                }
+                result.add(toInfo(commit));
+                if (result.size() > limit) {
+                  break;
+                }
+              }
+              if (!cursorSeen) {
+                throw new IOException(
+                    "Git history cursor does not belong to parcel path: " + beforeRevision);
+              }
+            } catch (NoHeadException ignored) {
+              return new HistoryPage(List.of(), Optional.empty());
+            }
+
+            boolean hasMore = result.size() > limit;
+            if (hasMore) {
+              result.removeLast();
+            }
+            Optional<String> nextCursor =
+                hasMore ? Optional.of(result.getLast().revision()) : Optional.empty();
+            return new HistoryPage(List.copyOf(result), nextCursor);
+          }
+        });
   }
 
   /**
@@ -347,19 +376,28 @@ public final class GitRepo {
    *
    * @param destination a path which must not already exist
    */
-  public synchronized void exportRevision(
+  public void exportRevision(
       String revision, String repositoryRelativePath, Path destination)
       throws IOException {
     String gitPath = validateGitPath(repositoryRelativePath);
     if (revision == null || revision.isBlank()) {
       throw new IllegalArgumentException("Revision must not be blank");
     }
-    core.exportResolvedSubtree(
-        revision,
-        gitPath,
-        destination,
-        SnapshotTreeLimits.DEFAULT,
-        ProgressReporter.NONE);
+    try {
+      core.withLock(
+          () -> {
+            // The subtree export re-acquires the same reentrant path lock.
+            core.exportResolvedSubtree(
+                revision,
+                gitPath,
+                destination,
+                SnapshotTreeLimits.DEFAULT,
+                ProgressReporter.NONE);
+            return null;
+          });
+    } catch (GitAPIException e) {
+      throw new IOException("Unexpected JGit failure for " + path, e);
+    }
   }
 
   private Git openOrInit() throws IOException, GitAPIException {

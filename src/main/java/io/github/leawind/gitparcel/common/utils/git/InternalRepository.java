@@ -20,9 +20,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 import org.eclipse.jgit.lib.RefUpdate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +34,6 @@ public final class InternalRepository {
   private static final String OPERATION_FILE = "operation.json";
   private static final String MESSAGE_MARKER = "\n\n-- gitparcel --\n";
   private static final Gson GSON = new Gson();
-  private static final ConcurrentHashMap<Path, ReentrantLock> LOCKS = new ConcurrentHashMap<>();
 
   /**
    * Read paths acquire the repository lock with a bounded timeout. A background save or restore
@@ -52,7 +48,6 @@ public final class InternalRepository {
 
   private final Path path;
   private final GitRepositoryCore core;
-  private final ReentrantLock lock;
   private final SnapshotTreeLimits limits;
 
   public InternalRepository(Path path) {
@@ -62,8 +57,9 @@ public final class InternalRepository {
   public InternalRepository(Path path, SnapshotTreeLimits limits) {
     this.path = path.toAbsolutePath().normalize();
     this.core = new GitRepositoryCore(this.path, RepositoryPolicy.INTERNAL);
-    this.lock = LOCKS.computeIfAbsent(this.path, ignored -> new ReentrantLock());
     this.limits = limits;
+    // Keep the shared-repository facade away from this directory tree.
+    InternalParcelRoots.register(this.path.getParent());
   }
 
   public Path path() {
@@ -75,20 +71,19 @@ public final class InternalRepository {
   }
 
   public void initialize() throws IOException {
-    lock.lock();
-    try {
-      try {
-        core.initializeBare();
-      } catch (org.eclipse.jgit.api.errors.GitAPIException e) {
-        throw new IOException("Failed to initialize internal repository", e);
-      }
-      RefUpdate.Result result = core.linkHead(CURRENT_REF);
-      if (!successful(result)) {
-        throw new IOException("Failed to link repository HEAD to current snapshot: " + result);
-      }
-    } finally {
-      lock.unlock();
-    }
+    sequence(
+        () -> {
+          try {
+            core.initializeBare();
+          } catch (org.eclipse.jgit.api.errors.GitAPIException e) {
+            throw new IOException("Failed to initialize internal repository", e);
+          }
+          RefUpdate.Result result = core.linkHead(CURRENT_REF);
+          if (!successful(result)) {
+            throw new IOException("Failed to link repository HEAD to current snapshot: " + result);
+          }
+          return null;
+        });
   }
 
   public RepositoryState inspect() {
@@ -96,95 +91,95 @@ public final class InternalRepository {
   }
 
   private RepositoryState inspect(boolean validateCompleteTrees) {
-    lock.lock();
     try {
-      if (!exists()) {
-        return new RepositoryState(Health.HEALTHY, List.of(), Optional.empty(), 0);
-      }
-      var diagnostics = new ArrayList<String>();
-      Map<SnapshotId, GitRepositoryCore.CommitData> commits = new HashMap<>();
-      Optional<SnapshotId> current = Optional.empty();
-      try {
-        if (!core.isBare()) {
-          diagnostics.add("Internal repository is not bare");
-        }
-        for (var ref : core.refsByPrefix(SNAPSHOTS_PREFIX)) {
-          String suffix = ref.name().substring(SNAPSHOTS_PREFIX.length());
-          if (!suffix.equals(ref.target().value())) {
-            diagnostics.add("Snapshot retention ref name does not match its target: " + ref.name());
-          }
-          try {
-            var commit = core.readCommit(ref.target());
-            if (validateCompleteTrees) {
-              core.summarizeTree(commit.treeId(), limits);
-            }
-            commits.put(ref.target(), commit);
-          } catch (IOException e) {
-            diagnostics.add("Invalid snapshot commit " + ref.target() + ": " + e.getMessage());
-          }
-        }
-        current = core.exactRef(CURRENT_REF);
-        if (current.isPresent() && !commits.containsKey(current.orElseThrow())) {
-          diagnostics.add("Current ref does not point to a retained snapshot");
-        }
-        if (!commits.isEmpty() && current.isEmpty()) {
-          diagnostics.add("Repository has snapshots but no current baseline");
-        }
-        long roots = 0;
-        for (var commit : commits.values()) {
-          if (commit.parents().size() > 1) {
-            diagnostics.add("Snapshot has multiple parents: " + commit.id());
-          } else if (commit.parents().isEmpty()) {
-            roots++;
-          } else if (!commits.containsKey(commit.parents().getFirst())) {
-            diagnostics.add("Snapshot parent is not retained: " + commit.id());
-          }
-        }
-        if (!commits.isEmpty() && roots != 1) {
-          diagnostics.add("Snapshot history must contain exactly one root; found " + roots);
-        }
-      } catch (Exception e) {
-        diagnostics.add("Repository inspection failed: " + describe(e));
-      }
+      return sequence(() -> inspectLocked(validateCompleteTrees));
+    } catch (IOException e) {
       return new RepositoryState(
-          diagnostics.isEmpty() ? Health.HEALTHY : Health.READ_ONLY,
-          diagnostics,
-          current,
-          commits.size());
-    } finally {
-      lock.unlock();
+          Health.READ_ONLY, List.of(describe(e)), Optional.empty(), 0);
     }
+  }
+
+  private RepositoryState inspectLocked(boolean validateCompleteTrees) throws IOException {
+    if (!exists()) {
+      return new RepositoryState(Health.HEALTHY, List.of(), Optional.empty(), 0);
+    }
+    var diagnostics = new ArrayList<String>();
+    Map<SnapshotId, GitRepositoryCore.CommitData> commits = new HashMap<>();
+    Optional<SnapshotId> current = Optional.empty();
+    try {
+      if (!core.isBare()) {
+        diagnostics.add("Internal repository is not bare");
+      }
+      for (var ref : core.refsByPrefix(SNAPSHOTS_PREFIX)) {
+        String suffix = ref.name().substring(SNAPSHOTS_PREFIX.length());
+        if (!suffix.equals(ref.target().value())) {
+          diagnostics.add("Snapshot retention ref name does not match its target: " + ref.name());
+        }
+        try {
+          var commit = core.readCommit(ref.target());
+          if (validateCompleteTrees) {
+            core.summarizeTree(commit.treeId(), limits);
+          }
+          commits.put(ref.target(), commit);
+        } catch (IOException e) {
+          diagnostics.add("Invalid snapshot commit " + ref.target() + ": " + e.getMessage());
+        }
+      }
+      current = core.exactRef(CURRENT_REF);
+      if (current.isPresent() && !commits.containsKey(current.orElseThrow())) {
+        diagnostics.add("Current ref does not point to a retained snapshot");
+      }
+      if (!commits.isEmpty() && current.isEmpty()) {
+        diagnostics.add("Repository has snapshots but no current baseline");
+      }
+      long roots = 0;
+      for (var commit : commits.values()) {
+        if (commit.parents().size() > 1) {
+          diagnostics.add("Snapshot has multiple parents: " + commit.id());
+        } else if (commit.parents().isEmpty()) {
+          roots++;
+        } else if (!commits.containsKey(commit.parents().getFirst())) {
+          diagnostics.add("Snapshot parent is not retained: " + commit.id());
+        }
+      }
+      if (!commits.isEmpty() && roots != 1) {
+        diagnostics.add("Snapshot history must contain exactly one root; found " + roots);
+      }
+    } catch (Exception e) {
+      diagnostics.add("Repository inspection failed: " + describe(e));
+    }
+    return new RepositoryState(
+        diagnostics.isEmpty() ? Health.HEALTHY : Health.READ_ONLY,
+        diagnostics,
+        current,
+        commits.size());
   }
 
   /** Materializes the current snapshot as an editable baseline and returns its identity. */
   public Optional<SnapshotId> prepareSnapshotWorkspace(
       Path workspace, ProgressReporter progress) throws IOException {
-    lock.lock();
-    try {
-      initialize();
-      requireHealthy();
-      Optional<SnapshotId> baseline = core.exactRef(CURRENT_REF);
-      if (baseline.isPresent()) {
-        core.exportCommitTree(baseline.orElseThrow(), workspace, limits, progress);
-      } else {
-        Files.createDirectories(workspace);
-      }
-      return baseline;
-    } finally {
-      lock.unlock();
-    }
+    return sequence(
+        () -> {
+          initialize();
+          requireHealthy();
+          Optional<SnapshotId> baseline = core.exactRef(CURRENT_REF);
+          if (baseline.isPresent()) {
+            core.exportCommitTree(baseline.orElseThrow(), workspace, limits, progress);
+          } else {
+            Files.createDirectories(workspace);
+          }
+          return baseline;
+        });
   }
 
   public SnapshotId saveSnapshot(Path workspace, SaveMetadata metadata, ProgressReporter progress)
       throws IOException {
-    lock.lock();
-    try {
-      initialize();
-      requireHealthy();
-      return saveSnapshot(workspace, core.exactRef(CURRENT_REF), metadata, progress);
-    } finally {
-      lock.unlock();
-    }
+    return sequence(
+        () -> {
+          initialize();
+          requireHealthy();
+          return saveSnapshot(workspace, core.exactRef(CURRENT_REF), metadata, progress);
+        });
   }
 
   /** Saves a workspace derived from the declared parent, rejecting stale baselines. */
@@ -194,44 +189,42 @@ public final class InternalRepository {
       SaveMetadata metadata,
       ProgressReporter progress)
       throws IOException {
-    lock.lock();
-    try {
-      initialize();
-      requireHealthy();
-      Optional<SnapshotId> current = core.exactRef(CURRENT_REF);
-      if (!current.equals(expectedParent)) {
-        throw new ConcurrentUpdateException(
-            "Current snapshot changed while the workspace was being edited");
-      }
-      validateWorkspaceShape(workspace);
+    return sequence(
+        () -> {
+          initialize();
+          requireHealthy();
+          Optional<SnapshotId> current = core.exactRef(CURRENT_REF);
+          if (!current.equals(expectedParent)) {
+            throw new ConcurrentUpdateException(
+                "Current snapshot changed while the workspace was being edited");
+          }
+          validateWorkspaceShape(workspace);
 
-      SnapshotId tree = core.writeTree(workspace, limits, progress);
-      UUID operationId = UUID.randomUUID();
-      String message = encodeMessage(metadata, operationId);
-      SnapshotId commit =
-          core.createCommit(
-              tree,
-              expectedParent.stream().toList(),
-              message,
-              metadata.author(),
-              metadata.committer(),
-              metadata.timestamp());
+          SnapshotId tree = core.writeTree(workspace, limits, progress);
+          UUID operationId = UUID.randomUUID();
+          String message = encodeMessage(metadata, operationId);
+          SnapshotId commit =
+              core.createCommit(
+                  tree,
+                  expectedParent.stream().toList(),
+                  message,
+                  metadata.author(),
+                  metadata.committer(),
+                  metadata.timestamp());
 
-      RefUpdate.Result retained =
-          core.compareAndSetRef(snapshotRef(commit), Optional.empty(), commit, false);
-      if (!successful(retained)) {
-        throw new IOException("Failed to retain new snapshot: " + retained);
-      }
-      RefUpdate.Result activated =
-          core.compareAndSetRef(CURRENT_REF, expectedParent, commit, false);
-      if (!successful(activated)) {
-        throw new ConcurrentUpdateException(
-            "Current snapshot changed while saving; new snapshot remains retained (" + activated + ")");
-      }
-      return commit;
-    } finally {
-      lock.unlock();
-    }
+          RefUpdate.Result retained =
+              core.compareAndSetRef(snapshotRef(commit), Optional.empty(), commit, false);
+          if (!successful(retained)) {
+            throw new IOException("Failed to retain new snapshot: " + retained);
+          }
+          RefUpdate.Result activated =
+              core.compareAndSetRef(CURRENT_REF, expectedParent, commit, false);
+          if (!successful(activated)) {
+            throw new ConcurrentUpdateException(
+                "Current snapshot changed while saving; new snapshot remains retained (" + activated + ")");
+          }
+          return commit;
+        });
   }
 
   public SnapshotTreePage queryTree(
@@ -239,59 +232,55 @@ public final class InternalRepository {
     if (limit < 1) {
       throw new IllegalArgumentException("Snapshot tree page limit must be positive");
     }
-    lockForRead();
-    try {
-      if (!exists()) {
-        return new SnapshotTreePage(
-            parcelUuid, cursor, List.of(), Optional.empty(), Optional.empty(), Optional.empty());
-      }
-      requireHealthy();
-      var commits = retainedCommits();
-      commits.sort(
-          Comparator.comparing(GitRepositoryCore.CommitData::committedAt)
-              .thenComparing(data -> data.id().value())
-              .reversed());
-      int start = 0;
-      if (cursor.isPresent()) {
-        int index = -1;
-        for (int i = 0; i < commits.size(); i++) {
-          if (commits.get(i).id().equals(cursor.orElseThrow())) {
-            index = i;
-            break;
+    return readSequenced(
+        () -> {
+          if (!exists()) {
+            return new SnapshotTreePage(
+                parcelUuid, cursor, List.of(), Optional.empty(), Optional.empty(), Optional.empty());
           }
-        }
-        if (index < 0) {
-          throw new IOException("Invalid or stale snapshot cursor");
-        }
-        start = index + 1;
-      }
-      int end = Math.min(commits.size(), start + limit);
-      var nodes = new ArrayList<SnapshotNode>(end - start);
-      for (int i = start; i < end; i++) {
-        nodes.add(toNode(commits.get(i)));
-      }
-      Optional<SnapshotId> next =
-          end < commits.size() && !nodes.isEmpty()
-              ? Optional.of(nodes.getLast().id())
-              : Optional.empty();
-      return new SnapshotTreePage(
-          parcelUuid, cursor, nodes, core.exactRef(CURRENT_REF), next, Optional.empty());
-    } finally {
-      lock.unlock();
-    }
+          requireHealthy();
+          var commits = retainedCommits();
+          commits.sort(
+              Comparator.comparing(GitRepositoryCore.CommitData::committedAt)
+                  .thenComparing(data -> data.id().value())
+                  .reversed());
+          int start = 0;
+          if (cursor.isPresent()) {
+            int index = -1;
+            for (int i = 0; i < commits.size(); i++) {
+              if (commits.get(i).id().equals(cursor.orElseThrow())) {
+                index = i;
+                break;
+              }
+            }
+            if (index < 0) {
+              throw new IOException("Invalid or stale snapshot cursor");
+            }
+            start = index + 1;
+          }
+          int end = Math.min(commits.size(), start + limit);
+          var nodes = new ArrayList<SnapshotNode>(end - start);
+          for (int i = start; i < end; i++) {
+            nodes.add(toNode(commits.get(i)));
+          }
+          Optional<SnapshotId> next =
+              end < commits.size() && !nodes.isEmpty()
+                  ? Optional.of(nodes.getLast().id())
+                  : Optional.empty();
+          return new SnapshotTreePage(
+              parcelUuid, cursor, nodes, core.exactRef(CURRENT_REF), next, Optional.empty());
+        });
   }
 
   public Optional<SnapshotId> current() throws IOException {
-    lock.lock();
-    try {
-      if (!exists()) {
-        return Optional.empty();
-      }
-      requireHealthy();
-      return core.exactRef(CURRENT_REF);
-    } finally {
-      lock.unlock();
-    }
+    return sequence(
+        () -> {
+          if (!exists()) {
+            return Optional.empty();
+          }
+          requireHealthy();
+          return core.exactRef(CURRENT_REF);
+        });
   }
 
   public void exportSnapshot(
@@ -299,14 +288,13 @@ public final class InternalRepository {
       Path destination,
       ProgressReporter progress)
       throws IOException {
-    lock.lock();
-    try {
-      requireHealthy();
-      requireRetained(snapshot);
-      core.exportCommitTree(snapshot, destination, limits, progress);
-    } finally {
-      lock.unlock();
-    }
+    sequence(
+        () -> {
+          requireHealthy();
+          requireRetained(snapshot);
+          core.exportCommitTree(snapshot, destination, limits, progress);
+          return null;
+        });
   }
 
   /**
@@ -319,75 +307,77 @@ public final class InternalRepository {
       SnapshotRestorer restorer,
       ProgressReporter progress)
       throws IOException {
-    lock.lock();
+    return sequence(() -> restoreLocked(target, workspaceFactory, restorer, progress));
+  }
+
+  private RestoreResult restoreLocked(
+      SnapshotId target,
+      SnapshotWorkspaceFactory workspaceFactory,
+      SnapshotRestorer restorer,
+      ProgressReporter progress)
+      throws IOException {
     UUID operationId = UUID.randomUUID();
     Optional<SnapshotId> operationCommit = Optional.empty();
-    try {
-      requireHealthy();
-      requireRetained(target);
-      Optional<SnapshotId> before = core.exactRef(CURRENT_REF);
-      RestoreOperation operation =
-          new RestoreOperation(operationId, RestoreStage.PREPARING, target, before, "");
-      operationCommit = Optional.of(writeOperation(operation, Optional.empty()));
+    requireHealthy();
+    requireRetained(target);
+    Optional<SnapshotId> before = core.exactRef(CURRENT_REF);
+    RestoreOperation operation =
+        new RestoreOperation(operationId, RestoreStage.PREPARING, target, before, "");
+    operationCommit = Optional.of(writeOperation(operation, Optional.empty()));
 
-      try (var workspace = workspaceFactory.create()) {
-        Path snapshotRoot = workspace.root().resolve("snapshot");
-        core.exportCommitTree(target, snapshotRoot, limits, progress);
-        restorer.validate(snapshotRoot);
+    try (var workspace = workspaceFactory.create()) {
+      Path snapshotRoot = workspace.root().resolve("snapshot");
+      core.exportCommitTree(target, snapshotRoot, limits, progress);
+      restorer.validate(snapshotRoot);
 
-        operation = new RestoreOperation(operationId, RestoreStage.APPLYING, target, before, "");
-        operationCommit =
-            Optional.of(writeOperation(operation, operationCommit));
-        try {
-          restorer.apply(snapshotRoot);
-        } catch (Exception e) {
-          RestoreOperation failed =
-              new RestoreOperation(
-                  operationId, RestoreStage.FAILED, target, before, describe(e));
-          try {
-            writeOperation(failed, operationCommit);
-          } catch (IOException persistenceFailure) {
-            e.addSuppressed(persistenceFailure);
-          }
-          throw new RestoreIncompleteException(operationId, "World restore did not complete", e);
-        }
-      } catch (RestoreIncompleteException e) {
-        throw e;
+      operation = new RestoreOperation(operationId, RestoreStage.APPLYING, target, before, "");
+      operationCommit = Optional.of(writeOperation(operation, operationCommit));
+      try {
+        restorer.apply(snapshotRoot);
       } catch (Exception e) {
-        try {
-          deleteOperation(operationId, operationCommit);
-        } catch (IOException cleanupFailure) {
-          e.addSuppressed(cleanupFailure);
-        }
-        if (e instanceof IOException io) {
-          throw io;
-        }
-        throw new IOException("Snapshot validation failed", e);
-      }
-
-      RefUpdate.Result moved = core.compareAndSetRef(CURRENT_REF, before, target, true);
-      if (!successful(moved)) {
         RestoreOperation failed =
-            new RestoreOperation(
-                operationId,
-                RestoreStage.FAILED,
-                target,
-                before,
-                "World was written but current ref update failed: " + moved);
-        var incomplete = new RestoreIncompleteException(
-            operationId, "World was restored but the current baseline could not be updated");
+            new RestoreOperation(operationId, RestoreStage.FAILED, target, before, describe(e));
         try {
           writeOperation(failed, operationCommit);
         } catch (IOException persistenceFailure) {
-          incomplete.addSuppressed(persistenceFailure);
+          e.addSuppressed(persistenceFailure);
         }
-        throw incomplete;
+        throw new RestoreIncompleteException(operationId, "World restore did not complete", e);
       }
-      deleteOperationQuietly(operationId, operationCommit);
-      return new RestoreResult(operationId, target, before);
-    } finally {
-      lock.unlock();
+    } catch (RestoreIncompleteException e) {
+      throw e;
+    } catch (Exception e) {
+      try {
+        deleteOperation(operationId, operationCommit);
+      } catch (IOException cleanupFailure) {
+        e.addSuppressed(cleanupFailure);
+      }
+      if (e instanceof IOException io) {
+        throw io;
+      }
+      throw new IOException("Snapshot validation failed", e);
     }
+
+    RefUpdate.Result moved = core.compareAndSetRef(CURRENT_REF, before, target, true);
+    if (!successful(moved)) {
+      RestoreOperation failed =
+          new RestoreOperation(
+              operationId,
+              RestoreStage.FAILED,
+              target,
+              before,
+              "World was written but current ref update failed: " + moved);
+      var incomplete = new RestoreIncompleteException(
+          operationId, "World was restored but the current baseline could not be updated");
+      try {
+        writeOperation(failed, operationCommit);
+      } catch (IOException persistenceFailure) {
+        incomplete.addSuppressed(persistenceFailure);
+      }
+      throw incomplete;
+    }
+    deleteOperationQuietly(operationId, operationCommit);
+    return new RestoreResult(operationId, target, before);
   }
 
   /**
@@ -395,27 +385,25 @@ public final class InternalRepository {
    * failing the whole listing, so one unreadable record cannot hide other recoverable operations.
    */
   public PendingRestoreReport pendingRestores() throws IOException {
-    lockForRead();
-    try {
-      if (!exists()) {
-        return new PendingRestoreReport(List.of(), List.of());
-      }
-      var result = new ArrayList<RestoreOperation>();
-      var diagnostics = new ArrayList<String>();
-      for (var ref : core.refsByPrefix(OPERATIONS_PREFIX)) {
-        try {
-          byte[] bytes = core.readSmallFile(ref.target(), OPERATION_FILE, 64 * 1024);
-          result.add(decodeOperation(bytes));
-        } catch (Exception e) {
-          LOGGER.error("Unreadable restore operation ref {} in {}", ref.name(), path, e);
-          diagnostics.add(ref.name() + ": " + describe(e));
-        }
-      }
-      result.sort(Comparator.comparing(RestoreOperation::operationId));
-      return new PendingRestoreReport(List.copyOf(result), List.copyOf(diagnostics));
-    } finally {
-      lock.unlock();
-    }
+    return readSequenced(
+        () -> {
+          if (!exists()) {
+            return new PendingRestoreReport(List.of(), List.of());
+          }
+          var result = new ArrayList<RestoreOperation>();
+          var diagnostics = new ArrayList<String>();
+          for (var ref : core.refsByPrefix(OPERATIONS_PREFIX)) {
+            try {
+              byte[] bytes = core.readSmallFile(ref.target(), OPERATION_FILE, 64 * 1024);
+              result.add(decodeOperation(bytes));
+            } catch (Exception e) {
+              LOGGER.error("Unreadable restore operation ref {} in {}", ref.name(), path, e);
+              diagnostics.add(ref.name() + ": " + describe(e));
+            }
+          }
+          result.sort(Comparator.comparing(RestoreOperation::operationId));
+          return new PendingRestoreReport(List.copyOf(result), List.copyOf(diagnostics));
+        });
   }
 
   /** Retries an interrupted restore target, or restores its protected pre-operation snapshot. */
@@ -426,31 +414,28 @@ public final class InternalRepository {
       SnapshotRestorer restorer,
       ProgressReporter progress)
       throws IOException {
-    lock.lock();
-    try {
-      SnapshotId operationCommit =
-          core.exactRef(operationRef(pendingOperationId))
-              .orElseThrow(
-                  () -> new IOException("Unknown pending restore operation: " + pendingOperationId));
-      RestoreOperation pending =
-          decodeOperation(core.readSmallFile(operationCommit, OPERATION_FILE, 64 * 1024));
-      if (!pending.operationId().equals(pendingOperationId)) {
-        throw new IOException("Pending restore operation identity does not match its ref");
-      }
-      SnapshotId selected =
-          rollback
-              ? pending
-                  .before()
+    return sequence(
+        () -> {
+          SnapshotId operationCommit =
+              core.exactRef(operationRef(pendingOperationId))
                   .orElseThrow(
-                      () -> new IOException("Pending restore has no protected rollback snapshot"))
-              : pending.target();
-      RestoreResult result =
-          restoreSnapshot(selected, workspaceFactory, restorer, progress);
-      deleteOperationQuietly(pendingOperationId, Optional.of(operationCommit));
-      return result;
-    } finally {
-      lock.unlock();
-    }
+                      () -> new IOException("Unknown pending restore operation: " + pendingOperationId));
+          RestoreOperation pending =
+              decodeOperation(core.readSmallFile(operationCommit, OPERATION_FILE, 64 * 1024));
+          if (!pending.operationId().equals(pendingOperationId)) {
+            throw new IOException("Pending restore operation identity does not match its ref");
+          }
+          SnapshotId selected =
+              rollback
+                  ? pending
+                      .before()
+                      .orElseThrow(
+                          () -> new IOException("Pending restore has no protected rollback snapshot"))
+                  : pending.target();
+          RestoreResult result = restoreLocked(selected, workspaceFactory, restorer, progress);
+          deleteOperationQuietly(pendingOperationId, Optional.of(operationCommit));
+          return result;
+        });
   }
 
   private SnapshotNode toNode(GitRepositoryCore.CommitData commit) throws IOException {
@@ -637,15 +622,21 @@ public final class InternalRepository {
         || result == RefUpdate.Result.NO_CHANGE;
   }
 
-  private void lockForRead() throws IOException {
+  /** Runs a multi-step repository sequence under the shared per-path lock (reentrant). */
+  private <T> T sequence(GitRepositoryCore.LockedAction<T> action) throws IOException {
     try {
-      if (!lock.tryLock(READ_LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-        throw new RepositoryBusyException(
-            "Repository is busy with a long operation; retry later: " + path);
-      }
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new IOException("Interrupted while acquiring repository access: " + path, e);
+      return core.withLock(action);
+    } catch (org.eclipse.jgit.api.errors.GitAPIException e) {
+      throw new IOException("Unexpected JGit failure for " + path, e);
+    }
+  }
+
+  /** Runs a read-style sequence with a bounded lock wait that fails fast instead of blocking. */
+  private <T> T readSequenced(GitRepositoryCore.LockedAction<T> action) throws IOException {
+    try {
+      return core.tryWithLock(READ_LOCK_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS, action);
+    } catch (org.eclipse.jgit.api.errors.GitAPIException e) {
+      throw new IOException("Unexpected JGit failure for " + path, e);
     }
   }
 
@@ -741,13 +732,6 @@ public final class InternalRepository {
 
   public static class ConcurrentUpdateException extends IOException {
     public ConcurrentUpdateException(String message) {
-      super(message);
-    }
-  }
-
-  /** The repository lock is held by a long-running operation; the read can be retried later. */
-  public static class RepositoryBusyException extends IOException {
-    public RepositoryBusyException(String message) {
       super(message);
     }
   }
