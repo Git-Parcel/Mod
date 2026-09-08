@@ -8,8 +8,8 @@ import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
 import org.jspecify.annotations.Nullable;
 
-final class GitParcelLevelSavedData extends CodecSavedData<GitParcelLevelSavedData> {
-  static final Codec<GitParcelLevelSavedData> CODEC =
+public final class GitParcelLevelSavedData extends CodecSavedData<GitParcelLevelSavedData> {
+  public static final Codec<GitParcelLevelSavedData> CODEC =
       RecordCodecBuilder.create(
           inst ->
               inst.group(
@@ -27,21 +27,21 @@ final class GitParcelLevelSavedData extends CodecSavedData<GitParcelLevelSavedDa
     this.parcels = parcels;
   }
 
-  Parcels parcels() {
+  public Parcels parcels() {
     return parcels;
   }
 
-  void clearParcels() {
+  public void clearParcels() {
     parcels.clear();
     setDirty();
   }
 
-  void addParcel(Parcel parcel) {
+  public void addParcel(Parcel parcel) {
     parcels.put(parcel);
     setDirty();
   }
 
-  @Nullable Parcel removeParcel(UUID uuid) {
+  public @Nullable Parcel removeParcel(UUID uuid) {
     var result = parcels.remove(uuid);
     if (result != null) {
       setDirty();
@@ -49,7 +49,7 @@ final class GitParcelLevelSavedData extends CodecSavedData<GitParcelLevelSavedDa
     return result;
   }
 
-  static GitParcelLevelSavedData get(ServerLevel level) {
+  public static GitParcelLevelSavedData get(ServerLevel level) {
     return GitParcelSavedDataAccess.level(level);
   }
 }

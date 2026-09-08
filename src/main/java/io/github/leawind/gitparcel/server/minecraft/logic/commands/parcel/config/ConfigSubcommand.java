@@ -1,5 +1,6 @@
 package io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.config;
 
+import io.github.leawind.gitparcel.server.minecraft.logic.world.ParcelRegistry;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
@@ -12,7 +13,6 @@ import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentManife
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.impl.content.BlockContentType;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
-import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.ParcelCommand;
@@ -55,7 +55,7 @@ public class ConfigSubcommand extends GitParcelBaseCommand {
     if (!validateWorldPermission(source, WorldPermissions.CONFIG_PARCEL)) {
       return 0;
     }
-    var parcelService = ParcelService.get(source.getLevel());
+    var parcelService = ParcelRegistry.get(source.getLevel());
     var parcels = ParcelArgument.getParcels(ctx, ParcelCommand.ARG_PARCELS);
 
     for (var parcel : parcels) {

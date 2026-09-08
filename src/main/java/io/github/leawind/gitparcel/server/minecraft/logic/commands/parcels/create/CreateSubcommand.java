@@ -1,5 +1,6 @@
 package io.github.leawind.gitparcel.server.minecraft.logic.commands.parcels.create;
 
+import io.github.leawind.gitparcel.server.minecraft.logic.world.ParcelRegistry;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -7,7 +8,6 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
-import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelWorldSavedData;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
@@ -88,7 +88,7 @@ public class CreateSubcommand extends GitParcelBaseCommand {
       Rotation rotation) {
     var source = ctx.getSource();
     var level = source.getLevel();
-    var parcelService = ParcelService.get(level);
+    var parcelService = ParcelRegistry.get(level);
 
     if (!validateWorldPermission(source, WorldPermissions.CREATE_PARCEL)) {
       return 0;

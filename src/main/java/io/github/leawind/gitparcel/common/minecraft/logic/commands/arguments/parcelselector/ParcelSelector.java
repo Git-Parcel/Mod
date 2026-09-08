@@ -1,12 +1,12 @@
 package io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.parcelselector;
 
+import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelLevelSavedData;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.permission.MinecraftPermissions;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelWorldSavedData;
-import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.BiConsumer;
@@ -94,7 +94,7 @@ public final class ParcelSelector {
 
     checkPermissions(source);
 
-    var parcels = ParcelService.get(source.getLevel()).parcels().stream();
+    var parcels = GitParcelLevelSavedData.get(source.getLevel()).parcels().values().stream();
 
     if (name != null) {
       return parcels.filter(parcel -> name.equals(parcel.meta().name())).toList();

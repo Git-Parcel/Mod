@@ -1,5 +1,6 @@
 package io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.history;
 
+import io.github.leawind.gitparcel.server.minecraft.logic.world.SnapshotService;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -9,7 +10,6 @@ import io.github.leawind.gitparcel.common.api.permission.ParcelPermissions;
 import io.github.leawind.gitparcel.common.api.snapshot.SnapshotTreePage;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
-import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.ParcelCommand;
@@ -44,7 +44,7 @@ public final class HistorySubcommand extends GitParcelBaseCommand {
       }
     }
 
-    var service = ParcelService.get(source.getLevel());
+    var service = SnapshotService.get(source.getLevel());
     var manager = OperationManager.get(source.getServer());
     int accepted = 0;
     for (var parcel : parcels) {

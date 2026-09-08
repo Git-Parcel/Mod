@@ -1,5 +1,6 @@
 package io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.restore;
 
+import io.github.leawind.gitparcel.server.minecraft.logic.world.SnapshotService;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -8,7 +9,6 @@ import io.github.leawind.gitparcel.common.api.operation.OperationSnapshot;
 import io.github.leawind.gitparcel.common.api.permission.ParcelPermissions;
 import io.github.leawind.gitparcel.common.api.snapshot.RestoreSnapshotRequest;
 import io.github.leawind.gitparcel.common.api.snapshot.SnapshotId;
-import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.SharedRepositoryArguments;
@@ -64,7 +64,7 @@ public final class RestoreSubcommand extends GitParcelBaseCommand {
       return 0;
     }
 
-    var service = ParcelService.get(source.getLevel());
+    var service = SnapshotService.get(source.getLevel());
     var manager = OperationManager.get(source.getServer());
     var identity = snapshotIdentity(source);
     var operation =
@@ -119,7 +119,7 @@ public final class RestoreSubcommand extends GitParcelBaseCommand {
       return 0;
     }
 
-    var service = ParcelService.get(source.getLevel());
+    var service = SnapshotService.get(source.getLevel());
     var manager = OperationManager.get(source.getServer());
     var operation =
         manager.submit(

@@ -1,5 +1,7 @@
 package io.github.leawind.gitparcel.server.minecraft.logic.network;
 
+import io.github.leawind.gitparcel.server.minecraft.logic.world.ParcelRegistry;
+import io.github.leawind.gitparcel.server.minecraft.logic.world.SnapshotService;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.common.api.operation.OperationErrorCode;
 import io.github.leawind.gitparcel.common.api.operation.OperationSnapshot;
@@ -14,7 +16,6 @@ import io.github.leawind.gitparcel.common.minecraft.logic.network.message.Update
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateSharedRepositoriesMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.permission.MinecraftPermissions;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelWorldSavedData;
-import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.platform.api.Services;
 import io.github.leawind.gitparcel.server.minecraft.logic.operation.OperationManager;
 import io.github.leawind.gitparcel.server.minecraft.logic.storage.shared.SharedRepositoryService;
@@ -58,7 +59,7 @@ public final class ServerQueryHandler {
       return;
     }
 
-    var parcel = ParcelService.get(player.level()).getParcel(request.parcelUuid());
+    var parcel = ParcelRegistry.get(player.level()).getParcel(request.parcelUuid());
     if (parcel == null) {
       sendHistoryFailure(player, request, "Parcel not found");
       return;
@@ -69,7 +70,7 @@ public final class ServerQueryHandler {
       return;
     }
 
-    var service = ParcelService.get(player.level());
+    var service = SnapshotService.get(player.level());
     var manager = OperationManager.get(player.level().getServer());
     var result = new AtomicReference<SnapshotTreePage>();
     manager.submit(

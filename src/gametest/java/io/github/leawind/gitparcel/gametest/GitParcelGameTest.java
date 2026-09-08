@@ -1,5 +1,7 @@
 package io.github.leawind.gitparcel.gametest;
 
+import io.github.leawind.gitparcel.server.minecraft.logic.world.ParcelRegistry;
+import io.github.leawind.gitparcel.server.minecraft.logic.world.SnapshotService;
 import com.google.common.jimfs.Jimfs;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.common.api.snapshot.RestoreSnapshotRequest;
@@ -8,7 +10,6 @@ import io.github.leawind.gitparcel.common.impl.content.BlockContentType;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelWorldSavedData;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
-import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.utils.git.GitRepositoryCore;
 import io.github.leawind.gitparcel.common.utils.git.SharedRepository;
 import io.github.leawind.gitparcel.gametest.utils.ChannelFlags;
@@ -39,15 +40,15 @@ public class GitParcelGameTest {
 
   public void testParcelLifecycle(GameTestHelpMore helper) throws Exception {
     var level = helper.getLevel();
-    var service = ParcelService.get(level);
-    service.reset();
+    var registry = ParcelRegistry.get(level);
+    registry.reset();
 
     var parcel = ParcelFactory.create(helper.getBoundingBox(), Mirror.NONE, Rotation.NONE);
-    service.addNewParcel(parcel);
-    if (service.getParcel(parcel.uuid()) != parcel) {
+    registry.addNewParcel(parcel);
+    if (registry.getParcel(parcel.uuid()) != parcel) {
       helper.fail("Added parcel is not available through the level service");
     }
-    if (ParcelService.get(level).getParcel(parcel.uuid()) != parcel) {
+    if (ParcelRegistry.get(level).getParcel(parcel.uuid()) != parcel) {
       helper.fail("Level saved data is not shared between service instances");
     }
 
@@ -57,9 +58,9 @@ public class GitParcelGameTest {
     }
 
     parcel.visual().showWireframe(false);
-    service.updateParcel(parcel);
+    registry.updateParcel(parcel);
 
-    if (service.deleteParcel(parcel.uuid()) != parcel || service.getParcel(parcel.uuid()) != null) {
+    if (registry.deleteParcel(parcel.uuid()) != parcel || registry.getParcel(parcel.uuid()) != null) {
       helper.fail("Deleted parcel is still registered in the level service");
     }
 
@@ -98,11 +99,12 @@ public class GitParcelGameTest {
             structureBox.maxZ());
     var rootBlocks = captureBlocks(helper, workspace);
 
-    var service = ParcelService.get(helper.getLevel());
-    service.reset();
+    var registry = ParcelRegistry.get(helper.getLevel());
+    var service = SnapshotService.get(helper.getLevel());
+    registry.reset();
     var parcel =
         ParcelFactory.create(helper.absoluteBoundingBox(workspace), Mirror.NONE, Rotation.NONE);
-    service.addNewParcel(parcel);
+    registry.addNewParcel(parcel);
 
     var root = service.saveSnapshot(parcel, "Bottom layer", "", GAMETEST_IDENTITY, true);
 
@@ -139,7 +141,7 @@ public class GitParcelGameTest {
       helper.fail("Restoring an old snapshot and saving did not produce the expected fork");
     }
 
-    service.deleteParcel(parcel.uuid());
+    registry.deleteParcel(parcel.uuid());
     helper.succeed();
   }
 
@@ -177,14 +179,15 @@ public class GitParcelGameTest {
     var box = helper.getRelativeBoundingBox();
     requireDimensions(helper, box, 48, 48, 48, "representative snapshot fixture");
 
-    var service = ParcelService.get(helper.getLevel());
-    service.reset();
+    var registry = ParcelRegistry.get(helper.getLevel());
+    var service = SnapshotService.get(helper.getLevel());
+    registry.reset();
     var parcel = ParcelFactory.create(helper.getBoundingBox(), Mirror.NONE, Rotation.NONE);
     var blocksConfig = blockConfig(parcel);
     if (blocksConfig.sectionSize.get() != BlockContentType.BlockSectionSize.SIZE_32) {
       helper.fail("Representative snapshot test must use 32-block sections by default");
     }
-    service.addNewParcel(parcel);
+    registry.addNewParcel(parcel);
 
     var sentinelPositions = normalStructureSentinels();
     var expected = captureBlocks(helper, sentinelPositions);
@@ -220,7 +223,7 @@ public class GitParcelGameTest {
       helper.fail("Representative snapshot restore left a pending recovery operation");
     }
 
-    service.deleteParcel(parcel.uuid());
+    registry.deleteParcel(parcel.uuid());
     helper.succeed();
   }
 

@@ -8,13 +8,15 @@ import io.github.leawind.gitparcel.common.impl.extension.GitParcelExtensions;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelContentsMessage;
-import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.platform.api.CommandArgumentTypeRegistrar;
 import io.github.leawind.gitparcel.common.platform.api.Services;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.ParcelCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parceldebug.ParcelDebugCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcels.ParcelsCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.operation.OperationManager;
+import io.github.leawind.gitparcel.server.minecraft.logic.world.ParcelRegistry;
+import io.github.leawind.gitparcel.server.minecraft.logic.world.SnapshotService;
+import io.github.leawind.gitparcel.server.minecraft.logic.network.ParcelSynchronization;
 import io.github.leawind.gitparcel.server.minecraft.logic.network.ServerQueryHandler;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -45,27 +47,26 @@ public final class ModEntrypoint {
     var capabilities = ParcelContentCapabilities.from(ParcelContentTypeRegistry.get());
     Services.SERVER_NETWORKING.send(player, new UpdateParcelContentsMessage(capabilities));
 
-    ParcelService.get(player.level()).syncTo(player);
+    ParcelSynchronization.syncParcelsTo(player);
     ServerQueryHandler.syncAvailableState(player);
   }
 
   /** Replaces client parcel state after the player moves to another dimension. */
   public static void onPlayerChangeDimension(ServerPlayer player) {
-    ParcelService.get(player.level()).syncTo(player);
+    ParcelSynchronization.syncParcelsTo(player);
   }
 
   /** Audits parcel repositories and reports interrupted restore operations. */
   public static void onServerStarted(MinecraftServer server) {
     var manager = OperationManager.get(server);
     for (var level : server.getAllLevels()) {
-      var service = ParcelService.get(level);
-      var parcels = service.parcels();
+      var parcels = ParcelRegistry.get(level).parcels();
       manager.submit(
           "audit_repositories",
           level.dimension().identifier().toString(),
           "server",
           () -> {
-            service.auditRepositories(parcels);
+            SnapshotService.get(level).auditRepositories(parcels);
             return "Audited " + parcels.size() + " parcel repositories";
           },
           ignored -> {});

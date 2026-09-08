@@ -1,5 +1,6 @@
 package io.github.leawind.gitparcel.server.minecraft.logic.commands.parcels.importparcel;
 
+import io.github.leawind.gitparcel.server.minecraft.logic.world.PublishImportService;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -7,7 +8,6 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.operation.OperationSnapshot;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
-import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelService;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.SharedRepositoryArguments;
@@ -87,7 +87,7 @@ public final class ImportSubcommand extends GitParcelBaseCommand {
     String revision = StringArgumentType.getString(ctx, ARG_REVISION);
     String path = StringArgumentType.getString(ctx, ARG_PATH);
     BlockPos position = BlockPosArgument.getLoadedBlockPos(ctx, ARG_AT);
-    var service = ParcelService.get(source.getLevel());
+    var service = PublishImportService.get(source.getLevel());
     var manager = OperationManager.get(source.getServer());
     var transform = new ParcelTransform(mirror, rotation, position);
     var identity = snapshotIdentity(source);
