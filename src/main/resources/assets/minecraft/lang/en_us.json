@@ -60,7 +60,5 @@
   "command.gitparcel.repositories.failure": "Shared repository operation failed: %s",
   "command.gitparcel.repositories.list.entry": "- %s [%s], remote: %s, last sync: %s",
   "command.gitparcel.repositories.list.header": "Shared repositories (%s):",
-  "key.gitparcel.admin_screen": "Git Parcel Admin Screen",
-  "key.gitparcel.debug_screen": "Git Parcel Debug Screen",
   "Z_placeholder.gitparcel": ""
 }

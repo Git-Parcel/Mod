@@ -11,11 +11,9 @@ import io.github.leawind.gitparcel.common.api.operation.OperationSnapshot;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.SharedRepositoryArguments;
-import io.github.leawind.gitparcel.server.minecraft.logic.network.ServerQueryHandler;
 import io.github.leawind.gitparcel.server.minecraft.logic.operation.OperationManager;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.server.level.ServerPlayer;
 
 public final class PublishSubcommand extends GitParcelBaseCommand {
   private static final String ARG_REPOSITORY = "repository";
@@ -87,9 +85,6 @@ public final class PublishSubcommand extends GitParcelBaseCommand {
                         repository,
                         path,
                         abbreviate(completed.result().orElseThrow())));
-                if (source.getEntity() instanceof ServerPlayer player) {
-                  ServerQueryHandler.syncRepositories(player);
-                }
               } else {
                 source.sendFailure(
                     Translations.of(

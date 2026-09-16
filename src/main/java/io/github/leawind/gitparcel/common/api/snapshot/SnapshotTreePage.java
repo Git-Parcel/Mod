@@ -40,9 +40,4 @@ public record SnapshotTreePage(
     nextCursor = nextCursor == null ? Optional.empty() : nextCursor;
     error = error == null ? Optional.empty() : error;
   }
-
-  public static SnapshotTreePage failure(UUID parcelUuid, Optional<SnapshotId> cursor, String error) {
-    return new SnapshotTreePage(
-        parcelUuid, cursor, List.of(), Optional.empty(), Optional.empty(), Optional.of(error));
-  }
 }

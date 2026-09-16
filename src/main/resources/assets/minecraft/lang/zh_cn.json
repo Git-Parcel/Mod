@@ -60,7 +60,5 @@
   "command.gitparcel.repositories.failure": "共享仓库操作失败：%s",
   "command.gitparcel.repositories.list.entry": "- %s [%s]，远程：%s，上次同步：%s",
   "command.gitparcel.repositories.list.header": "共享仓库（%s 个）：",
-  "key.gitparcel.admin_screen": "Git Parcel 管理员屏幕",
-  "key.gitparcel.debug_screen": "Git Parcel 调试屏幕",
   "Z_placeholder.gitparcel": ""
 }

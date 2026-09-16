@@ -2,12 +2,9 @@ package io.github.leawind.gitparcel.common.minecraft.logic;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
-import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentCapabilities;
-import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentTypeRegistry;
 import io.github.leawind.gitparcel.common.impl.extension.GitParcelExtensions;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.FilePathArgument;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
-import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelContentsMessage;
 import io.github.leawind.gitparcel.common.platform.api.CommandArgumentTypeRegistrar;
 import io.github.leawind.gitparcel.common.platform.api.Services;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.ParcelCommand;
@@ -17,7 +14,6 @@ import io.github.leawind.gitparcel.server.minecraft.logic.operation.OperationMan
 import io.github.leawind.gitparcel.server.minecraft.logic.world.ParcelRegistry;
 import io.github.leawind.gitparcel.server.minecraft.logic.world.SnapshotService;
 import io.github.leawind.gitparcel.server.minecraft.logic.network.ParcelSynchronization;
-import io.github.leawind.gitparcel.server.minecraft.logic.network.ServerQueryHandler;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -42,13 +38,9 @@ public final class ModEntrypoint {
     GitParcelExtensions.discoverAndFreeze();
   }
 
-  /** Synchronizes server-owned registries and parcel state after a player enters play state. */
+  /** Synchronizes server-owned parcel state after a player enters play state. */
   public static void onPlayerJoin(ServerPlayer player) {
-    var capabilities = ParcelContentCapabilities.from(ParcelContentTypeRegistry.get());
-    Services.SERVER_NETWORKING.send(player, new UpdateParcelContentsMessage(capabilities));
-
     ParcelSynchronization.syncParcelsTo(player);
-    ServerQueryHandler.syncAvailableState(player);
   }
 
   /** Replaces client parcel state after the player moves to another dimension. */
@@ -75,7 +67,6 @@ public final class ModEntrypoint {
 
   /** Cancels queued work and releases operation worker threads for this server. */
   public static void onServerStopping(MinecraftServer server) {
-    ServerQueryHandler.shutdown(server);
     OperationManager.shutdown(server);
   }
 
