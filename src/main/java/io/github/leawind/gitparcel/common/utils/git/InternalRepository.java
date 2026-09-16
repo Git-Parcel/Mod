@@ -2,7 +2,9 @@ package io.github.leawind.gitparcel.common.utils.git;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import io.github.leawind.gitparcel.common.api.exceptions.InvalidParcelMetaException;
 import io.github.leawind.gitparcel.common.api.operation.ProgressReporter;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.common.api.snapshot.SnapshotId;
 import io.github.leawind.gitparcel.common.api.snapshot.SnapshotNode;
 import io.github.leawind.gitparcel.common.api.snapshot.SnapshotTreePage;
@@ -32,6 +34,7 @@ public final class InternalRepository {
   public static final String OPERATIONS_PREFIX = "refs/gitparcel/operations/";
 
   private static final String OPERATION_FILE = "operation.json";
+  private static final String SNAPSHOT_META_FILE = "parcel.json";
   /** Machine-readable snapshot metadata travels as trailing {@code Git-Parcel-*: value} lines. */
   private static final String TRAILER_PREFIX = "Git-Parcel-";
   private static final Gson GSON = new Gson();
@@ -381,8 +384,7 @@ public final class InternalRepository {
     return new RestoreResult(operationId, target, before);
   }
 
-  /**
-   * Lists durable restore records. A single damaged operation ref becomes a diagnostic instead of
+  /** Lists durable restore records. A single damaged operation ref becomes a diagnostic instead of
    * failing the whole listing, so one unreadable record cannot hide other recoverable operations.
    */
   public PendingRestoreReport pendingRestores() throws IOException {
@@ -404,6 +406,19 @@ public final class InternalRepository {
           }
           result.sort(Comparator.comparing(RestoreOperation::operationId));
           return new PendingRestoreReport(List.copyOf(result), List.copyOf(diagnostics));
+        });
+  }
+
+  /** Reads the {@code parcel.json} metadata recorded by one snapshot commit. */
+  public ParcelMeta readSnapshotMeta(SnapshotId snapshot) throws IOException {
+    return readSequenced(
+        () -> {
+          byte[] bytes = core.readSmallFile(snapshot, SNAPSHOT_META_FILE, 1024 * 1024);
+          try {
+            return ParcelMeta.parse(new String(bytes, StandardCharsets.UTF_8));
+          } catch (InvalidParcelMetaException | RuntimeException e) {
+            throw new IOException("Invalid parcel metadata in snapshot " + snapshot, e);
+          }
         });
   }
 

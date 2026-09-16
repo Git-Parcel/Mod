@@ -77,7 +77,10 @@ public final class Parcel {
                       Visual.CODEC.fieldOf("visual").forGetter(Parcel::visual),
                       ParcelPermissions.CONFIG_CODEC
                           .fieldOf("permissions")
-                          .forGetter(Parcel::permissions))
+                          .forGetter(Parcel::permissions),
+                      ArchiveSync.CODEC
+                          .optionalFieldOf("archive_sync")
+                          .forGetter(Parcel::archiveSync))
                   .apply(inst, Parcel::new));
 
   // ////////////////////////////////////////////////////////////////
@@ -90,6 +93,7 @@ public final class Parcel {
   private ParcelTransform transform;
   private Visual visual;
   private PermissionConfig<ParcelPermissions> permissions;
+  private @Nullable ArchiveSync archiveSync;
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   private Parcel(
@@ -98,13 +102,15 @@ public final class Parcel {
       ParcelMeta meta,
       ParcelTransform transform,
       Visual visual,
-      PermissionConfig<ParcelPermissions> permissions) {
+      PermissionConfig<ParcelPermissions> permissions,
+      Optional<ArchiveSync> archiveSync) {
     this.uuid = uuid;
     this.dimension = dimension.orElse(null);
     this.meta = meta;
     this.transform = transform;
     this.visual = visual;
     this.permissions = permissions;
+    this.archiveSync = archiveSync.orElse(null);
   }
 
   // ////////////////////////////////////////////////////////////////
@@ -145,6 +151,20 @@ public final class Parcel {
 
   public PermissionConfig<ParcelPermissions> permissions() {
     return permissions;
+  }
+
+  /**
+   * Archive metadata cached when this parcel last synced with its archive. Absent until the first
+   * save, load, or import. The cache lets clients compare the registered bounds against the synced
+   * bounds without opening the repository; it is not a content-dirty query.
+   */
+  public Optional<ArchiveSync> archiveSync() {
+    return Optional.ofNullable(archiveSync);
+  }
+
+  /** Updates the cached archive metadata after a successful sync with the archive. */
+  public void setArchiveSync(@Nullable ArchiveSync archiveSync) {
+    this.archiveSync = archiveSync;
   }
 
   // ////////////////////////////////////////////////////////////////
@@ -196,7 +216,27 @@ public final class Parcel {
         meta,
         transform,
         new Visual(),
-        permissions);
+        permissions,
+        Optional.empty());
+  }
+
+  /**
+   * Archive metadata cached on the parcel at its last sync (save, load, or import).
+   *
+   * @param size Content size of the synced snapshot, in parcel-local coordinates.
+   * @param anchor Anchor offset of the synced snapshot, in parcel-local coordinates.
+   * @param repositorySizeBytes On-disk size of the archive repository in bytes.
+   */
+  public record ArchiveSync(Vec3i size, Vec3i anchor, long repositorySizeBytes) {
+    public static final Codec<ArchiveSync> CODEC =
+        RecordCodecBuilder.create(
+            inst ->
+                inst.group(
+                        Vec3i.CODEC.fieldOf("size").forGetter(ArchiveSync::size),
+                        Vec3i.CODEC.fieldOf("anchor").forGetter(ArchiveSync::anchor),
+                        Codec.LONG.fieldOf("repository_size_bytes")
+                            .forGetter(ArchiveSync::repositorySizeBytes))
+                    .apply(inst, ArchiveSync::new));
   }
 
   public static BlockPos getPivotBlockPos(Mirror mirror, Rotation rotation, BoundingBox box) {

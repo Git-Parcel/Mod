@@ -5,6 +5,7 @@ import io.github.leawind.gitparcel.server.minecraft.logic.world.SnapshotService;
 import com.google.common.jimfs.Jimfs;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.common.api.snapshot.RestoreSnapshotRequest;
+import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.api.snapshot.SnapshotNode;
 import io.github.leawind.gitparcel.common.impl.content.BlockContentType;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
@@ -127,6 +128,7 @@ public class GitParcelGameTest {
     registry.addNewParcel(parcel);
 
     var root = service.saveSnapshot(parcel, "Bottom layer", "", GAMETEST_IDENTITY, true);
+    assertArchiveSyncRefreshed(helper, parcel, "save");
 
     copyLayerToWorkspace(helper, structureBox.minY() + 10, workspace);
     var middleBlocks = captureBlocks(helper, workspace);
@@ -142,6 +144,7 @@ public class GitParcelGameTest {
         RestoreSnapshotRequest.Mode.DIRECT,
         true,
         GAMETEST_IDENTITY);
+    assertArchiveSyncRefreshed(helper, parcel, "restore");
     assertBlocks(helper, rootBlocks);
 
     copyLayerToWorkspace(helper, structureBox.minY() + 25, workspace);
@@ -701,6 +704,18 @@ public class GitParcelGameTest {
                   box.getXSpan(),
                   box.getYSpan(),
                   box.getZSpan()));
+    }
+  }
+
+  /** The cached archive metadata must describe the synced snapshot geometry after each sync. */
+  private static void assertArchiveSyncRefreshed(
+      GameTestHelpMore helper, Parcel parcel, String operation) {
+    var sync = parcel.archiveSync().orElse(null);
+    if (sync == null
+        || !sync.size().equals(parcel.meta().size())
+        || !sync.anchor().equals(parcel.meta().anchor())
+        || sync.repositorySizeBytes() <= 0) {
+      helper.fail("Archive sync cache was not refreshed after " + operation + ": " + sync);
     }
   }
 

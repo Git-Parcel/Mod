@@ -28,8 +28,9 @@ public final class ParcelRepositoryService {
 
   private ParcelRepositoryService() {}
 
-  public static InternalRepository repository(Parcel parcel, Path internalParcelsDir) {
-    return InternalRepository.at(internalParcelsDir, parcel.uuid());
+  /** Locates the archive that stores snapshots of the given parcel. */
+  public static ParcelArchive archive(Parcel parcel, Path internalParcelsDir) {
+    return ParcelArchive.forParcel(parcel, internalParcelsDir);
   }
 
   public static SnapshotId saveSnapshot(
@@ -68,7 +69,7 @@ public final class ParcelRepositoryService {
       throws IOException, ParcelException {
     try (var workspace = workspaceFactory.create()) {
       Path snapshotRoot = workspace.root().resolve("snapshot");
-      var repository = repository(parcel, internalParcelsDir);
+      var repository = archive(parcel, internalParcelsDir).repository();
       Optional<SnapshotId> baseline =
           repository.prepareSnapshotWorkspace(snapshotRoot, progress);
       captureSnapshot(level, parcel, snapshotRoot, ignoreEntities, progress);
@@ -107,7 +108,7 @@ public final class ParcelRepositoryService {
       SnapshotNode.Source source,
       ProgressReporter progress)
       throws IOException {
-    InternalRepository repository = repository(parcel, internalParcelsDir);
+    InternalRepository repository = archive(parcel, internalParcelsDir).repository();
     return saveWorkspaceSnapshot(
         parcel,
         internalParcelsDir,
@@ -139,7 +140,7 @@ public final class ParcelRepositoryService {
             SERVER_IDENTITY,
             source,
             Instant.now());
-    return repository(parcel, internalParcelsDir)
+    return archive(parcel, internalParcelsDir).repository()
         .saveSnapshot(snapshotRoot, expectedParent, metadata, progress);
   }
 
@@ -149,7 +150,7 @@ public final class ParcelRepositoryService {
       Path snapshotRoot,
       ProgressReporter progress)
       throws IOException {
-    return repository(parcel, internalParcelsDir)
+    return archive(parcel, internalParcelsDir).repository()
         .prepareSnapshotWorkspace(snapshotRoot, progress);
   }
 
@@ -159,7 +160,7 @@ public final class ParcelRepositoryService {
       int limit,
       Optional<SnapshotId> cursor)
       throws IOException {
-    return repository(parcel, internalParcelsDir)
+    return archive(parcel, internalParcelsDir).repository()
         .queryTree(parcel.uuid(), limit, cursor);
   }
 
@@ -193,7 +194,7 @@ public final class ParcelRepositoryService {
       ProgressReporter progress,
       ServerThreadBridge serverThread)
       throws IOException {
-    return repository(parcel, internalParcelsDir)
+    return archive(parcel, internalParcelsDir).repository()
         .restoreSnapshot(
             snapshotId,
             workspaceFactory,
@@ -213,7 +214,7 @@ public final class ParcelRepositoryService {
       ProgressReporter progress,
       ServerThreadBridge serverThread)
       throws IOException {
-    return repository(parcel, internalParcelsDir)
+    return archive(parcel, internalParcelsDir).repository()
         .resolvePendingRestore(
             operationId,
             rollback,

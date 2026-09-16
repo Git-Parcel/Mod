@@ -9,6 +9,7 @@ import io.github.leawind.gitparcel.common.api.snapshot.SnapshotId;
 import io.github.leawind.gitparcel.common.api.snapshot.SnapshotTreePage;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.impl.snapshot.TemporarySnapshotWorkspaceFactory;
+import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelArchive;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelRepositoryService;
 import io.github.leawind.gitparcel.common.utils.git.GitRepositoryCore;
 import io.github.leawind.gitparcel.common.utils.git.InternalRepository;
@@ -83,17 +84,20 @@ public final class SnapshotService {
     var lock = registry.acquireParcelLock(parcel.uuid());
     try {
       registry.requireRegistered(parcel);
-      return ParcelRepositoryService.saveSnapshot(
-          level,
-          parcel,
-          internalParcelsDirectory(),
-          name,
-          description,
-          identity,
-          ignoreEntities,
-          TemporarySnapshotWorkspaceFactory.INSTANCE,
-          progress,
-          io.github.leawind.gitparcel.common.api.snapshot.SnapshotNode.Source.SAVED);
+      SnapshotId snapshotId =
+          ParcelRepositoryService.saveSnapshot(
+              level,
+              parcel,
+              internalParcelsDirectory(),
+              name,
+              description,
+              identity,
+              ignoreEntities,
+              TemporarySnapshotWorkspaceFactory.INSTANCE,
+              progress,
+              io.github.leawind.gitparcel.common.api.snapshot.SnapshotNode.Source.SAVED);
+      refreshArchiveSync(parcel, snapshotId);
+      return snapshotId;
     } finally {
       lock.unlock();
     }
@@ -169,14 +173,17 @@ public final class SnapshotService {
             ignoreEntities,
             progress);
       }
-      return ParcelRepositoryService.restoreSnapshot(
-          level,
-          parcel,
-          internalParcelsDirectory(),
-          snapshotId,
-          ignoreEntities,
-          TemporarySnapshotWorkspaceFactory.INSTANCE,
-          progress);
+      var result =
+          ParcelRepositoryService.restoreSnapshot(
+              level,
+              parcel,
+              internalParcelsDirectory(),
+              snapshotId,
+              ignoreEntities,
+              TemporarySnapshotWorkspaceFactory.INSTANCE,
+              progress);
+      refreshArchiveSync(parcel, result.restored());
+      return result;
     } finally {
       lock.unlock();
     }
@@ -198,16 +205,19 @@ public final class SnapshotService {
     var lock = registry.acquireParcelLock(parcel.uuid());
     try {
       registry.requireRegistered(parcel);
-      return ParcelRepositoryService.resolvePendingRestore(
-          level,
-          parcel,
-          internalParcelsDirectory(),
-          operationId,
-          rollback,
-          ignoreEntities,
-          TemporarySnapshotWorkspaceFactory.INSTANCE,
-          ProgressReporter.NONE,
-          ServerThreadBridge.DIRECT);
+      var result =
+          ParcelRepositoryService.resolvePendingRestore(
+              level,
+              parcel,
+              internalParcelsDirectory(),
+              operationId,
+              rollback,
+              ignoreEntities,
+              TemporarySnapshotWorkspaceFactory.INSTANCE,
+              ProgressReporter.NONE,
+              ServerThreadBridge.DIRECT);
+      refreshArchiveSync(parcel, result.restored());
+      return result;
     } finally {
       lock.unlock();
     }
@@ -235,16 +245,19 @@ public final class SnapshotService {
             ParcelRepositoryService.captureSnapshot(
                 level, parcel, snapshotRoot, ignoreEntities, progress);
           });
-      return ParcelRepositoryService.saveWorkspaceSnapshot(
-          parcel,
-          internalParcelsDirectory(),
-          snapshotRoot,
-          name,
-          description,
-          identity,
-          io.github.leawind.gitparcel.common.api.snapshot.SnapshotNode.Source.SAVED,
-          progress,
-          baseline);
+      SnapshotId saved =
+          ParcelRepositoryService.saveWorkspaceSnapshot(
+              parcel,
+              internalParcelsDirectory(),
+              snapshotRoot,
+              name,
+              description,
+              identity,
+              io.github.leawind.gitparcel.common.api.snapshot.SnapshotNode.Source.SAVED,
+              progress,
+              baseline);
+      refreshArchiveSyncInBackground(parcel, saved, serverThread);
+      return saved;
     } finally {
       lock.unlock();
     }
@@ -267,15 +280,18 @@ public final class SnapshotService {
         saveBeforeRestore(
             parcel, snapshotId, ignoreEntities, identity, progress, serverThread);
       }
-      return ParcelRepositoryService.restoreSnapshot(
-          level,
-          parcel,
-          internalParcelsDirectory(),
-          snapshotId,
-          ignoreEntities,
-          TemporarySnapshotWorkspaceFactory.INSTANCE,
-          progress,
-          serverThread);
+      var result =
+          ParcelRepositoryService.restoreSnapshot(
+              level,
+              parcel,
+              internalParcelsDirectory(),
+              snapshotId,
+              ignoreEntities,
+              TemporarySnapshotWorkspaceFactory.INSTANCE,
+              progress,
+              serverThread);
+      refreshArchiveSyncInBackground(parcel, result.restored(), serverThread);
+      return result;
     } finally {
       lock.unlock();
     }
@@ -298,16 +314,18 @@ public final class SnapshotService {
           () ->
               ParcelRepositoryService.captureSnapshot(
                   level, parcel, snapshotRoot, ignoreEntities, progress));
-      ParcelRepositoryService.saveWorkspaceSnapshot(
-          parcel,
-          internalParcelsDirectory(),
-          snapshotRoot,
-          "Before restore " + snapshotId.abbreviate(),
-          "Automatically requested before restoring another snapshot.",
-          identity,
-          io.github.leawind.gitparcel.common.api.snapshot.SnapshotNode.Source.SAVED,
-          progress,
-          baseline);
+      SnapshotId saved =
+          ParcelRepositoryService.saveWorkspaceSnapshot(
+              parcel,
+              internalParcelsDirectory(),
+              snapshotRoot,
+              "Before restore " + snapshotId.abbreviate(),
+              "Automatically requested before restoring another snapshot.",
+              identity,
+              io.github.leawind.gitparcel.common.api.snapshot.SnapshotNode.Source.SAVED,
+              progress,
+              baseline);
+      refreshArchiveSyncInBackground(parcel, saved, serverThread);
     }
   }
 
@@ -323,16 +341,19 @@ public final class SnapshotService {
     var lock = registry.acquireParcelLock(parcel.uuid());
     try {
       serverThread.run(() -> registry.requireRegistered(parcel));
-      return ParcelRepositoryService.resolvePendingRestore(
-          level,
-          parcel,
-          internalParcelsDirectory(),
-          operationId,
-          rollback,
-          ignoreEntities,
-          TemporarySnapshotWorkspaceFactory.INSTANCE,
-          progress,
-          serverThread);
+      var result =
+          ParcelRepositoryService.resolvePendingRestore(
+              level,
+              parcel,
+              internalParcelsDirectory(),
+              operationId,
+              rollback,
+              ignoreEntities,
+              TemporarySnapshotWorkspaceFactory.INSTANCE,
+              progress,
+              serverThread);
+      refreshArchiveSyncInBackground(parcel, result.restored(), serverThread);
+      return result;
     } finally {
       lock.unlock();
     }
@@ -372,7 +393,45 @@ public final class SnapshotService {
   }
 
   InternalRepository internalRepository(Parcel parcel) {
-    return ParcelRepositoryService.repository(parcel, internalParcelsDirectory());
+    return archive(parcel).repository();
+  }
+
+  ParcelArchive archive(Parcel parcel) {
+    return ParcelRepositoryService.archive(parcel, internalParcelsDirectory());
+  }
+
+  /**
+   * Refreshes the parcel's cached archive metadata on the server thread after a successful sync.
+   * Best effort: a refresh failure only leaves the previous cache in place and is logged.
+   */
+  void refreshArchiveSync(Parcel parcel, SnapshotId synced) {
+    try {
+      parcel.setArchiveSync(archive(parcel).readSyncState(synced));
+      registry.updateParcel(parcel);
+    } catch (IOException e) {
+      LOGGER.warn("Failed to refresh archive sync cache for parcel {}", parcel.uuid(), e);
+    }
+  }
+
+  /** Variant of {@link #refreshArchiveSync} for worker threads; reads off-thread, mutates on the
+   * server thread. */
+  void refreshArchiveSyncInBackground(Parcel parcel, SnapshotId synced, ServerThreadBridge serverThread) {
+    final Parcel.ArchiveSync syncState;
+    try {
+      syncState = archive(parcel).readSyncState(synced);
+    } catch (IOException e) {
+      LOGGER.warn("Failed to refresh archive sync cache for parcel {}", parcel.uuid(), e);
+      return;
+    }
+    try {
+      serverThread.run(
+          () -> {
+            parcel.setArchiveSync(syncState);
+            registry.updateParcel(parcel);
+          });
+    } catch (Exception e) {
+      LOGGER.warn("Failed to publish refreshed archive sync cache for parcel {}", parcel.uuid(), e);
+    }
   }
 
   private Path internalParcelsDirectory() {

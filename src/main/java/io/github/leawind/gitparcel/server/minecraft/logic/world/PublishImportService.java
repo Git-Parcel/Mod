@@ -231,17 +231,20 @@ public final class PublishImportService {
                 return Parcel.create(meta, transform, permissions);
               });
 
-      ParcelRepositoryService.saveWorkspaceSnapshot(
-          parcel,
-          internalParcelsDirectory(),
-          snapshot,
-          "Imported snapshot",
-          "Imported from %s@%s:%s".formatted(repository, sharedCommit.value(), gitPath),
-          identity,
-          SnapshotNode.Source.IMPORTED,
-          progress);
+      SnapshotId imported =
+          ParcelRepositoryService.saveWorkspaceSnapshot(
+              parcel,
+              internalParcelsDirectory(),
+              snapshot,
+              "Imported snapshot",
+              "Imported from %s@%s:%s".formatted(repository, sharedCommit.value(), gitPath),
+              identity,
+              SnapshotNode.Source.IMPORTED,
+              progress);
+      Parcel.ArchiveSync syncState = snapshots.archive(parcel).readSyncState(imported);
       serverThread.run(
           () -> {
+            parcel.setArchiveSync(syncState);
             registry.validateNewParcel(parcel);
             ParcelStorage.applyValidatedSnapshot(
                 level,
@@ -287,17 +290,18 @@ public final class PublishImportService {
           }
           SharedRepository.get(lease.repository()).exportRevision(sharedCommit.value(), gitPath, snapshot);
         }
-        ParcelMeta restored = ParcelStorage.validateSnapshotCached(snapshot, sharedCommit, ProgressReporter.NONE);
-        ParcelRepositoryService.validateGeometry(parcel.meta(), restored);
-        return ParcelRepositoryService.saveWorkspaceSnapshot(
-            parcel,
-            internalParcelsDirectory(),
-            snapshot,
-            "Imported snapshot",
-            "Imported from %s@%s:%s".formatted(repository, sharedCommit.value(), gitPath),
-            identity,
-            SnapshotNode.Source.IMPORTED,
-            ProgressReporter.NONE);
+        SnapshotId imported =
+            ParcelRepositoryService.saveWorkspaceSnapshot(
+                parcel,
+                internalParcelsDirectory(),
+                snapshot,
+                "Imported snapshot",
+                "Imported from %s@%s:%s".formatted(repository, sharedCommit.value(), gitPath),
+                identity,
+                SnapshotNode.Source.IMPORTED,
+                ProgressReporter.NONE);
+        snapshots.refreshArchiveSync(parcel, imported);
+        return imported;
       }
     } finally {
       lock.unlock();

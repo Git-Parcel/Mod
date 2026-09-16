@@ -227,18 +227,36 @@ public final class ParcelMeta {
   }
 
   /**
+   * Parses portable parcel metadata from its JSON representation.
+   *
+   * @param json The JSON text of a {@code parcel.json} file
+   * @return The parsed {@link ParcelMeta} object
+   * @throws InvalidParcelMetaException If the content is not valid metadata
+   */
+  public static ParcelMeta parse(String json) throws InvalidParcelMetaException {
+    JsonObject root;
+    try {
+      root = GSON.fromJson(json, JsonObject.class);
+    } catch (RuntimeException e) {
+      throw new InvalidParcelMetaException("Invalid parcel metadata JSON", e);
+    }
+    if (root == null) {
+      throw new InvalidParcelMetaException("Empty parcel metadata");
+    }
+    try {
+      return CODEC.parse(JsonOps.INSTANCE, root).getOrThrow();
+    } catch (RuntimeException e) {
+      throw new InvalidParcelMetaException("Invalid parcel metadata", e);
+    }
+  }
+
+  /**
    * @param metaFile File path to the file
    * @return The parsed {@link ParcelMeta} object
    * @throws IOException If an I/O error occurs while reading the file
    * @throws InvalidParcelMetaException If the file content is not valid
    */
   public static ParcelMeta load(Path metaFile) throws IOException, InvalidParcelMetaException {
-    try {
-      var json = GSON.fromJson(Files.readString(metaFile), JsonObject.class);
-      var result = CODEC.parse(JsonOps.INSTANCE, json);
-      return result.getOrThrow();
-    } catch (IllegalStateException e) {
-      throw new InvalidParcelMetaException("Invalid parcel metadata at " + metaFile, e);
-    }
+    return parse(Files.readString(metaFile));
   }
 }

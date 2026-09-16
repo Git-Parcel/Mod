@@ -1,6 +1,8 @@
 package io.github.leawind.gitparcel.common.impl.world;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
@@ -221,5 +223,31 @@ public class ParcelTest extends AbstractGitParcelTest {
     var decoded = Parcel.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
     assertEquals(parcel.uuid(), decoded.uuid());
     assertEquals(parcel.dimension(), decoded.dimension());
+  }
+
+  @Test
+  void archiveSyncCacheIsAbsentUntilFirstSync() {
+    var parcel =
+        ParcelFactory.create(new BoundingBox(0, 0, 0, 1, 1, 1), Mirror.NONE, Rotation.NONE);
+    assertTrue(parcel.archiveSync().isEmpty());
+    var json = (JsonObject) Parcel.CODEC.encodeStart(JsonOps.INSTANCE, parcel).getOrThrow();
+    assertFalse(json.has("archive_sync"));
+    assertTrue(Parcel.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow().archiveSync().isEmpty());
+  }
+
+  @Test
+  void archiveSyncCacheRoundTripsThroughCodec() {
+    var parcel =
+        ParcelFactory.create(new BoundingBox(0, 0, 0, 2, 3, 4), Mirror.NONE, Rotation.NONE);
+    parcel.setArchiveSync(
+        new Parcel.ArchiveSync(new Vec3i(2, 3, 4), new Vec3i(1, 0, 2), 12345L));
+
+    var json = (JsonObject) Parcel.CODEC.encodeStart(JsonOps.INSTANCE, parcel).getOrThrow();
+    var decoded = Parcel.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
+
+    assertEquals(parcel.archiveSync(), decoded.archiveSync());
+    assertEquals(new Vec3i(2, 3, 4), decoded.archiveSync().orElseThrow().size());
+    assertEquals(new Vec3i(1, 0, 2), decoded.archiveSync().orElseThrow().anchor());
+    assertEquals(12345L, decoded.archiveSync().orElseThrow().repositorySizeBytes());
   }
 }

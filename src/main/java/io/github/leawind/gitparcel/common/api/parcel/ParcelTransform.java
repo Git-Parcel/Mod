@@ -10,8 +10,8 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Represents a <strong>local to world</strong> transformation applicable to parcels, including
- * mirroring, rotation, and translation.
+ * Represents a <strong>parcel-local to world</strong> transformation applicable to parcels,
+ * including mirroring, rotation, and translation.
  *
  * <p>Transformations are applied in the following order:
  *
@@ -22,6 +22,12 @@ import net.minecraft.world.phys.Vec3;
  * </ol>
  *
  * <p>The pivot point for mirroring and rotation is (0, 0, 0).
+ *
+ * <p>The translation is the anchor's absolute world position. Archive content is stored in
+ * anchor-relative coordinates with canonical orientation, so {@link #apply} maps an
+ * anchor-relative point directly to its world position; the anchor itself maps from the origin.
+ * The anchor is a persistent reference point of the owning parcel and does not move when the
+ * parcel bounds change.
  *
  * @see net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings
  */
