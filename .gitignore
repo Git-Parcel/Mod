@@ -17,6 +17,9 @@ out
 # vscode
 .vscode/
 
+# Obsidian
+.obsidian/
+
 # visual studio
 .vs/
 
