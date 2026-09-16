@@ -96,8 +96,8 @@ class BuiltinParcelContentTypesTest extends AbstractMinecraftTest {
 
   /**
    * Section file indices must agree between save and load even when the parcel anchor is nonzero.
-   * Save-side sections arrive anchor-relative while load-side partitions are parcel-relative, so
-   * this test pins that subtle contract for both section sizes and aligned/unaligned anchors.
+   * Both sides work in anchor-relative coordinates on the anchor-aligned grid, so this test pins
+   * that contract for both section sizes and aligned/unaligned anchors.
    */
   @Test
   void nonZeroAnchorsRoundTripBlockSections() throws Exception {
@@ -144,8 +144,8 @@ class BuiltinParcelContentTypesTest extends AbstractMinecraftTest {
         for (var region :
             io.github.leawind.gitparcel.common.impl.parcel.BlockSectionPartitioner.partition(
                 size, anchor, sectionSize)) {
-          BlockPos origin =
-              region.origin().offset(-anchor.getX(), -anchor.getY(), -anchor.getZ());
+          // Partitioned regions already carry anchor-relative origins.
+          BlockPos origin = region.origin();
           var states =
               new ArrayList<net.minecraft.world.level.block.state.BlockState>(
                   region.size().getX() * region.size().getY() * region.size().getZ());

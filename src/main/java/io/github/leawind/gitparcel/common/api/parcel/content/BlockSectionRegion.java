@@ -14,14 +14,15 @@ public record BlockSectionRegion(BlockPos origin, Vec3i size) {
     }
   }
 
-  public Vec3i gridCoordinate(int gridSize, Vec3i anchor) {
+  /** The anchor-relative grid cell index of this section on a grid aligned to the anchor. */
+  public Vec3i gridCoordinate(int gridSize) {
     if (gridSize <= 0) {
       throw new IllegalArgumentException("Grid size must be positive");
     }
     return new Vec3i(
-        Math.floorDiv(origin.getX() - anchor.getX(), gridSize),
-        Math.floorDiv(origin.getY() - anchor.getY(), gridSize),
-        Math.floorDiv(origin.getZ() - anchor.getZ(), gridSize));
+        Math.floorDiv(origin.getX(), gridSize),
+        Math.floorDiv(origin.getY(), gridSize),
+        Math.floorDiv(origin.getZ(), gridSize));
   }
 
   public BoundingBox bounds() {

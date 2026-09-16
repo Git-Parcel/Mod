@@ -57,10 +57,10 @@ public class BlockSectionPartitionerTest extends AbstractMinecraftTest {
 
   @Test
   void testGetCoord() {
-    assertEquals(Vec3i.ZERO, region(3, 4, 5, 3, 4, 5).gridCoordinate(16, Vec3i.ZERO));
+    assertEquals(Vec3i.ZERO, region(3, 4, 5, 3, 4, 5).gridCoordinate(16));
     assertEquals(
         new Vec3i(-1, -1, -1),
-        region(-3, -4, -5, 3, 4, 5).gridCoordinate(16, Vec3i.ZERO));
+        region(-3, -4, -5, 3, 4, 5).gridCoordinate(16));
   }
 
   @Test
@@ -72,6 +72,11 @@ public class BlockSectionPartitionerTest extends AbstractMinecraftTest {
     {
       var result = BlockSectionPartitioner.partition(SIZE_16X, new BlockPos(4, 5, 6), 16);
       assertEquals(8, result.size());
+      // Sections carry anchor-relative origins on the anchor-aligned grid.
+      assertTrue(
+          result.stream().anyMatch(section -> section.origin().equals(new BlockPos(0, 0, 0))));
+      assertTrue(
+          result.stream().anyMatch(section -> section.origin().equals(new BlockPos(-4, -5, -6))));
     }
 
     for (int i = 0; i < 1000; i++) {
@@ -82,6 +87,35 @@ public class BlockSectionPartitionerTest extends AbstractMinecraftTest {
   }
 
   @Test
+  void gridLinesPassThroughTheAnchor() {
+    // With the anchor itself on the section grid, the content bounds coincide with grid lines and
+    // every section origin is a multiple of the section size.
+    var result =
+        BlockSectionPartitioner.partition(new Vec3i(32, 32, 32), new BlockPos(16, 0, 16), 16);
+    assertEquals(8, result.size());
+    for (var section : result) {
+      assertEquals(0, Math.floorMod(section.origin().getX(), 16), section::toString);
+      assertEquals(0, Math.floorMod(section.origin().getY(), 16), section::toString);
+      assertEquals(0, Math.floorMod(section.origin().getZ(), 16), section::toString);
+    }
+  }
+
+  @Test
+  void gridIndicesAreStableAcrossBoundsChanges() {
+    // Expanding the extent away from the anchor only adds sections; existing sections keep their
+    // grid indices, so their files stay byte-identical after the bounds change.
+    var small = BlockSectionPartitioner.partition(new Vec3i(4, 16, 16), new Vec3i(4, 0, 0), 16);
+    var large = BlockSectionPartitioner.partition(new Vec3i(20, 16, 16), new Vec3i(4, 0, 0), 16);
+
+    var smallIndices = small.stream().map(section -> section.gridCoordinate(16)).toList();
+    var largeIndices = large.stream().map(section -> section.gridCoordinate(16)).toList();
+
+    assertEquals(List.of(new Vec3i(-1, 0, 0)), smallIndices);
+    assertTrue(largeIndices.containsAll(smallIndices));
+    assertEquals(List.of(new Vec3i(-1, 0, 0), new Vec3i(0, 0, 0)), largeIndices);
+  }
+
+  @Test
   void testSubdivideParcel1D() {
     BiConsumer<List<Integer>, List<Integer>> test =
         (args, expected) -> {
@@ -89,63 +123,49 @@ public class BlockSectionPartitionerTest extends AbstractMinecraftTest {
           assertEquals(expected, result);
         };
 
-    test.accept(List.of(1, 0), List.of(0, 1));
-    test.accept(List.of(1, -5), List.of(0, 1));
-    test.accept(List.of(37, 0), List.of(0, 16, 32, 37));
-    test.accept(List.of(16, 0), List.of(0, 16));
-    test.accept(List.of(16, 16), List.of(0, 16));
-    test.accept(List.of(17, 16), List.of(0, 16, 17));
-    test.accept(List.of(17, 17), List.of(0, 1, 17));
+    test.accept(List.of(0, 1), List.of(0, 1));
+    test.accept(List.of(-4, 1), List.of(-4, 0, 1));
+    test.accept(List.of(0, 37), List.of(0, 16, 32, 37));
+    test.accept(List.of(0, 16), List.of(0, 16));
+    test.accept(List.of(-16, 0), List.of(-16, 0));
+    test.accept(List.of(16, 17), List.of(16, 17));
+    test.accept(List.of(-1, 17), List.of(-1, 0, 16, 17));
 
     var random = new Random(12138);
     for (int i = 0; i < 10000; i++) {
-      int size = random.nextInt(1, 1000);
-      int anchor = random.nextInt(-100, 100);
+      int start = random.nextInt(-100, 100);
+      int end = start + random.nextInt(1, 1000);
 
-      var result = BlockSectionPartitioner.partitionAxis(16, size, anchor);
+      var result = BlockSectionPartitioner.partitionAxis(16, start, end);
       // assert ascending order
       for (int j = 0; j < result.size() - 1; j++) {
         assertTrue(result.get(j) <= result.get(j + 1));
       }
       int length = result.getLast() - result.getFirst();
-      assertEquals(size, length);
+      assertEquals(end - start, length);
     }
   }
 
   @Test
   void testFloorToGrid16() {
-    assertEquals(-16, BlockSectionPartitioner.floorToGrid(16, 0, -1));
-    assertEquals(0, BlockSectionPartitioner.floorToGrid(16, 0, 0));
-    assertEquals(0, BlockSectionPartitioner.floorToGrid(16, 0, 15));
-    assertEquals(16, BlockSectionPartitioner.floorToGrid(16, 0, 16));
-    assertEquals(16, BlockSectionPartitioner.floorToGrid(16, 0, 17));
-
-    assertEquals(1, BlockSectionPartitioner.floorToGrid(16, 1, 1));
-    assertEquals(-15, BlockSectionPartitioner.floorToGrid(16, 1, 0));
-
-    assertEquals(0, BlockSectionPartitioner.floorToGrid(16, 32, 1));
-    assertEquals(-15, BlockSectionPartitioner.floorToGrid(16, 33, 0));
-
-    assertEquals(0, BlockSectionPartitioner.floorToGrid(16, -32, 0));
-    assertEquals(2, BlockSectionPartitioner.floorToGrid(16, -30, 17));
+    assertEquals(-16, BlockSectionPartitioner.floorToGrid(16, -1));
+    assertEquals(0, BlockSectionPartitioner.floorToGrid(16, 0));
+    assertEquals(0, BlockSectionPartitioner.floorToGrid(16, 15));
+    assertEquals(16, BlockSectionPartitioner.floorToGrid(16, 16));
+    assertEquals(16, BlockSectionPartitioner.floorToGrid(16, 17));
+    assertEquals(-16, BlockSectionPartitioner.floorToGrid(16, -16));
+    assertEquals(-32, BlockSectionPartitioner.floorToGrid(16, -17));
   }
 
   @Test
   void testCeilToGrid16() {
-    assertEquals(0, BlockSectionPartitioner.ceilToGrid(16, 0, -1));
-    assertEquals(16, BlockSectionPartitioner.ceilToGrid(16, 0, 0));
-    assertEquals(16, BlockSectionPartitioner.ceilToGrid(16, 0, 15));
-    assertEquals(32, BlockSectionPartitioner.ceilToGrid(16, 0, 16));
-    assertEquals(32, BlockSectionPartitioner.ceilToGrid(16, 0, 17));
-
-    assertEquals(17, BlockSectionPartitioner.ceilToGrid(16, 1, 1));
-    assertEquals(1, BlockSectionPartitioner.ceilToGrid(16, 1, 0));
-
-    assertEquals(16, BlockSectionPartitioner.ceilToGrid(16, 32, 1));
-    assertEquals(1, BlockSectionPartitioner.ceilToGrid(16, 33, 0));
-
-    assertEquals(16, BlockSectionPartitioner.ceilToGrid(16, -32, 0));
-    assertEquals(18, BlockSectionPartitioner.ceilToGrid(16, -30, 17));
+    assertEquals(0, BlockSectionPartitioner.ceilToGrid(16, -1));
+    assertEquals(16, BlockSectionPartitioner.ceilToGrid(16, 0));
+    assertEquals(16, BlockSectionPartitioner.ceilToGrid(16, 15));
+    assertEquals(32, BlockSectionPartitioner.ceilToGrid(16, 16));
+    assertEquals(32, BlockSectionPartitioner.ceilToGrid(16, 17));
+    assertEquals(0, BlockSectionPartitioner.ceilToGrid(16, -16));
+    assertEquals(-16, BlockSectionPartitioner.ceilToGrid(16, -17));
   }
 
   private static BlockSectionRegion region(

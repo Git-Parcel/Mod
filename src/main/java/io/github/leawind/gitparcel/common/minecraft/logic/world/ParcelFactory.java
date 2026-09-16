@@ -59,10 +59,8 @@ public final class ParcelFactory {
       Mirror mirror,
       Rotation rotation,
       PermissionConfig<ParcelPermissions> permissions) {
-    var pivot = Parcel.getPivot(mirror, rotation, boundingBox);
-    var transform =
-        new ParcelTransform(
-            mirror, rotation, new Vec3i((int) pivot.x, (int) pivot.y, (int) pivot.z));
+    var anchorPos = Parcel.anchorPos(mirror, rotation, boundingBox);
+    var transform = new ParcelTransform(mirror, rotation, anchorPos);
 
     var meta = createMetadata(boundingBox, rotation);
 

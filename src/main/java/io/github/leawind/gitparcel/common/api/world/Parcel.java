@@ -14,12 +14,13 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
-import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 /// Parcel represents an axially aligned cuboid area in the world.
 ///
-/// - The pivot and anchor are treated as a point, not block position.
+/// - The anchor and placement transform are treated as points, not block positions.
+/// - The anchor is a persistent reference point stored as absolute world coordinates. It does not
+///   move when the parcel bounds change, and archive content is addressed relative to it.
 ///
 /// ### Demo
 ///
@@ -37,10 +38,10 @@ import org.jspecify.annotations.Nullable;
 /// Lets's say we have a parcel:
 ///
 /// - Size`(x, z)` = `(3, 5)`
-/// - Pivot point is `(0, 0)`
+/// - Anchor point is `(0, 0)`
 ///
 /// ```txt
-/// Pivot Point
+/// Anchor Point
 ///   👇
 ///    0      3
 /// 0  P------+
@@ -57,7 +58,7 @@ import org.jspecify.annotations.Nullable;
 ///
 /// ```txt
 ///    4          9
-/// 2  +----------P 👈Pivot point
+/// 2  +----------P 👈Anchor point
 ///    | 5x3      |
 ///    |          |
 /// 5  +----------+
@@ -172,10 +173,16 @@ public final class Parcel {
   // ////////////////////////////////////////////////////////////////
 
   public BoundingBox getBoundingBox() {
-    var localSize = meta.size();
-    var maxBlockPos =
-        new BlockPos(localSize.getX() - 1, localSize.getY() - 1, localSize.getZ() - 1);
-    return BoundingBox.fromCorners(getPivotBlockPos(), transform.apply(maxBlockPos));
+    var anchor = meta.anchor();
+    var size = meta.size();
+    BlockPos minPos = transform.apply(new BlockPos(-anchor.getX(), -anchor.getY(), -anchor.getZ()));
+    BlockPos maxPos =
+        transform.apply(
+            new BlockPos(
+                size.getX() - 1 - anchor.getX(),
+                size.getY() - 1 - anchor.getY(),
+                size.getZ() - 1 - anchor.getZ()));
+    return BoundingBox.fromCorners(minPos, maxPos);
   }
 
   public Vec3i getSizeWorldSpace() {
@@ -186,18 +193,13 @@ public final class Parcel {
     return meta.size();
   }
 
-  public Vec3 getPivot() {
-    var translation = transform.translation();
-    return new Vec3(translation.getX(), translation.getY(), translation.getZ());
-  }
-
-  public Vec3 getPivotBlockCenter() {
-    return transform.apply(new Vec3(0.5, 0.5, 0.5));
-  }
-
-  /** Get pivot block position in world space */
-  public BlockPos getPivotBlockPos() {
-    return BlockPos.containing(getPivotBlockCenter());
+  /**
+   * The anchor's absolute world position, which is also the placement translation. It is a
+   * persistent reference point: adjusting the parcel bounds never changes it, and moving it is an
+   * explicit placement change.
+   */
+  public Vec3i anchorPos() {
+    return transform.translation();
   }
 
   /** Creates a parcel model with a new UUID and default visual, permission, and storage settings. */
@@ -239,66 +241,41 @@ public final class Parcel {
                     .apply(inst, ArchiveSync::new));
   }
 
-  public static BlockPos getPivotBlockPos(Mirror mirror, Rotation rotation, BoundingBox box) {
+  /**
+   * Returns the anchor position for a freshly created parcel placed over the given world box.
+   *
+   * <p>New parcels start with the anchor at the local minimum corner, so this is the
+   * orientation-dependent corner of the box. Once created, the anchor stays at its absolute world
+   * position even if the bounds are adjusted later.
+   */
+  public static Vec3i anchorPos(Mirror mirror, Rotation rotation, BoundingBox box) {
     return switch (mirror) {
-      // P+
+      // A+
       // ++
       case NONE ->
           switch (rotation) {
-            case NONE -> new BlockPos(box.minX(), box.minY(), box.minZ());
-            case CLOCKWISE_90 -> new BlockPos(box.maxX(), box.minY(), box.minZ());
-            case CLOCKWISE_180 -> new BlockPos(box.maxX(), box.minY(), box.maxZ());
-            case COUNTERCLOCKWISE_90 -> new BlockPos(box.minX(), box.minY(), box.maxZ());
+            case NONE -> new Vec3i(box.minX(), box.minY(), box.minZ());
+            case CLOCKWISE_90 -> new Vec3i(1 + box.maxX(), box.minY(), box.minZ());
+            case CLOCKWISE_180 -> new Vec3i(1 + box.maxX(), box.minY(), 1 + box.maxZ());
+            case COUNTERCLOCKWISE_90 -> new Vec3i(box.minX(), box.minY(), 1 + box.maxZ());
           };
       // ++
-      // P+
+      // A+
       case LEFT_RIGHT ->
           switch (rotation) {
-            case NONE -> new BlockPos(box.minX(), box.minY(), box.maxZ());
-            case CLOCKWISE_90 -> new BlockPos(box.minX(), box.minY(), box.minZ());
-            case CLOCKWISE_180 -> new BlockPos(box.maxX(), box.minY(), box.minZ());
-            case COUNTERCLOCKWISE_90 -> new BlockPos(box.maxX(), box.minY(), box.maxZ());
+            case NONE -> new Vec3i(box.minX(), box.minY(), 1 + box.maxZ());
+            case CLOCKWISE_90 -> new Vec3i(box.minX(), box.minY(), box.minZ());
+            case CLOCKWISE_180 -> new Vec3i(1 + box.maxX(), box.minY(), box.minZ());
+            case COUNTERCLOCKWISE_90 -> new Vec3i(1 + box.maxX(), box.minY(), 1 + box.maxZ());
           };
-      // +P
+      // +A
       // ++
       case FRONT_BACK ->
           switch (rotation) {
-            case NONE -> new BlockPos(box.maxX(), box.minY(), box.minZ());
-            case CLOCKWISE_90 -> new BlockPos(box.maxX(), box.minY(), box.maxZ());
-            case CLOCKWISE_180 -> new BlockPos(box.minX(), box.minY(), box.maxZ());
-            case COUNTERCLOCKWISE_90 -> new BlockPos(box.minX(), box.minY(), box.minZ());
-          };
-    };
-  }
-
-  public static Vec3 getPivot(Mirror mirror, Rotation rotation, BoundingBox box) {
-    return switch (mirror) {
-      // P+
-      // ++
-      case NONE ->
-          switch (rotation) {
-            case NONE -> new Vec3(box.minX(), box.minY(), box.minZ());
-            case CLOCKWISE_90 -> new Vec3(1 + box.maxX(), box.minY(), box.minZ());
-            case CLOCKWISE_180 -> new Vec3(1 + box.maxX(), box.minY(), 1 + box.maxZ());
-            case COUNTERCLOCKWISE_90 -> new Vec3(box.minX(), box.minY(), 1 + box.maxZ());
-          };
-      // ++
-      // P+
-      case LEFT_RIGHT ->
-          switch (rotation) {
-            case NONE -> new Vec3(box.minX(), box.minY(), 1 + box.maxZ());
-            case CLOCKWISE_90 -> new Vec3(box.minX(), box.minY(), box.minZ());
-            case CLOCKWISE_180 -> new Vec3(1 + box.maxX(), box.minY(), box.minZ());
-            case COUNTERCLOCKWISE_90 -> new Vec3(1 + box.maxX(), box.minY(), 1 + box.maxZ());
-          };
-      // +P
-      // ++
-      case FRONT_BACK ->
-          switch (rotation) {
-            case NONE -> new Vec3(1 + box.maxX(), box.minY(), box.minZ());
-            case CLOCKWISE_90 -> new Vec3(1 + box.maxX(), box.minY(), 1 + box.maxZ());
-            case CLOCKWISE_180 -> new Vec3(box.minX(), box.minY(), 1 + box.maxZ());
-            case COUNTERCLOCKWISE_90 -> new Vec3(box.minX(), box.minY(), box.minZ());
+            case NONE -> new Vec3i(1 + box.maxX(), box.minY(), box.minZ());
+            case CLOCKWISE_90 -> new Vec3i(1 + box.maxX(), box.minY(), 1 + box.maxZ());
+            case CLOCKWISE_180 -> new Vec3i(box.minX(), box.minY(), 1 + box.maxZ());
+            case COUNTERCLOCKWISE_90 -> new Vec3i(box.minX(), box.minY(), box.minZ());
           };
     };
   }

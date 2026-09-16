@@ -33,8 +33,12 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
   private final ParcelSpace space =
       new ParcelSpace(
           new ParcelTransform(
-              Mirror.FRONT_BACK, Rotation.CLOCKWISE_90, new BlockPos(100, 20, -40)),
-          new BlockPos(7, 3, -2));
+              Mirror.FRONT_BACK,
+              Rotation.CLOCKWISE_90,
+              // The translation is the anchor's world position: the image of local (7, 3, -2).
+              new ParcelTransform(
+                      Mirror.FRONT_BACK, Rotation.CLOCKWISE_90, new BlockPos(100, 20, -40))
+                  .apply(new BlockPos(7, 3, -2))));
 
   @BeforeAll
   static void registerFields() {
@@ -179,7 +183,11 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
   void roundTripsDeclaredFieldsAcrossEveryTransform() {
     for (Mirror mirror : Mirror.values()) {
       for (Rotation rotation : Rotation.values()) {
-        var space = new ParcelSpace(new ParcelTransform(mirror, rotation, new BlockPos(-30, 64, 11)), new BlockPos(5, -2, 9));
+        var placement = new ParcelTransform(mirror, rotation, new BlockPos(-30, 64, 11));
+        // Fold the old anchor offset into the translation so it becomes the anchor's position.
+        var space =
+            new ParcelSpace(
+                new ParcelTransform(mirror, rotation, placement.apply(new BlockPos(5, -2, 9))));
         var context =
             new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession(), null);
         var world = new BlockPos(120, 70, -30);

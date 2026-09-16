@@ -184,9 +184,7 @@ public class GitParcelGameTest {
       fill(helper, box, Blocks.AIR.defaultBlockState());
       ParcelStorage.load(
           helper.getLevel(),
-          helper.absoluteBoundingBox(box),
-          Rotation.NONE,
-          Mirror.NONE,
+          parcel.transform(),
           tempDir,
           false,
           true,

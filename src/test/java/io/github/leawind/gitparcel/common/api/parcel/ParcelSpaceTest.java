@@ -11,26 +11,38 @@ import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 
 class ParcelSpaceTest extends AbstractMinecraftTest {
-  private static final BlockPos ANCHOR = new BlockPos(7, -3, 11);
-  private static final BlockPos TRANSLATION = new BlockPos(101, 42, -73);
+  /** The anchor's absolute world position, used as the placement translation. */
+  private static final BlockPos ANCHOR_WORLD = new BlockPos(101, 42, -73);
 
   @Test
-  void roundTripsAnchorRelativePositionsForEveryOrientation() {
-    var localBlock = new BlockPos(-4, 9, 13);
-    var localPoint = new Vec3(-3.75, 9.5, 13.125);
-
+  void mapsArchiveOriginToAnchorWorldPosition() {
     for (Mirror mirror : Mirror.values()) {
       for (Rotation rotation : Rotation.values()) {
         var space = space(mirror, rotation);
 
-        assertEquals(localBlock, space.toParcel(space.toWorld(localBlock)));
-        assertVecEquals(localPoint, space.toParcel(space.toWorld(localPoint)));
+        assertEquals(new Vec3(ANCHOR_WORLD), space.toWorld(Vec3.ZERO));
+        assertVecEquals(Vec3.ZERO, space.toParcel(new Vec3(ANCHOR_WORLD)));
       }
     }
   }
 
   @Test
-  void vectorsAndDirectionsIgnoreAnchorAndTranslation() {
+  void roundTripsAnchorRelativePositionsForEveryOrientation() {
+    var relativeBlock = new BlockPos(-4, 9, 13);
+    var relativePoint = new Vec3(-3.75, 9.5, 13.125);
+
+    for (Mirror mirror : Mirror.values()) {
+      for (Rotation rotation : Rotation.values()) {
+        var space = space(mirror, rotation);
+
+        assertEquals(relativeBlock, space.toParcel(space.toWorld(relativeBlock)));
+        assertVecEquals(relativePoint, space.toParcel(space.toWorld(relativePoint)));
+      }
+    }
+  }
+
+  @Test
+  void vectorsAndDirectionsIgnoreTheTranslation() {
     var vector = new Vec3(1.25, -2.5, 3.75);
 
     for (Mirror mirror : Mirror.values()) {
@@ -62,7 +74,7 @@ class ParcelSpaceTest extends AbstractMinecraftTest {
   }
 
   private static ParcelSpace space(Mirror mirror, Rotation rotation) {
-    return new ParcelSpace(new ParcelTransform(mirror, rotation, TRANSLATION), ANCHOR);
+    return new ParcelSpace(new ParcelTransform(mirror, rotation, ANCHOR_WORLD));
   }
 
   private static void assertVecEquals(Vec3 expected, Vec3 actual) {

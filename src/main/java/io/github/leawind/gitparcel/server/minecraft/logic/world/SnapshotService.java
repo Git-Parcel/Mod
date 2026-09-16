@@ -415,7 +415,8 @@ public final class SnapshotService {
 
   /** Variant of {@link #refreshArchiveSync} for worker threads; reads off-thread, mutates on the
    * server thread. */
-  void refreshArchiveSyncInBackground(Parcel parcel, SnapshotId synced, ServerThreadBridge serverThread) {
+  void refreshArchiveSyncInBackground(
+      Parcel parcel, SnapshotId synced, ServerThreadBridge serverThread) {
     final Parcel.ArchiveSync syncState;
     try {
       syncState = archive(parcel).readSyncState(synced);

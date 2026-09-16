@@ -5,92 +5,60 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelMeta;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.version.MinecraftVersion;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.ParcelFactory;
 import io.github.leawind.gitparcel.common.testutils.AbstractGitParcelTest;
+import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
-import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 
 public class ParcelTest extends AbstractGitParcelTest {
 
   @Test
-  void testGetPivotBlockPosPos() {
-    var bounds = BoundingBox.fromCorners(new BlockPos(1, 2, 3), new BlockPos(5, 8, 11));
-
-    assertEquals(
-      new BlockPos(1, 2, 3), Parcel.getPivotBlockPos(Mirror.NONE, Rotation.NONE, bounds));
-    assertEquals(
-        new BlockPos(5, 2, 3), Parcel.getPivotBlockPos(Mirror.NONE, Rotation.CLOCKWISE_90, bounds));
-    assertEquals(
-        new BlockPos(5, 2, 11),
-        Parcel.getPivotBlockPos(Mirror.NONE, Rotation.CLOCKWISE_180, bounds));
-    assertEquals(
-        new BlockPos(1, 2, 11),
-        Parcel.getPivotBlockPos(Mirror.NONE, Rotation.COUNTERCLOCKWISE_90, bounds));
-
-    assertEquals(
-        new BlockPos(1, 2, 11), Parcel.getPivotBlockPos(Mirror.LEFT_RIGHT, Rotation.NONE, bounds));
-    assertEquals(
-        new BlockPos(1, 2, 3),
-        Parcel.getPivotBlockPos(Mirror.LEFT_RIGHT, Rotation.CLOCKWISE_90, bounds));
-    assertEquals(
-        new BlockPos(5, 2, 3),
-        Parcel.getPivotBlockPos(Mirror.LEFT_RIGHT, Rotation.CLOCKWISE_180, bounds));
-    assertEquals(
-        new BlockPos(5, 2, 11),
-        Parcel.getPivotBlockPos(Mirror.LEFT_RIGHT, Rotation.COUNTERCLOCKWISE_90, bounds));
-
-    assertEquals(
-        new BlockPos(5, 2, 3), Parcel.getPivotBlockPos(Mirror.FRONT_BACK, Rotation.NONE, bounds));
-    assertEquals(
-        new BlockPos(5, 2, 11),
-        Parcel.getPivotBlockPos(Mirror.FRONT_BACK, Rotation.CLOCKWISE_90, bounds));
-    assertEquals(
-        new BlockPos(1, 2, 11),
-        Parcel.getPivotBlockPos(Mirror.FRONT_BACK, Rotation.CLOCKWISE_180, bounds));
-    assertEquals(
-        new BlockPos(1, 2, 3),
-        Parcel.getPivotBlockPos(Mirror.FRONT_BACK, Rotation.COUNTERCLOCKWISE_90, bounds));
-  }
-
-  @Test
-  void testGetPivot() {
+  void testAnchorPosStatic() {
     var boundingBox = new BoundingBox(1, 2, 3, 5, 8, 11);
 
-    assertEquals(new Vec3(1, 2, 3), Parcel.getPivot(Mirror.NONE, Rotation.NONE, boundingBox));
     assertEquals(
-        new Vec3(6, 2, 3), Parcel.getPivot(Mirror.NONE, Rotation.CLOCKWISE_90, boundingBox));
+        new Vec3i(1, 2, 3), Parcel.anchorPos(Mirror.NONE, Rotation.NONE, boundingBox));
     assertEquals(
-        new Vec3(6, 2, 12), Parcel.getPivot(Mirror.NONE, Rotation.CLOCKWISE_180, boundingBox));
+        new Vec3i(6, 2, 3), Parcel.anchorPos(Mirror.NONE, Rotation.CLOCKWISE_90, boundingBox));
     assertEquals(
-        new Vec3(1, 2, 12),
-        Parcel.getPivot(Mirror.NONE, Rotation.COUNTERCLOCKWISE_90, boundingBox));
+        new Vec3i(6, 2, 12), Parcel.anchorPos(Mirror.NONE, Rotation.CLOCKWISE_180, boundingBox));
+    assertEquals(
+        new Vec3i(1, 2, 12),
+        Parcel.anchorPos(Mirror.NONE, Rotation.COUNTERCLOCKWISE_90, boundingBox));
 
     assertEquals(
-        new Vec3(1, 2, 12), Parcel.getPivot(Mirror.LEFT_RIGHT, Rotation.NONE, boundingBox));
+        new Vec3i(1, 2, 12), Parcel.anchorPos(Mirror.LEFT_RIGHT, Rotation.NONE, boundingBox));
     assertEquals(
-        new Vec3(1, 2, 3), Parcel.getPivot(Mirror.LEFT_RIGHT, Rotation.CLOCKWISE_90, boundingBox));
+        new Vec3i(1, 2, 3),
+        Parcel.anchorPos(Mirror.LEFT_RIGHT, Rotation.CLOCKWISE_90, boundingBox));
     assertEquals(
-        new Vec3(6, 2, 3), Parcel.getPivot(Mirror.LEFT_RIGHT, Rotation.CLOCKWISE_180, boundingBox));
+        new Vec3i(6, 2, 3),
+        Parcel.anchorPos(Mirror.LEFT_RIGHT, Rotation.CLOCKWISE_180, boundingBox));
     assertEquals(
-        new Vec3(6, 2, 12),
-        Parcel.getPivot(Mirror.LEFT_RIGHT, Rotation.COUNTERCLOCKWISE_90, boundingBox));
+        new Vec3i(6, 2, 12),
+        Parcel.anchorPos(Mirror.LEFT_RIGHT, Rotation.COUNTERCLOCKWISE_90, boundingBox));
 
-    assertEquals(new Vec3(6, 2, 3), Parcel.getPivot(Mirror.FRONT_BACK, Rotation.NONE, boundingBox));
     assertEquals(
-        new Vec3(6, 2, 12), Parcel.getPivot(Mirror.FRONT_BACK, Rotation.CLOCKWISE_90, boundingBox));
+        new Vec3i(6, 2, 3), Parcel.anchorPos(Mirror.FRONT_BACK, Rotation.NONE, boundingBox));
     assertEquals(
-        new Vec3(1, 2, 12),
-        Parcel.getPivot(Mirror.FRONT_BACK, Rotation.CLOCKWISE_180, boundingBox));
+        new Vec3i(6, 2, 12),
+        Parcel.anchorPos(Mirror.FRONT_BACK, Rotation.CLOCKWISE_90, boundingBox));
     assertEquals(
-        new Vec3(1, 2, 3),
-        Parcel.getPivot(Mirror.FRONT_BACK, Rotation.COUNTERCLOCKWISE_90, boundingBox));
+        new Vec3i(1, 2, 12),
+        Parcel.anchorPos(Mirror.FRONT_BACK, Rotation.CLOCKWISE_180, boundingBox));
+    assertEquals(
+        new Vec3i(1, 2, 3),
+        Parcel.anchorPos(Mirror.FRONT_BACK, Rotation.COUNTERCLOCKWISE_90, boundingBox));
   }
 
   @Test
@@ -102,17 +70,11 @@ public class ParcelTest extends AbstractGitParcelTest {
     assertEquals(new Vec3i(3, 4, 5), parcel.getSizeWorldSpace());
     assertEquals(MinecraftVersion.currentDataVersion(), parcel.meta().dataVersion());
 
-    var localPivot = Vec3.ZERO;
-    var worldPivot = new Vec3(2, 3, 4);
-    assertEquals(worldPivot, parcel.getPivot());
-
-    var localPivotBlockCenter = new Vec3(0.5, 0.5, 0.5);
-    var worldPivotBlockCenter = new Vec3(2.5, 3.5, 4.5);
-    assertEquals(worldPivotBlockCenter, parcel.getPivotBlockCenter());
-
-    var localPivotBlockPos = BlockPos.ZERO;
-    var worldPivotBlockPos = new BlockPos(2, 3, 4);
-    assertEquals(worldPivotBlockPos, parcel.getPivotBlockPos());
+    // New parcels anchor at the local minimum corner, so the anchor equals the
+    // orientation-dependent corner the factory derives from the box.
+    var worldAnchorPos = new Vec3i(2, 3, 4);
+    assertEquals(worldAnchorPos, parcel.anchorPos());
+    assertEquals(worldAnchorPos, parcel.transform().translation());
 
     assertEquals(boundingBox, parcel.getBoundingBox());
   }
@@ -126,17 +88,11 @@ public class ParcelTest extends AbstractGitParcelTest {
     assertEquals(new Vec3i(3, 4, 5), parcel.getSizeParcelSpace());
     assertEquals(new Vec3i(3, 4, 5), parcel.getSizeWorldSpace());
 
-    var localPivot = Vec3.ZERO;
-    var worldPivot = new Vec3(2, 3, 9);
-    assertEquals(worldPivot, parcel.getPivot());
-
-    var localPivotBlockCenter = new Vec3(0.5, 0.5, 0.5);
-    var worldPivotBlockCenter = new Vec3(2.5, 3.5, 8.5);
-    assertEquals(worldPivotBlockCenter, parcel.getPivotBlockCenter());
-
-    var localPivotBlockPos = BlockPos.ZERO;
-    var worldPivotBlockPos = new BlockPos(2, 3, 8);
-    assertEquals(worldPivotBlockPos, parcel.getPivotBlockPos());
+    // New parcels anchor at the local minimum corner, so the anchor equals the
+    // orientation-dependent corner the factory derives from the box.
+    var worldAnchorPos = new Vec3i(2, 3, 9);
+    assertEquals(worldAnchorPos, parcel.anchorPos());
+    assertEquals(worldAnchorPos, parcel.transform().translation());
 
     assertEquals(boundingBox, parcel.getBoundingBox());
   }
@@ -150,17 +106,11 @@ public class ParcelTest extends AbstractGitParcelTest {
     assertEquals(new Vec3i(3, 4, 5), parcel.getSizeParcelSpace());
     assertEquals(new Vec3i(5, 4, 3), parcel.getSizeWorldSpace());
 
-    var localPivot = Vec3.ZERO;
-    var worldPivot = new Vec3(9, 3, 2);
-    assertEquals(worldPivot, parcel.getPivot());
-
-    var localPivotBlockCenter = new Vec3(0.5, 0.5, 0.5);
-    var worldPivotBlockCenter = new Vec3(8.5, 3.5, 2.5);
-    assertEquals(worldPivotBlockCenter, parcel.getPivotBlockCenter());
-
-    var localPivotBlockPos = BlockPos.ZERO;
-    var worldPivotBlockPos = new BlockPos(8, 3, 2);
-    assertEquals(worldPivotBlockPos, parcel.getPivotBlockPos());
+    // New parcels anchor at the local minimum corner, so the anchor equals the
+    // orientation-dependent corner the factory derives from the box.
+    var worldAnchorPos = new Vec3i(9, 3, 2);
+    assertEquals(worldAnchorPos, parcel.anchorPos());
+    assertEquals(worldAnchorPos, parcel.transform().translation());
 
     assertEquals(boundingBox, parcel.getBoundingBox());
   }
@@ -174,17 +124,11 @@ public class ParcelTest extends AbstractGitParcelTest {
     assertEquals(new Vec3i(3, 4, 5), parcel.getSizeParcelSpace());
     assertEquals(new Vec3i(5, 4, 3), parcel.getSizeWorldSpace());
 
-    var localPivot = Vec3.ZERO;
-    var worldPivot = new Vec3(4, 3, 2);
-    assertEquals(worldPivot, parcel.getPivot());
-
-    var localPivotBlockCenter = new Vec3(0.5, 0.5, 0.5);
-    var worldPivotBlockCenter = new Vec3(4.5, 3.5, 2.5);
-    assertEquals(worldPivotBlockCenter, parcel.getPivotBlockCenter());
-
-    var localPivotBlockPos = BlockPos.ZERO;
-    var worldPivotBlockPos = new BlockPos(4, 3, 2);
-    assertEquals(worldPivotBlockPos, parcel.getPivotBlockPos());
+    // New parcels anchor at the local minimum corner, so the anchor equals the
+    // orientation-dependent corner the factory derives from the box.
+    var worldAnchorPos = new Vec3i(4, 3, 2);
+    assertEquals(worldAnchorPos, parcel.anchorPos());
+    assertEquals(worldAnchorPos, parcel.transform().translation());
 
     assertEquals(boundingBox, parcel.getBoundingBox());
   }
@@ -198,19 +142,63 @@ public class ParcelTest extends AbstractGitParcelTest {
     assertEquals(new Vec3i(5, 4, 3), parcel.getSizeParcelSpace());
     assertEquals(new Vec3i(5, 4, 3), parcel.getSizeWorldSpace());
 
-    var localPivot = Vec3.ZERO;
-    var worldPivot = new Vec3(9, 3, 2);
-    assertEquals(worldPivot, parcel.getPivot());
-
-    var localPivotBlockCenter = new Vec3(0.5, 0.5, 0.5);
-    var worldPivotBlockCenter = new Vec3(8.5, 3.5, 2.5);
-    assertEquals(worldPivotBlockCenter, parcel.getPivotBlockCenter());
-
-    var localPivotBlockPos = BlockPos.ZERO;
-    var worldPivotBlockPos = new BlockPos(8, 3, 2);
-    assertEquals(worldPivotBlockPos, parcel.getPivotBlockPos());
+    // New parcels anchor at the local minimum corner, so the anchor equals the
+    // orientation-dependent corner the factory derives from the box.
+    var worldAnchorPos = new Vec3i(9, 3, 2);
+    assertEquals(worldAnchorPos, parcel.anchorPos());
+    assertEquals(worldAnchorPos, parcel.transform().translation());
 
     assertEquals(boundingBox, parcel.getBoundingBox());
+  }
+
+  @Test
+  void boundingBoxFollowsAnchorRelativeExtent() {
+    // Content spans the anchor-relative extent [-anchor, size - anchor); the world box is the
+    // placement image of that extent, not a corner-derived pivot.
+    var meta =
+        new ParcelMeta(
+            Map.of(),
+            MinecraftVersion.currentDataVersion(),
+            new Vec3i(5, 4, 6),
+            new Vec3i(2, 1, 3));
+    var parcel =
+        Parcel.create(
+            meta, new ParcelTransform(Mirror.NONE, Rotation.NONE, new Vec3i(100, 64, 200)));
+
+    assertEquals(new Vec3i(100, 64, 200), parcel.anchorPos());
+    assertEquals(
+        BoundingBox.fromCorners(new BlockPos(98, 63, 197), new BlockPos(102, 66, 202)),
+        parcel.getBoundingBox());
+  }
+
+  @Test
+  void anchorPosIsIndependentOfBoundsChanges() {
+    // The anchor is stored as an absolute position. Adjusting the extent (here: growing the parcel
+    // past the anchor on the negative side) keeps the anchor and the anchor-relative frame fixed,
+    // so archive coordinates and section grid indices stay valid.
+    var anchorWorld = new Vec3i(7, 64, 9);
+    var before =
+        Parcel.create(
+            new ParcelMeta(
+                Map.of(), MinecraftVersion.currentDataVersion(),
+                new Vec3i(4, 4, 4), Vec3i.ZERO),
+            new ParcelTransform(Mirror.NONE, Rotation.NONE, anchorWorld));
+    var after =
+        Parcel.create(
+            new ParcelMeta(
+                Map.of(), MinecraftVersion.currentDataVersion(),
+                new Vec3i(8, 4, 4), new Vec3i(4, 0, 0)),
+            new ParcelTransform(Mirror.NONE, Rotation.NONE, anchorWorld));
+
+    assertEquals(anchorWorld, before.anchorPos());
+    assertEquals(anchorWorld, after.anchorPos());
+    var spaceBefore = new ParcelSpace(before.transform());
+    var spaceAfter = new ParcelSpace(after.transform());
+    assertEquals(BlockPos.ZERO, spaceBefore.toParcel(spaceAfter.toWorld(BlockPos.ZERO)));
+    assertEquals(
+        new BoundingBox(7, 64, 9, 10, 67, 12), before.getBoundingBox());
+    assertEquals(
+        new BoundingBox(3, 64, 9, 10, 67, 12), after.getBoundingBox());
   }
 
   @Test

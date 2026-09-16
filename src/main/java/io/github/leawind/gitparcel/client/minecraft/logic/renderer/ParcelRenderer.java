@@ -66,26 +66,27 @@ public final class ParcelRenderer {
     void generateGizmos() {
       gizmos.clear();
 
-      var pivot = transform.apply(Vec3.ZERO);
+      // The wireframe outlines the parcel extent expressed in anchor-relative coordinates; the
+      // transform's translation is the anchor's absolute world position.
+      var minCorner =
+          new Vec3(-anchor.getX(), -anchor.getY(), -anchor.getZ());
+      var maxCorner =
+          new Vec3(
+              size.getX() - anchor.getX(),
+              size.getY() - anchor.getY(),
+              size.getZ() - anchor.getZ());
+      var pivot = transform.apply(minCorner);
 
       // Wireframe
       if (visual.showWireframe()) {
-        var x = new Vec3(size.getX(), 0, 0);
-        var y = new Vec3(0, size.getY(), 0);
-        var z = new Vec3(0, 0, size.getZ());
+        var x = transform.apply(new Vec3(maxCorner.x, minCorner.y, minCorner.z));
+        var y = transform.apply(new Vec3(minCorner.x, maxCorner.y, minCorner.z));
+        var z = transform.apply(new Vec3(minCorner.x, minCorner.y, maxCorner.z));
 
-        var xyz = new Vec3(size);
-        var yz = new Vec3(0, size.getY(), size.getZ());
-        var xz = new Vec3(size.getX(), 0, size.getZ());
-        var xy = new Vec3(size.getX(), size.getY(), 0);
-
-        x = transform.apply(x);
-        y = transform.apply(y);
-        z = transform.apply(z);
-        xyz = transform.apply(xyz);
-        yz = transform.apply(yz);
-        xz = transform.apply(xz);
-        xy = transform.apply(xy);
+        var xyz = transform.apply(maxCorner);
+        var yz = transform.apply(new Vec3(minCorner.x, maxCorner.y, maxCorner.z));
+        var xz = transform.apply(new Vec3(maxCorner.x, minCorner.y, maxCorner.z));
+        var xy = transform.apply(new Vec3(maxCorner.x, maxCorner.y, minCorner.z));
 
         gizmos.add(new LineGizmo(pivot, x, X_COLOR, WIREFRAME_LINE_WIDTH));
         gizmos.add(new LineGizmo(pivot, y, Y_COLOR, WIREFRAME_LINE_WIDTH));
@@ -108,15 +109,10 @@ public final class ParcelRenderer {
       if (visual.showAnchor()) {
         final float ANCHOR_SIZE = 1F;
 
-        var anchorPos = new Vec3(anchor);
-        var x = anchorPos.add(new Vec3(ANCHOR_SIZE, 0, 0));
-        var y = anchorPos.add(new Vec3(0, ANCHOR_SIZE, 0));
-        var z = anchorPos.add(new Vec3(0, 0, ANCHOR_SIZE));
-
-        anchorPos = transform.apply(anchorPos);
-        x = transform.apply(x);
-        y = transform.apply(y);
-        z = transform.apply(z);
+        var anchorPos = new Vec3(transform.translation());
+        var x = anchorPos.add(transform.applyVector(new Vec3(ANCHOR_SIZE, 0, 0)));
+        var y = anchorPos.add(transform.applyVector(new Vec3(0, ANCHOR_SIZE, 0)));
+        var z = anchorPos.add(transform.applyVector(new Vec3(0, 0, ANCHOR_SIZE)));
 
         gizmos.add(new ArrowGizmo(anchorPos, x, X_COLOR, WIREFRAME_LINE_WIDTH * 2));
         gizmos.add(new ArrowGizmo(anchorPos, y, Y_COLOR, WIREFRAME_LINE_WIDTH * 2));

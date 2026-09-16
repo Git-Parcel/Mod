@@ -101,18 +101,11 @@ public final class BlockContentType implements ParcelContentType<BlockContentTyp
     BlockPalette palette = loadPalette(paletteFile);
     var expectedFiles = new HashSet<Path>();
     expectedFiles.add(paletteFile);
-    Vec3i anchor = context.anchor();
     long count = 0;
+    // Sections arrive anchor-relative, matching the save path's grid indices.
     for (BlockSectionRegion section :
-        BlockSectionPartitioner.partition(context.parcelSize(), anchor, sectionSize)) {
-      BlockPos relativeOrigin =
-          new BlockPos(
-              section.origin().getX() - anchor.getX(),
-              section.origin().getY() - anchor.getY(),
-              section.origin().getZ() - anchor.getZ());
-      // Load partitions are parcel-relative, so the anchor shift belongs in the grid index; this
-      // matches the save path, whose sections already arrive anchor-relative.
-      long index = ZOrder3D.coordToIndexSigned(section.gridCoordinate(sectionSize, anchor));
+        BlockSectionPartitioner.partition(context.parcelSize(), context.anchor(), sectionSize)) {
+      long index = ZOrder3D.coordToIndexSigned(section.gridCoordinate(sectionSize));
       Path stateFile =
           RadixTreePathGenerator.toPath(
               sectionsDirectory, index, SECTION_BLOCK_STATE_SUFFIX);
@@ -134,7 +127,7 @@ public final class BlockContentType implements ParcelContentType<BlockContentTyp
               : List.of();
       if (Files.exists(blockEntityFile)) expectedFiles.add(blockEntityFile);
       sink.acceptBlockSection(
-          new BlockSection(relativeOrigin, section.size(), states, blockEntities));
+          new BlockSection(section.origin(), section.size(), states, blockEntities));
       context.progress().report("content_blocks", ++count, "sections");
     }
     ParcelContentFileSupport.validateOwnedFiles(directory, expectedFiles);

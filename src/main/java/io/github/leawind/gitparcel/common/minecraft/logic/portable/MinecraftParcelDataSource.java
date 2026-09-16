@@ -58,16 +58,14 @@ public final class MinecraftParcelDataSource implements ParcelDataSource {
       throws IOException, ParcelException {
     var processorContext = new ParcelRecordProcessorContext(level, space, attachments, attachments);
     var processors = ParcelRecordProcessorRegistry.get().orderedProcessors();
+    // Sections arrive anchor-relative: the grid is aligned to the anchor, so their origins double
+    // as stable archive coordinates.
     for (var section : BlockSectionPartitioner.partition(size, anchor, sectionSize)) {
       var states =
           new ArrayList<net.minecraft.world.level.block.state.BlockState>(
               section.size().getX() * section.size().getY() * section.size().getZ());
       var blockEntities = new ArrayList<BlockEntityRecord>();
-      BlockPos relativeOrigin =
-          new BlockPos(
-              section.origin().getX() - anchor.getX(),
-              section.origin().getY() - anchor.getY(),
-              section.origin().getZ() - anchor.getZ());
+      BlockPos relativeOrigin = section.origin();
 
       for (int x = 0; x < section.size().getX(); x++) {
         for (int y = 0; y < section.size().getY(); y++) {

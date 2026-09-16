@@ -106,8 +106,8 @@ public class SaveSubcommand {
       Rotation rotation) {
     try {
       BoundingBox boundingBox = BoundingBox.fromCorners(corner1, corner2);
-      var pivot = Parcel.getPivotBlockPos(mirror, rotation, boundingBox);
-      ParcelTransform transform = new ParcelTransform(mirror, rotation, pivot);
+      ParcelTransform transform =
+          new ParcelTransform(mirror, rotation, Parcel.anchorPos(mirror, rotation, boundingBox));
 
       var meta = ParcelFactory.createMetadata(boundingBox, rotation);
 

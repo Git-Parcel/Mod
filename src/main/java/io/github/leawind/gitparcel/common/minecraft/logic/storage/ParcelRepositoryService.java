@@ -3,7 +3,6 @@ package io.github.leawind.gitparcel.common.minecraft.logic.storage;
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.operation.ProgressReporter;
 import io.github.leawind.gitparcel.common.api.operation.ServerThreadBridge;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.common.api.snapshot.SnapshotId;
 import io.github.leawind.gitparcel.common.api.snapshot.SnapshotNode;
 import io.github.leawind.gitparcel.common.api.snapshot.SnapshotTreePage;
@@ -233,11 +232,13 @@ public final class ParcelRepositoryService {
     return new InternalRepository.SnapshotRestorer() {
       @Override
       public void validate(Path snapshotRoot) throws Exception {
-        ParcelMeta restored =
-            validatedCommit.isPresent()
-                ? ParcelStorage.validateSnapshotCached(snapshotRoot, validatedCommit.orElseThrow(), progress)
-                : ParcelStorage.validateSnapshot(snapshotRoot, progress);
-        validateGeometry(parcel.meta(), restored);
+        // Restores keep the parcel placement and load the snapshot's own geometry without a
+        // boundary check: bounds changes since the last sync are a structural signal, not an error.
+        if (validatedCommit.isPresent()) {
+          ParcelStorage.validateSnapshotCached(snapshotRoot, validatedCommit.orElseThrow(), progress);
+        } else {
+          ParcelStorage.validateSnapshot(snapshotRoot, progress);
+        }
       }
 
       @Override
@@ -259,14 +260,5 @@ public final class ParcelRepositoryService {
                     ProgressReporter.prefixed("restore_", progress)));
       }
     };
-  }
-
-  public static void validateGeometry(ParcelMeta current, ParcelMeta restored)
-      throws ParcelException {
-    if (!current.size().equals(restored.size())
-        || !current.anchor().equals(restored.anchor())) {
-      throw new ParcelException(
-          "Cannot restore a snapshot whose size or anchor differs from the registered parcel");
-    }
   }
 }

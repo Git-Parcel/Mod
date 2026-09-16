@@ -38,9 +38,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Mirror;
-import net.minecraft.world.level.block.Rotation;
-import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
@@ -201,7 +198,7 @@ public class ParcelStorage {
       meta.setContents(previousContents);
     }
 
-    var space = new ParcelSpace(transform, meta.anchor());
+    var space = new ParcelSpace(transform);
     var source =
         new MinecraftParcelDataSource(
             level, meta.size(), meta.anchor(), space, ignoreEntities);
@@ -519,7 +516,7 @@ public class ParcelStorage {
     var meta = ParcelMeta.load(parcelDir.resolve(META_FILE_NAME));
     Path dataDir = parcelDir.resolve(DATA_DIR_NAME);
     var types = resolveSnapshotContentTypes(meta, dataDir);
-    var space = new ParcelSpace(transform, meta.anchor());
+    var space = new ParcelSpace(transform);
     if (!ignoreEntities) {
       level
           .getEntities(
@@ -607,21 +604,6 @@ public class ParcelStorage {
         new ParcelContentType.LoadContext<>(
             meta.size(), meta.anchor(), meta.dataVersion(), directory, config, progress),
         sink);
-  }
-
-  public static void load(
-      ServerLevel level,
-      BoundingBox boundingBox,
-      Rotation rotation,
-      Mirror mirror,
-      Path parcelDir,
-      boolean ignoreBlocks,
-      boolean ignoreEntities,
-      @Block.UpdateFlags int flags)
-      throws IOException, ParcelException {
-    var pivot = Parcel.getPivotBlockPos(mirror, rotation, boundingBox);
-    ParcelTransform transform = new ParcelTransform(mirror, rotation, pivot);
-    load(level, transform, parcelDir, ignoreBlocks, ignoreEntities, flags);
   }
 
   private static AABB worldBounds(ParcelSpace space, net.minecraft.core.Vec3i size, net.minecraft.core.Vec3i anchor) {

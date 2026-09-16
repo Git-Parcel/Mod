@@ -27,8 +27,12 @@ class PaintingRecordProcessorTest extends AbstractMinecraftTest {
     var space =
         new ParcelSpace(
             new ParcelTransform(
-                Mirror.LEFT_RIGHT, Rotation.CLOCKWISE_90, new BlockPos(20, 4, -8)),
-            new BlockPos(3, 1, 7));
+                Mirror.LEFT_RIGHT,
+                Rotation.CLOCKWISE_90,
+                // The translation is the anchor's world position: the image of local (3, 1, 7).
+                new ParcelTransform(
+                        Mirror.LEFT_RIGHT, Rotation.CLOCKWISE_90, new BlockPos(20, 4, -8))
+                    .apply(new BlockPos(3, 1, 7))));
     var payload = new CompoundTag();
     payload.putString("direction", Direction.WEST.getName());
     var record = record(new SemanticData(PaintingRecordProcessor.ID, 0, payload));
@@ -69,7 +73,6 @@ class PaintingRecordProcessorTest extends AbstractMinecraftTest {
   }
 
   private static final class ParcelSpaceTestValues {
-    private static final ParcelSpace IDENTITY =
-        new ParcelSpace(ParcelTransform.IDENTITY, BlockPos.ZERO);
+    private static final ParcelSpace IDENTITY = new ParcelSpace(ParcelTransform.IDENTITY);
   }
 }

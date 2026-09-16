@@ -2,27 +2,31 @@ package io.github.leawind.gitparcel.common.api.parcel;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Vec3i;
 import net.minecraft.world.phys.Vec3;
 
-/** Converts points between world space and parcel space relative to the parcel anchor. */
-public record ParcelSpace(ParcelTransform transform, Vec3i anchor) {
+/**
+ * Converts points between world space and the anchor-relative parcel space of one placement.
+ *
+ * <p>The transform's translation is the anchor's absolute world position, and its mirror and
+ * rotation describe the placement orientation. Archive content is always interpreted in
+ * anchor-relative coordinates with canonical orientation, so {@link #toWorld} and {@link #toParcel}
+ * are the single definition point of the frame change (SEMANTICS.md rule 3.3).
+ */
+public record ParcelSpace(ParcelTransform transform) {
   public Vec3 toWorld(Vec3 relative) {
-    return transform.apply(relative.add(anchor.getX(), anchor.getY(), anchor.getZ()));
+    return transform.apply(relative);
   }
 
   public BlockPos toWorld(BlockPos relative) {
-    return transform.apply(relative.offset(anchor));
+    return transform.apply(relative);
   }
 
   public Vec3 toParcel(Vec3 world) {
-    return transform
-        .applyInverted(world)
-        .subtract(anchor.getX(), anchor.getY(), anchor.getZ());
+    return transform.applyInverted(world);
   }
 
   public BlockPos toParcel(BlockPos world) {
-    return transform.applyInverted(world).subtract(anchor);
+    return transform.applyInverted(world);
   }
 
   public Vec3 toWorldVector(Vec3 vector) {

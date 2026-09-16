@@ -29,8 +29,10 @@ class MinecraftCoreRecordProcessorTest extends AbstractMinecraftTest {
           new ParcelTransform(
               Mirror.FRONT_BACK,
               Rotation.CLOCKWISE_90,
-              new BlockPos(100, 20, -40)),
-          new BlockPos(7, 3, -2));
+              // The translation is the anchor's world position: the image of local (7, 3, -2).
+              new ParcelTransform(
+                      Mirror.FRONT_BACK, Rotation.CLOCKWISE_90, new BlockPos(100, 20, -40))
+                  .apply(new BlockPos(7, 3, -2))));
   private final ParcelRecordProcessorContext context =
       new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession(), null);
 
@@ -133,9 +135,10 @@ class MinecraftCoreRecordProcessorTest extends AbstractMinecraftTest {
   void restoresEntitySpatialFieldsForEveryTransform() {
     for (Mirror mirror : Mirror.values()) {
       for (Rotation rotation : Rotation.values()) {
-        var transform = new ParcelTransform(mirror, rotation, new BlockPos(-30, 64, 11));
-        var anchor = new BlockPos(5, -2, 9);
-        var space = new ParcelSpace(transform, anchor);
+        var placement = new ParcelTransform(mirror, rotation, new BlockPos(-30, 64, 11));
+        // Fold the old anchor offset into the translation so it becomes the anchor's position.
+        var space = new ParcelSpace(
+            new ParcelTransform(mirror, rotation, placement.apply(new BlockPos(5, -2, 9))));
         var context = new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession(), null);
         var relativePos = new Vec3(1.5, 2.25, -3.75);
         var localMotion = new Vec3(0.25, -0.5, 1.5);

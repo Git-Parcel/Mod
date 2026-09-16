@@ -68,6 +68,13 @@ public final class ParcelMeta {
   private Map<String, ParcelContentManifest> contents;
   private int dataVersion;
   private Vec3i size;
+
+  /**
+   * The anchor's offset in parcel-local coordinates: the anchor is the origin of the archive's
+   * coordinate system, so stored content spans {@code [-anchor, size - anchor)} around it. The
+   * anchor's absolute world position belongs to the world-side parcel, never to this portable
+   * metadata.
+   */
   private Vec3i anchor;
 
   /**
