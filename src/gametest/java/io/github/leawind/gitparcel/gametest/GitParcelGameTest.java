@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -32,6 +33,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Leashable;
 import net.minecraft.world.entity.animal.chicken.Chicken;
 import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -399,6 +401,79 @@ public class GitParcelGameTest {
               }
             })
         .thenSucceed();
+  }
+
+  /**
+   * An item frame restored at a mirrored placement keeps its facing (direction role) and its
+   * in-plane item rotation (45° step role), per SEMANTICS.md rule 3.1.
+   */
+  public void testItemFrameOrientationFollowsPlacement(GameTestHelpMore helper) throws Exception {
+    var level = helper.getLevel();
+    var registry = ParcelRegistry.get(level);
+    registry.reset();
+
+    var box = helper.getRelativeBoundingBox();
+    int halfHeight = box.getYSpan() / 2;
+    var sourceBox =
+        new BoundingBox(
+            box.minX(), box.minY(), box.minZ(), box.maxX(), box.minY() + halfHeight - 1, box.maxZ());
+    var targetBox =
+        new BoundingBox(
+            box.minX(),
+            box.maxY() + 1 - halfHeight,
+            box.minZ(),
+            box.maxX(),
+            box.maxY(),
+            box.maxZ());
+
+    var sourceParcel =
+        ParcelFactory.create(helper.absoluteBoundingBox(sourceBox), Mirror.NONE, Rotation.NONE);
+    sourceParcel.meta().setExcludeEntities(false);
+    registry.addNewParcel(sourceParcel);
+
+    var wallPos = new BlockPos(1, 1, 1);
+    helper.setBlock(wallPos, Blocks.STONE);
+    var frame = new ItemFrame(level, helper.absolutePos(wallPos), Direction.SOUTH);
+    frame.setRotation(3);
+    level.addFreshEntity(frame);
+
+    try (var fs = Jimfs.newFileSystem()) {
+      Path tempDir = fs.getPath("/parcel");
+      Files.createDirectories(tempDir);
+      ParcelStorage.save(level, sourceParcel, tempDir, false);
+
+      var targetParcel =
+          ParcelFactory.create(helper.absoluteBoundingBox(targetBox), Mirror.LEFT_RIGHT, Rotation.NONE);
+      targetParcel.meta().setExcludeEntities(false);
+      ParcelStorage.load(
+          level, targetParcel.transform(), tempDir, false, false, WORLD_UPDATE_FLAGS);
+    }
+
+    var targetArea =
+        new AABB(
+            helper.absolutePos(new BlockPos(0, targetBox.minY() - box.minY(), 0)).getCenter(),
+            helper
+                .absolutePos(
+                    new BlockPos(
+                        targetBox.getXSpan(),
+                        targetBox.getYSpan() + (targetBox.minY() - box.minY()),
+                        targetBox.getZSpan()))
+                .getCenter());
+    var frames = level.getEntities(EntityType.ITEM_FRAME, targetArea, e -> true);
+    if (frames.size() != 1) {
+      helper.fail("Restored parcel must contain exactly one item frame, got " + frames.size());
+    }
+    var restored = frames.getFirst();
+    if (restored.getDirection() != Direction.NORTH) {
+      helper.fail(
+          "Mirrored frame must face north, got " + restored.getDirection()); 
+    }
+    if (restored.getRotation() != 5) {
+      helper.fail("Mirrored frame rotation must negate 3 to 5, got " + restored.getRotation());
+    }
+
+    registry.deleteParcel(sourceParcel.uuid());
+    helper.succeed();
   }
 
   /**

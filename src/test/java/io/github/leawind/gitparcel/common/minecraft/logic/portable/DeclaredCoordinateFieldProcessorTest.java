@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateField;
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateFieldRegistry;
+import net.minecraft.nbt.ByteTag;
+import net.minecraft.nbt.StringTag;
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFieldRegistry;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSemantics;
@@ -16,6 +18,7 @@ import io.github.leawind.gitparcel.common.impl.extension.attachment.ParcelAttach
 import io.github.leawind.gitparcel.common.testutils.AbstractMinecraftTest;
 import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
@@ -63,6 +66,18 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
             TEST_BLOCK_ENTITY,
             "Items[].tag.waypoint",
             ParcelCoordinateField.Encoding.POSITION));
+    registry.register(
+        ParcelCoordinateField.forType(
+            ParcelCoordinateField.Target.ENTITY,
+            TEST_ENTITY,
+            "Facing",
+            ParcelCoordinateField.Encoding.DIRECTION));
+    registry.register(
+        ParcelCoordinateField.forType(
+            ParcelCoordinateField.Target.ENTITY,
+            TEST_ENTITY,
+            "ItemRotation",
+            ParcelCoordinateField.Encoding.ROTATION_STEP));
   }
 
   @Test
@@ -212,6 +227,62 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
                 .formatted(mirror, rotation));
       }
     }
+  }
+
+  /** Rule 3.1: direction fields transform as orientations and keep their encoded form. */
+  @Test
+  void transformsDirectionFieldsPreservingTheirEncodedForm() {
+    var stringData = entityData(TEST_ENTITY);
+    stringData.put("Facing", StringTag.valueOf("north"));
+    var stringRecord = new EntityRecord(TEST_ENTITY, Vec3.ZERO, BlockPos.ZERO, stringData, List.of());
+    var restoredString = processor.restoreEntity(context(), stringRecord);
+    assertEquals(
+        space.toWorldDirection(Direction.NORTH).getName(),
+        restoredString.data().getString("Facing").orElseThrow());
+
+    var byteData = entityData(TEST_ENTITY);
+    byteData.put("Facing", ByteTag.valueOf((byte) Direction.NORTH.get3DDataValue()));
+    var byteRecord = new EntityRecord(TEST_ENTITY, Vec3.ZERO, BlockPos.ZERO, byteData, List.of());
+    var restoredByte = processor.restoreEntity(context(), byteRecord);
+    assertEquals(
+        (byte) space.toWorldDirection(Direction.NORTH).get3DDataValue(),
+        restoredByte.data().getByte("Facing").orElseThrow());
+  }
+
+  /**
+   * Rule 3.1: rotation steps are rewritten against the record's own declared facing, read before
+   * any rewrite.
+   */
+  @Test
+  void transformsRotationStepsAgainstTheDeclaredFacing() {
+    var mirrored =
+        new ParcelSpace(
+            new ParcelTransform(Mirror.LEFT_RIGHT, Rotation.NONE, new BlockPos(100, 64, 100)));
+    var mirroredContext =
+        new ParcelRecordProcessorContext(
+            null, mirrored, new ParcelAttachmentSession(), null, fullSemantics());
+
+    var data = entityData(TEST_ENTITY);
+    data.putString("Facing", Direction.SOUTH.getName());
+    data.put("ItemRotation", ByteTag.valueOf((byte) 3));
+    var record = new EntityRecord(TEST_ENTITY, Vec3.ZERO, BlockPos.ZERO, data, List.of());
+
+    var restored = processor.restoreEntity(mirroredContext, record);
+
+    assertEquals(Direction.NORTH.getName(), restored.data().getString("Facing").orElseThrow());
+    assertEquals((byte) 5, restored.data().getByte("ItemRotation").orElseThrow());
+  }
+
+  private static ParcelSemantics fullSemantics() {
+    return new ParcelSemantics(
+        List.of(),
+        ParcelCoordinateFieldRegistry.get().fields().stream()
+            .map(ParcelSemantics.CoordinateField::of)
+            .toList(),
+        ParcelEntityRefFieldRegistry.get().fields().stream()
+            .map(ParcelSemantics.ReferenceField::of)
+            .toList(),
+        List.of());
   }
 
   @Test

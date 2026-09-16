@@ -56,5 +56,29 @@ public final class BuiltinExtension implements GitParcelExtension {
         ParcelCoordinateField.forAny(
             ParcelCoordinateField.Target.ENTITY, "leash", ParcelCoordinateField.Encoding.BLOCK_POS));
     registrar.registerEntityRefField(ParcelEntityRefField.forAny("leash.UUID"));
+
+    // Item frames carry a wall/floor facing plus an in-plane item rotation; shulkers carry a
+    // hanging facing. All use the engine's 3D data value encoding.
+    for (String frame : new String[] {"item_frame", "glow_item_frame"}) {
+      var frameType = Identifier.fromNamespaceAndPath("minecraft", frame);
+      registrar.registerCoordinateField(
+          ParcelCoordinateField.forType(
+              ParcelCoordinateField.Target.ENTITY,
+              frameType,
+              "Facing",
+              ParcelCoordinateField.Encoding.DIRECTION));
+      registrar.registerCoordinateField(
+          ParcelCoordinateField.forType(
+              ParcelCoordinateField.Target.ENTITY,
+              frameType,
+              "ItemRotation",
+              ParcelCoordinateField.Encoding.ROTATION_STEP));
+    }
+    registrar.registerCoordinateField(
+        ParcelCoordinateField.forType(
+            ParcelCoordinateField.Target.ENTITY,
+            Identifier.fromNamespaceAndPath("minecraft", "shulker"),
+            "Facing",
+            ParcelCoordinateField.Encoding.DIRECTION));
   }
 }

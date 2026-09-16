@@ -6,8 +6,8 @@ import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Declares an NBT field that stores a world position, so the built-in declared-field processor
- * rebases it between world space and parcel space on capture and restore.
+ * Declares an NBT field that stores a world position or orientation, so the built-in declared-field
+ * processor rebases it between world space and parcel space on capture and restore.
  *
  * <p>Declared fields are parcel-frame references: they are translated (and mirrored/rotated) with
  * the parcel when it is restored or imported at a different transform. Data that references the
@@ -31,7 +31,17 @@ public record ParcelCoordinateField(
     /** Compound with integer {@code X}, {@code Y}, {@code Z} keys, a common modding convention. */
     BLOCK_POS_XYZ,
     /** List of three doubles, the {@link net.minecraft.world.phys.Vec3#CODEC} form. */
-    POSITION
+    POSITION,
+    /**
+     * A {@link net.minecraft.core.Direction} stored as a name string or a 3D data value number;
+     * transformed as an orientation role and written back in the original form.
+     */
+    DIRECTION,
+    /**
+     * An item-frame style in-plane rotation step (45° units) stored as a number; paired with the
+     * record's {@link #DIRECTION} field for the frame facing (SEMANTICS.md rule 3.1).
+     */
+    ROTATION_STEP
   }
 
   public ParcelCoordinateField {

@@ -551,12 +551,12 @@ public final class ExampleIntegration implements GitParcelExtension {
 
 按要处理的数据选择通道：
 
-| 你的数据                                                  | 通道                                    |
-| --------------------------------------------------------- | --------------------------------------- |
-| 一种全新的、可独立保存的内容（自有序列化格式）            | 内容类型 `ParcelContentType`            |
-| 记录 NBT 中的世界坐标、实体间 UUID 引用、瞬态与派生字段   | 记录处理器 `ParcelRecordProcessor`      |
-| 引用世界外部存储的数据（如地图画、模组侧库存）            | 附件（处理器 + `ParcelAttachmentType`） |
-| 不被任何记录引用的区域性数据（模组 per-region SavedData） | 区域贡献者 `ParcelCaptureContributor`   |
+| 你的数据                                                      | 通道                                    |
+| ------------------------------------------------------------- | --------------------------------------- |
+| 一种全新的、可独立保存的内容（自有序列化格式）                | 内容类型 `ParcelContentType`            |
+| 记录 NBT 中的世界坐标、朝向、实体间 UUID 引用、瞬态与派生字段 | 记录处理器 `ParcelRecordProcessor`      |
+| 引用世界外部存储的数据（如地图画、模组侧库存）                | 附件（处理器 + `ParcelAttachmentType`） |
+| 不被任何记录引用的区域性数据（模组 per-region SavedData）     | 区域贡献者 `ParcelCaptureContributor`   |
 
 ### 记录处理器
 

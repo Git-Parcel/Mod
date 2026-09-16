@@ -73,6 +73,49 @@ class ParcelSpaceTest extends AbstractMinecraftTest {
     }
   }
 
+  /** Rule 3.1: the step transform is an involution pair across every facing and orientation. */
+  @Test
+  void roundTripsRotationStepsForEveryFacingAndOrientation() {
+    for (Mirror mirror : Mirror.values()) {
+      for (Rotation rotation : Rotation.values()) {
+        var space = space(mirror, rotation);
+        for (Direction facing : Direction.values()) {
+          for (int step = 0; step < 8; step++) {
+            int world = space.toWorldRotationStep(facing, step);
+            assertEquals(
+                step,
+                space.toParcelRotationStep(facing, world),
+                "step round trip for mirror=%s rotation=%s facing=%s".formatted(mirror, rotation, facing));
+          }
+        }
+      }
+    }
+  }
+
+  /** Wall-mounted frames stay upright when the world rotates around Y. */
+  @Test
+  void wallFramesKeepTheirStepUnderRotation() {
+    var space = space(Mirror.NONE, Rotation.CLOCKWISE_90);
+    assertEquals(3, space.toWorldRotationStep(Direction.SOUTH, 3));
+    assertEquals(7, space.toWorldRotationStep(Direction.WEST, 7));
+  }
+
+  /** Mirroring flips the in-plane handedness, negating the step (mod 8). */
+  @Test
+  void wallFramesNegateTheirStepUnderMirror() {
+    var space = space(Mirror.LEFT_RIGHT, Rotation.NONE);
+    assertEquals(5, space.toWorldRotationStep(Direction.SOUTH, 3));
+    assertEquals(0, space.toWorldRotationStep(Direction.EAST, 0));
+  }
+
+  /** Floor frames rotate with the world because their reference top is a horizontal direction. */
+  @Test
+  void floorFramesStepUnderRotation() {
+    var space = space(Mirror.NONE, Rotation.CLOCKWISE_90);
+    assertEquals(5, space.toWorldRotationStep(Direction.UP, 3));
+    assertEquals(5, space.toWorldRotationStep(Direction.DOWN, 7));
+  }
+
   private static ParcelSpace space(Mirror mirror, Rotation rotation) {
     return new ParcelSpace(new ParcelTransform(mirror, rotation, ANCHOR_WORLD));
   }
