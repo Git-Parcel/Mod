@@ -4,8 +4,12 @@ import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentTypeRegistry;
 import io.github.leawind.gitparcel.common.api.extension.contributor.ParcelCaptureContributorRegistry;
 import io.github.leawind.gitparcel.common.api.extension.contributor.ParcelRestoreContext;
+import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefField;
+import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFieldRegistry;
+import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessor;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelSemantics;
 import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockSection;
@@ -22,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
+import org.jspecify.annotations.Nullable;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.EntityProcessor;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -45,6 +50,8 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
   private final ParcelAttachmentSession attachments = new ParcelAttachmentSession();
   private final List<BufferedEntity> bufferedEntities = new ArrayList<>();
   private final List<AttachmentRecord> restoredAttachments = new ArrayList<>();
+  private final List<ParcelRecordProcessor> participants;
+  private final List<ParcelEntityRefField> declaredRefFields;
   private boolean finished;
 
   public MinecraftParcelDataSink(
@@ -53,14 +60,43 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
       boolean ignoreBlocks,
       boolean ignoreEntities,
       int blockUpdateFlags,
-      int sourceDataVersion) {
+      int sourceDataVersion,
+      @Nullable ParcelSemantics semantics) {
     this.level = level;
     this.space = space;
     this.ignoreBlocks = ignoreBlocks;
     this.ignoreEntities = ignoreEntities;
     this.blockUpdateFlags = blockUpdateFlags;
     this.sourceDataVersion = sourceDataVersion;
-    this.processorContext = new ParcelRecordProcessorContext(level, space, attachments, null);
+    this.participants = participants(semantics);
+    this.declaredRefFields = declaredRefFields(semantics);
+    this.processorContext =
+        new ParcelRecordProcessorContext(level, space, attachments, null, semantics);
+  }
+
+  /**
+   * Resolves the rule 7.3 participants: the processors recorded by the snapshot's
+   * self-description. The core processor always participates because authoritative positioning is
+   * rewritten unconditionally (SEMANTICS.md definition 2.2); without a manifest only the core
+   * processor runs.
+   */
+  private static List<ParcelRecordProcessor> participants(@Nullable ParcelSemantics semantics) {
+    return ParcelRecordProcessorRegistry.get().orderedProcessors().stream()
+        .filter(
+            processor ->
+                processor.id().equals(MinecraftCoreRecordProcessor.ID)
+                    || (semantics != null && semantics.declaresProcessor(processor.id())))
+        .toList();
+  }
+
+  /** Declared entity-reference fields recorded by the snapshot; none without a manifest. */
+  private static List<ParcelEntityRefField> declaredRefFields(@Nullable ParcelSemantics semantics) {
+    if (semantics == null) {
+      return List.of();
+    }
+    return ParcelEntityRefFieldRegistry.get().fields().stream()
+        .filter(semantics::declares)
+        .toList();
   }
 
   @Override
@@ -115,7 +151,7 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
                   sourceDataVersion),
               original.semanticData());
       validateSemanticData(record.semanticData());
-      for (var processor : ParcelRecordProcessorRegistry.get().orderedProcessors()) {
+      for (var processor : participants) {
         record = processor.restoreBlockEntity(processorContext, record);
       }
       var worldPos = space.toWorld(record.pos());
@@ -146,7 +182,7 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
                 sourceDataVersion),
             original.semanticData());
     validateSemanticData(record.semanticData());
-    for (var processor : ParcelRecordProcessorRegistry.get().orderedProcessors()) {
+    for (var processor : participants) {
       record = processor.restoreEntity(processorContext, record);
     }
     bufferedEntities.add(new BufferedEntity(originalId, record));
@@ -171,7 +207,8 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
         buffered
             .originalId()
             .ifPresent(id -> data.put("UUID", encodeUuid(remap.getOrDefault(id, id))));
-        EntityUuidRemapper.rewriteReferences(data, buffered.record().type(), remap);
+        EntityUuidRemapper.rewriteReferences(
+            data, buffered.record().type(), remap, declaredRefFields);
         data.putString("id", buffered.record().type().toString());
         var entity =
             EntityType.loadEntityRecursive(

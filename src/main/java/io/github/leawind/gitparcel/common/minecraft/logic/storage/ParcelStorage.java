@@ -2,9 +2,12 @@ package io.github.leawind.gitparcel.common.minecraft.logic.storage;
 
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentTypeRegistry;
+import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateFieldRegistry;
+import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFieldRegistry;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
 import io.github.leawind.gitparcel.common.api.operation.ProgressReporter;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelMeta;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelSemantics;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
@@ -34,6 +37,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -193,6 +197,7 @@ public class ParcelStorage {
     Map<String, ParcelContentManifest> previousContents = meta.contents();
     try {
       meta.setContents(contents);
+      meta.setSemantics(ParcelSemantics.captureCurrent());
       meta.save(getMetaFile(parcelDir));
     } finally {
       meta.setContents(previousContents);
@@ -517,6 +522,7 @@ public class ParcelStorage {
     Path dataDir = parcelDir.resolve(DATA_DIR_NAME);
     var types = resolveSnapshotContentTypes(meta, dataDir);
     var space = new ParcelSpace(transform);
+    discloseSemanticsGaps(meta);
     if (!ignoreEntities) {
       level
           .getEntities(
@@ -532,7 +538,8 @@ public class ParcelStorage {
             ignoreBlocks,
             ignoreEntities,
             flags,
-            meta.dataVersion());
+            meta.dataVersion(),
+            meta.semantics().orElse(null));
     try {
       for (ParcelContentType<?> type : ParcelContentTypeOrder.forLoad(types)) {
         loadContent(
@@ -546,6 +553,74 @@ public class ParcelStorage {
       sink.commit();
     } finally {
       sink.finish();
+    }
+  }
+
+  /**
+   * Rule 7.2 disclosure: warns when a snapshot's self-description references semantics that are no
+   * longer registered, so the coming degradation is explicit instead of silent.
+   */
+  private static void discloseSemanticsGaps(ParcelMeta meta) {
+    var semantics = meta.semantics();
+    if (semantics.isEmpty()) {
+      LOGGER.warn(
+          "Snapshot {} has no semantic self-description; only the core processor will"
+              + " participate and declared fields will not be rewritten",
+          meta.name() == null ? "(unnamed)" : meta.name());
+      return;
+    }
+    var recorded = semantics.orElseThrow();
+    var missingProcessors =
+        recorded.processors().stream()
+            .filter(id -> ParcelRecordProcessorRegistry.get().get(id) == null)
+            .map(Identifier::toString)
+            .toList();
+    if (!missingProcessors.isEmpty()) {
+      LOGGER.warn(
+          "Snapshot {} references unregistered parcel processors; the affected fields will not be"
+              + " transformed: {}",
+          meta.name() == null ? "(unnamed)" : meta.name(),
+          missingProcessors);
+    }
+    var missingAttachments =
+        recorded.attachments().stream()
+            .filter(entry -> ParcelAttachmentTypeRegistry.get().get(entry.type()) == null)
+            .map(entry -> entry.type().toString())
+            .toList();
+    if (!missingAttachments.isEmpty()) {
+      LOGGER.warn(
+          "Snapshot {} references unregistered parcel attachment types; affected records will"
+              + " degrade: {}",
+          meta.name() == null ? "(unnamed)" : meta.name(),
+          missingAttachments);
+    }
+    var missingCoordinateFields =
+        recorded.coordinateFields().stream()
+            .filter(
+                entry ->
+                    ParcelCoordinateFieldRegistry.get().fields().stream()
+                        .noneMatch(entry::matches))
+            .toList();
+    if (!missingCoordinateFields.isEmpty()) {
+      LOGGER.warn(
+          "Snapshot {} references unregistered declared coordinate fields; they will not be"
+              + " rewritten: {}",
+          meta.name() == null ? "(unnamed)" : meta.name(),
+          missingCoordinateFields);
+    }
+    var missingRefFields =
+        recorded.entityRefFields().stream()
+            .filter(
+                entry ->
+                    ParcelEntityRefFieldRegistry.get().fields().stream()
+                        .noneMatch(entry::matches))
+            .toList();
+    if (!missingRefFields.isEmpty()) {
+      LOGGER.warn(
+          "Snapshot {} references unregistered declared entity-reference fields; they will not"
+              + " be rewritten: {}",
+          meta.name() == null ? "(unnamed)" : meta.name(),
+          missingRefFields);
     }
   }
 

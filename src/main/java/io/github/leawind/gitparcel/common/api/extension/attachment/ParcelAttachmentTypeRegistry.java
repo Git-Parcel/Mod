@@ -9,9 +9,13 @@ public interface ParcelAttachmentTypeRegistry {
     return ParcelAttachmentTypeRegistryImpl.INSTANCE;
   }
 
-  void register(ParcelAttachmentType type);
+  void register(io.github.leawind.gitparcel.common.api.extension.RegistrationSource source,
+      ParcelAttachmentType type);
 
   @Nullable ParcelAttachmentType get(Identifier id);
+
+  /** All registered attachment types in registration order. */
+  java.util.List<ParcelAttachmentType> types();
 
   void freeze();
 

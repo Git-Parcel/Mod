@@ -23,6 +23,12 @@ public final class BuiltinExtension implements GitParcelExtension {
     return "gitparcel:builtin";
   }
 
+  /** The builtin extension owns vanilla-field semantics in addition to its own namespace. */
+  @Override
+  public java.util.Collection<String> ownedNamespaces() {
+    return java.util.Set.of("gitparcel", "minecraft");
+  }
+
   @Override
   public void register(ParcelExtensionRegistrar registrar) {
     registrar.registerContentType(new AttachmentContentType());

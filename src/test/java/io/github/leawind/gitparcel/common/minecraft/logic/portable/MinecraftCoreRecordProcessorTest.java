@@ -34,7 +34,7 @@ class MinecraftCoreRecordProcessorTest extends AbstractMinecraftTest {
                       Mirror.FRONT_BACK, Rotation.CLOCKWISE_90, new BlockPos(100, 20, -40))
                   .apply(new BlockPos(7, 3, -2))));
   private final ParcelRecordProcessorContext context =
-      new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession(), null);
+      new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession(), null, null);
 
   @Test
   void restoresBlockEntityCoordinatesFromAnchorRelativePosition() {
@@ -139,7 +139,7 @@ class MinecraftCoreRecordProcessorTest extends AbstractMinecraftTest {
         // Fold the old anchor offset into the translation so it becomes the anchor's position.
         var space = new ParcelSpace(
             new ParcelTransform(mirror, rotation, placement.apply(new BlockPos(5, -2, 9))));
-        var context = new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession(), null);
+        var context = new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession(), null, null);
         var relativePos = new Vec3(1.5, 2.25, -3.75);
         var localMotion = new Vec3(0.25, -0.5, 1.5);
         var relativeBlockPos = new BlockPos(1, -1, 2);

@@ -56,6 +56,14 @@ public interface ParcelContentType<C extends ParcelContentConfig<C>> {
   Spec spec();
 
   /** Content ids that must be loaded before this content type. Save order is the reverse. */
+  /**
+   * Explicit tie-break priority for rule 7.4 adjudication among same-tier duplicate
+   * registrations; higher wins.
+   */
+  default int registrationPriority() {
+    return 0;
+  }
+
   default Set<String> loadAfter() {
     return Set.of();
   }

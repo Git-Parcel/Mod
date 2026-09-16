@@ -10,7 +10,8 @@ public interface ParcelContentTypeRegistry {
     return Factory.getParcelContentTypeRegistry();
   }
 
-  void register(ParcelContentType<?> type);
+  void register(io.github.leawind.gitparcel.common.api.extension.RegistrationSource source,
+      ParcelContentType<?> type);
 
   @Nullable ParcelContentType<?> get(ParcelContentType.Spec spec);
 

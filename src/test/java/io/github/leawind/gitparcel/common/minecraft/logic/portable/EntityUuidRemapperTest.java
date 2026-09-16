@@ -63,7 +63,7 @@ class EntityUuidRemapperTest extends AbstractMinecraftTest {
     memories.put("friends", friends);
     data.put("memories", memories);
 
-    EntityUuidRemapper.rewriteReferences(data, TEST_ENTITY, new HashMap<>(remap));
+    EntityUuidRemapper.rewriteReferences(data, TEST_ENTITY, new HashMap<>(remap), io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFieldRegistry.get().fields());
 
     assertEquals(
         remap.get(insideB),
@@ -85,7 +85,7 @@ class EntityUuidRemapperTest extends AbstractMinecraftTest {
     data.putString("id", OTHER_ENTITY.toString());
     putUuid(data, "partner", insideA);
 
-    EntityUuidRemapper.rewriteReferences(data, OTHER_ENTITY, new HashMap<>(remap));
+    EntityUuidRemapper.rewriteReferences(data, OTHER_ENTITY, new HashMap<>(remap), io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFieldRegistry.get().fields());
 
     assertEquals(insideA, readUuid(data, "partner").orElseThrow());
   }
@@ -103,7 +103,7 @@ class EntityUuidRemapperTest extends AbstractMinecraftTest {
     passengers.add(passenger);
     data.put("Passengers", passengers);
 
-    EntityUuidRemapper.rewriteReferences(data, TEST_ENTITY, new HashMap<>(remap));
+    EntityUuidRemapper.rewriteReferences(data, TEST_ENTITY, new HashMap<>(remap), io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFieldRegistry.get().fields());
 
     var passengerTag = data.getList("Passengers").orElseThrow().getCompound(0).orElseThrow();
     assertTrue(readUuid(passengerTag, "partner").isPresent());

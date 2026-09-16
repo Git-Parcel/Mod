@@ -1,7 +1,6 @@
 package io.github.leawind.gitparcel.common.minecraft.logic.portable;
 
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefField;
-import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFieldRegistry;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,11 +36,14 @@ final class EntityUuidRemapper {
    * the same scoping as the top-level entity.
    */
   static void rewriteReferences(
-      CompoundTag data, @Nullable Identifier entityType, Map<UUID, UUID> remap) {
+      CompoundTag data,
+      @Nullable Identifier entityType,
+      Map<UUID, UUID> remap,
+      List<ParcelEntityRefField> declaredFields) {
     if (remap.isEmpty()) {
       return;
     }
-    rewriteTree(data, entityType, remap);
+    rewriteTree(data, entityType, remap, declaredFields);
     data.getList("Passengers")
         .ifPresent(
             passengers ->
@@ -52,12 +54,16 @@ final class EntityUuidRemapper {
                             rewriteTree(
                                 passenger,
                                 passenger.getString("id").map(Identifier::parse).orElse(null),
-                                remap)));
+                                remap,
+                                declaredFields)));
   }
 
   private static void rewriteTree(
-      CompoundTag data, @Nullable Identifier entityType, Map<UUID, UUID> remap) {
-    for (ParcelEntityRefField field : ParcelEntityRefFieldRegistry.get().fields()) {
+      CompoundTag data,
+      @Nullable Identifier entityType,
+      Map<UUID, UUID> remap,
+      List<ParcelEntityRefField> declaredFields) {
+    for (ParcelEntityRefField field : declaredFields) {
       if (!field.appliesTo(entityType)) {
         continue;
       }

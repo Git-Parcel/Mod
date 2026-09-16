@@ -44,7 +44,10 @@ class ParcelStorageValidationTest extends AbstractMinecraftTest {
   static void registerProbeAttachmentType() {
     var registry = ParcelAttachmentTypeRegistry.get();
     if (registry.get(PROBE_ATTACHMENT_TYPE) == null) {
-      registry.register(probeAttachmentType());
+      registry.register(
+          new io.github.leawind.gitparcel.common.api.extension.RegistrationSource(
+              "gitparceltest:fixture", false, 0),
+          probeAttachmentType());
     }
   }
 

@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+
+import io.github.leawind.gitparcel.common.api.extension.RegistrationSource;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentConfig;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentType;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSink;
@@ -20,10 +22,10 @@ class ParcelContentTypeRegistryTest {
     var blocks3 = new TestContentType("blocks", 3);
     var blocks2 = new TestContentType("blocks", 2);
 
-    registry.register(blocks1);
-    registry.register(entities1);
-    registry.register(blocks3);
-    registry.register(blocks2);
+    registry.register(GUEST, blocks1);
+    registry.register(GUEST, entities1);
+    registry.register(GUEST, blocks3);
+    registry.register(GUEST, blocks2);
     registry.freeze();
 
     assertSame(blocks3, registry.latest("blocks"));
@@ -32,17 +34,29 @@ class ParcelContentTypeRegistryTest {
     assertSame(blocks2, registry.get(blocks2.spec()));
   }
 
+  /**
+   * Rule 7.4: content type ids are plain directory names without a namespace, so a duplicate
+   * same-version registration adjudicates instead of failing; higher priority wins.
+   */
   @Test
-  void rejectsDuplicateVersionsAndUnsafeDirectoryNames() {
+  void adjudicatesDuplicateVersionsAndRejectsUnsafeDirectoryNames() {
     var registry = new ParcelContentTypeRegistryImpl();
-    registry.register(new TestContentType("blocks", 1));
+    var first = new TestContentType("blocks", 1);
+    var second = new TestContentType("blocks", 1);
+    var higher = new TestContentType("blocks", 1);
+    registry.register(GUEST, first);
 
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> registry.register(new TestContentType("blocks", 1)));
+    registry.register(GUEST, second);
+    assertSame(first, registry.get(first.spec()));
+    registry.register(OWNER, higher);
+    assertSame(higher, registry.get(first.spec()));
+
     assertThrows(IllegalArgumentException.class, () -> new TestContentType("../blocks", 1));
     assertThrows(IllegalArgumentException.class, () -> new TestContentType("blocks", -1));
   }
+
+  private static final RegistrationSource GUEST = new RegistrationSource("test:guest", false, 0);
+  private static final RegistrationSource OWNER = new RegistrationSource("test:content", true, 0);
 
   private static final class TestContentType
       implements ParcelContentType<ParcelContentConfig.None> {

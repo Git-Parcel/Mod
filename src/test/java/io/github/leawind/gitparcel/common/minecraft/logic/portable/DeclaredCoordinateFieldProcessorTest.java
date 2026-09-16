@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateField;
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateFieldRegistry;
+import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFieldRegistry;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelSemantics;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
@@ -72,7 +74,7 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
     var record =
         new EntityRecord(TEST_ENTITY, new Vec3(0, 0, 0), BlockPos.ZERO, data, List.of());
 
-    var captured = processor.captureEntity(context(), null, record);
+    var captured = processor.captureEntity(captureContext(), null, record);
 
     assertEquals(
         space.toParcel(new BlockPos(120, 70, -30)),
@@ -189,7 +191,7 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
             new ParcelSpace(
                 new ParcelTransform(mirror, rotation, placement.apply(new BlockPos(5, -2, 9))));
         var context =
-            new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession(), null);
+            new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession(), null, null);
         var world = new BlockPos(120, 70, -30);
         var data = entityData(TEST_ENTITY);
         putBlockPosCodec(data, "home", world);
@@ -223,8 +225,83 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
     assertTrue(restored.data().getList("home").isEmpty());
   }
 
+  /**
+   * A capture context: the attachment collector marks the capture direction, so every registered
+   * field participates.
+   */
+  private ParcelRecordProcessorContext captureContext() {
+    var session = new ParcelAttachmentSession();
+    return new ParcelRecordProcessorContext(null, space, session, session, null);
+  }
+
+  /** A restore context carrying a self-description that records every registered field. */
   private ParcelRecordProcessorContext context() {
-    return new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession(), null);
+    return new ParcelRecordProcessorContext(
+        null,
+        space,
+        new ParcelAttachmentSession(),
+        null,
+        new ParcelSemantics(
+            List.of(),
+            ParcelCoordinateFieldRegistry.get().fields().stream()
+                .map(ParcelSemantics.CoordinateField::of)
+                .toList(),
+            ParcelEntityRefFieldRegistry.get().fields().stream()
+                .map(ParcelSemantics.ReferenceField::of)
+                .toList(),
+            List.of()));
+  }
+
+  /** Rule 7.3: fields the snapshot self-description omits must not be rewritten on restore. */
+  @Test
+  void restoresOnlyFieldsRecordedByTheSnapshotSelfDescription() {
+    var data = entityData(TEST_ENTITY);
+    putBlockPosCodec(data, "home", new BlockPos(4, -1, 2));
+    putPositionCodec(data, "sprint_target", new Vec3(4.5, -1.25, 2.5));
+    var record =
+        new EntityRecord(TEST_ENTITY, new Vec3(0, 0, 0), BlockPos.ZERO, data, List.of());
+
+    var partial =
+        new ParcelSemantics(
+            List.of(),
+            List.of(
+                ParcelSemantics.CoordinateField.of(
+                    ParcelCoordinateField.forType(
+                        ParcelCoordinateField.Target.ENTITY,
+                        TEST_ENTITY,
+                        "home",
+                        ParcelCoordinateField.Encoding.BLOCK_POS))),
+            List.of(),
+            List.of());
+    var partialContext =
+        new ParcelRecordProcessorContext(
+            null, space, new ParcelAttachmentSession(), null, partial);
+
+    var restored = processor.restoreEntity(partialContext, record);
+
+    assertEquals(
+        space.toWorld(new BlockPos(4, -1, 2)),
+        readBlockPosCodec(restored.data(), "home").orElseThrow());
+    assertEquals(
+        new Vec3(4.5, -1.25, 2.5),
+        readPositionCodec(restored.data(), "sprint_target").orElseThrow(),
+        "fields absent from the snapshot self-description must not be rebased");
+  }
+
+  /** Rule 7.3: restoring a pre-self-description snapshot rewrites nothing. */
+  @Test
+  void restoresNothingWithoutASelfDescription() {
+    var data = entityData(TEST_ENTITY);
+    putBlockPosCodec(data, "home", new BlockPos(4, -1, 2));
+    var record =
+        new EntityRecord(TEST_ENTITY, new Vec3(0, 0, 0), BlockPos.ZERO, data, List.of());
+
+    var manifestlessContext =
+        new ParcelRecordProcessorContext(
+            null, space, new ParcelAttachmentSession(), null, null);
+
+    var restored = processor.restoreEntity(manifestlessContext, record);
+    assertEquals(new BlockPos(4, -1, 2), readBlockPosCodec(restored.data(), "home").orElseThrow());
   }
 
   private static Identifier id(String path) {

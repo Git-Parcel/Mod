@@ -10,5 +10,13 @@ public interface ParcelAttachmentType {
 
   int schemaVersion();
 
+  /**
+   * Explicit tie-break priority for rule 7.4 adjudication among same-tier duplicate
+   * registrations; higher wins.
+   */
+  default int registrationPriority() {
+    return 0;
+  }
+
   void restore(ParcelRecordProcessorContext context, AttachmentRecord attachment) throws Exception;
 }

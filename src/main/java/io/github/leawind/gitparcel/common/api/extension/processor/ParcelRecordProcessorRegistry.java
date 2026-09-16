@@ -10,7 +10,8 @@ public interface ParcelRecordProcessorRegistry {
     return ParcelRecordProcessorRegistryImpl.INSTANCE;
   }
 
-  void register(ParcelRecordProcessor processor);
+  void register(io.github.leawind.gitparcel.common.api.extension.RegistrationSource source,
+      ParcelRecordProcessor processor);
 
   @Nullable ParcelRecordProcessor get(Identifier id);
 

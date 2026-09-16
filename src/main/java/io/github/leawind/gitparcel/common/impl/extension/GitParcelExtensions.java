@@ -46,7 +46,7 @@ public final class GitParcelExtensions {
         continue;
       }
 
-      var registrar = new ParcelExtensionRegistrarImpl();
+      var registrar = new ParcelExtensionRegistrarImpl(extension);
       try {
         extension.register(registrar);
         registrar.commit(registry);

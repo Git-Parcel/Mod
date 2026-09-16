@@ -20,6 +20,14 @@ public interface ParcelRecordProcessor {
     return Set.of();
   }
 
+  /**
+   * Explicit tie-break priority for rule 7.4 adjudication among same-tier duplicate
+   * registrations; higher wins.
+   */
+  default int registrationPriority() {
+    return 0;
+  }
+
   default Set<Identifier> runBefore() {
     return Set.of();
   }

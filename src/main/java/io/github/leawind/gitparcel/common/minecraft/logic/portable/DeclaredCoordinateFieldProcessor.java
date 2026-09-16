@@ -46,7 +46,7 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
       ParcelRecordProcessorContext context, BlockEntity source, BlockEntityRecord record) {
     var typeId = record.data().getString("id").map(Identifier::parse).orElse(null);
     var data = record.data().copy();
-    transformBlockEntity(data, typeId, context.space(), false);
+    transformBlockEntity(context, data, typeId, context.space(), false);
     return new BlockEntityRecord(record.pos(), data, record.semanticData());
   }
 
@@ -55,7 +55,7 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
       ParcelRecordProcessorContext context, BlockEntityRecord record) {
     var typeId = record.data().getString("id").map(Identifier::parse).orElse(null);
     var data = record.data().copy();
-    transformBlockEntity(data, typeId, context.space(), true);
+    transformBlockEntity(context, data, typeId, context.space(), true);
     return new BlockEntityRecord(record.pos(), data, record.semanticData());
   }
 
@@ -63,7 +63,7 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
   public EntityRecord captureEntity(
       ParcelRecordProcessorContext context, Entity source, EntityRecord record) {
     var data = record.data().copy();
-    transformEntityTree(data, record.type(), context.space(), false);
+    transformEntityTree(context, data, record.type(), context.space(), false);
     return new EntityRecord(record.type(), record.pos(), record.blockPos(), data, record.semanticData());
   }
 
@@ -71,16 +71,20 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
   public EntityRecord restoreEntity(
       ParcelRecordProcessorContext context, EntityRecord record) {
     var data = record.data().copy();
-    transformEntityTree(data, record.type(), context.space(), true);
+    transformEntityTree(context, data, record.type(), context.space(), true);
     return new EntityRecord(record.type(), record.pos(), record.blockPos(), data, record.semanticData());
   }
 
   private static void transformBlockEntity(
-      CompoundTag data, @Nullable Identifier typeId, ParcelSpace space, boolean toWorld) {
+      ParcelRecordProcessorContext context,
+      CompoundTag data,
+      @Nullable Identifier typeId,
+      ParcelSpace space,
+      boolean toWorld) {
     if (typeId == null) {
       return;
     }
-    var fields = applicableFields(ParcelCoordinateField.Target.BLOCK_ENTITY, typeId);
+    var fields = applicableFields(context, ParcelCoordinateField.Target.BLOCK_ENTITY, typeId);
     if (fields.isEmpty()) {
       return;
     }
@@ -94,8 +98,12 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
   }
 
   private static void transformEntityTree(
-      CompoundTag data, Identifier typeId, ParcelSpace space, boolean toWorld) {
-    var fields = applicableFields(ParcelCoordinateField.Target.ENTITY, typeId);
+      ParcelRecordProcessorContext context,
+      CompoundTag data,
+      Identifier typeId,
+      ParcelSpace space,
+      boolean toWorld) {
+    var fields = applicableFields(context, ParcelCoordinateField.Target.ENTITY, typeId);
     for (var field : fields) {
       NbtPaths.forEach(
           data, NbtPaths.parse(field.path()), slot -> rebaseSlot(slot, field.encoding(), space, toWorld));
@@ -108,16 +116,27 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
                     .forEach(
                         passenger ->
                             transformEntityTree(
+                                context,
                                 passenger,
                                 passenger.getString("id").map(Identifier::parse).orElse(null),
                                 space,
                                 toWorld)));
   }
 
+  /**
+   * Rule 7.3 field participation: capture applies every registered field; restore only the fields
+   * the snapshot's self-description records. Restoring a snapshot without a manifest applies none,
+   * because whether its declared fields were ever relativized is unknown.
+   */
   private static List<ParcelCoordinateField> applicableFields(
-      ParcelCoordinateField.Target target, @Nullable Identifier typeId) {
+      ParcelRecordProcessorContext context,
+      ParcelCoordinateField.Target target,
+      @Nullable Identifier typeId) {
+    boolean capturing = context.collector() != null;
+    var semantics = context.semantics();
     return ParcelCoordinateFieldRegistry.get().fields().stream()
         .filter(field -> field.appliesTo(target, typeId))
+        .filter(field -> capturing || (semantics != null && semantics.declares(field)))
         .toList();
   }
 

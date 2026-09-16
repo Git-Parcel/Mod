@@ -56,7 +56,8 @@ public final class MinecraftParcelDataSource implements ParcelDataSource {
   public void forEachBlockSection(
       int sectionSize, ParcelDataConsumer<BlockSection> consumer)
       throws IOException, ParcelException {
-    var processorContext = new ParcelRecordProcessorContext(level, space, attachments, attachments);
+    var processorContext =
+        new ParcelRecordProcessorContext(level, space, attachments, attachments, null);
     var processors = ParcelRecordProcessorRegistry.get().orderedProcessors();
     // Sections arrive anchor-relative: the grid is aligned to the anchor, so their origins double
     // as stable archive coordinates.
@@ -104,7 +105,8 @@ public final class MinecraftParcelDataSource implements ParcelDataSource {
     if (ignoreEntities) {
       return;
     }
-    var processorContext = new ParcelRecordProcessorContext(level, space, attachments, attachments);
+    var processorContext =
+        new ParcelRecordProcessorContext(level, space, attachments, attachments, null);
     var processors = ParcelRecordProcessorRegistry.get().orderedProcessors();
     AABB bounds = worldBounds();
     List<Entity> entities =

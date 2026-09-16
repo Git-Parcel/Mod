@@ -1,5 +1,6 @@
 package io.github.leawind.gitparcel.common.testutils;
 
+import io.github.leawind.gitparcel.common.api.extension.RegistrationSource;
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentConfig;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentType;
@@ -11,6 +12,8 @@ import org.junit.jupiter.api.BeforeAll;
 
 /** Minecraft test base with a small parcel-content registry fixture. */
 public class AbstractGitParcelTest extends AbstractMinecraftTest {
+  protected static final RegistrationSource TEST_SOURCE =
+      new RegistrationSource("test:fixture", false, 0);
   protected static class TestContentType
       implements ParcelContentType<ParcelContentConfig.None> {
     private final Spec spec;
@@ -36,8 +39,8 @@ public class AbstractGitParcelTest extends AbstractMinecraftTest {
   static void beforeAllGitParcel() {
     var registry = ParcelContentTypeRegistry.get();
     registry.clear();
-    registry.register(new TestContentType("alpha", 0));
-    registry.register(new TestContentType("beta", 0));
-    registry.register(new TestContentType("charlie", 0));
+    registry.register(TEST_SOURCE, new TestContentType("alpha", 0));
+    registry.register(TEST_SOURCE, new TestContentType("beta", 0));
+    registry.register(TEST_SOURCE, new TestContentType("charlie", 0));
   }
 }

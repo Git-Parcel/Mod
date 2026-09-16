@@ -6,6 +6,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.leawind.gitparcel.common.api.exceptions.InvalidParcelMetaException;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelSemantics;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentManifest;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -54,7 +55,10 @@ public final class ParcelMeta {
                           .forGetter(d -> Optional.ofNullable(d.mods)),
                       Codec.BOOL
                           .optionalFieldOf("exclude_entities")
-                          .forGetter(d -> Optional.ofNullable(d.excludeEntities)))
+                          .forGetter(d -> Optional.ofNullable(d.excludeEntities)),
+                      ParcelSemantics.CODEC
+                          .optionalFieldOf("semantics")
+                          .forGetter(d -> Optional.ofNullable(d.semantics)))
                   .apply(inst, ParcelMeta::new));
 
   //  public static final Pattern NAME_PATTERN = Pattern.compile("^[\\p{L}\\p{N}\\p{P} ]{1,255}$");
@@ -90,6 +94,9 @@ public final class ParcelMeta {
   /** Default is {@code true}. */
   public @Nullable Boolean excludeEntities = null;
 
+  /** Self-description of the semantics effective when this snapshot was captured. */
+  private @Nullable ParcelSemantics semantics;
+
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   private ParcelMeta(
       Map<String, ParcelContentManifest> contents,
@@ -101,7 +108,8 @@ public final class ParcelMeta {
       Optional<String> author,
       Optional<List<String>> tgs,
       Optional<Map<String, ModDependency>> mods,
-      Optional<Boolean> excludeEntities) {
+      Optional<Boolean> excludeEntities,
+      Optional<ParcelSemantics> semantics) {
     this.contents = Map.copyOf(contents);
     this.dataVersion = dataVersion;
     this.size = size;
@@ -112,6 +120,7 @@ public final class ParcelMeta {
     this.tags = tgs.orElse(null);
     this.mods = mods.orElse(null);
     this.excludeEntities = excludeEntities.orElse(true);
+    this.semantics = semantics.orElse(null);
   }
 
   public ParcelMeta(
@@ -155,6 +164,16 @@ public final class ParcelMeta {
 
   public void setContents(Map<String, ParcelContentManifest> contents) {
     this.contents = Map.copyOf(contents);
+  }
+
+  /** The snapshot self-description recorded at capture; absent in pre-self-description data. */
+  public Optional<ParcelSemantics> semantics() {
+    return Optional.ofNullable(semantics);
+  }
+
+  /** Records the semantic self-description to store with the next snapshot write. */
+  public void setSemantics(@Nullable ParcelSemantics semantics) {
+    this.semantics = semantics;
   }
 
   /** Sets the name. */
