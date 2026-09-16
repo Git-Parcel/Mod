@@ -34,10 +34,3 @@ type = "required"
 versionRange = "[${system_storage_lib_version},)"
 ordering = "NONE"
 side = "SERVER"
-
-[["dependencies.${mod_id}"]]
-modId = "modernui"
-type = "required"
-versionRange = "[${modernui_version},)"
-ordering = "NONE"
-side = "CLIENT"

@@ -23,7 +23,6 @@
     "fabricloader": "*",
     "fabric-api": "*",
     "minecraft": "${mc}",
-    "modernui": ">=${modernui_version}",
     "system_storage_lib": ">=${system_storage_lib_version}"
   }
 }

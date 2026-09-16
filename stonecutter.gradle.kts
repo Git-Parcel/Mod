@@ -259,24 +259,6 @@ allprojects {
             filter { includeGroup("com.terraformersmc") }
         }
 
-        // Modern UI
-        exclusiveContent {
-            forRepository {
-                maven("https://maven.izzel.io/releases/") {
-                    name = "IzzelAliz Maven"
-                }
-            }
-            filter {
-                includeGroup("icyllis.modernui")
-            }
-        }
-        maven {
-            url = uri("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/")
-            content {
-                includeGroup("fuzs.forgeconfigapiport")
-            }
-        }
-
         maven("https://maven.neoforged.net/releases/") {
             content {
                 includeGroupByRegex("net\\.neoforged(\\..*)?")

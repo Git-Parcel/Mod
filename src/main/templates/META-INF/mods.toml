@@ -33,10 +33,3 @@ mandatory = true
 versionRange = "[${system_storage_lib_version},)"
 ordering = "NONE"
 side = "SERVER"
-
-[["dependencies.${mod_id}"]]
-modId = "modernui"
-mandatory = true
-versionRange = "[${modernui_version},)"
-ordering = "NONE"
-side = "CLIENT"

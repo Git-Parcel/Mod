@@ -24,7 +24,6 @@ val modIssuesUrl = requiredProp("mod.issues_url")
 val modEmail = requiredProp("mod.email")
 
 val systemStorageLibVersion = requiredProp("deps.systemStorageLib")
-val modernUiVersion = requiredProp("deps.modernUi")
 
 val isFabric = modstitch.isLoom
 val isNeoforge = modstitch.isModDevGradleRegular
@@ -92,7 +91,6 @@ modstitch {
         replacementProperties.put("email", modEmail)
         replacementProperties.put("mc", requiredProp("meta.mcDep"))
         replacementProperties.put("system_storage_lib_version", systemStorageLibVersion)
-        replacementProperties.put("modernui_version", modernUiVersion)
         if (isNeoforge || isForge) {
             replacementProperties.put("loaderVersion", requiredProp("meta.loaderDep"))
         }
@@ -163,26 +161,6 @@ dependencies {
     }
 
     modstitchModImplementation("com.github.Leawind:SystemStorageLib:$systemStorageLibVersion")
-
-    // Modern UI
-    modstitchModImplementation("dev.icyllis:modernui-core:$modernUiVersion")
-    modstitchModImplementation("icyllis.modernui:ModernUI-Markflow:$modernUiVersion")
-    if (isFabric) {
-        modstitchModImplementation(
-            "icyllis.modernui:ModernUI-Fabric:${requiredProp("deps.modernUiPlatform")}",
-        )
-    } else if (isNeoforge) {
-        modstitchModImplementation(
-            "icyllis.modernui:ModernUI-NeoForge:${requiredProp("deps.modernUiPlatform")}",
-        )
-    }
-
-    // Forge Config API Port (required by Modern UI)
-    if (isFabric) {
-        modstitchModImplementation(
-            "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${requiredProp("deps.forgeConfigApiPort")}",
-        )
-    }
     // endregion
 
     // region bundled
