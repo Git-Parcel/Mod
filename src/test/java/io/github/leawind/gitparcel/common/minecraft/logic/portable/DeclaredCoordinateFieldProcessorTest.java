@@ -10,6 +10,8 @@ import net.minecraft.nbt.StringTag;
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFieldRegistry;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSemantics;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelExtent;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelSemantics;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
@@ -19,6 +21,7 @@ import io.github.leawind.gitparcel.common.testutils.AbstractMinecraftTest;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
@@ -78,6 +81,20 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
             TEST_ENTITY,
             "ItemRotation",
             ParcelCoordinateField.Encoding.ROTATION_STEP));
+    registry.register(
+        ParcelCoordinateField.forType(
+            ParcelCoordinateField.Target.ENTITY,
+            TEST_ENTITY,
+            "forced_outside",
+            ParcelCoordinateField.Encoding.POSITION,
+            ParcelCoordinateField.Pointing.OUTSIDE));
+    registry.register(
+        ParcelCoordinateField.forType(
+            ParcelCoordinateField.Target.ENTITY,
+            TEST_ENTITY,
+            "forced_inside",
+            ParcelCoordinateField.Encoding.POSITION,
+            ParcelCoordinateField.Pointing.INSIDE));
   }
 
   @Test
@@ -206,7 +223,7 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
             new ParcelSpace(
                 new ParcelTransform(mirror, rotation, placement.apply(new BlockPos(5, -2, 9))));
         var context =
-            new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession(), null, null);
+            new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession(), null, null, null);
         var world = new BlockPos(120, 70, -30);
         var data = entityData(TEST_ENTITY);
         putBlockPosCodec(data, "home", world);
@@ -260,7 +277,7 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
             new ParcelTransform(Mirror.LEFT_RIGHT, Rotation.NONE, new BlockPos(100, 64, 100)));
     var mirroredContext =
         new ParcelRecordProcessorContext(
-            null, mirrored, new ParcelAttachmentSession(), null, fullSemantics());
+            null, mirrored, new ParcelAttachmentSession(), null, fullSemantics(), null);
 
     var data = entityData(TEST_ENTITY);
     data.putString("Facing", Direction.SOUTH.getName());
@@ -285,6 +302,90 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
         List.of());
   }
 
+  /**
+   * Rule 3.2: on restore, values inside the parcel extent transform to world space; values
+   * outside it are outside-pointing world references and stay identical.
+   */
+  @Test
+  void restoresOnlyInsidePointingEdgesWhenGeometryIsKnown() {
+    var extent = new ParcelExtent(new Vec3i(8, 8, 8), new Vec3i(2, 1, 0));
+    var geometricContext =
+        new ParcelRecordProcessorContext(
+            null, space, new ParcelAttachmentSession(), null, fullSemantics(), extent);
+
+    var data = entityData(TEST_ENTITY);
+    putPositionCodec(data, "sprint_target", space.toWorld(new Vec3(1, -1, 2)));
+    putPositionCodec(data, "forced_outside", space.toWorld(new Vec3(50, 0, 50)));
+    var record = new EntityRecord(TEST_ENTITY, Vec3.ZERO, BlockPos.ZERO, data, List.of());
+
+    var restored = processor.restoreEntity(geometricContext, record);
+
+    assertEquals(
+        space.toWorld(new Vec3(1, -1, 2)),
+        readPositionCodec(restored.data(), "sprint_target").orElseThrow());
+  }
+
+  /** Rule 3.2: outside-pointing edges stay identical on restore, whatever the placement. */
+  @Test
+  void keepsOutsidePointingEdgesIdenticalOnRestore() {
+    var extent = new ParcelExtent(new Vec3i(8, 8, 8), new Vec3i(2, 1, 0));
+    var geometricContext =
+        new ParcelRecordProcessorContext(
+            null, space, new ParcelAttachmentSession(), null, fullSemantics(), extent);
+    Vec3 outsideWorld = new Vec3(1234.5, 64.25, -987.25);
+
+    var data = entityData(TEST_ENTITY);
+    putPositionCodec(data, "sprint_target", outsideWorld);
+    var record = new EntityRecord(TEST_ENTITY, Vec3.ZERO, BlockPos.ZERO, data, List.of());
+
+    var restored = processor.restoreEntity(geometricContext, record);
+
+    assertEquals(outsideWorld, readPositionCodec(restored.data(), "sprint_target").orElseThrow());
+  }
+
+  /** Rule 3.2: capture stores outside-pointing world values verbatim, without rebasing. */
+  @Test
+  void capturesOutsidePointingEdgesVerbatim() {
+    var extent = new ParcelExtent(new Vec3i(8, 8, 8), new Vec3i(2, 1, 0));
+    var session = new ParcelAttachmentSession();
+    var captureContext =
+        new ParcelRecordProcessorContext(null, space, session, session, null, extent);
+    // A world point whose parcel-space image falls outside the extent.
+    Vec3 worldValue = space.toWorld(new Vec3(50, 0, 50));
+
+    var data = entityData(TEST_ENTITY);
+    putPositionCodec(data, "sprint_target", worldValue);
+    var record = new EntityRecord(TEST_ENTITY, Vec3.ZERO, BlockPos.ZERO, data, List.of());
+
+    var captured = processor.captureEntity(captureContext, null, record);
+
+    assertEquals(worldValue, readPositionCodec(captured.data(), "sprint_target").orElseThrow());
+  }
+
+  /** Explicit pointing declarations override the geometric detection. */
+  @Test
+  void pointingDeclarationsOverrideTheGeometry() {
+    var extent = new ParcelExtent(new Vec3i(8, 8, 8), new Vec3i(2, 1, 0));
+    var geometricContext =
+        new ParcelRecordProcessorContext(
+            null, space, new ParcelAttachmentSession(), null, fullSemantics(), extent);
+    Vec3 outsideWorld = new Vec3(1234.5, 64.25, -987.25);
+    Vec3 insideParcel = new Vec3(1, -1, 2);
+
+    var data = entityData(TEST_ENTITY);
+    putPositionCodec(data, "forced_outside", insideParcel); // in extent but forced outside
+    putPositionCodec(data, "forced_inside", outsideWorld); // outside extent but forced inside
+    var record = new EntityRecord(TEST_ENTITY, Vec3.ZERO, BlockPos.ZERO, data, List.of());
+
+    var restored = processor.restoreEntity(geometricContext, record);
+
+    assertEquals(
+        insideParcel, readPositionCodec(restored.data(), "forced_outside").orElseThrow());
+    assertEquals(
+        space.toWorld(outsideWorld),
+        readPositionCodec(restored.data(), "forced_inside").orElseThrow());
+  }
+
   @Test
   void leavesMissingPathsUntouched() {
     var data = entityData(TEST_ENTITY);
@@ -302,7 +403,7 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
    */
   private ParcelRecordProcessorContext captureContext() {
     var session = new ParcelAttachmentSession();
-    return new ParcelRecordProcessorContext(null, space, session, session, null);
+    return new ParcelRecordProcessorContext(null, space, session, session, null, null);
   }
 
   /** A restore context carrying a self-description that records every registered field. */
@@ -320,7 +421,7 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
             ParcelEntityRefFieldRegistry.get().fields().stream()
                 .map(ParcelSemantics.ReferenceField::of)
                 .toList(),
-            List.of()));
+            List.of()), null);
   }
 
   /** Rule 7.3: fields the snapshot self-description omits must not be rewritten on restore. */
@@ -346,7 +447,7 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
             List.of());
     var partialContext =
         new ParcelRecordProcessorContext(
-            null, space, new ParcelAttachmentSession(), null, partial);
+            null, space, new ParcelAttachmentSession(), null, partial, null);
 
     var restored = processor.restoreEntity(partialContext, record);
 
@@ -369,7 +470,7 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
 
     var manifestlessContext =
         new ParcelRecordProcessorContext(
-            null, space, new ParcelAttachmentSession(), null, null);
+            null, space, new ParcelAttachmentSession(), null, null, null);
 
     var restored = processor.restoreEntity(manifestlessContext, record);
     assertEquals(new BlockPos(4, -1, 2), readBlockPosCodec(restored.data(), "home").orElseThrow());

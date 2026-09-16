@@ -91,11 +91,15 @@ public record ParcelSemantics(
   }
 
   /**
-   * One declared world-position field. The type is {@code null} when the declaration applies to
-   * every entity or block-entity type.
+   * One declared world-position or orientation field. The type is {@code null} when the
+   * declaration applies to every entity or block-entity type.
    */
   public record CoordinateField(
-      String target, @Nullable String type, String path, String encoding) {
+      String target,
+      @Nullable String type,
+      String path,
+      String encoding,
+      @Nullable String pointing) {
     public static final Codec<CoordinateField> CODEC =
         RecordCodecBuilder.create(
             inst ->
@@ -105,25 +109,39 @@ public record ParcelSemantics(
                             .optionalFieldOf("type")
                             .forGetter(field -> Optional.ofNullable(field.type())),
                         Codec.STRING.fieldOf("path").forGetter(CoordinateField::path),
-                        Codec.STRING.fieldOf("encoding").forGetter(CoordinateField::encoding))
+                        Codec.STRING.fieldOf("encoding").forGetter(CoordinateField::encoding),
+                        Codec.STRING
+                            .optionalFieldOf("pointing")
+                            .forGetter(field -> Optional.ofNullable(field.pointing())))
                     .apply(
                         inst,
-                        (target, type, path, encoding) ->
-                            new CoordinateField(target, type.orElse(null), path, encoding)));
+                        (target, type, path, encoding, pointing) ->
+                            new CoordinateField(
+                                target, type.orElse(null), path, encoding, pointing.orElse(null))));
 
     public static CoordinateField of(ParcelCoordinateField field) {
       return new CoordinateField(
           field.target().name(),
           field.type().map(Identifier::toString).orElse(null),
           field.path(),
-          field.encoding().name());
+          field.encoding().name(),
+          field.pointing() == ParcelCoordinateField.Pointing.GEOMETRIC
+              ? null
+              : field.pointing().name());
     }
 
     public boolean matches(ParcelCoordinateField field) {
       return target.equals(field.target().name())
           && path.equals(field.path())
           && encoding.equals(field.encoding().name())
-          && java.util.Objects.equals(type, field.type().map(Identifier::toString).orElse(null));
+          && java.util.Objects.equals(type, field.type().map(Identifier::toString).orElse(null))
+          && java.util.Objects.equals(pointing, recordedPointing(field));
+    }
+
+    private static @Nullable String recordedPointing(ParcelCoordinateField field) {
+      return field.pointing() == ParcelCoordinateField.Pointing.GEOMETRIC
+          ? null
+          : field.pointing().name();
     }
   }
 

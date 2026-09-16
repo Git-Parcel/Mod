@@ -17,12 +17,27 @@ import org.jspecify.annotations.Nullable;
  * iterate every element of a list, for example {@code flower_pos} or {@code Items[].tag.target}.
  */
 public record ParcelCoordinateField(
-    Target target, Optional<Identifier> type, String path, Encoding encoding) {
+    Target target,
+    Optional<Identifier> type,
+    String path,
+    Encoding encoding,
+    Pointing pointing) {
   private static final String PATH_PATTERN = "^[A-Za-z0-9_.:\\[\\]-]+$";
 
   public enum Target {
     ENTITY,
     BLOCK_ENTITY
+  }
+
+  /**
+   * Rule 3.2 inside/outside override for a spatial edge. {@code GEOMETRIC} detects the pointing
+   * by containment in the parcel extent; {@code INSIDE} always transforms; {@code OUTSIDE} never
+   * transforms. Orientation encodings ({@code DIRECTION}, {@code ROTATION_STEP}) ignore this.
+   */
+  public enum Pointing {
+    GEOMETRIC,
+    INSIDE,
+    OUTSIDE
   }
 
   public enum Encoding {
@@ -60,13 +75,25 @@ public record ParcelCoordinateField(
   /** Convenience constructor applying to every type of the target. */
   public static ParcelCoordinateField forAny(
       Target target, String path, Encoding encoding) {
-    return new ParcelCoordinateField(target, Optional.empty(), path, encoding);
+    return forAny(target, path, encoding, Pointing.GEOMETRIC);
+  }
+
+  /** Convenience constructor applying to every type of the target, with an explicit pointing. */
+  public static ParcelCoordinateField forAny(
+      Target target, String path, Encoding encoding, Pointing pointing) {
+    return new ParcelCoordinateField(target, Optional.empty(), path, encoding, pointing);
   }
 
   /** Convenience constructor scoped to one entity or block-entity type. */
   public static ParcelCoordinateField forType(
       Target target, Identifier type, String path, Encoding encoding) {
-    return new ParcelCoordinateField(target, Optional.of(type), path, encoding);
+    return forType(target, type, path, encoding, Pointing.GEOMETRIC);
+  }
+
+  /** Convenience constructor scoped to one entity or block-entity type, with an explicit pointing. */
+  public static ParcelCoordinateField forType(
+      Target target, Identifier type, String path, Encoding encoding, Pointing pointing) {
+    return new ParcelCoordinateField(target, Optional.of(type), path, encoding, pointing);
   }
 
   public boolean appliesTo(Target queryTarget, @Nullable Identifier queryType) {

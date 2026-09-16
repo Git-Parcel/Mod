@@ -22,8 +22,8 @@ class ParcelSemanticsTest extends AbstractMinecraftTest {
             List.of(PROCESSOR),
             List.of(
                 new ParcelSemantics.CoordinateField(
-                    "ENTITY", "minecraft:cow", "home", "BLOCK_POS"),
-                new ParcelSemantics.CoordinateField("BLOCK_ENTITY", null, "Items[].tag.wp", "POSITION")),
+                    "ENTITY", "minecraft:cow", "home", "BLOCK_POS", null),
+                new ParcelSemantics.CoordinateField("BLOCK_ENTITY", null, "Items[].tag.wp", "POSITION", null)),
             List.of(new ParcelSemantics.ReferenceField("minecraft:cow", "leash.UUID")),
             List.of(
                 new ParcelSemantics.AttachmentType(
@@ -42,7 +42,7 @@ class ParcelSemanticsTest extends AbstractMinecraftTest {
     var recorded =
         new ParcelSemantics(
             List.of(),
-            List.of(new ParcelSemantics.CoordinateField("ENTITY", "minecraft:cow", "home", "BLOCK_POS")),
+            List.of(new ParcelSemantics.CoordinateField("ENTITY", "minecraft:cow", "home", "BLOCK_POS", null)),
             List.of(),
             List.of());
     var same =

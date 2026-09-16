@@ -6,6 +6,7 @@ import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateFi
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFieldRegistry;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
 import io.github.leawind.gitparcel.common.api.operation.ProgressReporter;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelExtent;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSemantics;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
@@ -539,7 +540,8 @@ public class ParcelStorage {
             ignoreEntities,
             flags,
             meta.dataVersion(),
-            meta.semantics().orElse(null));
+            meta.semantics().orElse(null),
+            new ParcelExtent(meta.size(), meta.anchor()));
     try {
       for (ParcelContentType<?> type : ParcelContentTypeOrder.forLoad(types)) {
         loadContent(

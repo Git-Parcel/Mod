@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.common.api.extension.processor;
 
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentCollector;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentContext;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelExtent;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSemantics;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
 import java.util.Objects;
@@ -15,13 +16,16 @@ import org.jspecify.annotations.Nullable;
  *     null} and processors must call {@link #requireCollector()} only from capture methods
  * @param semantics the snapshot's self-description while restoring, {@code null} while capturing;
  *     rule 7.3 participation is adjudicated against it
+ * @param extent the parcel's anchor-relative content extent, used for inside/outside detection
+ *     (definition 3.2); {@code null} degrades spatial edges to always inside-pointing
  */
 public record ParcelRecordProcessorContext(
     LevelAccessor level,
     ParcelSpace space,
     ParcelAttachmentContext attachments,
     @Nullable ParcelAttachmentCollector collector,
-    @Nullable ParcelSemantics semantics) {
+    @Nullable ParcelSemantics semantics,
+    @Nullable ParcelExtent extent) {
 
   /** Returns the capture-time attachment collector. */
   public ParcelAttachmentCollector requireCollector() {

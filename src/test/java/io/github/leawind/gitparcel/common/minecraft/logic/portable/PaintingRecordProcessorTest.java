@@ -40,7 +40,7 @@ class PaintingRecordProcessorTest extends AbstractMinecraftTest {
     var restored =
         new PaintingRecordProcessor()
             .restoreEntity(
-                new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession(), null, null),
+                new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession(), null, null, null),
                 record);
 
     assertEquals(
@@ -63,7 +63,7 @@ class PaintingRecordProcessorTest extends AbstractMinecraftTest {
                         ParcelSpaceTestValues.IDENTITY,
                         new ParcelAttachmentSession(),
                         null,
-                        null),
+                        null, null),
                     record(new SemanticData(PaintingRecordProcessor.ID, 99, payload))));
   }
 

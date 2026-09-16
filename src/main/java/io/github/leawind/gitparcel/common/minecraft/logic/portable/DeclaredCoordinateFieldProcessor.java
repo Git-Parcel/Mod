@@ -4,6 +4,7 @@ import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateFi
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateFieldRegistry;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessor;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelExtent;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
@@ -101,7 +102,7 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
       NbtPaths.forEach(
           data,
           NbtPaths.parse(field.path()),
-          slot -> rebaseSlot(slot, field.encoding(), space, toWorld, frameFacing));
+          slot -> rebaseSlot(context, field, slot, space, toWorld, frameFacing));
     }
   }
 
@@ -116,7 +117,7 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
     var frameFacing = firstDeclaredDirection(fields, data);
     for (var field : stepFieldsFirst(fields)) {
       NbtPaths.forEach(
-          data, NbtPaths.parse(field.path()), slot -> rebaseSlot(slot, field.encoding(), space, toWorld, frameFacing));
+          data, NbtPaths.parse(field.path()), slot -> rebaseSlot(context, field, slot, space, toWorld, frameFacing));
     }
     data.getList("Passengers")
         .ifPresent(
@@ -151,8 +152,9 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
   }
 
   private static void rebaseSlot(
+      ParcelRecordProcessorContext context,
+      ParcelCoordinateField field,
       NbtPaths.Slot slot,
-      ParcelCoordinateField.Encoding encoding,
       ParcelSpace space,
       boolean toWorld,
       @Nullable Direction frameFacing) {
@@ -160,16 +162,26 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
     if (tag == null) {
       return;
     }
+    var encoding = field.encoding();
     switch (encoding) {
       case BLOCK_POS -> readBlockPos(tag).ifPresent(pos -> {
+        if (!shouldTransform(context, field, space, new Vec3(pos.getX(), pos.getY(), pos.getZ()), toWorld)) {
+          return;
+        }
         BlockPos rebased = toWorld ? space.toWorld(pos) : space.toParcel(pos);
         slot.set(encodeBlockPos(rebased));
       });
       case BLOCK_POS_XYZ -> readBlockPosXyz(tag).ifPresent(pos -> {
+        if (!shouldTransform(context, field, space, new Vec3(pos.getX(), pos.getY(), pos.getZ()), toWorld)) {
+          return;
+        }
         BlockPos rebased = toWorld ? space.toWorld(pos) : space.toParcel(pos);
         slot.set(encodeBlockPosXyz(rebased));
       });
       case POSITION -> readPosition(tag).ifPresent(pos -> {
+        if (!shouldTransform(context, field, space, pos, toWorld)) {
+          return;
+        }
         Vec3 rebased = toWorld ? space.toWorld(pos) : space.toParcel(pos);
         slot.set(encodePosition(rebased));
       });
@@ -188,6 +200,38 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
         slot.set(encodeStep(rebased, tag));
       });
     }
+  }
+
+  /**
+   * Rule 3.2 inside/outside adjudication for one spatial edge value. Capture sees world-space
+   * values (inverse-transform them and test the extent); restore sees parcel-space values (test
+   * the extent directly). Without an extent the field degrades to always inside-pointing.
+   */
+  private static boolean shouldTransform(
+      ParcelRecordProcessorContext context,
+      ParcelCoordinateField field,
+      ParcelSpace space,
+      Vec3 value,
+      boolean toWorld) {
+    if (field.encoding() == ParcelCoordinateField.Encoding.DIRECTION
+        || field.encoding() == ParcelCoordinateField.Encoding.ROTATION_STEP) {
+      return true;
+    }
+    switch (field.pointing()) {
+      case INSIDE:
+        return true;
+      case OUTSIDE:
+        return false;
+      case GEOMETRIC:
+        var extent = context.extent();
+        return extent == null || extentContains(extent, space, value, toWorld);
+    }
+    return true;
+  }
+
+  private static boolean extentContains(
+      ParcelExtent extent, ParcelSpace space, Vec3 value, boolean toWorld) {
+    return toWorld ? extent.contains(value) : extent.contains(space.toParcel(value));
   }
 
   /** Reads the raw value of the first applicable direction field, before any rewrite. */

@@ -9,6 +9,7 @@ import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFie
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessor;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelExtent;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSemantics;
 import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
@@ -61,7 +62,8 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
       boolean ignoreEntities,
       int blockUpdateFlags,
       int sourceDataVersion,
-      @Nullable ParcelSemantics semantics) {
+      @Nullable ParcelSemantics semantics,
+      @Nullable ParcelExtent extent) {
     this.level = level;
     this.space = space;
     this.ignoreBlocks = ignoreBlocks;
@@ -71,7 +73,7 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
     this.participants = participants(semantics);
     this.declaredRefFields = declaredRefFields(semantics);
     this.processorContext =
-        new ParcelRecordProcessorContext(level, space, attachments, null, semantics);
+        new ParcelRecordProcessorContext(level, space, attachments, null, semantics, extent);
   }
 
   /**
