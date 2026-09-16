@@ -148,7 +148,7 @@ P1、P2、P5 进入 GameTest 基座并对扩展注册的处理器自动生效；
 - 瞬态与派生处理：消除与相对化策略（定义 2.5、规则 2.2、规则 2.3）未实现；原版瞬态字段清单待审计生成。
 - 朝向变换：NBT 朝向编码（标量步进角度与方向枚举）的变换未实现（规则 3.1），镜像与旋转下此类字段当前不变换。
 - 方块状态透传告知：未覆写 `rotate`/`mirror` 的模组方块按规则 7.1 评为透传（规则 3.4），恢复前的显式告知未实现。
-- 实体替换：恢复当前不清除区域内已有实体，违反不变式 6.2，重复恢复会导致实体翻倍。
+- 实体替换：恢复已按 AABB 相交、非玩家的谓词清除区域内旧实体，不变式 6.2 与 P5 成立；清除尚未按捕获谓词的根实体判定执行——乘客被逐个清除而非随根整树搬运，跨界载具的边界乘客存在重复或悬空的边角情形。
 - 快照自述：快照未记录处理器与附件类型清单，规则 7.3 与规则 7.4 待装载层实现。
 
 ## 10. 已知局限
@@ -160,14 +160,14 @@ P1、P2、P5 进入 GameTest 基座并对扩展注册的处理器自动生效；
 
 ## 11. 机制映射
 
-| 规约元素         | 实现                                                 |
-| ---------------- | ---------------------------------------------------- |
-| 定位字段归一化   | `MinecraftCoreRecordProcessor`                       |
-| 空间边换算       | 记录处理器经 `ParcelSpace` 施加变换                  |
-| 方块状态变换     | `ParcelBlockTransform`（原版 `rotate`/`mirror`）     |
-| 身份边翻译       | 记录处理器经 `EntityUuidRemapper` 重写（批次两阶段） |
-| 资源边物化与回填 | `ParcelAttachmentType` 与附件内容类型                |
-| 区域贡献         | `ParcelCaptureContributor`                           |
-| 处理器次序       | `ParcelRecordProcessorRegistry` 的拓扑排序           |
-| 瞬态与派生处理   | 待实现（处理器职责，定义 2.5）                       |
-| 实体替换         | 待实现（`MinecraftParcelDataSink` 恢复侧）           |
+| 规约元素         | 实现                                                            |
+| ---------------- | --------------------------------------------------------------- |
+| 定位字段归一化   | `MinecraftCoreRecordProcessor`                                  |
+| 空间边换算       | 记录处理器经 `ParcelSpace` 施加变换                             |
+| 方块状态变换     | `ParcelBlockTransform`（原版 `rotate`/`mirror`）                |
+| 身份边翻译       | 记录处理器经 `EntityUuidRemapper` 重写（批次两阶段）            |
+| 资源边物化与回填 | `ParcelAttachmentType` 与附件内容类型                           |
+| 区域贡献         | `ParcelCaptureContributor`                                      |
+| 处理器次序       | `ParcelRecordProcessorRegistry` 的拓扑排序                      |
+| 瞬态与派生处理   | 待实现（处理器职责，定义 2.5）                                  |
+| 实体替换         | `ParcelStorage` 恢复侧清除 + `MinecraftParcelDataSink` 批次生成 |
