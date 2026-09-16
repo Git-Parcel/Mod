@@ -158,3 +158,5 @@ stonecutter 的 `replacements.string` 是双向替换：条件为 true 时按 `r
 ## 踩坑记录
 
 实现中踩过并确认的坑，供后续任务避让；条目应写清现象与结论，不罗列排查过程。
+
+- `ParcelTransform`/`ParcelSpace` 的 `BlockPos` 重载在旋转下带 −1 修正（方块网格到方块网格的映射），`Vec3` 重载是纯点映射。parcel 锚点是格点而非方块索引：断言或换算锚点自身必须走 `Vec3` 语义（`transform.translation()`），用 `BlockPos` 重载往返锚点会在带旋转的朝向下偏移一格。
