@@ -80,7 +80,10 @@ public final class TransientFieldProcessor implements ParcelRecordProcessor {
   }
 
   private void applyEntityTree(
-      ParcelRecordProcessorContext context, CompoundTag data, Identifier typeId, boolean capturing) {
+      ParcelRecordProcessorContext context,
+      CompoundTag data,
+      Identifier typeId,
+      boolean capturing) {
     apply(context, ParcelTransientField.Target.ENTITY, typeId, data, capturing);
     data.getList("Passengers")
         .ifPresent(
