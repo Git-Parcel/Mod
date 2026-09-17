@@ -146,7 +146,7 @@ P1、P2、P5 进入 GameTest 基座并对扩展注册的处理器自动生效；
 
 已确认缺口（实现应向本节收敛）：
 
-- 时间边：计划刻（方块刻与流体刻）经 `scheduled_ticks` 内容类型搬运（规则 6.3）：内指计划刻随 parcel 变换坐标，触发时刻按规则 2.3 相对化，恢复时清除后重灌。方块实体内的时间边字段已按审计补齐相对化声明（Vault `state_updating_resumes_at`、TrialSpawner `next_mob_spawns_at`、Interaction `attack`/`interaction.timestamp`）。
+- 时间边：计划刻（方块刻与流体刻）经 `scheduled_ticks` 内容类型搬运（规则 6.3）：内指计划刻随 parcel 变换坐标，触发时刻按规则 2.3 相对化，恢复时清除后重灌。方块实体内的时间边字段已按审计补齐相对化声明（Vault `state_updating_resumes_at`、TrialSpawner `next_mob_spawns_at` 与 `cooldown_ends_at`、Interaction `attack`/`interaction.timestamp`）。
 - 空间边：声明字段通道已按审计补齐原版位置字段（`home_pos`、蜜蜂 `hive_pos`/`flower_pos`、`sleeping_pos`、`anchor_pos`、`patrol_target`、`bound_pos`、`wander_target`、`beam_target`、末地折跃门 `exit_portal`）；`TileX/Y/Z` 在 26.x 已演进为 `block_pos` 并由核心处理器无条件重写。Brain 记忆中的位置类记忆（GlobalPos 复合、跨维度）登记为不处理，村民迁移评为透传。
 - 瞬态与派生处理：消除与偏移相对化已实现；按持有者 tickCount 折算的相对计数、Brain 记忆 `ttl`、物品冷却与熔炉键名核对、以及浮点归一化仍未处理。
 - 实体替换：恢复已按 AABB 相交、非玩家的谓词清除区域内旧实体，不变式 6.2 与 P5 成立；清除尚未按捕获谓词的根实体判定执行——乘客被逐个清除而非随根整树搬运，跨界载具的边界乘客存在重复或悬空的边角情形。

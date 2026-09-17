@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateField;
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateFieldRegistry;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
+import io.github.leawind.gitparcel.common.api.extension.transientfield.ParcelTransientField;
+import io.github.leawind.gitparcel.common.api.extension.transientfield.ParcelTransientFieldRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentTypeRegistry;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.BuiltinExtension;
 import io.github.leawind.gitparcel.common.minecraft.logic.portable.TransientFieldProcessor;
@@ -59,6 +61,60 @@ class BuiltinExtensionRegistrationTest extends AbstractMinecraftTest {
     assertNotNull(
         ParcelRecordProcessorRegistry.get().get(TransientFieldProcessor.ID),
         "the builtin extension must register the transient-field processor");
+  }
+
+  /** Pins the audited game-time offset declarations. */
+  @Test
+  void declaresAuditedGameTimeOffsetFields() {
+    var registry = ParcelTransientFieldRegistry.get();
+    if (registry.fields().stream().noneMatch(field -> field.path().equals("anger_end_time"))) {
+      var extension = new BuiltinExtension();
+      var registrar = new ParcelExtensionRegistrarImpl(extension);
+      extension.register(registrar);
+      registrar.commit(ParcelContentTypeRegistry.get());
+    }
+    var fields = registry.fields();
+
+    assertTrue(
+        fields.stream()
+            .anyMatch(
+                field ->
+                    field.path().equals("server_data.state_updating_resumes_at")
+                        && field.target() == ParcelTransientField.Target.BLOCK_ENTITY
+                        && field
+                            .type()
+                            .equals(java.util.Optional.of(id("minecraft", "vault")))
+                        && field.kind() == ParcelTransientField.Kind.OFFSET_GAME_TIME));
+    for (String path : new String[] {"next_mob_spawns_at", "cooldown_ends_at"}) {
+      assertTrue(
+          fields.stream()
+              .anyMatch(
+                  field ->
+                      field.path().equals(path)
+                          && field.target() == ParcelTransientField.Target.BLOCK_ENTITY
+                          && field
+                              .type()
+                              .equals(java.util.Optional.of(id("minecraft", "trial_spawner")))
+                          && field.kind() == ParcelTransientField.Kind.OFFSET_GAME_TIME),
+          "missing declaration for " + path);
+    }
+    for (String path : new String[] {"attack.timestamp", "interaction.timestamp"}) {
+      assertTrue(
+          fields.stream()
+              .anyMatch(
+                  field ->
+                      field.path().equals(path)
+                          && field.target() == ParcelTransientField.Target.ENTITY
+                          && field
+                              .type()
+                              .equals(java.util.Optional.of(id("minecraft", "interaction")))
+                          && field.kind() == ParcelTransientField.Kind.OFFSET_GAME_TIME),
+          "missing declaration for " + path);
+    }
+  }
+
+  private static Identifier id(String namespace, String path) {
+    return Identifier.fromNamespaceAndPath(namespace, path);
   }
 
   private static boolean declares(

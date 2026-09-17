@@ -141,5 +141,29 @@ public final class BuiltinExtension implements GitParcelExtension {
             ParcelTransientField.Target.ENTITY,
             "anger_end_time",
             ParcelTransientField.Kind.OFFSET_GAME_TIME));
+    registrar.registerTransientField(
+        ParcelTransientField.forType(
+            ParcelTransientField.Target.BLOCK_ENTITY,
+            Identifier.fromNamespaceAndPath("minecraft", "vault"),
+            "server_data.state_updating_resumes_at",
+            ParcelTransientField.Kind.OFFSET_GAME_TIME));
+    for (String path : new String[] {"next_mob_spawns_at", "cooldown_ends_at"}) {
+      registrar.registerTransientField(
+          ParcelTransientField.forType(
+              ParcelTransientField.Target.BLOCK_ENTITY,
+              Identifier.fromNamespaceAndPath("minecraft", "trial_spawner"),
+              path,
+              ParcelTransientField.Kind.OFFSET_GAME_TIME));
+    }
+    // The interaction entity records its last attacker/responder with an absolute game-time
+    // timestamp (the UUID half is an identity edge that keeps its value per invariant 4.2).
+    for (String path : new String[] {"attack.timestamp", "interaction.timestamp"}) {
+      registrar.registerTransientField(
+          ParcelTransientField.forType(
+              ParcelTransientField.Target.ENTITY,
+              Identifier.fromNamespaceAndPath("minecraft", "interaction"),
+              path,
+              ParcelTransientField.Kind.OFFSET_GAME_TIME));
+    }
   }
 }
