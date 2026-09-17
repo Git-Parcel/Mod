@@ -80,5 +80,26 @@ public final class BuiltinExtension implements GitParcelExtension {
             Identifier.fromNamespaceAndPath("minecraft", "shulker"),
             "Facing",
             ParcelCoordinateField.Encoding.DIRECTION));
+
+    // World positions written by vanilla mobs and hanging entities. All use
+    // the BlockPos codec and geometric inside/outside detection.
+    registrar.registerCoordinateField(
+        ParcelCoordinateField.forAny(
+            ParcelCoordinateField.Target.ENTITY, "home_pos", ParcelCoordinateField.Encoding.BLOCK_POS));
+    registrar.registerCoordinateField(
+        ParcelCoordinateField.forAny(
+            ParcelCoordinateField.Target.ENTITY, "sleeping_pos", ParcelCoordinateField.Encoding.BLOCK_POS));
+    for (String field : new String[] {"hive_pos", "flower_pos", "anchor_pos", "patrol_target",
+        "bound_pos", "wander_target", "beam_target"}) {
+      registrar.registerCoordinateField(
+          ParcelCoordinateField.forAny(
+              ParcelCoordinateField.Target.ENTITY, field, ParcelCoordinateField.Encoding.BLOCK_POS));
+    }
+    registrar.registerCoordinateField(
+        ParcelCoordinateField.forType(
+            ParcelCoordinateField.Target.BLOCK_ENTITY,
+            Identifier.fromNamespaceAndPath("minecraft", "end_gateway"),
+            "exit_portal",
+            ParcelCoordinateField.Encoding.BLOCK_POS));
   }
 }
