@@ -29,6 +29,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Leashable;
@@ -46,10 +47,15 @@ import net.minecraft.world.level.block.entity.BeehiveBlockEntity;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.ticks.LevelChunkTicks;
+import net.minecraft.world.ticks.ScheduledTick;
+import net.minecraft.world.ticks.TickPriority;
 import org.slf4j.Logger;
 
 public class GitParcelGameTest {
@@ -496,6 +502,168 @@ public class GitParcelGameTest {
 
     registry.deleteParcel(parcel.uuid());
     helper.succeed();
+  }
+
+  /**
+   * Scheduled block and fluid ticks round-trip with their trigger ticks re-anchored to the restore
+   * game time (rule 2.3). Regional replacement (rule 6.3) supersedes a conflicting same-position
+   * tick queued after the capture, keeps negative delays (already-elapsed targets), and leaves
+   * ticks outside the extent untouched.
+   */
+  public void testScheduledTickRoundTrip(GameTestHelpMore helper) throws Exception {
+    var level = helper.getLevel();
+    var registry = ParcelRegistry.get(level);
+    registry.reset();
+    var parcel = ParcelFactory.create(helper.getBoundingBox(), Mirror.NONE, Rotation.NONE);
+    registry.addNewParcel(parcel);
+
+    BlockPos insidePos = helper.absolutePos(new BlockPos(2, 1, 2));
+    BlockPos pastPos = helper.absolutePos(new BlockPos(3, 1, 2));
+    BlockPos fluidPos = helper.absolutePos(new BlockPos(4, 1, 2));
+    BlockPos outsidePos = helper.absolutePos(new BlockPos(-3, 1, -3));
+
+    long captureTime = level.getGameTime();
+    blockTicks(level, insidePos)
+        .schedule(
+            new ScheduledTick<>(
+                Blocks.REDSTONE_BLOCK, insidePos, captureTime + 100, TickPriority.NORMAL, 0L));
+    blockTicks(level, pastPos)
+        .schedule(
+            new ScheduledTick<>(
+                Blocks.REDSTONE_BLOCK, pastPos, captureTime - 50, TickPriority.HIGH, 0L));
+    fluidTicks(level, fluidPos)
+        .schedule(
+            new ScheduledTick<>(
+                Fluids.WATER, fluidPos, captureTime + 7, TickPriority.NORMAL, 0L));
+    blockTicks(level, outsidePos)
+        .schedule(
+            new ScheduledTick<>(
+                Blocks.REDSTONE_BLOCK, outsidePos, captureTime + 500, TickPriority.NORMAL, 0L));
+
+    try (var fs = Jimfs.newFileSystem()) {
+      Path tempDir = fs.getPath("/parcel");
+      ParcelStorage.save(level, parcel, tempDir, true);
+
+      // Post-capture drift at the same position as a captured tick: the snapshot must win.
+      blockTicks(level, insidePos).removeIf(t -> t.pos().equals(insidePos));
+      blockTicks(level, insidePos)
+          .schedule(
+              new ScheduledTick<>(
+                  Blocks.REDSTONE_BLOCK, insidePos, captureTime + 999, TickPriority.NORMAL, 0L));
+
+      long restoreTime = level.getGameTime();
+      ParcelStorage.load(level, parcel.transform(), tempDir, false, true, WORLD_UPDATE_FLAGS);
+
+      assertTickTrigger(helper, level, "inside", restoreTime + 100, insidePos,
+          Blocks.REDSTONE_BLOCK, false);
+      assertTickTrigger(helper, level, "past", restoreTime - 50, pastPos,
+          Blocks.REDSTONE_BLOCK, false);
+      assertTickTrigger(helper, level, "fluid", restoreTime + 7, fluidPos, Fluids.WATER, true);
+      assertTickTrigger(helper, level, "outside", captureTime + 500, outsidePos,
+          Blocks.REDSTONE_BLOCK, false);
+    }
+
+    registry.deleteParcel(parcel.uuid());
+    helper.succeed();
+  }
+
+  /**
+   * Inside-pointing ticks travel with their target block through a rotated migration: the tick
+   * lands on the restored marker block with its trigger re-anchored (invariants 3.1 and 6.3).
+   */
+  public void testScheduledTickRotatedMigration(GameTestHelpMore helper) throws Exception {
+    var level = helper.getLevel();
+    var registry = ParcelRegistry.get(level);
+    registry.reset();
+
+    var box = helper.getRelativeBoundingBox();
+    int halfHeight = box.getYSpan() / 2;
+    var sourceBox =
+        new BoundingBox(
+            box.minX(), box.minY(), box.minZ(), box.maxX(), box.minY() + halfHeight - 1, box.maxZ());
+    var targetBox =
+        new BoundingBox(
+            box.minX(),
+            box.maxY() + 1 - halfHeight,
+            box.minZ(),
+            box.maxX(),
+            box.maxY(),
+            box.maxZ());
+
+    var sourceParcel =
+        ParcelFactory.create(helper.absoluteBoundingBox(sourceBox), Mirror.NONE, Rotation.NONE);
+    registry.addNewParcel(sourceParcel);
+
+    var markerRelative = new BlockPos(6, 1, 9);
+    helper.setBlock(markerRelative, Blocks.GOLD_BLOCK);
+    BlockPos markerPos = helper.absolutePos(markerRelative);
+    long captureTime = level.getGameTime();
+    blockTicks(level, markerPos)
+        .schedule(
+            new ScheduledTick<>(
+                Blocks.GOLD_BLOCK, markerPos, captureTime + 33, TickPriority.NORMAL, 0L));
+
+    try (var fs = Jimfs.newFileSystem()) {
+      Path tempDir = fs.getPath("/parcel");
+      ParcelStorage.save(level, sourceParcel, tempDir, true);
+
+      var targetParcel =
+          ParcelFactory.create(
+              helper.absoluteBoundingBox(targetBox), Mirror.NONE, Rotation.CLOCKWISE_90);
+      long restoreTime = level.getGameTime();
+      ParcelStorage.load(level, targetParcel.transform(), tempDir, false, true,
+          WORLD_UPDATE_FLAGS);
+
+      var targetArea = helper.absoluteBoundingBox(targetBox);
+      BlockPos restoredMarker = null;
+      for (BlockPos pos :
+          BlockPos.betweenClosed(
+              targetArea.minX(), targetArea.minY(), targetArea.minZ(),
+              targetArea.maxX(), targetArea.maxY(), targetArea.maxZ())) {
+        if (level.getBlockState(pos).is(Blocks.GOLD_BLOCK)) {
+          restoredMarker = pos.immutable();
+          break;
+        }
+      }
+      if (restoredMarker == null) {
+        helper.fail("Rotated parcel must restore the gold marker block");
+      }
+      assertTickTrigger(helper, level, "migrated", restoreTime + 33, restoredMarker,
+          Blocks.GOLD_BLOCK, false);
+    }
+
+    registry.deleteParcel(sourceParcel.uuid());
+    helper.succeed();
+  }
+
+  @SuppressWarnings("unchecked")
+  private static LevelChunkTicks<Block> blockTicks(ServerLevel level, BlockPos pos) {
+    return (LevelChunkTicks<Block>) level.getChunk(pos).getBlockTicks();
+  }
+
+  @SuppressWarnings("unchecked")
+  private static LevelChunkTicks<Fluid> fluidTicks(ServerLevel level, BlockPos pos) {
+    return (LevelChunkTicks<Fluid>) level.getChunk(pos).getFluidTicks();
+  }
+
+  private static <T> void assertTickTrigger(
+      GameTestHelpMore helper,
+      ServerLevel level,
+      String label,
+      long expected,
+      BlockPos pos,
+      T type,
+      boolean fluid) {
+    var container = fluid ? fluidTicks(level, pos) : blockTicks(level, pos);
+    long actual =
+        container.getAll()
+            .filter(t -> t.pos().equals(pos) && t.type() == type)
+            .findFirst()
+            .map(ScheduledTick::triggerTick)
+            .orElse(Long.MIN_VALUE);
+    if (actual != expected) {
+      helper.fail(label + " tick trigger must be " + expected + ", got " + actual);
+    }
   }
 
   /** Reads the single entity record of a captured snapshot as text. */

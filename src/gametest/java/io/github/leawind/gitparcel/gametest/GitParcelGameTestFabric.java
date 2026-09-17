@@ -65,6 +65,16 @@ public class GitParcelGameTestFabric extends GitParcelGameTest implements Custom
   }
 
   @GameTest(structure = "gametest:swamp_hut-7x8x9", maxTicks = 200)
+  public void testScheduledTickRoundTrip(GameTestHelper helper) throws Exception {
+    Tester.test(helper, super::testScheduledTickRoundTrip);
+  }
+
+  @GameTest(structure = "gametest:normal-48x48x48", maxTicks = 400)
+  public void testScheduledTickRotatedMigration(GameTestHelper helper) throws Exception {
+    Tester.test(helper, super::testScheduledTickRotatedMigration);
+  }
+
+  @GameTest(structure = "gametest:swamp_hut-7x8x9", maxTicks = 200)
   public void testItemFrameOrientationFollowsPlacement(GameTestHelper helper) throws Exception {
     Tester.test(helper, super::testItemFrameOrientationFollowsPlacement);
   }
