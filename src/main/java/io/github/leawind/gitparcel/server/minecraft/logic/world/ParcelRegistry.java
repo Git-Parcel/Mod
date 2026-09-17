@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.server.minecraft.logic.world;
 import com.google.common.collect.MapMaker;
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
+import io.github.leawind.gitparcel.common.impl.world.ParcelResizer;
 import io.github.leawind.gitparcel.common.impl.world.ParcelValidator;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelLevelSavedData;
 import io.github.leawind.gitparcel.common.minecraft.logic.world.GitParcelWorldSavedData;
@@ -17,6 +18,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReentrantLock;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.server.level.ServerLevel;
 import org.jspecify.annotations.Nullable;
 
@@ -146,6 +148,29 @@ public final class ParcelRegistry {
     requireRegistered(parcel);
     savedData.setDirty();
     ParcelSynchronization.broadcastIncremental(level, parcel);
+  }
+
+  /**
+   * Adjusts the parcel's content extent to a new world box: pure registration, no world or
+   * archive writes, reversible by resizing back. Reuses the creation validations against the
+   * other parcels.
+   */
+  public void resizeParcel(Parcel parcel, BoundingBox newBox) throws ParcelException.Busy {
+    ReentrantLock lock = acquireParcelLock(parcel.uuid());
+    try {
+      requireRegistered(parcel);
+      ParcelResizer.resize(parcel, newBox);
+      var others =
+          savedData.parcels().values().stream()
+              .filter(other -> other.uuid() != parcel.uuid())
+              .toList();
+      var maxParcelVolume = GitParcelWorldSavedData.get(level.getServer()).maxParcelVolume();
+      ParcelValidator.validateNewParcel(parcel, others, maxParcelVolume);
+      savedData.setDirty();
+      ParcelSynchronization.broadcastIncremental(level, parcel);
+    } finally {
+      lock.unlock();
+    }
   }
 
   /** Serializes mutating use cases for one parcel; queries do not take this lock. */

@@ -13,6 +13,7 @@ import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.config
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.delete.DeleteSubcommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.history.HistorySubcommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.publish.PublishSubcommand;
+import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.resize.ResizeSubcommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.restore.RestoreSubcommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.save.SaveSubcommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.tp.TeleportSubcommand;
@@ -37,6 +38,7 @@ public class ParcelCommand extends GitParcelBaseCommand {
                     .then(DeleteSubcommand.build())
                     .then(HistorySubcommand.build())
                     .then(PublishSubcommand.build())
+                    .then(ResizeSubcommand.build())
                     .then(RestoreSubcommand.build())
                     .then(SaveSubcommand.build())
                     .then(TeleportSubcommand.build()));

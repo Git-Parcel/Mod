@@ -176,6 +176,18 @@ public final class ParcelMeta {
     this.semantics = semantics;
   }
 
+  /**
+   * Rewrites the extent — size and anchor offset together — during a bounds adjustment. The
+   * anchor offset is stored so the two components of the extent cannot drift apart.
+   */
+  public void resize(Vec3i size, Vec3i anchor) {
+    if (size.getX() <= 0 || size.getY() <= 0 || size.getZ() <= 0) {
+      throw new IllegalArgumentException("Parcel size must be positive: " + size);
+    }
+    this.size = size;
+    this.anchor = anchor;
+  }
+
   /** Sets the name. */
   public void setName(@Nullable String name) throws IllegalArgumentException {
     if (!isValidDisplayName(name)) {

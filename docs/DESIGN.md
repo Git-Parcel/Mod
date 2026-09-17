@@ -248,6 +248,14 @@ Minecraft 世界写入和 Git ref 更新无法组成真正的跨系统事务。�
 
 创建只注册区域，不会隐式保存。理由：注册与内容捕获是两个失败半径完全不同的操作，隐式保存会把"圈了一块地"放大成一次完整捕获。删除默认只删除世界注册关系，内部 bare 仓库会保留，以便备份或人工恢复；永久删除必须单独确认（破坏性操作分级原则）。
 
+### 调整边界
+
+```text
+/parcel <selector> resize <from> <to>
+```
+
+把 parcel 的内容范围调整为新的世界盒（含端点），语义由锚点参照系唯一决定：锚点的世界绝对坐标与局部朝向保持不变，变的只是哪些世界格属于管理范围。调整是纯注册操作——不写世界、不写归档，改回去即完全可逆。成长出的新格在下次保存时被捕获（与创建相同，不隐式捕获）；收缩掉的格在下次保存时被内容存储的独占目录协调清除。期间恢复按归档自身几何加载（不做边界校验），旧快照只填旧范围；自述缓存的边界差异信号在此显式可见。要求 CONFIG 权限、选择器恰好匹配一个 parcel，并复用创建时的全部校验（正尺寸、体积上限、不与其他 parcel 重叠）。锚点不要求位于新范围内。重定基准（单独移动锚点或改变局部朝向并全量重写归档坐标）是另一个独立操作，本命令不涉及。
+
 ### 保存快照
 
 ```text
@@ -292,7 +300,7 @@ Minecraft 世界写入和 Git ref 更新无法组成真正的跨系统事务。�
 /parcel <selector> config set <key> <value>
 ```
 
-现有 key 包括 `content.blocks.sectionSize`（仅接受 `16` 或 `32`）、`meta.name`、`meta.author`、`meta.description`、`meta.excludeEntities`、`visual.showWireframe` 和 `visual.showAnchor`。权限、视觉设置、变换以及所属维度是运行时 parcel 属性，不会因恢复内容快照而回退。
+现有 key 包括 `content.blocks.sectionSize`（仅接受 `16` 或 `32`）、`meta.name`、`meta.author`、`meta.description`、`meta.excludeEntities`、`visual.showWireframe` 和 `visual.showAnchor`。权限、视觉设置、变换以及所属维度是运行时 parcel 属性，不会因恢复内容快照而回退。范围调整使用 `resize` 命令而非 config key。
 
 ### 共享仓库
 

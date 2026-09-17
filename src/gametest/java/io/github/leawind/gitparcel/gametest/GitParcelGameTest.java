@@ -405,6 +405,59 @@ public class GitParcelGameTest {
   }
 
   /**
+   * Resizing is a pure registration change: the anchor stays put, the next save captures the new
+   * extent, a shrink leaves no stale section files behind, and restores fill whatever extent the
+   * archive recorded.
+   */
+  public void testResizeRecapturesAdjustedExtent(GameTestHelpMore helper) throws Exception {
+    var level = helper.getLevel();
+    var registry = ParcelRegistry.get(level);
+    var service = SnapshotService.get(level);
+    registry.reset();
+
+    var sourceBox = new BoundingBox(0, 0, 0, 5, 3, 5);
+    var parcel =
+        ParcelFactory.create(helper.absoluteBoundingBox(sourceBox), Mirror.NONE, Rotation.NONE);
+    parcel.meta().setExcludeEntities(false);
+    registry.addNewParcel(parcel);
+
+    helper.setBlock(new BlockPos(6, 1, 6), Blocks.STONE);
+
+    var grownBox = new BoundingBox(0, 0, 0, 6, 6, 8);
+    var anchorBefore = parcel.anchorPos();
+    registry.resizeParcel(parcel, helper.absoluteBoundingBox(grownBox));
+    if (!anchorBefore.equals(parcel.anchorPos())) {
+      helper.fail("Resizing must not move the anchor");
+    }
+    if (!helper.absoluteBoundingBox(grownBox).equals(parcel.getBoundingBox())) {
+      helper.fail("Resized parcel must cover exactly the requested box");
+    }
+
+    var snapshot = service.saveSnapshot(parcel, "Grown", "", GAMETEST_IDENTITY, true);
+    fill(helper, helper.getRelativeBoundingBox(), Blocks.AIR.defaultBlockState());
+    service.restoreSnapshot(parcel, snapshot, RestoreSnapshotRequest.Mode.DIRECT, true, GAMETEST_IDENTITY);
+    if (!helper.getBlockState(new BlockPos(6, 1, 6)).is(Blocks.STONE)) {
+      helper.fail("The grown cell captured before the resize must survive restore");
+    }
+
+    var shrunkBox = new BoundingBox(0, 0, 0, 5, 3, 5);
+    registry.resizeParcel(parcel, helper.absoluteBoundingBox(shrunkBox));
+    helper.setBlock(new BlockPos(1, 1, 1), Blocks.STONE);
+    try (var fs = Jimfs.newFileSystem()) {
+      Path tempDir = fs.getPath("/parcel");
+      ParcelStorage.save(level, parcel, tempDir, true);
+      fill(helper, helper.getRelativeBoundingBox(), Blocks.AIR.defaultBlockState());
+      ParcelStorage.load(level, parcel.transform(), tempDir, false, true, WORLD_UPDATE_FLAGS);
+    }
+    if (!helper.getBlockState(new BlockPos(1, 1, 1)).is(Blocks.STONE)) {
+      helper.fail("The shrunken parcel must keep loading its content after the stale sections");
+    }
+
+    registry.deleteParcel(parcel.uuid());
+    helper.succeed();
+  }
+
+  /**
    * Two captures of an untouched world produce byte-identical trees (P3), and the eliminated
    * transient fields never enter the snapshot (definition 2.5).
    */
