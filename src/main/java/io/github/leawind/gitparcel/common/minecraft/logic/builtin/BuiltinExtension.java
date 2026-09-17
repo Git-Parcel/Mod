@@ -14,6 +14,7 @@ import io.github.leawind.gitparcel.common.minecraft.logic.portable.MapDataAttach
 import io.github.leawind.gitparcel.common.minecraft.logic.portable.MapItemProcessor;
 import io.github.leawind.gitparcel.common.minecraft.logic.portable.MinecraftCoreRecordProcessor;
 import io.github.leawind.gitparcel.common.minecraft.logic.portable.PaintingRecordProcessor;
+import io.github.leawind.gitparcel.common.minecraft.logic.portable.TransientFieldProcessor;
 import net.minecraft.resources.Identifier;
 
 /** Built-in parcel content types and semantic processors, discovered through the public SPI. */
@@ -39,6 +40,7 @@ public final class BuiltinExtension implements GitParcelExtension {
     registrar.registerProcessor(new PaintingRecordProcessor());
     registrar.registerProcessor(new DeclaredCoordinateFieldProcessor());
     registrar.registerProcessor(new MapItemProcessor());
+    registrar.registerProcessor(new TransientFieldProcessor());
     registrar.registerAttachmentType(MapDataAttachmentType.INSTANCE);
     registerVanillaCoordinateFields(registrar);
   }

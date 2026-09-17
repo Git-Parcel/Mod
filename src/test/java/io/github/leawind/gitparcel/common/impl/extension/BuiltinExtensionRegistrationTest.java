@@ -1,11 +1,14 @@
 package io.github.leawind.gitparcel.common.impl.extension;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateField;
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateFieldRegistry;
+import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentTypeRegistry;
 import io.github.leawind.gitparcel.common.minecraft.logic.builtin.BuiltinExtension;
+import io.github.leawind.gitparcel.common.minecraft.logic.portable.TransientFieldProcessor;
 import io.github.leawind.gitparcel.common.testutils.AbstractMinecraftTest;
 import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
@@ -43,6 +46,19 @@ class BuiltinExtensionRegistrationTest extends AbstractMinecraftTest {
                             .type()
                             .equals(java.util.Optional.of(
                                 Identifier.fromNamespaceAndPath("minecraft", "end_gateway")))));
+  }
+
+  @Test
+  void registersTransientFieldProcessor() {
+    if (ParcelRecordProcessorRegistry.get().get(TransientFieldProcessor.ID) == null) {
+      var extension = new BuiltinExtension();
+      var registrar = new ParcelExtensionRegistrarImpl(extension);
+      extension.register(registrar);
+      registrar.commit(ParcelContentTypeRegistry.get());
+    }
+    assertNotNull(
+        ParcelRecordProcessorRegistry.get().get(TransientFieldProcessor.ID),
+        "the builtin extension must register the transient-field processor");
   }
 
   private static boolean declares(
