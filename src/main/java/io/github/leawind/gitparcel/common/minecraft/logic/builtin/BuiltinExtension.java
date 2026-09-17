@@ -8,6 +8,7 @@ import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFie
 import io.github.leawind.gitparcel.common.impl.content.AttachmentContentType;
 import io.github.leawind.gitparcel.common.impl.content.BlockContentType;
 import io.github.leawind.gitparcel.common.impl.content.EntityContentType;
+import io.github.leawind.gitparcel.common.impl.content.ScheduledTickContentType;
 import io.github.leawind.gitparcel.common.minecraft.logic.portable.DeclaredCoordinateFieldProcessor;
 import io.github.leawind.gitparcel.common.api.extension.transientfield.ParcelTransientField;
 import io.github.leawind.gitparcel.common.minecraft.logic.portable.MapDataAttachmentType;
@@ -36,6 +37,7 @@ public final class BuiltinExtension implements GitParcelExtension {
     registrar.registerContentType(new AttachmentContentType());
     registrar.registerContentType(new BlockContentType());
     registrar.registerContentType(new EntityContentType());
+    registrar.registerContentType(new ScheduledTickContentType());
     registrar.registerProcessor(new MinecraftCoreRecordProcessor());
     registrar.registerProcessor(new PaintingRecordProcessor());
     registrar.registerProcessor(new DeclaredCoordinateFieldProcessor());

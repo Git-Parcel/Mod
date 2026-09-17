@@ -6,12 +6,14 @@ import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.LocalAttachmentId;
+import io.github.leawind.gitparcel.common.api.parcel.content.ScheduledTickRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.SemanticData;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.ticks.TickPriority;
 
 public final class ParcelRecordCodecs {
   private ParcelRecordCodecs() {}
@@ -45,6 +47,37 @@ public final class ParcelRecordCodecs {
               inst.group(
                       BLOCK_ENTITY.listOf().fieldOf("entries").forGetter(BlockEntities::entries))
                   .apply(inst, BlockEntities::new));
+
+  /**
+   * Mirrors vanilla chunk tick storage (SavedTick): the trigger tick travels as a delay relative to
+   * the capture game time and sub-tick ordering is not persisted.
+   */
+  private static final Codec<ScheduledTickRecord> SCHEDULED_TICK =
+      RecordCodecBuilder.create(
+          inst ->
+              inst.group(
+                      Codec.BOOL
+                          .optionalFieldOf("fluid", false)
+                          .forGetter(ScheduledTickRecord::fluid),
+                      Identifier.CODEC.fieldOf("i").forGetter(ScheduledTickRecord::typeId),
+                      BlockPos.CODEC.fieldOf("pos").forGetter(ScheduledTickRecord::pos),
+                      Codec.INT.fieldOf("t").forGetter(ScheduledTickRecord::delay),
+                      TickPriority.CODEC
+                          .optionalFieldOf("p", TickPriority.NORMAL)
+                          .forGetter(ScheduledTickRecord::priority))
+                  .apply(inst, ScheduledTickRecord::new));
+
+  public record ScheduledTicks(List<ScheduledTickRecord> entries) {}
+
+  public static final Codec<ScheduledTicks> SCHEDULED_TICKS =
+      RecordCodecBuilder.create(
+          inst ->
+              inst.group(
+                      SCHEDULED_TICK
+                          .listOf()
+                          .fieldOf("entries")
+                          .forGetter(ScheduledTicks::entries))
+                  .apply(inst, ScheduledTicks::new));
 
   public static final Codec<EntityRecord> ENTITY =
       RecordCodecBuilder.create(

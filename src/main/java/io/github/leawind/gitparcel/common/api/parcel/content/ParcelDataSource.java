@@ -24,6 +24,13 @@ public interface ParcelDataSource {
   void forEachEntity(ParcelDataConsumer<EntityRecord> consumer)
       throws IOException, ParcelException;
 
+  /**
+   * Emits the scheduled block and fluid ticks targeting blocks inside the parcel extent, in a
+   * stable order. Sources without regional tick access emit nothing.
+   */
+  default void forEachScheduledTick(ParcelDataConsumer<ScheduledTickRecord> consumer)
+      throws IOException, ParcelException {}
+
   void forEachAttachment(ParcelDataConsumer<AttachmentRecord> consumer)
       throws IOException, ParcelException;
 }

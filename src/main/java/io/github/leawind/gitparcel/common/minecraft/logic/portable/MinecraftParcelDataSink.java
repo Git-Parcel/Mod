@@ -16,6 +16,7 @@ import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockSection;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSink;
+import io.github.leawind.gitparcel.common.api.parcel.content.ScheduledTickRecord;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
 import io.github.leawind.gitparcel.common.minecraft.logic.transform.ParcelBlockTransform;
@@ -26,6 +27,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import org.jspecify.annotations.Nullable;
 import net.minecraft.util.ProblemReporter;
@@ -33,7 +37,12 @@ import net.minecraft.world.entity.EntityProcessor;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.ticks.LevelChunkTicks;
+import net.minecraft.world.ticks.ScheduledTick;
+import net.minecraft.world.ticks.TickPriority;
 
 /** Places portable parcel records into a server level. */
 public final class MinecraftParcelDataSink implements ParcelDataSink {
@@ -50,6 +59,7 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
   private final ParcelRecordProcessorContext processorContext;
   private final ParcelAttachmentSession attachments = new ParcelAttachmentSession();
   private final List<BufferedEntity> bufferedEntities = new ArrayList<>();
+  private final List<ScheduledTickRecord> bufferedTicks = new ArrayList<>();
   private final List<AttachmentRecord> restoredAttachments = new ArrayList<>();
   private final List<ParcelRecordProcessor> participants;
   private final List<ParcelEntityRefField> declaredRefFields;
@@ -190,10 +200,17 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
     bufferedEntities.add(new BufferedEntity(originalId, record));
   }
 
+  @Override
+  public void acceptScheduledTick(ScheduledTickRecord tick) throws ParcelException {
+    if (!ignoreBlocks) {
+      bufferedTicks.add(tick);
+    }
+  }
+
   /**
    * Summons the whole entity batch with fresh UUIDs, rewriting declared references so intra-parcel
-   * links (leashes and mod-owned fields) survive the restore, then lets capture contributors
-   * re-apply their regional data.
+   * links (leashes and mod-owned fields) survive the restore, replays the snapshot's scheduled
+   * ticks, then lets capture contributors re-apply their regional data.
    */
   @Override
   public void commit() throws ParcelException {
@@ -226,6 +243,9 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
         level.addFreshEntityWithPassengers(entity);
       }
     }
+    if (!ignoreBlocks) {
+      replayScheduledTicks();
+    }
     var contributorContext = new ParcelRestoreContext(level, space, List.copyOf(restoredAttachments));
     for (var contributor : ParcelCaptureContributorRegistry.get().contributors()) {
       try {
@@ -234,6 +254,67 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
         throw new ParcelException("Parcel restore contributor failed: " + contributor.id(), e);
       }
     }
+  }
+
+  /**
+   * Re-anchors the buffered ticks onto the current game time (rule 2.3) and schedules them over
+   * whatever the block placement itself queued at the same position (rule 6.3): the snapshot is
+   * authoritative, so same-position ticks are replaced rather than accumulated.
+   */
+  private void replayScheduledTicks() throws ParcelException {
+    long gameTime = level.getLevel().getGameTime();
+    long subTickOrder = -bufferedTicks.size();
+    for (ScheduledTickRecord tick : bufferedTicks) {
+      BlockPos worldPos = space.toWorld(tick.pos());
+      long triggerTick = gameTime + tick.delay();
+      if (tick.fluid()) {
+        var fluid =
+            BuiltInRegistries.FLUID.get(tick.typeId()).map(Holder::value).orElse(null);
+        if (fluid == null) {
+          throw new ParcelException.CorruptedParcelException(
+              "Unknown fluid in scheduled tick: " + tick.typeId());
+        }
+        placeTick(
+            levelTicks(level.getChunk(worldPos).getFluidTicks()),
+            fluid,
+            worldPos,
+            triggerTick,
+            tick.priority(),
+            subTickOrder++);
+      } else {
+        var block =
+            BuiltInRegistries.BLOCK.get(tick.typeId()).map(Holder::value).orElse(null);
+        if (block == null) {
+          throw new ParcelException.CorruptedParcelException(
+              "Unknown block in scheduled tick: " + tick.typeId());
+        }
+        placeTick(
+            levelTicks(level.getChunk(worldPos).getBlockTicks()),
+            block,
+            worldPos,
+            triggerTick,
+            tick.priority(),
+            subTickOrder++);
+      }
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <T> LevelChunkTicks<T> levelTicks(
+      net.minecraft.world.ticks.TickContainerAccess<T> container) {
+    return (LevelChunkTicks<T>) container;
+  }
+
+  private <T> void placeTick(
+      LevelChunkTicks<T> container,
+      T type,
+      BlockPos worldPos,
+      long triggerTick,
+      TickPriority priority,
+      long subTickOrder) {
+    container.removeIf(existing -> existing.type() == type && existing.pos().equals(worldPos));
+    container.schedule(
+        new ScheduledTick<>(type, worldPos, triggerTick, priority, subTickOrder));
   }
 
   private static Optional<UUID> readEntityUuid(CompoundTag data) {

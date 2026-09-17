@@ -5,12 +5,14 @@ import io.github.leawind.gitparcel.common.api.extension.contributor.ParcelCaptur
 import io.github.leawind.gitparcel.common.api.extension.contributor.ParcelCaptureContributorRegistry;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelExtent;
 import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockSection;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataConsumer;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSource;
+import io.github.leawind.gitparcel.common.api.parcel.content.ScheduledTickRecord;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
 import io.github.leawind.gitparcel.common.impl.parcel.BlockSectionPartitioner;
 import io.github.leawind.gitparcel.common.minecraft.logic.storage.ParcelStorage;
@@ -20,10 +22,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Function;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.painting.Painting;
@@ -33,6 +38,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.ticks.SavedTick;
 
 /** Lazily captures a level into portable parcel records. */
 public final class MinecraftParcelDataSource implements ParcelDataSource {
@@ -140,6 +146,49 @@ public final class MinecraftParcelDataSource implements ParcelDataSource {
         }
         consumer.accept(record);
       }
+    }
+  }
+
+  @Override
+  public void forEachScheduledTick(
+      ParcelDataConsumer<ScheduledTickRecord> consumer)
+      throws IOException, ParcelException {
+    // Scheduled ticks live in per-chunk containers, so enumerate the chunks covering the world
+    // bounds and ask each for its serialization form, which already relativizes trigger ticks
+    // against the passed game time (rule 2.3) and includes not-yet-unpacked pending ticks.
+    var extent = new ParcelExtent(size, anchor);
+    long gameTime = level.getGameTime();
+    AABB bounds = worldBounds();
+    int minChunkX = SectionPos.posToSectionCoord(bounds.minX);
+    int minChunkZ = SectionPos.posToSectionCoord(bounds.minZ);
+    int maxChunkX = SectionPos.posToSectionCoord(bounds.maxX);
+    int maxChunkZ = SectionPos.posToSectionCoord(bounds.maxZ);
+    for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+      for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+        var packed = level.getChunk(chunkX, chunkZ).getTicksForSerialization(gameTime);
+        emitTicks(packed.blocks(), false, BuiltInRegistries.BLOCK::getKey, extent, consumer);
+        emitTicks(packed.fluids(), true, BuiltInRegistries.FLUID::getKey, extent, consumer);
+      }
+    }
+  }
+
+  private <T> void emitTicks(
+      List<SavedTick<T>> ticks,
+      boolean fluid,
+      Function<T, Identifier> keyOf,
+      ParcelExtent extent,
+      ParcelDataConsumer<ScheduledTickRecord> consumer)
+      throws IOException, ParcelException {
+    for (var tick : ticks) {
+      // The BlockPos overload maps the block grid onto the anchor-relative grid, the same
+      // conversion block capture uses; ticks outside the extent stay in the outside world.
+      BlockPos relativePos = space.toParcel(tick.pos());
+      if (!extent.contains(relativePos)) {
+        continue;
+      }
+      consumer.accept(
+          new ScheduledTickRecord(
+              fluid, keyOf.apply(tick.type()), relativePos, tick.delay(), tick.priority()));
     }
   }
 

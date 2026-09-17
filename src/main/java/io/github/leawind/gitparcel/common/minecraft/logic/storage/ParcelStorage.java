@@ -20,6 +20,7 @@ import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentType;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentTypeRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSink;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSource;
+import io.github.leawind.gitparcel.common.api.parcel.content.ScheduledTickRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.SemanticData;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.impl.content.ParcelContentTypeOrder;
@@ -43,6 +44,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
@@ -532,6 +534,13 @@ public class ParcelStorage {
               entity -> !(entity instanceof Player))
           .forEach(Entity::discard);
     }
+    if (!ignoreBlocks) {
+      // Regional replacement (rule 6.3): ticks inside the extent belong to the snapshot alone, so
+      // the world-side queues are cleared before any content is placed.
+      var area = gridBounds(space, meta.size(), meta.anchor());
+      level.getBlockTicks().clearArea(area);
+      level.getFluidTicks().clearArea(area);
+    }
     var sink =
         new MinecraftParcelDataSink(
             level,
@@ -709,6 +718,23 @@ public class ParcelStorage {
     return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
   }
 
+  /**
+   * The extent's world-side block lattice, inclusive on both ends. The placement transform maps
+   * lattice points to lattice points, so the half-open extent {@code [-anchor, size - anchor)}
+   * becomes an exact inclusive box after flooring the min corner and stepping the max corner back.
+   */
+  private static BoundingBox gridBounds(
+      ParcelSpace space, net.minecraft.core.Vec3i size, net.minecraft.core.Vec3i anchor) {
+    AABB bounds = worldBounds(space, size, anchor);
+    return new BoundingBox(
+        (int) Math.floor(bounds.minX),
+        (int) Math.floor(bounds.minY),
+        (int) Math.floor(bounds.minZ),
+        (int) Math.ceil(bounds.maxX) - 1,
+        (int) Math.ceil(bounds.maxY) - 1,
+        (int) Math.ceil(bounds.maxZ) - 1);
+  }
+
   static final class SnapshotValidationSink implements ParcelDataSink {
     private final int minX;
     private final int minY;
@@ -787,6 +813,15 @@ public class ParcelStorage {
             "Entity lies outside the parcel: " + pos);
       }
       validateSemanticData(entity.semanticData());
+    }
+
+    @Override
+    public void acceptScheduledTick(ScheduledTickRecord tick) throws ParcelException {
+      var pos = tick.pos();
+      if (!contains(pos.getX(), pos.getY(), pos.getZ())) {
+        throw new ParcelException.CorruptedParcelException(
+            "Scheduled tick lies outside the parcel: " + pos);
+      }
     }
 
     private boolean contains(int x, int y, int z) {
