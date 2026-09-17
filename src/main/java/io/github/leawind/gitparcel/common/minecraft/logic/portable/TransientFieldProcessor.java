@@ -39,7 +39,9 @@ public final class TransientFieldProcessor implements ParcelRecordProcessor {
 
   @Override
   public BlockEntityRecord captureBlockEntity(
-      ParcelRecordProcessorContext context, net.minecraft.world.level.block.entity.BlockEntity source, BlockEntityRecord record) {
+      ParcelRecordProcessorContext context,
+      net.minecraft.world.level.block.entity.BlockEntity source,
+      BlockEntityRecord record) {
     var data = record.data().copy();
     apply(
         context,
@@ -65,10 +67,13 @@ public final class TransientFieldProcessor implements ParcelRecordProcessor {
 
   @Override
   public EntityRecord captureEntity(
-      ParcelRecordProcessorContext context, net.minecraft.world.entity.Entity source, EntityRecord record) {
+      ParcelRecordProcessorContext context,
+      net.minecraft.world.entity.Entity source,
+      EntityRecord record) {
     var data = record.data().copy();
     applyEntityTree(context, data, record.type(), true);
-    return new EntityRecord(record.type(), record.pos(), record.blockPos(), data, record.semanticData());
+    return new EntityRecord(
+        record.type(), record.pos(), record.blockPos(), data, record.semanticData());
   }
 
   @Override
@@ -76,7 +81,8 @@ public final class TransientFieldProcessor implements ParcelRecordProcessor {
       ParcelRecordProcessorContext context, EntityRecord record) {
     var data = record.data().copy();
     applyEntityTree(context, data, record.type(), false);
-    return new EntityRecord(record.type(), record.pos(), record.blockPos(), data, record.semanticData());
+    return new EntityRecord(
+        record.type(), record.pos(), record.blockPos(), data, record.semanticData());
   }
 
   private void applyEntityTree(
