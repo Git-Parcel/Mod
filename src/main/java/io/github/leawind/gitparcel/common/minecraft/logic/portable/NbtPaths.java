@@ -24,6 +24,9 @@ public final class NbtPaths {
 
     void set(Tag value);
 
+    /** Removes the value at this location; only compound slots support removal. */
+    default void remove() {}
+
     record CompoundSlot(CompoundTag container, String key) implements Slot {
       @Override
       public Tag get() {
@@ -33,6 +36,11 @@ public final class NbtPaths {
       @Override
       public void set(Tag value) {
         container.put(key, value);
+      }
+
+      @Override
+      public void remove() {
+        container.remove(key);
       }
     }
 

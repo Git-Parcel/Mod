@@ -24,4 +24,11 @@ public interface ParcelExtensionRegistrar {
 
   /** Registers a capture contributor for world-external regional data. */
   void registerContributor(ParcelCaptureContributor contributor);
+
+  /**
+   * Declares an NBT field with no cross-snapshot semantics, eliminated on capture or rewritten as
+   * a game-time offset (definition 2.5, rule 2.3).
+   */
+  void registerTransientField(
+      io.github.leawind.gitparcel.common.api.extension.transientfield.ParcelTransientField field);
 }

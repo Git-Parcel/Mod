@@ -13,6 +13,8 @@ import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFie
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFieldRegistry;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessor;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
+import io.github.leawind.gitparcel.common.api.extension.transientfield.ParcelTransientField;
+import io.github.leawind.gitparcel.common.api.extension.transientfield.ParcelTransientFieldRegistry;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentType;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelContentTypeRegistry;
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ final class ParcelExtensionRegistrarImpl implements ParcelExtensionRegistrar {
   private final List<ParcelCoordinateField> coordinateFields = new ArrayList<>();
   private final List<ParcelEntityRefField> entityRefFields = new ArrayList<>();
   private final List<ParcelCaptureContributor> contributors = new ArrayList<>();
+  private final List<ParcelTransientField> transientFields = new ArrayList<>();
 
   ParcelExtensionRegistrarImpl(GitParcelExtension extension) {
     this.extension = extension;
@@ -73,6 +76,11 @@ final class ParcelExtensionRegistrarImpl implements ParcelExtensionRegistrar {
     contributors.add(contributor);
   }
 
+  @Override
+  public void registerTransientField(ParcelTransientField field) {
+    transientFields.add(field);
+  }
+
   void commit(ParcelContentTypeRegistry registry) {
     contentTypes.forEach(
         type -> registry.register(source(null, type.registrationPriority()), type));
@@ -89,5 +97,6 @@ final class ParcelExtensionRegistrarImpl implements ParcelExtensionRegistrar {
     coordinateFields.forEach(ParcelCoordinateFieldRegistry.get()::register);
     entityRefFields.forEach(ParcelEntityRefFieldRegistry.get()::register);
     contributors.forEach(ParcelCaptureContributorRegistry.get()::register);
+    transientFields.forEach(ParcelTransientFieldRegistry.get()::register);
   }
 }

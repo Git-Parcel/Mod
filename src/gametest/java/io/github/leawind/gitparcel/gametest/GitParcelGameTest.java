@@ -4,6 +4,7 @@ import io.github.leawind.gitparcel.server.minecraft.logic.world.ParcelRegistry;
 import io.github.leawind.gitparcel.server.minecraft.logic.world.SnapshotService;
 import com.google.common.jimfs.Jimfs;
 import com.mojang.logging.LogUtils;
+import io.github.leawind.gitparcel.common.api.operation.ProgressReporter;
 import io.github.leawind.gitparcel.common.api.snapshot.RestoreSnapshotRequest;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.api.snapshot.SnapshotNode;
@@ -401,6 +402,83 @@ public class GitParcelGameTest {
               }
             })
         .thenSucceed();
+  }
+
+  /**
+   * Two captures of an untouched world produce byte-identical trees (P3), and the eliminated
+   * transient fields never enter the snapshot (definition 2.5).
+   */
+  public void testDeterministicCapture(GameTestHelpMore helper) throws Exception {
+    var level = helper.getLevel();
+    var registry = ParcelRegistry.get(level);
+    registry.reset();
+    var parcel =
+        ParcelFactory.create(helper.absoluteBoundingBox(helper.getRelativeBoundingBox()),
+            Mirror.NONE, Rotation.NONE);
+    parcel.meta().setExcludeEntities(false);
+    registry.addNewParcel(parcel);
+
+    var cow = helper.spawn(EntityType.COW, new BlockPos(2, 1, 4));
+    cow.setRemainingFireTicks(100);
+
+    try (var fs = Jimfs.newFileSystem()) {
+      var first = fs.getPath("/first");
+      var second = fs.getPath("/second");
+      ParcelStorage.captureSnapshot(level, parcel, first, false, ProgressReporter.NONE);
+      ParcelStorage.captureSnapshot(level, parcel, second, false, ProgressReporter.NONE);
+
+      var cowRecord = findEntityRecord(first);
+      if (cowRecord.contains("\"Fire\"") || cowRecord.contains("\"HurtTime\"")) {
+        helper.fail("Eliminated transient fields leaked into the snapshot: " + cowRecord);
+      }
+      if (cowRecord.isEmpty()) {
+        helper.fail("The captured snapshot contains no entity record");
+      }
+
+      var mismatch = compareTrees(first, second);
+      if (mismatch.isPresent()) {
+        helper.fail("Repeated captures differ: " + mismatch.orElseThrow());
+      }
+    }
+
+    registry.deleteParcel(parcel.uuid());
+    helper.succeed();
+  }
+
+  /** Reads the single entity record of a captured snapshot as text. */
+  private static String findEntityRecord(Path snapshotRoot) throws Exception {
+    try (var stream = Files.list(snapshotRoot.resolve("data/entities"))) {
+      for (Path file : stream.filter(path -> path.toString().endsWith(".snbt")).toList()) {
+        return Files.readString(file);
+      }
+    }
+    return "";
+  }
+
+  /** Compares two trees file by file; returns the first mismatch description, if any. */
+  private static java.util.Optional<String> compareTrees(Path first, Path second)
+      throws Exception {
+    try (var files = Files.walk(first);
+        var others = Files.walk(second)) {
+      var firstFiles = files.filter(Files::isRegularFile).sorted().toList();
+      var secondFiles = others.filter(Files::isRegularFile).sorted().toList();
+      if (firstFiles.size() != secondFiles.size()) {
+        return java.util.Optional.of(
+            "file count differs: %d vs %d".formatted(firstFiles.size(), secondFiles.size()));
+      }
+      for (int i = 0; i < firstFiles.size(); i++) {
+        var relative = first.relativize(firstFiles.get(i));
+        var otherRelative = second.relativize(secondFiles.get(i));
+        if (!relative.equals(otherRelative)) {
+          return java.util.Optional.of("path differs: %s vs %s".formatted(relative, otherRelative));
+        }
+        if (!java.util.Arrays.equals(Files.readAllBytes(firstFiles.get(i)),
+            Files.readAllBytes(secondFiles.get(i)))) {
+          return java.util.Optional.of("content differs: " + relative);
+        }
+      }
+    }
+    return java.util.Optional.empty();
   }
 
   /**

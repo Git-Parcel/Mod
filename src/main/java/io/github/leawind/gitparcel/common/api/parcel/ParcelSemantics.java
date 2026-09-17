@@ -9,6 +9,8 @@ import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFie
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFieldRegistry;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessor;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorRegistry;
+import io.github.leawind.gitparcel.common.api.extension.transientfield.ParcelTransientField;
+import io.github.leawind.gitparcel.common.api.extension.transientfield.ParcelTransientFieldRegistry;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.resources.Identifier;
@@ -28,6 +30,7 @@ public record ParcelSemantics(
     List<Identifier> processors,
     List<CoordinateField> coordinateFields,
     List<ReferenceField> entityRefFields,
+    List<TransientField> transientFields,
     List<AttachmentType> attachments) {
   public static final Codec<ParcelSemantics> CODEC =
       RecordCodecBuilder.create(
@@ -44,6 +47,10 @@ public record ParcelSemantics(
                           .listOf()
                           .fieldOf("entity_ref_fields")
                           .forGetter(ParcelSemantics::entityRefFields),
+                      TransientField.CODEC
+                          .listOf()
+                          .optionalFieldOf("transient_fields", List.of())
+                          .forGetter(ParcelSemantics::transientFields),
                       AttachmentType.CODEC
                           .listOf()
                           .fieldOf("attachments")
@@ -54,7 +61,17 @@ public record ParcelSemantics(
     processors = List.copyOf(processors);
     coordinateFields = List.copyOf(coordinateFields);
     entityRefFields = List.copyOf(entityRefFields);
+    transientFields = List.copyOf(transientFields);
     attachments = List.copyOf(attachments);
+  }
+
+  /** Convenience constructor for manifests recorded before the transient-field section. */
+  public ParcelSemantics(
+      List<Identifier> processors,
+      List<CoordinateField> coordinateFields,
+      List<ReferenceField> entityRefFields,
+      List<AttachmentType> attachments) {
+    this(processors, coordinateFields, entityRefFields, List.of(), attachments);
   }
 
   /** Records every processor, declared field, and attachment type currently registered. */
@@ -71,11 +88,19 @@ public record ParcelSemantics(
         ParcelEntityRefFieldRegistry.get().fields().stream()
             .map(ReferenceField::of)
             .toList();
+    var transientFields =
+        ParcelTransientFieldRegistry.get().fields().stream()
+            .map(TransientField::of)
+            .toList();
     var attachments =
         ParcelAttachmentTypeRegistry.get().types().stream()
             .map(AttachmentType::of)
             .toList();
-    return new ParcelSemantics(processors, coordinateFields, entityRefFields, attachments);
+    return new ParcelSemantics(processors, coordinateFields, entityRefFields, transientFields, attachments);
+  }
+
+  public boolean declares(ParcelTransientField field) {
+    return transientFields.stream().anyMatch(recorded -> recorded.matches(field));
   }
 
   public boolean declaresProcessor(Identifier id) {
@@ -166,6 +191,40 @@ public record ParcelSemantics(
 
     public boolean matches(ParcelEntityRefField field) {
       return path.equals(field.path())
+          && java.util.Objects.equals(type, field.type().map(Identifier::toString).orElse(null));
+    }
+  }
+
+  /** One declared transient field recorded with its capture-time disposition. */
+  public record TransientField(
+      String target, @Nullable String type, String path, String kind) {
+    public static final Codec<TransientField> CODEC =
+        RecordCodecBuilder.create(
+            inst ->
+                inst.group(
+                        Codec.STRING.fieldOf("target").forGetter(TransientField::target),
+                        Codec.STRING
+                            .optionalFieldOf("type")
+                            .forGetter(field -> Optional.ofNullable(field.type())),
+                        Codec.STRING.fieldOf("path").forGetter(TransientField::path),
+                        Codec.STRING.fieldOf("kind").forGetter(TransientField::kind))
+                    .apply(
+                        inst,
+                        (target, type, path, kind) ->
+                            new TransientField(target, type.orElse(null), path, kind)));
+
+    public static TransientField of(ParcelTransientField field) {
+      return new TransientField(
+          field.target().name(),
+          field.type().map(Identifier::toString).orElse(null),
+          field.path(),
+          field.kind().name());
+    }
+
+    public boolean matches(ParcelTransientField field) {
+      return target.equals(field.target().name())
+          && path.equals(field.path())
+          && kind.equals(field.kind().name())
           && java.util.Objects.equals(type, field.type().map(Identifier::toString).orElse(null));
     }
   }

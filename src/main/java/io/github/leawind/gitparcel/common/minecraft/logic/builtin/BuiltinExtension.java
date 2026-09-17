@@ -9,6 +9,7 @@ import io.github.leawind.gitparcel.common.impl.content.AttachmentContentType;
 import io.github.leawind.gitparcel.common.impl.content.BlockContentType;
 import io.github.leawind.gitparcel.common.impl.content.EntityContentType;
 import io.github.leawind.gitparcel.common.minecraft.logic.portable.DeclaredCoordinateFieldProcessor;
+import io.github.leawind.gitparcel.common.api.extension.transientfield.ParcelTransientField;
 import io.github.leawind.gitparcel.common.minecraft.logic.portable.MapDataAttachmentType;
 import io.github.leawind.gitparcel.common.minecraft.logic.portable.MapItemProcessor;
 import io.github.leawind.gitparcel.common.minecraft.logic.portable.MinecraftCoreRecordProcessor;
@@ -101,5 +102,42 @@ public final class BuiltinExtension implements GitParcelExtension {
             Identifier.fromNamespaceAndPath("minecraft", "end_gateway"),
             "exit_portal",
             ParcelCoordinateField.Encoding.BLOCK_POS));
+
+    // Transient fields eliminated on capture: volatile state whose changes
+    // carry no cross-snapshot semantics.
+    for (String path : new String[] {
+      "HurtTime",
+      "DeathTime",
+      "Fire",
+      "Air",
+      "TicksFrozen",
+      "PortalCooldown",
+      "fall_distance",
+      "current_explosion_impact_pos",
+      "current_impulse_context_reset_grace_time",
+      "shake",
+      "Steps",
+      "TXD",
+      "TYD",
+      "TZD"
+    }) {
+      registrar.registerTransientField(
+          ParcelTransientField.forAny(
+              ParcelTransientField.Target.ENTITY,
+              path,
+              ParcelTransientField.Kind.ELIMINATE));
+    }
+    registrar.registerTransientField(
+        ParcelTransientField.forType(
+            ParcelTransientField.Target.BLOCK_ENTITY,
+            Identifier.fromNamespaceAndPath("minecraft", "end_gateway"),
+            "Age",
+            ParcelTransientField.Kind.ELIMINATE));
+    // Game-time absolute references rewritten as offsets between capture and restore (rule 2.3).
+    registrar.registerTransientField(
+        ParcelTransientField.forAny(
+            ParcelTransientField.Target.ENTITY,
+            "anger_end_time",
+            ParcelTransientField.Kind.OFFSET_GAME_TIME));
   }
 }
