@@ -5,13 +5,14 @@ import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
 import java.util.Set;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  * Transforms Minecraft data into and out of portable parcel records.
  *
- * <p>Implementations must be stateless. Methods are invoked on the server thread.
+ * <p>Implementations must be stateless. Methods are invoked on the server thread and only ever see
+ * the neutral record and the neutral {@link ParcelRecordProcessorContext}; live game objects never
+ * cross this boundary. World lookups needed for attachment collection go through {@code
+ * ParcelAttachmentCollector#level()}, an explicitly marked version seam.
  */
 public interface ParcelRecordProcessor {
   Identifier id();
@@ -33,8 +34,7 @@ public interface ParcelRecordProcessor {
   }
 
   default BlockEntityRecord captureBlockEntity(
-      ParcelRecordProcessorContext context, BlockEntity source, BlockEntityRecord record)
-      throws ParcelException {
+      ParcelRecordProcessorContext context, BlockEntityRecord record) throws ParcelException {
     return record;
   }
 
@@ -44,7 +44,7 @@ public interface ParcelRecordProcessor {
   }
 
   default EntityRecord captureEntity(
-      ParcelRecordProcessorContext context, Entity source, EntityRecord record) throws ParcelException {
+      ParcelRecordProcessorContext context, EntityRecord record) throws ParcelException {
     return record;
   }
 

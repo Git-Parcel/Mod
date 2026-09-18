@@ -11,7 +11,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.LongTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -39,9 +38,7 @@ public final class TransientFieldProcessor implements ParcelRecordProcessor {
 
   @Override
   public BlockEntityRecord captureBlockEntity(
-      ParcelRecordProcessorContext context,
-      net.minecraft.world.level.block.entity.BlockEntity source,
-      BlockEntityRecord record) {
+      ParcelRecordProcessorContext context, BlockEntityRecord record) {
     var data = record.data().copy();
     apply(
         context,
@@ -67,9 +64,7 @@ public final class TransientFieldProcessor implements ParcelRecordProcessor {
 
   @Override
   public EntityRecord captureEntity(
-      ParcelRecordProcessorContext context,
-      net.minecraft.world.entity.Entity source,
-      EntityRecord record) {
+      ParcelRecordProcessorContext context, EntityRecord record) {
     var data = record.data().copy();
     applyEntityTree(context, data, record.type(), true);
     return new EntityRecord(
@@ -119,7 +114,7 @@ public final class TransientFieldProcessor implements ParcelRecordProcessor {
           }
         }
         case OFFSET_GAME_TIME -> {
-          long delta = capturing ? -currentGameTime(context) : currentGameTime(context);
+          long delta = capturing ? -context.gameTime() : context.gameTime();
           NbtPaths.forEach(
               data,
               NbtPaths.parse(field.path()),
@@ -146,10 +141,6 @@ public final class TransientFieldProcessor implements ParcelRecordProcessor {
     if (tag instanceof net.minecraft.nbt.NumericTag number) {
       slot.set(LongTag.valueOf(number.longValue() + delta));
     }
-  }
-
-  private static long currentGameTime(ParcelRecordProcessorContext context) {
-    return context.level() instanceof Level level ? level.getGameTime() : 0L;
   }
 
   private static @Nullable Identifier typeId(CompoundTag data) {

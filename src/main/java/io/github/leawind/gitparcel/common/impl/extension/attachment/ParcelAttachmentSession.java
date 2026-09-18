@@ -7,15 +7,39 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.Level;
+import org.jspecify.annotations.Nullable;
 
-/** Mutable state scoped to one capture or placement operation. */
+/**
+ * Mutable state scoped to one capture or placement operation.
+ *
+ * <p>Capture sessions carry the capturing level for the collector's live-world seam; restore
+ * sessions never expose one.
+ */
 public final class ParcelAttachmentSession implements ParcelAttachmentCollector {
   private final Map<CaptureKey, LocalAttachmentId> capturedIds = new HashMap<>();
   private final List<AttachmentRecord> captured = new ArrayList<>();
   private final Map<LocalAttachmentId, Object> resolved = new HashMap<>();
+  private final @Nullable Level level;
+
+  /** Creates a restore-side session without live-world access. */
+  public ParcelAttachmentSession() {
+    this(null);
+  }
+
+  /** Creates a capture-side session whose collector exposes the capturing level. */
+  public ParcelAttachmentSession(@Nullable Level level) {
+    this.level = level;
+  }
+
+  @Override
+  public Level level() {
+    return Objects.requireNonNull(level, "This attachment session has no capturing level");
+  }
 
   @Override
   public LocalAttachmentId collect(

@@ -23,8 +23,6 @@ import net.minecraft.nbt.ShortTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
@@ -51,7 +49,7 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
 
   @Override
   public BlockEntityRecord captureBlockEntity(
-      ParcelRecordProcessorContext context, BlockEntity source, BlockEntityRecord record) {
+      ParcelRecordProcessorContext context, BlockEntityRecord record) {
     var typeId = record.data().getString("id").map(Identifier::parse).orElse(null);
     var data = record.data().copy();
     transformBlockEntity(context, data, typeId, context.space(), false);
@@ -69,7 +67,7 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
 
   @Override
   public EntityRecord captureEntity(
-      ParcelRecordProcessorContext context, Entity source, EntityRecord record) {
+      ParcelRecordProcessorContext context, EntityRecord record) {
     var data = record.data().copy();
     transformEntityTree(context, data, record.type(), context.space(), false);
     return new EntityRecord(record.type(), record.pos(), record.blockPos(), data, record.semanticData());

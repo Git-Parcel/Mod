@@ -47,7 +47,7 @@ public final class MinecraftParcelDataSource implements ParcelDataSource {
   private final Vec3i anchor;
   private final ParcelSpace space;
   private final boolean ignoreEntities;
-  private final ParcelAttachmentSession attachments = new ParcelAttachmentSession();
+  private final ParcelAttachmentSession attachments;
 
   public MinecraftParcelDataSource(
       Level level, Vec3i size, Vec3i anchor, ParcelSpace space, boolean ignoreEntities) {
@@ -56,6 +56,7 @@ public final class MinecraftParcelDataSource implements ParcelDataSource {
     this.anchor = anchor;
     this.space = space;
     this.ignoreEntities = ignoreEntities;
+    this.attachments = new ParcelAttachmentSession(level);
   }
 
   @Override
@@ -64,7 +65,8 @@ public final class MinecraftParcelDataSource implements ParcelDataSource {
       throws IOException, ParcelException {
     var extent = new io.github.leawind.gitparcel.common.api.parcel.ParcelExtent(size, anchor);
     var processorContext =
-        new ParcelRecordProcessorContext(level, space, attachments, attachments, null, extent);
+        new ParcelRecordProcessorContext(
+            space, attachments, attachments, null, extent, level.getGameTime());
     var processors = ParcelRecordProcessorRegistry.get().orderedProcessors();
     // Sections arrive anchor-relative: the grid is aligned to the anchor, so their origins double
     // as stable archive coordinates.
@@ -89,8 +91,7 @@ public final class MinecraftParcelDataSource implements ParcelDataSource {
               BlockEntityRecord record =
                   new BlockEntityRecord(relativePos, data, List.of());
               for (var processor : processors) {
-                record =
-                    processor.captureBlockEntity(processorContext, blockEntity, record);
+                record = processor.captureBlockEntity(processorContext, record);
               }
               blockEntities.add(record);
             }
@@ -114,7 +115,8 @@ public final class MinecraftParcelDataSource implements ParcelDataSource {
     }
     var extent = new io.github.leawind.gitparcel.common.api.parcel.ParcelExtent(size, anchor);
     var processorContext =
-        new ParcelRecordProcessorContext(level, space, attachments, attachments, null, extent);
+        new ParcelRecordProcessorContext(
+            space, attachments, attachments, null, extent, level.getGameTime());
     var processors = ParcelRecordProcessorRegistry.get().orderedProcessors();
     AABB bounds = worldBounds();
     List<Entity> entities =
@@ -142,7 +144,7 @@ public final class MinecraftParcelDataSource implements ParcelDataSource {
                 output.buildResult().copy(),
                 List.of());
         for (var processor : processors) {
-          record = processor.captureEntity(processorContext, entity, record);
+          record = processor.captureEntity(processorContext, record);
         }
         consumer.accept(record);
       }

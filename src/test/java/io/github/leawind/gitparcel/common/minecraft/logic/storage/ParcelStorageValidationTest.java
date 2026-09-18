@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentType;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentTypeRegistry;
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
+import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentRestoreContext;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelMeta;
 import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
@@ -149,7 +149,7 @@ class ParcelStorageValidationTest extends AbstractMinecraftTest {
 
       @Override
       public void restore(
-          ParcelRecordProcessorContext context, AttachmentRecord attachment) {}
+          ParcelAttachmentRestoreContext context, AttachmentRecord attachment) {}
     };
   }
 

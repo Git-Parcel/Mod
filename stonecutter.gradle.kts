@@ -174,6 +174,32 @@ val checkArchitectureBoundaries by tasks.registering {
                     violations += "$relativePath places test-only code in the production source set"
                 }
 
+                // The extension API stays neutral: live game objects are only allowed in the
+                // four explicitly marked version-seam contexts (DESIGN.md, 接口稳定性与兼容共存).
+                val apiLiveTypeSeamFiles =
+                    setOf(
+                        "/common/api/extension/attachment/ParcelAttachmentCollector.java",
+                        "/common/api/extension/attachment/ParcelAttachmentRestoreContext.java",
+                        "/common/api/extension/contributor/ParcelCaptureContext.java",
+                        "/common/api/extension/contributor/ParcelRestoreContext.java",
+                    )
+                val liveGameTypeImports =
+                    listOf(
+                        "import net.minecraft.world.entity.Entity;",
+                        "import net.minecraft.world.level.block.entity.BlockEntity;",
+                        "import net.minecraft.world.level.Level;",
+                        "import net.minecraft.world.level.LevelAccessor;",
+                        "import net.minecraft.world.level.ServerLevelAccessor;",
+                        "import net.minecraft.server.level.ServerLevel;",
+                    )
+                if (relativePath.contains("/common/api/") &&
+                    apiLiveTypeSeamFiles.none(relativePath::endsWith) &&
+                    liveGameTypeImports.any(content::contains)
+                ) {
+                    violations +=
+                        "$relativePath exposes live game objects outside the marked version seams"
+                }
+
                 if (relativePath.contains("/common/minecraft/logic/network/protocol/")) {
                     violations += "$relativePath reintroduces the retired network protocol package"
                 }

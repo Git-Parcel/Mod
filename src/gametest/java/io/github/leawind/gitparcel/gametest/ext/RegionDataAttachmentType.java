@@ -1,7 +1,7 @@
 package io.github.leawind.gitparcel.gametest.ext;
 
+import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentRestoreContext;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentType;
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
 import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
 import net.minecraft.resources.Identifier;
 
@@ -23,5 +23,5 @@ public enum RegionDataAttachmentType implements ParcelAttachmentType {
   }
 
   @Override
-  public void restore(ParcelRecordProcessorContext context, AttachmentRecord attachment) {}
+  public void restore(ParcelAttachmentRestoreContext context, AttachmentRecord attachment) {}
 }

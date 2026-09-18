@@ -1,6 +1,7 @@
 package io.github.leawind.gitparcel.common.minecraft.logic.portable;
 
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
+import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentRestoreContext;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentTypeRegistry;
 import io.github.leawind.gitparcel.common.api.extension.contributor.ParcelCaptureContributorRegistry;
 import io.github.leawind.gitparcel.common.api.extension.contributor.ParcelRestoreContext;
@@ -15,6 +16,7 @@ import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockSection;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
+import io.github.leawind.gitparcel.common.api.parcel.content.LocalAttachmentId;
 import io.github.leawind.gitparcel.common.api.parcel.content.ParcelDataSink;
 import io.github.leawind.gitparcel.common.api.parcel.content.ScheduledTickRecord;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
@@ -32,11 +34,11 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import org.jspecify.annotations.Nullable;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.EntityProcessor;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.storage.TagValueInput;
@@ -48,7 +50,24 @@ import net.minecraft.world.ticks.TickPriority;
 public final class MinecraftParcelDataSink implements ParcelDataSink {
   private record BufferedEntity(Optional<UUID> originalId, EntityRecord record) {}
 
-  private final ServerLevelAccessor level;
+  /**
+   * Restore-side attachment context: the neutral session plus the target level, exposing the
+   * live-world seam that attachment materialization requires.
+   */
+  private record AttachmentRestoreContext(ServerLevel level, ParcelAttachmentSession attachments)
+      implements ParcelAttachmentRestoreContext {
+    @Override
+    public ServerLevel level() {
+      return level;
+    }
+
+    @Override
+    public void resolve(LocalAttachmentId id, Object value) {
+      attachments.resolve(id, value);
+    }
+  }
+
+  private final ServerLevel level;
   private final ParcelSpace space;
   private final boolean ignoreBlocks;
   private final boolean ignoreEntities;
@@ -66,7 +85,7 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
   private boolean finished;
 
   public MinecraftParcelDataSink(
-      ServerLevelAccessor level,
+      ServerLevel level,
       ParcelSpace space,
       boolean ignoreBlocks,
       boolean ignoreEntities,
@@ -83,7 +102,8 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
     this.participants = participants(semantics);
     this.declaredRefFields = declaredRefFields(semantics);
     this.processorContext =
-        new ParcelRecordProcessorContext(level, space, attachments, null, semantics, extent);
+        new ParcelRecordProcessorContext(
+            space, attachments, null, semantics, extent, level.getGameTime());
   }
 
   /**
@@ -129,7 +149,7 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
               .formatted(attachment.schemaVersion(), attachment.type()));
     }
     try {
-      type.restore(processorContext, attachment);
+      type.restore(new AttachmentRestoreContext(level, attachments), attachment);
     } catch (Exception e) {
       throw new ParcelException("Failed to restore attachment " + attachment.id(), e);
     }

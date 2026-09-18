@@ -35,11 +35,13 @@ class TransientFieldProcessorTest extends AbstractMinecraftTest {
   private static final ParcelTransientField ELIMINATE_FIRE =
       ParcelTransientField.forAny(
           ParcelTransientField.Target.ENTITY, "Fire", ParcelTransientField.Kind.ELIMINATE);
+  // A path the builtin extension never declares: a forAny path like its "anger_end_time" would
+  // also match TEST_ENTITY and double the offset.
   private static final ParcelTransientField OFFSET_ANGER =
       ParcelTransientField.forType(
           ParcelTransientField.Target.ENTITY,
           TEST_ENTITY,
-          "anger_end_time",
+          "calm_end_time",
           ParcelTransientField.Kind.OFFSET_GAME_TIME);
   private static final ParcelTransientField ELIMINATE_PASSENGER_HURT =
       ParcelTransientField.forAny(
@@ -66,7 +68,7 @@ class TransientFieldProcessorTest extends AbstractMinecraftTest {
   void eliminatesDeclaredFieldsOnCaptureOnly() {
     var record = recordWithFire(10);
 
-    var captured = processor.captureEntity(context(null), null, record);
+    var captured = processor.captureEntity(context(null), record);
     assertFalse(captured.data().contains("Fire"), "eliminated fields must not enter snapshots");
 
     // The restore side performs no elimination: snapshots never carry the fields, and a
@@ -82,7 +84,7 @@ class TransientFieldProcessorTest extends AbstractMinecraftTest {
     var record = recordWithFire(10);
     record.data().put("Health", ByteTag.valueOf((byte) 20));
 
-    var captured = processor.captureEntity(context(null), null, record);
+    var captured = processor.captureEntity(context(null), record);
 
     assertTrue(captured.data().contains("Health"));
     assertTrue(captured.data().contains("Fire") == false);
@@ -93,12 +95,12 @@ class TransientFieldProcessorTest extends AbstractMinecraftTest {
   void offsetsParticipateOnlyWhenTheManifestDeclaresThem() {
     var data = new CompoundTag();
     data.putString("id", TEST_ENTITY.toString());
-    data.put("anger_end_time", LongTag.valueOf(5000L));
+    data.put("calm_end_time", LongTag.valueOf(5000L));
 
     var manifestless = context(null);
     var restored = processor.restoreEntity(manifestless, record(TEST_ENTITY, data.copy()));
     assertEquals(
-        5000L, restored.data().getLong("anger_end_time").orElseThrow(), "no manifest, no rewrite");
+        5000L, restored.data().getLong("calm_end_time").orElseThrow(), "no manifest, no rewrite");
 
     var declaring =
         new ParcelSemantics(
@@ -109,10 +111,40 @@ class TransientFieldProcessorTest extends AbstractMinecraftTest {
             List.of());
     var withManifest =
         new ParcelRecordProcessorContext(
-            null, SPACE, new ParcelAttachmentSession(), null, declaring, null);
+            SPACE, new ParcelAttachmentSession(), null, declaring, null, 0L);
     var reAnchored = processor.restoreEntity(withManifest, record(TEST_ENTITY, data.copy()));
-    // Test levels are absent, so the current game time reads as zero: value + 0.
-    assertEquals(5000L, reAnchored.data().getLong("anger_end_time").orElseThrow());
+    // The restore context anchors at game time 0, so the offset is re-anchored to value + 0.
+    assertEquals(5000L, reAnchored.data().getLong("calm_end_time").orElseThrow());
+  }
+
+  /**
+   * Rule 2.3 with real anchors: capture at game time 1000 stores value − 1000; restoring at game
+   * time 3000 writes back 3000 + offset.
+   */
+  @Test
+  void offsetsAnchorOnTheContextGameTime() {
+    var data = new CompoundTag();
+    data.putString("id", TEST_ENTITY.toString());
+    data.put("calm_end_time", LongTag.valueOf(5000L));
+    var declaring =
+        new ParcelSemantics(
+            List.of(),
+            List.of(),
+            List.of(),
+            List.of(ParcelSemantics.TransientField.of(OFFSET_ANGER)),
+            List.of());
+
+    var captureContext =
+        new ParcelRecordProcessorContext(
+            SPACE, new ParcelAttachmentSession(), new ParcelAttachmentSession(), null, null, 1000L);
+    var captured = processor.captureEntity(captureContext, record(TEST_ENTITY, data));
+    assertEquals(4000L, captured.data().getLong("calm_end_time").orElseThrow());
+
+    var restoreContext =
+        new ParcelRecordProcessorContext(
+            SPACE, new ParcelAttachmentSession(), null, declaring, null, 3000L);
+    var restored = processor.restoreEntity(restoreContext, captured);
+    assertEquals(7000L, restored.data().getLong("calm_end_time").orElseThrow());
   }
 
   /** Elimination descends into the Passengers subtree filtered by each nested type. */
@@ -125,7 +157,7 @@ class TransientFieldProcessorTest extends AbstractMinecraftTest {
     data.put("Passengers", passengerList(passenger));
     var record = record(TEST_ENTITY, data);
 
-    var captured = processor.captureEntity(context(null), null, record);
+    var captured = processor.captureEntity(context(null), record);
 
     assertFalse(captured.data().contains("HurtTime"));
     assertFalse(
@@ -149,8 +181,8 @@ class TransientFieldProcessorTest extends AbstractMinecraftTest {
     data.put("server_data", serverData);
     var record = new BlockEntityRecord(BlockPos.ZERO, data, List.of());
 
-    var captured = processor.captureBlockEntity(context(null), null, record);
-    // Test levels are absent so the game time reads as zero: offset = value - 0.
+    var captured = processor.captureBlockEntity(context(null), record);
+    // The capture context anchors at game time 0: offset = value - 0.
     var capturedServerData =
         captured.data().getCompound("server_data").orElseThrow();
     assertEquals(5000L, capturedServerData.getLong("state_updating_resumes_at").orElseThrow());
@@ -176,7 +208,7 @@ class TransientFieldProcessorTest extends AbstractMinecraftTest {
 
   private ParcelRecordProcessorContext context(ParcelSemantics semantics) {
     return new ParcelRecordProcessorContext(
-        null, SPACE, new ParcelAttachmentSession(), null, semantics, null);
+        SPACE, new ParcelAttachmentSession(), null, semantics, null, 0L);
   }
 
   private static EntityRecord recordWithFire(int seconds) {

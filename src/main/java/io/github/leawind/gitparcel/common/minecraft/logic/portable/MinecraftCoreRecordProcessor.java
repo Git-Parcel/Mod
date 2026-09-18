@@ -6,16 +6,20 @@ import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.DoubleTag;
 import net.minecraft.nbt.FloatTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 
-/** Normalizes vanilla spatial fields shared by all block entities and entities. */
+/**
+ * Normalizes vanilla spatial fields shared by all block entities and entities.
+ *
+ * <p>The entity tree (Pos, Motion, Rotation, block_pos) is transformed straight from the NBT that
+ * vanilla serialization produced; every value the transform needs is already in the record.
+ */
 public final class MinecraftCoreRecordProcessor implements ParcelRecordProcessor {
   public static final Identifier ID =
       Identifier.fromNamespaceAndPath("gitparcel", "minecraft_core");
@@ -27,7 +31,7 @@ public final class MinecraftCoreRecordProcessor implements ParcelRecordProcessor
 
   @Override
   public BlockEntityRecord captureBlockEntity(
-      ParcelRecordProcessorContext context, BlockEntity source, BlockEntityRecord record) {
+      ParcelRecordProcessorContext context, BlockEntityRecord record) {
     var data = record.data().copy();
     putBlockPos(data, record.pos());
     return new BlockEntityRecord(record.pos(), data, record.semanticData());
@@ -43,15 +47,13 @@ public final class MinecraftCoreRecordProcessor implements ParcelRecordProcessor
 
   @Override
   public EntityRecord captureEntity(
-      ParcelRecordProcessorContext context, Entity source, EntityRecord record) {
+      ParcelRecordProcessorContext context, EntityRecord record) {
     var data = record.data().copy();
     transformEntityTree(data, context.space(), false);
     putVec3(data, "Pos", record.pos());
     if (data.contains("block_pos")) {
       putBlockPos(data, "block_pos", record.blockPos());
     }
-    putVec3(data, "Motion", context.space().toParcelVector(source.getDeltaMovement()));
-    putRotation(data, context.space().toParcelYaw(source.getYRot()), source.getXRot());
     return new EntityRecord(
         record.type(), record.pos(), record.blockPos(), data, record.semanticData());
   }
@@ -69,7 +71,7 @@ public final class MinecraftCoreRecordProcessor implements ParcelRecordProcessor
   }
 
   private static void transformEntityTree(
-      net.minecraft.nbt.CompoundTag data, ParcelSpace space, boolean toWorld) {
+      CompoundTag data, ParcelSpace space, boolean toWorld) {
     readVec3(data, "Pos")
         .map(value -> toWorld ? space.toWorld(value) : space.toParcel(value))
         .ifPresent(value -> putVec3(data, "Pos", value));
@@ -97,18 +99,17 @@ public final class MinecraftCoreRecordProcessor implements ParcelRecordProcessor
                     .forEach(passenger -> transformEntityTree(passenger, space, toWorld)));
   }
 
-  private static void putBlockPos(net.minecraft.nbt.CompoundTag data, BlockPos pos) {
+  private static void putBlockPos(CompoundTag data, BlockPos pos) {
     data.putInt("x", pos.getX());
     data.putInt("y", pos.getY());
     data.putInt("z", pos.getZ());
   }
 
-  private static void putBlockPos(
-      net.minecraft.nbt.CompoundTag data, String key, BlockPos pos) {
+  private static void putBlockPos(CompoundTag data, String key, BlockPos pos) {
     data.put(key, BlockPos.CODEC.encodeStart(NbtOps.INSTANCE, pos).getOrThrow());
   }
 
-  private static void putVec3(net.minecraft.nbt.CompoundTag data, String key, Vec3 value) {
+  private static void putVec3(CompoundTag data, String key, Vec3 value) {
     ListTag list = new ListTag();
     list.add(DoubleTag.valueOf(value.x));
     list.add(DoubleTag.valueOf(value.y));
@@ -116,8 +117,7 @@ public final class MinecraftCoreRecordProcessor implements ParcelRecordProcessor
     data.put(key, list);
   }
 
-  private static java.util.Optional<Vec3> readVec3(
-      net.minecraft.nbt.CompoundTag data, String key) {
+  private static java.util.Optional<Vec3> readVec3(CompoundTag data, String key) {
     return data.getList(key)
         .filter(list -> list.size() >= 3)
         .map(
@@ -128,21 +128,20 @@ public final class MinecraftCoreRecordProcessor implements ParcelRecordProcessor
                     list.getDouble(2).orElse(0.0)));
   }
 
-  private static void putRotation(
-      net.minecraft.nbt.CompoundTag data, float yaw, float pitch) {
+  private static void putRotation(CompoundTag data, float yaw, float pitch) {
     ListTag list = new ListTag();
     list.add(FloatTag.valueOf(yaw));
     list.add(FloatTag.valueOf(pitch));
     data.put("Rotation", list);
   }
 
-  private static java.util.Optional<Float> readYaw(net.minecraft.nbt.CompoundTag data) {
+  private static java.util.Optional<Float> readYaw(CompoundTag data) {
     return data.getList("Rotation")
         .filter(list -> !list.isEmpty())
         .map(list -> list.getFloat(0).orElse(0.0F));
   }
 
-  private static float readPitch(net.minecraft.nbt.CompoundTag data) {
+  private static float readPitch(CompoundTag data) {
     return data.getList("Rotation")
         .filter(list -> list.size() >= 2)
         .map(list -> list.getFloat(1).orElse(0.0F))

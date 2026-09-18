@@ -9,10 +9,7 @@ import io.github.leawind.gitparcel.common.api.parcel.content.LocalAttachmentId;
 import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.MapItem;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 
@@ -41,8 +38,7 @@ public final class MapItemProcessor implements ParcelRecordProcessor {
 
   @Override
   public BlockEntityRecord captureBlockEntity(
-      ParcelRecordProcessorContext context, BlockEntity source, BlockEntityRecord record)
-      throws ParcelException {
+      ParcelRecordProcessorContext context, BlockEntityRecord record) throws ParcelException {
     var data = record.data().copy();
     ItemStackNbtWalker.forEachBlockEntityItem(data, item -> captureItem(item, context));
     return new BlockEntityRecord(record.pos(), data, record.semanticData());
@@ -58,8 +54,7 @@ public final class MapItemProcessor implements ParcelRecordProcessor {
 
   @Override
   public EntityRecord captureEntity(
-      ParcelRecordProcessorContext context, Entity source, EntityRecord record)
-      throws ParcelException {
+      ParcelRecordProcessorContext context, EntityRecord record) throws ParcelException {
     var data = record.data().copy();
     ItemStackNbtWalker.forEachEntityItem(data, item -> captureItem(item, context));
     return new EntityRecord(record.type(), record.pos(), record.blockPos(), data, record.semanticData());
@@ -85,10 +80,8 @@ public final class MapItemProcessor implements ParcelRecordProcessor {
     if (mapId < 0) {
       return;
     }
-    if (!(context.level() instanceof Level level)) {
-      return;
-    }
-    MapItemSavedData data = MapItem.getSavedData(new MapId(mapId), level);
+    MapItemSavedData data =
+        MapItem.getSavedData(new MapId(mapId), context.requireCollector().level());
     if (data == null) {
       return;
     }

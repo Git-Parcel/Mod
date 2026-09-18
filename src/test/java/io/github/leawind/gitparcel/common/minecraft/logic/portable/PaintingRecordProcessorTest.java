@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.common.minecraft.logic.portable;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
@@ -40,12 +41,65 @@ class PaintingRecordProcessorTest extends AbstractMinecraftTest {
     var restored =
         new PaintingRecordProcessor()
             .restoreEntity(
-                new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession(), null, null, null),
+                new ParcelRecordProcessorContext(
+                    space, new ParcelAttachmentSession(), null, null, null, 0L),
                 record);
 
     assertEquals(
         space.toWorldDirection(Direction.WEST).get2DDataValue(),
         restored.data().getInt("facing").orElseThrow());
+  }
+
+  /**
+   * Capture re-derives the wall direction from the vanilla {@code facing} byte (legacy 2D data
+   * value) instead of the live entity, and stores it parcel-relative in the semantic payload.
+   */
+  @Test
+  void capturesFacingFromTheVanillaNbtByte() {
+    var space = ParcelSpaceTestValues.IDENTITY;
+    var data = new CompoundTag();
+    data.putInt("facing", Direction.NORTH.get2DDataValue());
+    var record = record(data, null);
+
+    var captured =
+        new PaintingRecordProcessor()
+            .captureEntity(
+                new ParcelRecordProcessorContext(
+                    space, new ParcelAttachmentSession(), new ParcelAttachmentSession(), null, null, 0L),
+                record);
+
+    var semantic = captured.semanticData().get(0);
+    assertEquals(
+        Direction.NORTH.getName(),
+        semantic.payload().getString("direction").orElseThrow());
+  }
+
+  /** Records of other entity types pass through untouched. */
+  @Test
+  void ignoresOtherEntityTypes() {
+    var data = new CompoundTag();
+    data.putInt("facing", Direction.NORTH.get2DDataValue());
+    var record =
+        new EntityRecord(
+            Identifier.fromNamespaceAndPath("minecraft", "armor_stand"),
+            Vec3.ZERO,
+            BlockPos.ZERO,
+            data,
+            List.of());
+
+    var captured =
+        new PaintingRecordProcessor()
+            .captureEntity(
+                new ParcelRecordProcessorContext(
+                    ParcelSpaceTestValues.IDENTITY,
+                    new ParcelAttachmentSession(),
+                    new ParcelAttachmentSession(),
+                    null,
+                    null,
+                    0L),
+                record);
+
+    assertTrue(captured.semanticData().isEmpty());
   }
 
   @Test
@@ -59,21 +113,26 @@ class PaintingRecordProcessorTest extends AbstractMinecraftTest {
             new PaintingRecordProcessor()
                 .restoreEntity(
                     new ParcelRecordProcessorContext(
-                        null,
                         ParcelSpaceTestValues.IDENTITY,
                         new ParcelAttachmentSession(),
                         null,
-                        null, null),
-                    record(new SemanticData(PaintingRecordProcessor.ID, 99, payload))));
+                        null,
+                        null,
+                        0L),
+                    record(new CompoundTag(), new SemanticData(PaintingRecordProcessor.ID, 99, payload))));
   }
 
-  private static EntityRecord record(SemanticData semantic) {
+  private static EntityRecord record(CompoundTag data, SemanticData semantic) {
     return new EntityRecord(
         Identifier.fromNamespaceAndPath("minecraft", "painting"),
         Vec3.ZERO,
         BlockPos.ZERO,
-        new CompoundTag(),
-        List.of(semantic));
+        data,
+        semantic == null ? List.of() : List.of(semantic));
+  }
+
+  private static EntityRecord record(SemanticData semantic) {
+    return record(new CompoundTag(), semantic);
   }
 
   private static final class ParcelSpaceTestValues {

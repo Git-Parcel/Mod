@@ -1,14 +1,12 @@
 package io.github.leawind.gitparcel.common.minecraft.logic.portable;
 
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
+import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentRestoreContext;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentType;
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
 import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 
@@ -36,11 +34,8 @@ public enum MapDataAttachmentType implements ParcelAttachmentType {
   }
 
   @Override
-  public void restore(ParcelRecordProcessorContext context, AttachmentRecord attachment)
+  public void restore(ParcelAttachmentRestoreContext context, AttachmentRecord attachment)
       throws Exception {
-    if (!(context.level() instanceof ServerLevel level)) {
-      throw new ParcelException("Map attachments restore on the server thread only");
-    }
     MapItemSavedData data =
         MapItemSavedData.CODEC
             .parse(NbtOps.INSTANCE, attachment.payload())
@@ -49,9 +44,10 @@ public enum MapDataAttachmentType implements ParcelAttachmentType {
                 () ->
                     new ParcelException(
                         "Corrupt map payload for attachment " + attachment.id()));
+    var level = context.level();
     MapId newId = level.getServer().overworld().getFreeMapId();
     level.setMapData(newId, data);
-    context.attachments().resolve(attachment.id(), newId);
+    context.resolve(attachment.id(), newId);
   }
 
   /** Serializes map data for the attachment payload. */

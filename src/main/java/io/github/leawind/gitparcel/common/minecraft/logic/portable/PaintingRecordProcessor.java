@@ -6,16 +6,22 @@ import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordPr
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.SemanticData;
 import java.util.ArrayList;
-import java.util.Set;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.decoration.painting.Painting;
 
-/** Preserves a painting's wall attachment and facing in parcel space. */
+/**
+ * Preserves a painting's wall attachment and facing in parcel space.
+ *
+ * <p>Vanilla serializes the wall direction as the {@code facing} field with the legacy 2D data
+ * value encoding ({@link Direction#from2DDataValue}); capture re-derives the direction from it
+ * instead of the live entity.
+ */
 public final class PaintingRecordProcessor implements ParcelRecordProcessor {
   public static final Identifier ID = Identifier.fromNamespaceAndPath("gitparcel", "painting");
+
+  private static final Identifier PAINTING_TYPE =
+      Identifier.fromNamespaceAndPath("minecraft", "painting");
 
   @Override
   public Identifier id() {
@@ -23,19 +29,24 @@ public final class PaintingRecordProcessor implements ParcelRecordProcessor {
   }
 
   @Override
-  public Set<Identifier> runAfter() {
-    return Set.of(MinecraftCoreRecordProcessor.ID);
+  public java.util.Set<Identifier> runAfter() {
+    return java.util.Set.of(MinecraftCoreRecordProcessor.ID);
   }
 
   @Override
   public EntityRecord captureEntity(
-      ParcelRecordProcessorContext context, Entity source, EntityRecord record) {
-    if (!(source instanceof Painting painting)) {
+      ParcelRecordProcessorContext context, EntityRecord record) {
+    if (!PAINTING_TYPE.equals(record.type())) {
+      return record;
+    }
+    int facing = record.data().getInt("facing").orElse(-1);
+    if (facing < 0) {
       return record;
     }
     CompoundTag payload = new CompoundTag();
     payload.putString(
-        "direction", context.space().toParcelDirection(painting.getDirection()).getName());
+        "direction",
+        context.space().toParcelDirection(Direction.from2DDataValue(facing)).getName());
     var semantic = new ArrayList<>(record.semanticData());
     semantic.add(new SemanticData(ID, 0, payload));
     return new EntityRecord(record.type(), record.pos(), record.blockPos(), record.data(), semantic);

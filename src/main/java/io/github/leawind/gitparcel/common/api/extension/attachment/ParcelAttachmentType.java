@@ -1,7 +1,6 @@
 package io.github.leawind.gitparcel.common.api.extension.attachment;
 
 import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
-import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
 import net.minecraft.resources.Identifier;
 
 /** Restores a registered kind of world-external parcel attachment. */
@@ -18,5 +17,6 @@ public interface ParcelAttachmentType {
     return 0;
   }
 
-  void restore(ParcelRecordProcessorContext context, AttachmentRecord attachment) throws Exception;
+  void restore(ParcelAttachmentRestoreContext context, AttachmentRecord attachment)
+      throws Exception;
 }

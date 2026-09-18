@@ -8,7 +8,6 @@ import io.github.leawind.gitparcel.common.api.parcel.content.LocalAttachmentId;
 import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.Entity;
 
 /**
  * Attaches a marker payload to every captured entity and re-materializes it as the entity's custom
@@ -29,7 +28,7 @@ public enum MarkerRecordProcessor implements ParcelRecordProcessor {
 
   @Override
   public EntityRecord captureEntity(
-      ParcelRecordProcessorContext context, Entity source, EntityRecord record) {
+      ParcelRecordProcessorContext context, EntityRecord record) {
     var payload = new CompoundTag();
     payload.putString(MarkerAttachmentType.PAYLOAD_KEY, MARKER_VALUE);
     LocalAttachmentId ref =

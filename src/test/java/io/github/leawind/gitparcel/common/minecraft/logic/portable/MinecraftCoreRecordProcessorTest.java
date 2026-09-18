@@ -34,7 +34,7 @@ class MinecraftCoreRecordProcessorTest extends AbstractMinecraftTest {
                       Mirror.FRONT_BACK, Rotation.CLOCKWISE_90, new BlockPos(100, 20, -40))
                   .apply(new BlockPos(7, 3, -2))));
   private final ParcelRecordProcessorContext context =
-      new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession(), null, null, null);
+      new ParcelRecordProcessorContext(space, new ParcelAttachmentSession(), null, null, null, 0L);
 
   @Test
   void restoresBlockEntityCoordinatesFromAnchorRelativePosition() {
@@ -124,11 +124,56 @@ class MinecraftCoreRecordProcessorTest extends AbstractMinecraftTest {
     var relative = new BlockPos(2, -1, 4);
 
     var captured =
-        processor.captureBlockEntity(context, null, new BlockEntityRecord(relative, data, List.of()));
+        processor.captureBlockEntity(context, new BlockEntityRecord(relative, data, List.of()));
 
     assertEquals(relative.getX(), captured.data().getInt("x").orElseThrow());
     assertEquals(relative.getY(), captured.data().getInt("y").orElseThrow());
     assertEquals(relative.getZ(), captured.data().getInt("z").orElseThrow());
+  }
+
+  /**
+   * The capture side works purely from the vanilla NBT tree: world-space Pos, Motion and Rotation
+   * (as written by {@code Entity#save}) are rebased without touching a live entity.
+   */
+  @Test
+  void capturesEntitySpatialFieldsFromTheNbtTree() {
+    var relativePos = new Vec3(1.5, 2.25, -3.75);
+    var worldPos = space.toWorld(relativePos);
+    var worldMotion = new Vec3(0.25, -0.5, 1.5);
+    var worldYaw = 37.5F;
+    var data = new CompoundTag();
+    data.put("Pos", doubles(worldPos));
+    data.put("Motion", doubles(worldMotion));
+    data.put("Rotation", floats(worldYaw, -12F));
+    var passengerWorldPos = worldPos.add(1, 0, 0);
+    var passenger = new CompoundTag();
+    passenger.put("Pos", doubles(passengerWorldPos));
+    passenger.put("Motion", doubles(new Vec3(-1, 0.25, 0.5)));
+    passenger.put("Rotation", floats(-80F, 5F));
+    var passengers = new ListTag();
+    passengers.add(passenger);
+    data.put("Passengers", passengers);
+    var record =
+        new EntityRecord(
+            Identifier.fromNamespaceAndPath("minecraft", "armor_stand"),
+            relativePos,
+            BlockPos.containing(relativePos),
+            data,
+            List.of());
+
+    var captured = processor.captureEntity(context, record);
+    var restored = processor.restoreEntity(context, captured);
+
+    assertVecEquals(worldPos, readVec(restored.data(), "Pos"));
+    assertVecEquals(worldMotion, readVec(restored.data(), "Motion"));
+    assertEquals(
+        worldYaw,
+        restored.data().getList("Rotation").orElseThrow().getFloat(0).orElseThrow(),
+        1.0E-5F);
+    var restoredPassenger =
+        restored.data().getList("Passengers").orElseThrow().getCompound(0).orElseThrow();
+    assertVecEquals(passengerWorldPos, readVec(restoredPassenger, "Pos"));
+    assertVecEquals(new Vec3(-1, 0.25, 0.5), readVec(restoredPassenger, "Motion"));
   }
 
   @Test
@@ -139,7 +184,7 @@ class MinecraftCoreRecordProcessorTest extends AbstractMinecraftTest {
         // Fold the old anchor offset into the translation so it becomes the anchor's position.
         var space = new ParcelSpace(
             new ParcelTransform(mirror, rotation, placement.apply(new BlockPos(5, -2, 9))));
-        var context = new ParcelRecordProcessorContext(null, space, new ParcelAttachmentSession(), null, null, null);
+        var context = new ParcelRecordProcessorContext(space, new ParcelAttachmentSession(), null, null, null, 0L);
         var relativePos = new Vec3(1.5, 2.25, -3.75);
         var localMotion = new Vec3(0.25, -0.5, 1.5);
         var relativeBlockPos = new BlockPos(1, -1, 2);
