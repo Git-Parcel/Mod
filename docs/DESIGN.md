@@ -102,7 +102,7 @@ Minecraft 世界适配       InternalRepository      SharedRepository
 
 本模组经 Stonecutter 按版本切分公共源集，并同时构建 Fabric 与 NeoForge。多版本架构遵循三条规则：
 
-- 公共契约不引用易变的游戏类型。领域模型、内容类型的 NIO 契约、`GitRepositoryCore`、`OperationManager` 和扩展 SPI 只依赖 JDK、NBT、`Identifier` 与本模组自有类型；扩展接口以中立记录（记录种类、类型 ID、NBT 载荷）为载体，不暴露活的游戏对象。
+- 公共契约不引用易变的游戏类型。领域模型、内容类型的 NIO 契约、`GitRepositoryCore`、`OperationManager` 和扩展 SPI 只依赖 JDK、NBT、`Identifier`、Mojang `Codec`、稳定值类型（坐标、向量、朝向、方块状态等数据与枚举值类型）及本模组自有类型；易变指活的游戏对象与随版本漂移的运行时 API。扩展接口以中立记录（记录种类、类型 ID、NBT 载荷）为载体，不暴露活的游戏对象。
 - 版本差异收敛于两个接缝：世界适配层（方块状态与 NBT 编解码、实体与方块实体存取、DataFixer 挂点、命令注册、生命周期与网络）与各内容类型的版本化编解码器；接缝内的差异用 Stonecutter 条件编译维护。
 - 双轴版本模型：内容类型版本（文件布局）与 Minecraft 数据版本（NBT schema）相互独立。`parcel.json` 记录数据版本，`contents` 清单记录每个目录的布局版本；读取时布局版本选择读取器实现，数据版本经 vanilla DataFixer 升级到当前 schema 后才进入处理器管线。
 
@@ -528,7 +528,7 @@ JGit `FileRepository` 不支持任意 NIO `FileSystem`，内容类型也不应�
 
 世界内容除方块与实体本身外，还包含需要特殊处理的数据：嵌套在世界 NBT 中的坐标、实体之间的 UUID 引用、随时间流逝而无语义累积的瞬态数据、以及引用世界外部存储的数据（如地图）。这些数据的语义分类（四类边、瞬态与派生载荷）由 SEMANTICS.md 规约，处理逻辑一律由记录处理器以代码实现，核心不提供数据文件形式的声明层：
 
-- 记录处理器（`ParcelRecordProcessor`）：无状态，在世界的调度线程上执行，捕获/恢复时逐记录变换中立记录（记录种类、类型 ID、NBT 载荷与定位字段），可声明 `runAfter`/`runBefore` 顺序。处理器不自行组合镜像与旋转，只请求 `ParcelSpace` 施加完整变换（SEMANTICS.md 规则 3.3）；身份边在批次句柄翻译阶段重写（SEMANTICS.md 规则 4.1）；瞬态与派生载荷的消除与相对化同样是处理器职责（SEMANTICS.md 定义 2.5、规则 2.2、规则 2.3）。处理器私有的版本化侧数据通过 `SemanticData` 挂在记录上。
+- 记录处理器（`ParcelRecordProcessor`）：无状态，在世界的调度线程上执行，捕获/恢复时逐记录变换中立记录（记录种类、类型 ID、NBT 载荷与定位字段），可声明 `runAfter`/`runBefore` 顺序。处理器只接收中立记录与中立上下文——空间变换、附件、快照自述、内容范围与操作级 `gameTime`（SEMANTICS.md 规则 2.3 的相对化锚点）——不接收 `Entity`、`BlockEntity`、`Level` 等活的游戏对象。处理器不自行组合镜像与旋转，只请求 `ParcelSpace` 施加完整变换（SEMANTICS.md 规则 3.3）；身份边在批次句柄翻译阶段重写（SEMANTICS.md 规则 4.1）；瞬态与派生载荷的消除与相对化同样是处理器职责（SEMANTICS.md 定义 2.5、规则 2.2、规则 2.3）。处理器私有的版本化侧数据通过 `SemanticData` 挂在记录上。
 - 附件（`ParcelAttachmentType` + `ParcelAttachmentCollector`）：捕获时处理器或贡献者把世界外部数据收集为附件记录，经内置 `attachments` 内容类型随快照持久化；恢复时附件类型把数据重新物化到目标世界并通过上下文 `resolve` 回传。引用编码进 NBT 时必须保留原版值作为降级路径（例如地图物品保留原 `map_id`）。附件恢复要求类型已注册且 schema 版本精确匹配；引用不可解析时显式失败。理由：外部存储的内容不在记录里，NBT 句柄单独搬运必然指向错误数据；精确 schema 匹配保证“宣称能恢复的数据一定正确”，降级路径保证缺失时行为可预期而非崩溃。
 - 区域贡献者（`ParcelCaptureContributor`）：覆盖不被任何记录引用的区域性模组数据——捕获钩子在附件排放前运行，恢复钩子在所有内容（含延迟提交的实体批次）应用后运行，并能看到本次恢复的全部附件记录。贡献者收集的附件同样需要已注册的附件类型。
 
@@ -581,9 +581,10 @@ public final class AnchorRecordProcessor implements ParcelRecordProcessor {
   @Override
   public BlockEntityRecord captureBlockEntity(
       ParcelRecordProcessorContext ctx, BlockEntityRecord record) {
-    BlockPos home = readHomePos(record.nbt());
-    writeHomePos(record.nbt(), ctx.space().toParcel(home)); // 变换唯一定义点（SEMANTICS.md 规则 3.3）
-    return record;
+    var data = record.data().copy();
+    BlockPos home = readHomePos(data);
+    writeHomePos(data, ctx.space().toParcel(home)); // 变换唯一定义点（SEMANTICS.md 规则 3.3）
+    return new BlockEntityRecord(record.pos(), data, record.semanticData());
   }
 }
 ```
@@ -616,7 +617,7 @@ public final class AnchorRecordProcessor implements ParcelRecordProcessor {
 
 扩展接口的稳定性与共存规则：
 
-- 扩展 API 只暴露中立类型：`Identifier`、NBT、本模组自有类型与各上下文接口；不暴露 `Entity`、`BlockEntity`、`Level` 等活的游戏对象。需要活世界状态的少数钩子（附件收集、区域贡献者）经窄上下文接口访问，这些接口是明确标记的版本接缝。
+- 扩展 API 只暴露中立类型：`Identifier`、NBT、稳定值类型、本模组自有类型与各上下文接口；不暴露 `Entity`、`BlockEntity`、`Level` 等活的游戏对象。需要活世界状态的少数钩子——附件收集（捕获侧 collector 携带 level）、附件物化（恢复侧专用上下文携带 level）、区域贡献者——经窄上下文接口访问，这些接口是明确标记的版本接缝。
 - 处理器按类型 ID（字符串）过滤目标，不引用目标模组的类。目标模组缺席时，其记录类型不会出现在捕获流中，处理器自然失活，不得崩溃或报错。
 - 同一 ID 的重复注册不得失败（SEMANTICS.md 规则 7.4）：命名空间属主注册永远优先于客人注册，与加载顺序无关；属主命名空间由扩展显式声明（默认为其 ID 的命名空间，内置扩展含 minecraft）；同为客人或同为属主时按显式优先级裁决，同优先级时以扩展 ID 字典序裁决，结果记入日志。
 
