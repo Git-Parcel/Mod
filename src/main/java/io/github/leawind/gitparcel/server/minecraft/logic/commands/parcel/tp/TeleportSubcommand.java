@@ -74,7 +74,7 @@ public class TeleportSubcommand {
   }
 
   private static Vec3 getTeleportPos(Parcel parcel) {
-    return parcel.getBoundingBox().getCenter().getBottomCenter();
+    return Vec3.atBottomCenterOf(parcel.getBoundingBox().getCenter());
   }
 
   private static String formatDouble(double value) {

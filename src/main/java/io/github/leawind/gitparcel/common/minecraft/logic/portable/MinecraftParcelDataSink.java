@@ -39,6 +39,9 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.EntityProcessor;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+/*? if >=26.3 {*/
+import net.minecraft.world.entity.EntitySpawnRequest;
+/*?}*/
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.storage.TagValueInput;
@@ -250,8 +253,16 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
             data, buffered.record().type(), remap, declaredRefFields);
         data.putString("id", buffered.record().type().toString());
         var entity =
+            /*? if >=26.3 {*/
             EntityType.loadEntityRecursive(
+                data,
+                level.getLevel(),
+                new EntitySpawnRequest(EntitySpawnReason.LOAD, false),
+                EntityProcessor.NOP);
+            /*?} else {*/
+            /*EntityType.loadEntityRecursive(
                 data, level.getLevel(), EntitySpawnReason.LOAD, EntityProcessor.NOP);
+            *//*?}*/
         if (entity == null) {
           throw new ParcelException("Failed to create entity " + buffered.record().type());
         }

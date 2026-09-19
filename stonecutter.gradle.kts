@@ -1,15 +1,19 @@
 plugins {
     id("dev.kikugie.stonecutter")
 
-    val modstitchVersion = "0.8.4"
+    val modstitchVersion = "0.8.5"
     id("dev.isxander.modstitch.base") version modstitchVersion apply false
+    // ModStitch pins an older ModDevGradle; force the latest so new MC versions
+    // are recognized by its NeoForm runtime instead of falling back to 26.1
+    // snapshot capabilities.
+    id("net.neoforged.moddev") version "2.0.147" apply false
     id("net.fabricmc.fabric-loom") version "1.15.5" apply false
     id("com.gradleup.shadow") version "8.3.10" apply false
 
     id("me.modmuss50.mod-publish-plugin") version "0.8.4" apply false
 }
 
-stonecutter active "26.1-fabric"
+stonecutter active "26.3-fabric"
 
 val buildAndCollect by tasks.registering(Sync::class) {
     group = "build"

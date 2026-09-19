@@ -17,6 +17,7 @@ import io.github.leawind.gitparcel.common.utils.git.SharedRepository;
 import io.github.leawind.gitparcel.gametest.ext.MarkerRecordProcessor;
 import io.github.leawind.gitparcel.gametest.ext.RegionMarkerContributor;
 import io.github.leawind.gitparcel.gametest.utils.ChannelFlags;
+import io.github.leawind.gitparcel.gametest.utils.GameEntityTypes;
 import io.github.leawind.gitparcel.gametest.utils.GameTestHelpMore;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,6 +54,7 @@ import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.ticks.LevelChunkTicks;
 import net.minecraft.world.ticks.ScheduledTick;
 import net.minecraft.world.ticks.TickPriority;
@@ -359,9 +361,9 @@ public class GitParcelGameTest {
     var parcel = ParcelFactory.create(helper.getBoundingBox(), Mirror.NONE, Rotation.NONE);
     registry.addNewParcel(parcel);
 
-    var cow = helper.spawn(EntityType.COW, new BlockPos(2, 1, 4));
-    var holder = helper.spawn(EntityType.COW, new BlockPos(4, 1, 4));
-    var chicken = helper.spawn(EntityType.CHICKEN, new BlockPos(2, 1, 4));
+    var cow = helper.spawn(GameEntityTypes.COW, new BlockPos(2, 1, 4));
+    var holder = helper.spawn(GameEntityTypes.COW, new BlockPos(4, 1, 4));
+    var chicken = helper.spawn(GameEntityTypes.CHICKEN, new BlockPos(2, 1, 4));
     chicken.startRiding(cow);
     cow.setLeashedTo(holder, true);
     if (!cow.isLeashed() || !chicken.isPassenger()) {
@@ -375,8 +377,8 @@ public class GitParcelGameTest {
         parcel, snapshot, RestoreSnapshotRequest.Mode.DIRECT, false, GAMETEST_IDENTITY);
 
     var area = entityQueryArea(helper);
-    var cows = level.getEntities(EntityType.COW, area, e -> true);
-    var chickens = level.getEntities(EntityType.CHICKEN, area, e -> true);
+    var cows = level.getEntities(GameEntityTypes.COW, area, e -> true);
+    var chickens = level.getEntities(GameEntityTypes.CHICKEN, area, e -> true);
     if (cows.size() != 2 || chickens.size() != 1) {
       helper.fail(
           "Restored parcel must contain exactly two cows and one chicken, got %d/%d"
@@ -396,7 +398,7 @@ public class GitParcelGameTest {
         .thenExecuteAfter(
             20,
             () -> {
-              var leashed = level.getEntities(EntityType.COW, area, Leashable::isLeashed);
+              var leashed = level.getEntities(GameEntityTypes.COW, area, Leashable::isLeashed);
               if (leashed.size() != 1) {
                 helper.fail(
                     "Exactly one cow must be leashed after reference remapping, got "
@@ -477,7 +479,7 @@ public class GitParcelGameTest {
     parcel.meta().setExcludeEntities(false);
     registry.addNewParcel(parcel);
 
-    var cow = helper.spawn(EntityType.COW, new BlockPos(2, 1, 4));
+    var cow = helper.spawn(GameEntityTypes.COW, new BlockPos(2, 1, 4));
     cow.setRemainingFireTicks(100);
 
     try (var fs = Jimfs.newFileSystem()) {
@@ -750,15 +752,15 @@ public class GitParcelGameTest {
 
     var targetArea =
         new AABB(
-            helper.absolutePos(new BlockPos(0, targetBox.minY() - box.minY(), 0)).getCenter(),
-            helper
-                .absolutePos(
+            Vec3.atCenterOf(
+                helper.absolutePos(new BlockPos(0, targetBox.minY() - box.minY(), 0))),
+            Vec3.atCenterOf(
+                helper.absolutePos(
                     new BlockPos(
                         targetBox.getXSpan(),
                         targetBox.getYSpan() + (targetBox.minY() - box.minY()),
-                        targetBox.getZSpan()))
-                .getCenter());
-    var frames = level.getEntities(EntityType.ITEM_FRAME, targetArea, e -> true);
+                        targetBox.getZSpan()))));
+    var frames = level.getEntities(GameEntityTypes.ITEM_FRAME, targetArea, e -> true);
     if (frames.size() != 1) {
       helper.fail("Restored parcel must contain exactly one item frame, got " + frames.size());
     }
@@ -845,13 +847,13 @@ public class GitParcelGameTest {
     var parcel = ParcelFactory.create(helper.getBoundingBox(), Mirror.NONE, Rotation.NONE);
     registry.addNewParcel(parcel);
 
-    helper.spawn(EntityType.COW, new BlockPos(2, 1, 4));
+    helper.spawn(GameEntityTypes.COW, new BlockPos(2, 1, 4));
 
     var snapshot = service.saveSnapshot(parcel, "Attachment", "", GAMETEST_IDENTITY, false);
     service.restoreSnapshot(
         parcel, snapshot, RestoreSnapshotRequest.Mode.DIRECT, false, GAMETEST_IDENTITY);
 
-    var cows = level.getEntities(EntityType.COW, entityQueryArea(helper), e -> true);
+    var cows = level.getEntities(GameEntityTypes.COW, entityQueryArea(helper), e -> true);
     if (cows.size() != 1) {
       helper.fail("Restored parcel must contain exactly one cow, got " + cows.size());
     }
