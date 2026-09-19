@@ -160,3 +160,6 @@ stonecutter 的 `replacements.string` 是双向替换：条件为 true 时按 `r
 实现中踩过并确认的坑，供后续任务避让；条目应写清现象与结论，不罗列排查过程。
 
 - `ParcelTransform`/`ParcelSpace` 的 `BlockPos` 重载在旋转下带 −1 修正（方块网格到方块网格的映射），`Vec3` 重载是纯点映射。parcel 锚点是格点而非方块索引：断言或换算锚点自身必须走 `Vec3` 语义（`transform.translation()`），用 `BlockPos` 重载往返锚点会在带旋转的朝向下偏移一格。
+- Stonecutter 条件块的假分支是"注释包裹"语义：激活时 stonecutter 剥离 `/*` 与 `*/` 标记还原代码。多行假分支必须是 `/*` 开头、裸续行（不得加 javadoc 风格的 ` *` 前缀）、`*/` 结尾的单块注释，否则剥离标记后会残留 ` *`，生成非法 Java 导致"非法的类型开始"编译错误。
+- `replacements.string` 只作用于主源集，`src/gametest` 等附加源集不做字符串替换；附加源集里的版本差异要用条件块（或接缝类）维护。
+- ModStitch 锁定旧版 ModDevGradle，新 MC 版本发布后 NFRT 会因不识别版本号而 recompile 失败（日志先报 `Failed to parse MC version`，最终 `Node action for recompile failed`）。升级 ModStitch 常不足以跟进，需在 `stonecutter.gradle.kts` 的 plugins 块显式声明新版 `net.neoforged.moddev`（buildscript classpath 对同一模块取最高版本）。
