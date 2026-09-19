@@ -33,14 +33,8 @@ public class Entrypoint implements ModInitializer {
 
   @VersionSensitive("fabric playS2C -> clientboundPlay, since mc26.1")
   private static void registerPayloads() {
-    /*? if >= 26.1 {*/
     PayloadTypeRegistry.clientboundPlay()
         .register(MinecraftPayloads.PARCELS_TYPE, MinecraftPayloads.PARCELS_CODEC);
-    /*?} else {*/
-    /*PayloadTypeRegistry.playS2C()
-                       .register(MinecraftPayloads.PARCELS_TYPE, MinecraftPayloads.PARCELS_CODEC);
-    */
-    /*?}*/
   }
 }
 /*?}*/

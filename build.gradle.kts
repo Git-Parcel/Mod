@@ -119,19 +119,6 @@ stonecutter {
         put("neoforge", isNeoforge)
         put("forge", isForge)
     }
-
-    // ResourceLocation -> Identifier
-    replacements.string(current.parsed >= "1.21.11") {
-        replace("net.minecraft.resources.ResourceLocation", "net.minecraft.resources.Identifier")
-        replace("ResourceLocation", "Identifier")
-    }
-    // Input -> ClientInput
-    replacements.string(current.parsed > "1.21") {
-        replace(
-            "net.minecraft.client.player.Input",
-            "net.minecraft.client.player.ClientInput"
-        )
-    }
 }
 // endregion
 

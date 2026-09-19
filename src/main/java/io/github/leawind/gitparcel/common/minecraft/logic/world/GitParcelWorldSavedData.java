@@ -6,9 +6,9 @@ import io.github.leawind.gitparcel.common.api.permission.ParcelPermissions;
 import io.github.leawind.gitparcel.common.api.permission.PermissionConfig;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.level.saveddata.SavedData;
 
-public final class GitParcelWorldSavedData
-    extends CodecSavedData<GitParcelWorldSavedData> {
+public final class GitParcelWorldSavedData extends SavedData {
   private static final long DEFAULT_MAX_PARCEL_VOLUME = 128 * 128 * 128;
 
   public static final Codec<GitParcelWorldSavedData> CODEC =
@@ -59,7 +59,6 @@ public final class GitParcelWorldSavedData
       PermissionConfig<WorldPermissions> permissions,
       PermissionConfig<ParcelPermissions> parcelDefaultPermissions,
       long maxParcelVolume) {
-    super(CODEC);
     this.permissions = permissions;
     this.parcelDefaultPermissions = parcelDefaultPermissions;
     this.maxParcelVolume = maxParcelVolume;
