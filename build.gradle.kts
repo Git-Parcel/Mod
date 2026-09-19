@@ -35,11 +35,12 @@ val loader = when {
     else -> error("Unknown loader")
 }
 
-// Unit testing: only Fabric is supported for now.
+// Unit testing: only Fabric on modern versions is supported for now.
 // Fabric: unitTesting() adds fabric-loader-junit which causes ServiceLoader classloader
 // isolation issues, so we add JUnit dependencies manually instead.
 // NeoForge: unitTesting() requires a valid mod JAR but classes dir isn't recognized.
-val supportsUnitTesting = isFabric
+// 1.20.1: test sources still use post-1.20.1 APIs and are ported separately.
+val supportsUnitTesting = isFabric && stonecutter.current.parsed >= "26.1"
 // endregion
 
 // region ModStitch Setup
@@ -119,6 +120,22 @@ stonecutter {
         put("neoforge", isNeoforge)
         put("forge", isForge)
     }
+
+    // Identifier is the 26.1 rename of ResourceLocation; shared sources write the new name and
+    // pre-rename targets get it reversed, including the constructor-style static factory.
+    replacements.string(current.parsed >= "1.21.11") {
+        replace("net.minecraft.resources.ResourceLocation", "net.minecraft.resources.Identifier")
+        replace("new ResourceLocation", "Identifier.fromNamespaceAndPath")
+        replace("ResourceLocation", "Identifier")
+    }
+
+    replacements.string(current.parsed >= "1.21.11") {
+        replace("getNormal()", "getUnitVec3i()")
+        replace(
+            "(Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SUPPRESS_DROPS | Block.UPDATE_INVISIBLE)",
+            "Block.UPDATE_SKIP_ALL_SIDEEFFECTS",
+        )
+    }
 }
 // endregion
 
@@ -176,11 +193,25 @@ dependencies {
     compileOnly("org.jetbrains:annotations:24.0.1")
     compileOnly("com.google.auto.service:auto-service-annotations:1.1.1")
     annotationProcessor("com.google.auto.service:auto-service:1.1.1")
-}
+
+    // Fabric Loader and NeoForge bundle MixinExtras; Forge does not. Its annotation processor
+    // emits production-mapping refmaps, while the loader-specific artifact initializes it at
+    // runtime.
+    val mixinExtrasVersion = "0.5.4"
+    val mixinExtrasCommon = "io.github.llamalad7:mixinextras-common:$mixinExtrasVersion"
+    compileOnly(mixinExtrasCommon)
+    if (isForge) {
+        annotationProcessor(mixinExtrasCommon)
+        val mixinExtrasForge = "io.github.llamalad7:mixinextras-forge:$mixinExtrasVersion"
+        implementation(mixinExtrasForge)
+        modstitchJiJ(mixinExtrasForge)
+    }
+  }
 // endregion
 
 // region Fabric Gametest
-if (isFabric) {
+// Gametest sources target the modern serialization APIs and are only compiled for 26.x.
+if (isFabric && stonecutter.current.parsed >= "26.1") {
     the<net.fabricmc.loom.api.fabricapi.FabricApiExtension>().configureTests {
         createSourceSet.set(true)
         modId.set(project.property("mod.id") as String)

@@ -55,7 +55,11 @@ public final class ParcelRegistry {
 
   /** Backfills the owning dimension once per loaded level instead of on every command. */
   private void repairDimensions() {
+    /*? if >=26.1 {*/
     String dimension = level.dimension().identifier().toString();
+    /*?} else {*/
+    /*String dimension = level.dimension().location().toString();
+    *//*?}*/
     boolean changed = false;
     for (Parcel parcel : savedData.parcels().values()) {
       if (parcel.dimension().isEmpty()) {
@@ -86,7 +90,11 @@ public final class ParcelRegistry {
   }
 
   public void addNewParcel(Parcel parcel) throws IllegalArgumentException {
+    /*? if >=26.1 {*/
     parcel.assignDimension(level.dimension().identifier().toString());
+    /*?} else {*/
+    /*parcel.assignDimension(level.dimension().location().toString());
+    *//*?}*/
     validateNewParcel(parcel);
     savedData.addParcel(parcel);
     ParcelSynchronization.broadcastIncremental(level, parcel);

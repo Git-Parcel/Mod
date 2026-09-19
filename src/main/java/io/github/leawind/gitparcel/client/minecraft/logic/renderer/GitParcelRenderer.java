@@ -1,5 +1,7 @@
 package io.github.leawind.gitparcel.client.minecraft.logic.renderer;
 
+import io.github.leawind.gitparcel.client.minecraft.bridge.GameClientApi;
+
 public final class GitParcelRenderer {
   private GitParcelRenderer() {}
 
@@ -7,7 +9,7 @@ public final class GitParcelRenderer {
 
   private final ParcelRenderer parcelRenderer = new ParcelRenderer();
 
-  public void renderGizmos() {
-    parcelRenderer.renderGizmos();
+  public void renderGizmos(GameClientApi.Render.Context context) {
+    parcelRenderer.renderGizmos(context);
   }
 }

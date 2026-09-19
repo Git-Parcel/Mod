@@ -430,7 +430,10 @@ public class ParcelStorage {
       Path parcelDir,
       boolean ignoreBlocks,
       boolean ignoreEntities,
-      @Block.UpdateFlags int flags)
+      /*? if >=26.1 {*/
+      @Block.UpdateFlags
+      /*?}*/
+      int flags)
       throws IOException, ParcelException {
     load(
         level,
@@ -497,7 +500,10 @@ public class ParcelStorage {
       Path parcelDir,
       boolean ignoreBlocks,
       boolean ignoreEntities,
-      @Block.UpdateFlags int flags,
+      /*? if >=26.1 {*/
+      @Block.UpdateFlags
+      /*?}*/
+      int flags,
       ProgressReporter progress)
       throws IOException, ParcelException {
     validateSnapshot(parcelDir, progress);
@@ -518,7 +524,10 @@ public class ParcelStorage {
       Path parcelDir,
       boolean ignoreBlocks,
       boolean ignoreEntities,
-      @Block.UpdateFlags int flags,
+      /*? if >=26.1 {*/
+      @Block.UpdateFlags
+      /*?}*/
+      int flags,
       ProgressReporter progress)
       throws IOException, ParcelException {
     var meta = ParcelMeta.load(parcelDir.resolve(META_FILE_NAME));

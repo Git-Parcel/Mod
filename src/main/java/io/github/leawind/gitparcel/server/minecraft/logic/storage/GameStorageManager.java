@@ -41,8 +41,14 @@ public class GameStorageManager {
       new ConcurrentHashMap<>();
 
   public static GameStorageManager getInstance(MinecraftServer server) {
+    /*? if >=26.1 {*/
     return CACHE.computeIfAbsent(
         server.getServerDirectory().resolve(DIR_NAME).normalize(), GameStorageManager::new);
+    /*?} else {*/
+    /*return CACHE.computeIfAbsent(
+        server.getServerDirectory().toPath().resolve(DIR_NAME).normalize(),
+        GameStorageManager::new);
+    *//*?}*/
   }
 
   private final Path root;
@@ -149,13 +155,13 @@ public class GameStorageManager {
      */
     private static Config load(Path file) throws IOException {
       var json = GSON.fromJson(Files.readString(file), JsonObject.class);
-      return Config.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
+      return Config.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
     }
 
     private void save(Path file) throws IOException {
       Files.createDirectories(file.getParent());
       var result = CODEC.encodeStart(JsonOps.INSTANCE, this);
-      Files.writeString(file, GSON.toJson((JsonObject) result.getOrThrow()));
+      Files.writeString(file, GSON.toJson((JsonObject) result.result().orElseThrow()));
     }
 
     private boolean useSystemStorage = false;

@@ -178,11 +178,21 @@ public final class ZOrder3D {
       };
 
   private static long hash(int x, int y, int z) {
+    /*? if >=26.1 {*/
     final long PACKED_X_MASK = (1L << BlockPos.PACKED_HORIZONTAL_LENGTH) - 1L;
     final long PACKED_Y_MASK = (1L << BlockPos.PACKED_Y_LENGTH) - 1L;
     final long PACKED_Z_MASK = (1L << BlockPos.PACKED_HORIZONTAL_LENGTH) - 1L;
     final int Z_OFFSET = BlockPos.PACKED_Y_LENGTH;
     final int X_OFFSET = BlockPos.PACKED_Y_LENGTH + BlockPos.PACKED_HORIZONTAL_LENGTH;
+    /*?} else {*/
+    /*// 1.20.1 keeps the same [26 x][12 y][26 z] packed-long layout but the
+    // bit-width constants are internal, so they are restated here.
+    final long PACKED_X_MASK = (1L << 26) - 1L;
+    final long PACKED_Y_MASK = (1L << 12) - 1L;
+    final long PACKED_Z_MASK = (1L << 26) - 1L;
+    final int Z_OFFSET = 12;
+    final int X_OFFSET = 12 + 26;
+    *//*?}*/
 
     return ((long) x & PACKED_X_MASK) << X_OFFSET
         | ((long) y & PACKED_Y_MASK)

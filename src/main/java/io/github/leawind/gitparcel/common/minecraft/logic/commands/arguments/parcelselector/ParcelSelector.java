@@ -12,7 +12,11 @@ import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import net.minecraft.commands.CommandSourceStack;
+/*? if >=26.1 {*/
 import net.minecraft.util.Util;
+/*?} else {*/
+/*import net.minecraft.Util;
+ *//*?}*/
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -145,7 +149,14 @@ public final class ParcelSelector {
       return result == null ? List.of() : List.of(result);
     }
 
+    /*? if >=26.1 {*/
     var list = parcels.filter(Util.allOf(predicates)).toList();
+    /*?} else {*/
+    /*var list =
+        parcels
+            .filter(predicates.stream().reduce(ignored -> true, Predicate::and))
+            .toList();
+    *//*?}*/
 
     if (list.size() > 1) {
       order.accept(source.getPosition(), list);

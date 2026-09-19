@@ -6,6 +6,9 @@ import io.github.leawind.gitparcel.common.api.permission.ParcelPermissions;
 import io.github.leawind.gitparcel.common.api.permission.PermissionConfig;
 import io.github.leawind.gitparcel.common.api.permission.WorldPermissions;
 import net.minecraft.server.MinecraftServer;
+/*? if <26.1 {*/
+/*import net.minecraft.nbt.CompoundTag;
+ *//*?}*/
 import net.minecraft.world.level.saveddata.SavedData;
 
 public final class GitParcelWorldSavedData extends SavedData {
@@ -54,6 +57,13 @@ public final class GitParcelWorldSavedData extends SavedData {
         new PermissionConfig<>(ParcelPermissions.REGISTRY),
         DEFAULT_MAX_PARCEL_VOLUME);
   }
+
+  /*? if <26.1 {*/
+  /*@Override
+  public CompoundTag save(CompoundTag tag) {
+    return CodecSavedData.encode(CODEC, this);
+  }
+  *//*?}*/
 
   private GitParcelWorldSavedData(
       PermissionConfig<WorldPermissions> permissions,

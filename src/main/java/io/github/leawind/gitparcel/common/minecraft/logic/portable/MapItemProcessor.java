@@ -10,7 +10,9 @@ import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.MapItem;
+/*? if >=26.1 {*/
 import net.minecraft.world.level.saveddata.maps.MapId;
+/*?}*/
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 
 /**
@@ -26,10 +28,16 @@ public final class MapItemProcessor implements ParcelRecordProcessor {
   public static final Identifier ID = Identifier.fromNamespaceAndPath("gitparcel", "map_items");
 
   private static final String FILLED_MAP = "minecraft:filled_map";
+  /*? if >=26.1 {*/
   private static final String COMPONENTS = "components";
   private static final String MAP_ID_COMPONENT = "minecraft:map_id";
   private static final String CUSTOM_DATA_COMPONENT = "minecraft:custom_data";
   private static final String REF_KEY = "gitparcel:map_attachment";
+  /*?} else {*/
+  /*private static final String TAG = "tag";
+  private static final String LEGACY_MAP_KEY = "map";
+  private static final String REF_KEY = "gitparcel:map_attachment";
+  *//*?}*/
 
   @Override
   public Identifier id() {
@@ -72,6 +80,7 @@ public final class MapItemProcessor implements ParcelRecordProcessor {
     if (!isFilledMap(item)) {
       return;
     }
+    /*? if >=26.1 {*/
     var components = item.getCompound(COMPONENTS).orElse(null);
     if (components == null) {
       return;
@@ -95,10 +104,35 @@ public final class MapItemProcessor implements ParcelRecordProcessor {
                 true,
                 MapDataAttachmentType.payloadOf(data));
     customDataOf(components).putString(REF_KEY, ref.value());
+    /*?} else {*/
+    /*var tag = item.contains(TAG) ? item.getCompound(TAG) : null;
+    if (tag == null) {
+      return;
+    }
+    int mapId = tag.getInt(LEGACY_MAP_KEY);
+    if (mapId <= 0) {
+      return;
+    }
+    MapItemSavedData data = MapItem.getSavedData(mapId, context.requireCollector().level());
+    if (data == null) {
+      return;
+    }
+    LocalAttachmentId ref =
+        context
+            .requireCollector()
+            .collect(
+                mapId,
+                MapDataAttachmentType.ID,
+                MapDataAttachmentType.SCHEMA_VERSION,
+                true,
+                MapDataAttachmentType.payloadOf(data));
+    tag.putString(REF_KEY, ref.value());
+    *//*?}*/
   }
 
   private static void restoreItem(CompoundTag item, ParcelRecordProcessorContext context)
       throws ParcelException {
+    /*? if >=26.1 {*/
     var components = item.getCompound(COMPONENTS).orElse(null);
     if (components == null) {
       return;
@@ -126,12 +160,38 @@ public final class MapItemProcessor implements ParcelRecordProcessor {
     if (mapCustomData.isEmpty()) {
       mapComponents.remove(CUSTOM_DATA_COMPONENT);
     }
+    /*?} else {*/
+    /*var tag = item.contains(TAG) ? item.getCompound(TAG) : null;
+    if (tag == null) {
+      return;
+    }
+    String ref = tag.getString(REF_KEY);
+    if (ref.isEmpty()) {
+      return;
+    }
+    Integer newId =
+        context
+            .attachments()
+            .findResolved(new LocalAttachmentId(ref), Integer.class)
+            .orElseThrow(
+                () ->
+                    new ParcelException(
+                        "Map attachment was not restored before its item: " + ref));
+    var mapTag = item.getCompound(TAG);
+    mapTag.putInt(LEGACY_MAP_KEY, newId);
+    mapTag.remove(REF_KEY);
+    *//*?}*/
   }
 
   private static boolean isFilledMap(CompoundTag item) {
+    /*? if >=26.1 {*/
     return FILLED_MAP.equals(item.getString("id").orElse(""));
+    /*?} else {*/
+    /*return FILLED_MAP.equals(item.getString("id"));
+    *//*?}*/
   }
 
+  /*? if >=26.1 {*/
   private static CompoundTag customDataOf(CompoundTag components) {
     var customData = components.getCompound(CUSTOM_DATA_COMPONENT).orElse(null);
     if (customData != null) {
@@ -141,4 +201,5 @@ public final class MapItemProcessor implements ParcelRecordProcessor {
     components.put(CUSTOM_DATA_COMPONENT, customData);
     return customData;
   }
+  /*?}*/
 }

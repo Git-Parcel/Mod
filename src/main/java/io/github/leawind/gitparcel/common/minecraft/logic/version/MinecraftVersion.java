@@ -10,6 +10,10 @@ public final class MinecraftVersion {
 
   /** Returns the data version to persist for data created by the active Minecraft runtime. */
   public static int currentDataVersion() {
+    /*? if >=1.21.11 {*/
     return SharedConstants.getCurrentVersion().dataVersion().version();
+    /*?} else {*/
+    /*return SharedConstants.getCurrentVersion().getDataVersion().getVersion();
+     *//*?}*/
   }
 }

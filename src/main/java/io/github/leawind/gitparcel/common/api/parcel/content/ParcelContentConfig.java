@@ -41,7 +41,7 @@ public abstract class ParcelContentConfig<Self extends ParcelContentConfig<Self>
   public final JsonObject toJson() {
     JsonObject json = new JsonObject();
     for (var item : configItems.values()) {
-      json.add(item.name(), item.encodeStart(JsonOps.INSTANCE).getOrThrow());
+      json.add(item.name(), item.encodeStart(JsonOps.INSTANCE).result().orElseThrow());
     }
     return json;
   }
@@ -67,7 +67,7 @@ public abstract class ParcelContentConfig<Self extends ParcelContentConfig<Self>
       return;
     }
     try {
-      item.set(item.codec().parse(JsonOps.INSTANCE, value).getOrThrow());
+      item.set(item.codec().parse(JsonOps.INSTANCE, value).result().orElseThrow());
     } catch (IllegalStateException e) {
       item.reset();
       errors.add(e);

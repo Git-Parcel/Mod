@@ -59,7 +59,11 @@ public class ClearDataSubcommand {
       sendSuccess(
           source,
           "command.gitparcel.parcel_debug.clear_data.level.success",
+          /*? if >=26.1 {*/
           serverLevel.dimension().identifier().toString());
+          /*?} else {*/
+          /*serverLevel.dimension().location().toString());
+          *//*?}*/
       return 1;
     } catch (Exception e) {
       ParcelDebugCommand.LOGGER.error("Unexpected error while clearing level data", e);

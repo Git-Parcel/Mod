@@ -222,7 +222,7 @@ public final class ParcelMeta {
   public void save(Path file) throws IOException, IllegalStateException {
     Files.createDirectories(file.getParent());
     var result = CODEC.encodeStart(JsonOps.INSTANCE, this);
-    Files.writeString(file, GSON.toJson((JsonObject) result.getOrThrow()));
+    Files.writeString(file, GSON.toJson((JsonObject) result.result().orElseThrow()));
   }
 
   public record ModDependency(
@@ -282,7 +282,7 @@ public final class ParcelMeta {
       throw new InvalidParcelMetaException("Empty parcel metadata");
     }
     try {
-      return CODEC.parse(JsonOps.INSTANCE, root).getOrThrow();
+      return CODEC.parse(JsonOps.INSTANCE, root).result().orElseThrow();
     } catch (RuntimeException e) {
       throw new InvalidParcelMetaException("Invalid parcel metadata", e);
     }

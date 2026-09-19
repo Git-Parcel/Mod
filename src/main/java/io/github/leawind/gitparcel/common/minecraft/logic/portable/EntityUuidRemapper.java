@@ -44,6 +44,7 @@ final class EntityUuidRemapper {
       return;
     }
     rewriteTree(data, entityType, remap, declaredFields);
+    /*? if >=26.1 {*/
     data.getList("Passengers")
         .ifPresent(
             passengers ->
@@ -56,6 +57,17 @@ final class EntityUuidRemapper {
                                 passenger.getString("id").map(Identifier::parse).orElse(null),
                                 remap,
                                 declaredFields)));
+    /*?} else {*/
+    /*var passengers = data.getList("Passengers", Tag.TAG_COMPOUND);
+    for (int i = 0; i < passengers.size(); i++) {
+      var passenger = passengers.getCompound(i);
+      rewriteTree(
+          passenger,
+          Identifier.tryParse(passenger.getString("id")),
+          remap,
+          declaredFields);
+    }
+    *//*?}*/
   }
 
   private static void rewriteTree(
@@ -85,7 +97,7 @@ final class EntityUuidRemapper {
     }
     UUID replacement = remap.get(original.orElseThrow());
     if (replacement != null) {
-      slot.set(UUIDUtil.CODEC.encodeStart(NbtOps.INSTANCE, replacement).getOrThrow());
+      slot.set(UUIDUtil.CODEC.encodeStart(NbtOps.INSTANCE, replacement).result().orElseThrow());
     }
   }
 }

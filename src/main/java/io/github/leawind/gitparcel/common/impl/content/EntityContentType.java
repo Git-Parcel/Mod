@@ -35,6 +35,7 @@ public final class EntityContentType implements ParcelContentType<ParcelContentC
           // Name files by the entity's persistent UUID so a capture whose enumeration order
           // shifted still produces byte-identical files and keeps Git object deduplication.
           String name = null;
+          /*? if >=26.1 {*/
           var uuidParts = entity.data().getIntArray("UUID");
           if (uuidParts.isPresent() && uuidParts.orElseThrow().length == 4) {
             int[] parts = uuidParts.orElseThrow();
@@ -45,6 +46,18 @@ public final class EntityContentType implements ParcelContentType<ParcelContentC
                     .toString()
                     .replace("-", "");
           }
+          /*?} else {*/
+          /*if (entity.data().contains("UUID")
+              && entity.data().getIntArray("UUID").length == 4) {
+            int[] parts = entity.data().getIntArray("UUID");
+            long mostSignificant = ((long) parts[0] << 32) | (parts[1] & 0xFFFFFFFFL);
+            long leastSignificant = ((long) parts[2] << 32) | (parts[3] & 0xFFFFFFFFL);
+            name =
+                new java.util.UUID(mostSignificant, leastSignificant)
+                    .toString()
+                    .replace("-", "");
+          }
+          *//*?}*/
           if (name == null) {
             name = "%08X".formatted(index[0]);
           }

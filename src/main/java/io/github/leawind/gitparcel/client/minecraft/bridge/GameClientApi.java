@@ -4,7 +4,9 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.leawind.inventory.event.SimpleEventEmitter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+/*? if >=26.1 {*/
 import net.minecraft.client.renderer.state.level.LevelRenderState;
+/*?}*/
 import org.jspecify.annotations.Nullable;
 
 public final class GameClientApi {
@@ -20,17 +22,23 @@ public final class GameClientApi {
 
       public Minecraft minecraft;
       public @Nullable ClientLevel level;
+      /*? if >=26.1 {*/
       public LevelRenderState renderState;
+      /*?}*/
       public PoseStack matrices;
 
       public void prepare(
           Minecraft minecraft,
           @Nullable ClientLevel level,
+          /*? if >=26.1 {*/
           LevelRenderState renderState,
+          /*?}*/
           PoseStack matrices) {
         this.minecraft = minecraft;
         this.level = level;
+        /*? if >=26.1 {*/
         this.renderState = renderState;
+        /*?}*/
         this.matrices = matrices;
 
         isInitialized = true;

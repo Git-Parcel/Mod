@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.common.minecraft.logic.portable;
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import java.util.List;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 
 /**
  * Visits item-stack compounds stored inside entity and block-entity NBT.
@@ -40,6 +41,7 @@ public final class ItemStackNbtWalker {
   private static void visitLists(CompoundTag data, List<String> keys, ItemVisitor item)
       throws ParcelException {
     for (String key : keys) {
+      /*? if >=26.1 {*/
       var list = data.getList(key);
       if (list.isEmpty()) {
         continue;
@@ -49,16 +51,32 @@ public final class ItemStackNbtWalker {
           item.accept(compound);
         }
       }
+      /*?} else {*/
+      /*var list = data.getList(key, Tag.TAG_COMPOUND);
+      for (int i = 0; i < list.size(); i++) {
+        var compound = list.getCompound(i);
+        if (!compound.isEmpty()) {
+          item.accept(compound);
+        }
+      }
+      *//*?}*/
     }
   }
 
   private static void visitCompounds(CompoundTag data, List<String> keys, ItemVisitor item)
       throws ParcelException {
     for (String key : keys) {
+      /*? if >=26.1 {*/
       var compound = data.getCompound(key);
       if (compound.isPresent()) {
         item.accept(compound.orElseThrow());
       }
+      /*?} else {*/
+      /*var compound = data.getCompound(key);
+      if (!compound.isEmpty()) {
+        item.accept(compound);
+      }
+      *//*?}*/
     }
   }
 }

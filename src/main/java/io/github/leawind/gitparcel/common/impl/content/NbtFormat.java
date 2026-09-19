@@ -37,7 +37,11 @@ public enum NbtFormat {
   public void write(Path path, CompoundTag tag, boolean format) throws IOException {
     switch (this) {
       case BINARY:
+        /*? if >=26.1 {*/
         NbtIo.write(tag, path);
+        /*?} else {*/
+        /*NbtIo.write(tag, new java.io.DataOutputStream(Files.newOutputStream(path)));
+        *//*?}*/
         break;
       case TEXT:
         Files.writeString(path, format ? formatSnbt(tag) : tag.toString());
@@ -67,12 +71,21 @@ public enum NbtFormat {
    * otherwise defaults to {@code NbtAccounter.unlimitedHeap()}.
    */
   public static Result<CompoundTag, String> readBinary(Path path) {
+    /*? if >=26.1 {*/
     try (var input = Files.newInputStream(path);
         var data = new java.io.DataInputStream(input)) {
       return Result.ok(NbtIo.read(data, NbtAccounter.create(MAX_RECORD_BYTES)));
     } catch (IOException | net.minecraft.nbt.NbtException e) {
       return Result.err(e.getMessage());
     }
+    /*?} else {*/
+    /*try (var input = Files.newInputStream(path);
+        var data = new java.io.DataInputStream(input)) {
+      return Result.ok(NbtIo.read(data, new NbtAccounter(MAX_RECORD_BYTES)));
+    } catch (IOException e) {
+      return Result.err(e.getMessage());
+    }
+    *//*?}*/
   }
 
   /**
@@ -92,7 +105,11 @@ public enum NbtFormat {
           "SNBT nesting depth %d exceeds the limit of %d".formatted(depth, MAX_SNBT_DEPTH));
     }
     try {
+      /*? if >=26.1 {*/
       return Result.ok(TagParser.parseCompoundFully(text));
+      /*?} else {*/
+      /*return Result.ok(TagParser.parseTag(text));
+      *//*?}*/
     } catch (CommandSyntaxException e) {
       return Result.err(e.getMessage());
     }

@@ -16,11 +16,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import net.minecraft.commands.arguments.blocks.BlockStateParser;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.state.BlockState;
+/*? if <26.1 {*/
+/*import net.minecraft.world.level.block.state.properties.Property;
+ *//*?}*/
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -78,6 +82,7 @@ public class BlockPalette extends IntIdPalette<BlockState> {
   @VersionSensitive
   public static String stringifyBlockState(BlockState blockState) {
     var sb = new StringBuilder();
+    /*? if >=26.1 {*/
     sb.append(BuiltInRegistries.BLOCK.wrapAsHolder(blockState.getBlock()).getRegisteredName());
     var values = blockState.getValues().toList();
     if (!values.isEmpty()) {
@@ -88,14 +93,40 @@ public class BlockPalette extends IntIdPalette<BlockState> {
               .collect(Collectors.joining(",")));
       sb.append(']');
     }
+    /*?} else {*/
+    /*sb.append(BuiltInRegistries.BLOCK.getKey(blockState.getBlock()));
+    var values = List.copyOf(blockState.getValues().entrySet());
+    if (!values.isEmpty()) {
+      sb.append('[');
+      sb.append(
+          values.stream()
+              .map(BlockPalette::entryName)
+              .collect(Collectors.joining(",")));
+      sb.append(']');
+    }
+    *//*?}*/
     return sb.toString();
   }
 
+  /*? if <26.1 {*/
+  /*@SuppressWarnings({"unchecked", "rawtypes"})
+  private static String entryName(Map.Entry<Property<?>, Comparable<?>> entry) {
+    return entry.getKey().getName() + "=" + ((Property) entry.getKey()).getName(entry.getValue());
+  }
+  *//*?}*/
+
   public static Result<BlockState, String> parseBlockState(String blockStateString) {
     try {
+      /*? if >=26.1 {*/
       var blockState =
           BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK, blockStateString, false)
               .blockState();
+      /*?} else {*/
+      /*var blockState =
+          BlockStateParser.parseForBlock(
+                  BuiltInRegistries.BLOCK.asLookup(), blockStateString, false)
+              .blockState();
+      *//*?}*/
       return Result.ok(blockState);
     } catch (CommandSyntaxException e) {
       return Result.err(e.getMessage());

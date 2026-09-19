@@ -4,15 +4,21 @@ import io.github.leawind.gitparcel.common.impl.GitParcelUtils;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.ServerMessage;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.message.UpdateParcelsMessage;
 import io.github.leawind.gitparcel.common.utils.anno.VersionSensitive;
+/*? if >=26.1 {*/
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NonNull;
+/*?} else {*/
+/*import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.network.FriendlyByteBuf;
+ *//*?}*/
+import net.minecraft.resources.Identifier;
 
 /**
- * Adapts stable Git Parcel messages to Minecraft's custom-payload API.
+ * Adapts stable Git Parcel messages to Minecraft's play-packet API.
  *
  * <p>Payload identifiers, wrappers, and stream codecs are intentionally kept in this one
  * version-sensitive class. Business logic and platform service interfaces exchange {@link
@@ -20,6 +26,7 @@ import org.jspecify.annotations.NonNull;
  */
 @VersionSensitive("Minecraft custom payload and stream codec API")
 public final class MinecraftPayloads {
+  /*? if >=26.1 {*/
   public static final Identifier PARCELS_ID = GitParcelUtils.identifier("update_parcels");
 
   public static final CustomPacketPayload.Type<ParcelsPayload> PARCELS_TYPE =
@@ -44,4 +51,28 @@ public final class MinecraftPayloads {
       return PARCELS_TYPE;
     }
   }
+  /*?} else {*/
+  /*public static final Identifier PARCELS_ID = GitParcelUtils.identifier("update_parcels");
+
+  private MinecraftPayloads() {}
+
+  public static void write(UpdateParcelsMessage message, FriendlyByteBuf buf) {
+    buf.writeNbt(
+        (CompoundTag)
+            UpdateParcelsMessage.CODEC.encodeStart(NbtOps.INSTANCE, message).result().orElseThrow());
+  }
+
+  public static UpdateParcelsMessage read(FriendlyByteBuf buf) {
+    return UpdateParcelsMessage.CODEC
+        .parse(NbtOps.INSTANCE, buf.readNbt())
+        .result().orElseThrow();
+  }
+
+  public static UpdateParcelsMessage encode(ServerMessage message) {
+    if (message instanceof UpdateParcelsMessage update) {
+      return update;
+    }
+    throw new IllegalArgumentException("Unsupported server message: " + message.getClass());
+  }*/
+  /*?}*/
 }

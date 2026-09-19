@@ -62,10 +62,18 @@ public final class ParcelRecordCodecs {
                       Identifier.CODEC.fieldOf("i").forGetter(ScheduledTickRecord::typeId),
                       BlockPos.CODEC.fieldOf("pos").forGetter(ScheduledTickRecord::pos),
                       Codec.INT.fieldOf("t").forGetter(ScheduledTickRecord::delay),
+                      /*? if >=26.1 {*/
                       TickPriority.CODEC
                           .optionalFieldOf("p", TickPriority.NORMAL)
                           .forGetter(ScheduledTickRecord::priority))
                   .apply(inst, ScheduledTickRecord::new));
+      /*?} else {*/
+      /*Codec.INT
+                  .xmap(TickPriority::byValue, TickPriority::ordinal)
+                  .optionalFieldOf("p", TickPriority.NORMAL)
+                  .forGetter(ScheduledTickRecord::priority))
+          .apply(inst, ScheduledTickRecord::new));
+      *//*?}*/
 
   public record ScheduledTicks(List<ScheduledTickRecord> entries) {}
 
@@ -111,10 +119,10 @@ public final class ParcelRecordCodecs {
   public static CompoundTag encode(Codec<?> codec, Object value) {
     @SuppressWarnings("unchecked")
     Codec<Object> typed = (Codec<Object>) codec;
-    return (CompoundTag) typed.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, value).getOrThrow();
+    return (CompoundTag) typed.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, value).result().orElseThrow();
   }
 
   public static <T> T decode(Codec<T> codec, CompoundTag tag) {
-    return codec.parse(net.minecraft.nbt.NbtOps.INSTANCE, tag).getOrThrow();
+    return codec.parse(net.minecraft.nbt.NbtOps.INSTANCE, tag).result().orElseThrow();
   }
 }

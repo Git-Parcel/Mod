@@ -7,7 +7,9 @@ import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.Identifier;
+/*? if >=26.1 {*/
 import net.minecraft.world.level.saveddata.maps.MapId;
+/*?}*/
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 
 /**
@@ -36,6 +38,7 @@ public enum MapDataAttachmentType implements ParcelAttachmentType {
   @Override
   public void restore(ParcelAttachmentRestoreContext context, AttachmentRecord attachment)
       throws Exception {
+    /*? if >=26.1 {*/
     MapItemSavedData data =
         MapItemSavedData.CODEC
             .parse(NbtOps.INSTANCE, attachment.payload())
@@ -47,12 +50,25 @@ public enum MapDataAttachmentType implements ParcelAttachmentType {
     var level = context.level();
     MapId newId = level.getServer().overworld().getFreeMapId();
     level.setMapData(newId, data);
+    /*?} else {*/
+    /*MapItemSavedData data = MapItemSavedData.load(attachment.payload());
+    if (data == null) {
+      throw new ParcelException("Corrupt map payload for attachment " + attachment.id());
+    }
+    var level = context.level();
+    int newId = level.getServer().overworld().getFreeMapId();
+    level.setMapData("map_" + newId, data);
+    *//*?}*/
     context.resolve(attachment.id(), newId);
   }
 
   /** Serializes map data for the attachment payload. */
   public static CompoundTag payloadOf(MapItemSavedData data) {
-    return (net.minecraft.nbt.CompoundTag)
-        MapItemSavedData.CODEC.encodeStart(NbtOps.INSTANCE, data).getOrThrow();
+    /*? if >=26.1 {*/
+    return (CompoundTag)
+        MapItemSavedData.CODEC.encodeStart(NbtOps.INSTANCE, data).result().orElseThrow();
+    /*?} else {*/
+    /*return data.save(new CompoundTag());
+    *//*?}*/
   }
 }

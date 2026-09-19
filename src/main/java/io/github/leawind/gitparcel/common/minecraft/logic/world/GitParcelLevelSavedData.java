@@ -6,6 +6,9 @@ import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.api.world.Parcels;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
+/*? if <26.1 {*/
+/*import net.minecraft.nbt.CompoundTag;
+ *//*?}*/
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jspecify.annotations.Nullable;
 
@@ -26,6 +29,13 @@ public final class GitParcelLevelSavedData extends SavedData {
   private GitParcelLevelSavedData(Parcels parcels) {
     this.parcels = parcels;
   }
+
+  /*? if <26.1 {*/
+  /*@Override
+  public CompoundTag save(CompoundTag tag) {
+    return CodecSavedData.encode(CODEC, this);
+  }
+  *//*?}*/
 
   public Parcels parcels() {
     return parcels;

@@ -29,13 +29,21 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
+/*? if >=26.1 {*/
 import net.minecraft.util.ProblemReporter;
+/*?}*/
 import net.minecraft.world.entity.Entity;
+/*? if >=26.1 {*/
 import net.minecraft.world.entity.decoration.painting.Painting;
+/*?} else {*/
+/*import net.minecraft.world.entity.decoration.Painting;
+ *//*?}*/
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+/*? if >=26.1 {*/
 import net.minecraft.world.level.storage.TagValueOutput;
+/*?}*/
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.ticks.SavedTick;
@@ -87,7 +95,11 @@ public final class MinecraftParcelDataSource implements ParcelDataSource {
                     space.transform(), level.getBlockState(worldPos)));
             BlockEntity blockEntity = level.getBlockEntity(worldPos);
             if (blockEntity != null) {
+              /*? if >=26.1 {*/
               CompoundTag data = blockEntity.saveWithFullMetadata(level.registryAccess());
+              /*?} else {*/
+              /*CompoundTag data = blockEntity.saveWithFullMetadata();
+              *//*?}*/
               BlockEntityRecord record =
                   new BlockEntityRecord(relativePos, data, List.of());
               for (var processor : processors) {
@@ -125,6 +137,7 @@ public final class MinecraftParcelDataSource implements ParcelDataSource {
             bounds,
             entity -> !(entity instanceof Player) && !entity.isPassenger());
     entities.sort(Comparator.comparing(Entity::getUUID));
+    /*? if >=26.1 {*/
     try (var reporter = new ProblemReporter.ScopedCollector(ParcelStorage.LOGGER)) {
       for (Entity entity : entities) {
         var output = TagValueOutput.createWithContext(reporter, entity.registryAccess());
@@ -149,6 +162,30 @@ public final class MinecraftParcelDataSource implements ParcelDataSource {
         consumer.accept(record);
       }
     }
+    /*?} else {*/
+    /*for (Entity entity : entities) {
+      CompoundTag data = new CompoundTag();
+      if (!entity.save(data)) {
+        continue;
+      }
+      Vec3 pos = space.toParcel(entity.position());
+      BlockPos attached =
+          entity instanceof Painting painting
+              ? space.toParcel(painting.getPos())
+              : BlockPos.containing(pos);
+      EntityRecord record =
+          new EntityRecord(
+              BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()),
+              pos,
+              attached,
+              data.copy(),
+              List.of());
+      for (var processor : processors) {
+        record = processor.captureEntity(processorContext, record);
+      }
+      consumer.accept(record);
+    }
+    *//*?}*/
   }
 
   @Override
@@ -167,9 +204,45 @@ public final class MinecraftParcelDataSource implements ParcelDataSource {
     int maxChunkZ = SectionPos.posToSectionCoord(bounds.maxZ);
     for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+        /*? if >=26.1 {*/
         var packed = level.getChunk(chunkX, chunkZ).getTicksForSerialization(gameTime);
         emitTicks(packed.blocks(), false, BuiltInRegistries.BLOCK::getKey, extent, consumer);
         emitTicks(packed.fluids(), true, BuiltInRegistries.FLUID::getKey, extent, consumer);
+        /*?} else {*/
+        /*var packed = level.getChunk(chunkX, chunkZ).getTicksForSerialization();
+        emitTicks(
+            ((net.minecraft.world.ticks.LevelChunkTicks<net.minecraft.world.level.block.Block>)
+                    packed.blocks())
+                .getAll()
+                .map(
+                    tick ->
+                        new SavedTick<>(
+                            tick.type(),
+                            tick.pos(),
+                            (int) (tick.triggerTick() - gameTime),
+                            tick.priority()))
+                .toList(),
+            false,
+            BuiltInRegistries.BLOCK::getKey,
+            extent,
+            consumer);
+        emitTicks(
+            ((net.minecraft.world.ticks.LevelChunkTicks<net.minecraft.world.level.material.Fluid>)
+                    packed.fluids())
+                .getAll()
+                .map(
+                    tick ->
+                        new SavedTick<>(
+                            tick.type(),
+                            tick.pos(),
+                            (int) (tick.triggerTick() - gameTime),
+                            tick.priority()))
+                .toList(),
+            true,
+            BuiltInRegistries.FLUID::getKey,
+            extent,
+            consumer);
+        *//*?}*/
       }
     }
   }

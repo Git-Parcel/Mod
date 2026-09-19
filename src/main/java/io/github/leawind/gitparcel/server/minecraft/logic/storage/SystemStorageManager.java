@@ -123,13 +123,13 @@ public class SystemStorageManager {
      */
     private static Config load(Path file) throws IOException {
       var json = GSON.fromJson(Files.readString(file), JsonObject.class);
-      return CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
+      return CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
     }
 
     private void save(Path file) throws IOException {
       Files.createDirectories(file.getParent());
       var result = CODEC.encodeStart(JsonOps.INSTANCE, this);
-      Files.writeString(file, GSON.toJson((JsonObject) result.getOrThrow()));
+      Files.writeString(file, GSON.toJson((JsonObject) result.result().orElseThrow()));
     }
 
     private final String sharedPath;

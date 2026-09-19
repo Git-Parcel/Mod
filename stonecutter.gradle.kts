@@ -7,6 +7,7 @@ plugins {
     // are recognized by its NeoForm runtime instead of falling back to 26.1
     // snapshot capabilities.
     id("net.neoforged.moddev") version "2.0.147" apply false
+    id("net.neoforged.moddev.legacyforge") version "2.0.147" apply false
     id("net.fabricmc.fabric-loom") version "1.15.5" apply false
     id("com.gradleup.shadow") version "8.3.10" apply false
 

@@ -23,6 +23,7 @@ stonecutter {
             }
         }
 
+        mc("1.20.1", "fabric", "forge")
         mc("26.1", "fabric", "neoforge")
         mc("26.3", "fabric", "neoforge")
 

@@ -35,16 +35,22 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import org.jspecify.annotations.Nullable;
 import net.minecraft.server.level.ServerLevel;
+/*? if >=26.1 {*/
 import net.minecraft.util.ProblemReporter;
+/*?}*/
+/*? if >=26.1 {*/
 import net.minecraft.world.entity.EntityProcessor;
 import net.minecraft.world.entity.EntitySpawnReason;
+/*?}*/
 import net.minecraft.world.entity.EntityType;
 /*? if >=26.3 {*/
 import net.minecraft.world.entity.EntitySpawnRequest;
 /*?}*/
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
+/*? if >=26.1 {*/
 import net.minecraft.world.level.storage.TagValueInput;
+/*?}*/
 import net.minecraft.world.ticks.LevelChunkTicks;
 import net.minecraft.world.ticks.ScheduledTick;
 import net.minecraft.world.ticks.TickPriority;
@@ -76,8 +82,10 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
   private final boolean ignoreEntities;
   private final int blockUpdateFlags;
   private final int sourceDataVersion;
+  /*? if >=26.1 {*/
   private final ProblemReporter.ScopedCollector reporter =
       new ProblemReporter.ScopedCollector(ParcelStorage.LOGGER);
+  /*?}*/
   private final ParcelRecordProcessorContext processorContext;
   private final ParcelAttachmentSession attachments = new ParcelAttachmentSession();
   private final List<BufferedEntity> bufferedEntities = new ArrayList<>();
@@ -192,8 +200,12 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
       var worldPos = space.toWorld(record.pos());
       var blockEntity = level.getBlockEntity(worldPos);
       if (blockEntity != null) {
+        /*? if >=26.1 {*/
         blockEntity.loadWithComponents(
             TagValueInput.create(reporter, level.registryAccess(), record.data()));
+        /*?} else {*/
+        /*blockEntity.load(record.data());
+        *//*?}*/
         blockEntity.setChanged();
       }
     }
@@ -259,18 +271,29 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
                 level.getLevel(),
                 new EntitySpawnRequest(EntitySpawnReason.LOAD, false),
                 EntityProcessor.NOP);
-            /*?} else {*/
+            /*?} else if >=26.1 {*/
             /*EntityType.loadEntityRecursive(
                 data, level.getLevel(), EntitySpawnReason.LOAD, EntityProcessor.NOP);
+            *//*?} else {*/
+            /*EntityType.loadEntityRecursive(data, level.getLevel(), e -> e);
             *//*?}*/
         if (entity == null) {
           throw new ParcelException("Failed to create entity " + buffered.record().type());
         }
         var worldPosition = space.toWorld(buffered.record().pos());
+        /*? if >=26.1 {*/
         entity.snapTo(
             worldPosition,
             space.toWorldYaw(entity.getYRot()),
             entity.getXRot());
+        /*?} else {*/
+        /*entity.moveTo(
+            worldPosition.x,
+            worldPosition.y,
+            worldPosition.z,
+            space.toWorldYaw(entity.getYRot()),
+            entity.getXRot());
+        *//*?}*/
         level.addFreshEntityWithPassengers(entity);
       }
     }
@@ -299,8 +322,12 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
       BlockPos worldPos = space.toWorld(tick.pos());
       long triggerTick = gameTime + tick.delay();
       if (tick.fluid()) {
+        /*? if >=26.1 {*/
         var fluid =
             BuiltInRegistries.FLUID.get(tick.typeId()).map(Holder::value).orElse(null);
+        /*?} else {*/
+        /*var fluid = BuiltInRegistries.FLUID.get(tick.typeId());
+        *//*?}*/
         if (fluid == null) {
           throw new ParcelException.CorruptedParcelException(
               "Unknown fluid in scheduled tick: " + tick.typeId());
@@ -313,8 +340,12 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
             tick.priority(),
             subTickOrder++);
       } else {
+        /*? if >=26.1 {*/
         var block =
             BuiltInRegistries.BLOCK.get(tick.typeId()).map(Holder::value).orElse(null);
+        /*?} else {*/
+        /*var block = BuiltInRegistries.BLOCK.get(tick.typeId());
+        *//*?}*/
         if (block == null) {
           throw new ParcelException.CorruptedParcelException(
               "Unknown block in scheduled tick: " + tick.typeId());
@@ -349,11 +380,18 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
   }
 
   private static Optional<UUID> readEntityUuid(CompoundTag data) {
+    /*? if >=26.1 {*/
     var uuid = data.getIntArray("UUID");
     if (uuid.isEmpty() || uuid.orElseThrow().length != 4) {
       return Optional.empty();
     }
     int[] parts = uuid.orElseThrow();
+    /*?} else {*/
+    /*if (!data.contains("UUID") || data.getIntArray("UUID").length != 4) {
+      return Optional.empty();
+    }
+    int[] parts = data.getIntArray("UUID");
+    *//*?}*/
     return Optional.of(
         new UUID(
             ((long) parts[0] << 32) | (parts[1] & 0xFFFFFFFFL),
@@ -363,13 +401,15 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
   private static net.minecraft.nbt.Tag encodeUuid(UUID uuid) {
     return net.minecraft.core.UUIDUtil.CODEC
         .encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, uuid)
-        .getOrThrow();
+        .result().orElseThrow();
   }
 
   @Override
   public void finish() {
     if (!finished) {
+      /*? if >=26.1 {*/
       reporter.close();
+      /*?}*/
       finished = true;
     }
   }

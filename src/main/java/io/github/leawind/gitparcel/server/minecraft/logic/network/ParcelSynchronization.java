@@ -32,8 +32,14 @@ public final class ParcelSynchronization {
 
   /** Sends the authoritative parcel list of the player's level to that player. */
   public static void syncParcelsTo(ServerPlayer player) {
+    /*? if >=26.1 {*/
     Services.SERVER_NETWORKING.send(
         player,
         UpdateParcelsMessage.fullSync(ParcelRegistry.get(player.level()).parcelsById()));
+    /*?} else {*/
+    /*Services.SERVER_NETWORKING.send(
+        player,
+        UpdateParcelsMessage.fullSync(ParcelRegistry.get(player.serverLevel()).parcelsById()));
+    *//*?}*/
   }
 }

@@ -15,7 +15,7 @@ public final class ModClientEntrypoint {
     LOGGER.debug("Initializing Git Parcel mod client");
 
     GameClientApi.Render.ON_BEFORE_FINALIZE_GIZMOS.on(
-        (context) -> GitParcelRenderer.INSTANCE.renderGizmos());
+        (context) -> GitParcelRenderer.INSTANCE.renderGizmos(context));
   }
 
   /** Clears state owned by the previous server connection. */

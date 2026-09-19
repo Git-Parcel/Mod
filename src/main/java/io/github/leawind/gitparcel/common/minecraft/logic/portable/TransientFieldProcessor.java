@@ -86,6 +86,7 @@ public final class TransientFieldProcessor implements ParcelRecordProcessor {
       Identifier typeId,
       boolean capturing) {
     apply(context, ParcelTransientField.Target.ENTITY, typeId, data, capturing);
+    /*? if >=26.1 {*/
     data.getList("Passengers")
         .ifPresent(
             passengers ->
@@ -98,6 +99,17 @@ public final class TransientFieldProcessor implements ParcelRecordProcessor {
                                 passenger,
                                 passenger.getString("id").map(Identifier::parse).orElse(null),
                                 capturing)));
+    /*?} else {*/
+    /*var passengers = data.getList("Passengers", Tag.TAG_COMPOUND);
+    for (int i = 0; i < passengers.size(); i++) {
+      var passenger = passengers.getCompound(i);
+      applyEntityTree(
+          context,
+          passenger,
+          Identifier.tryParse(passenger.getString("id")),
+          capturing);
+    }
+    *//*?}*/
   }
 
   private void apply(
@@ -139,12 +151,20 @@ public final class TransientFieldProcessor implements ParcelRecordProcessor {
   private static void offsetValue(NbtPaths.Slot slot, long delta) {
     Tag tag = slot.get();
     if (tag instanceof net.minecraft.nbt.NumericTag number) {
+      /*? if >=26.1 {*/
       slot.set(LongTag.valueOf(number.longValue() + delta));
+      /*?} else {*/
+      /*slot.set(LongTag.valueOf(number.getAsLong() + delta));
+      *//*?}*/
     }
   }
 
   private static @Nullable Identifier typeId(CompoundTag data) {
+    /*? if >=26.1 {*/
     return data.getString("id").map(Identifier::parse).orElse(null);
+    /*?} else {*/
+    /*return Identifier.tryParse(data.getString("id"));
+    *//*?}*/
   }
 
 }

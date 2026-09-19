@@ -6,15 +6,18 @@ import io.github.leawind.gitparcel.common.api.permission.PermissionType;
 import io.github.leawind.gitparcel.common.utils.anno.VersionSensitive;
 import java.util.function.Predicate;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
+/*? if >=1.21.11 {*/
+import net.minecraft.commands.Commands;
 import net.minecraft.server.permissions.PermissionCheck;
+/*?}*/
 
 /**
- * Adapts Git Parcel's stable permission levels to Minecraft's permission-set API.
+ * Adapts Git Parcel's stable permission levels to the current Minecraft command permission API.
  *
- * <p>Keeping the conversion to {@link PermissionCheck} here prevents the version-specific
- * permission API from leaking into permission configs and command implementations.
+ * <p>Minecraft 1.21.11 replaced integer command permission checks with permission sets. Keeping
+ * that conversion here prevents the version-specific API from leaking into permission configs and
+ * command implementations.
  */
 @VersionSensitive("Minecraft command permission API")
 public final class MinecraftPermissions {
@@ -22,11 +25,19 @@ public final class MinecraftPermissions {
 
   public static boolean hasPermission(
       CommandSourceStack source, PermissionLevel requiredLevel) {
+    /*? if >=1.21.11 {*/
     return checker(requiredLevel).check(source.permissions());
+    /*?} else {*/
+    /*return source.hasPermission(requiredLevel.id());
+     *//*?}*/
   }
 
   public static boolean hasPermission(ServerPlayer player, PermissionLevel requiredLevel) {
+    /*? if >=1.21.11 {*/
     return checker(requiredLevel).check(player.permissions());
+    /*?} else {*/
+    /*return player.hasPermissions(requiredLevel.id());
+     *//*?}*/
   }
 
   public static Predicate<CommandSourceStack> require(PermissionLevel requiredLevel) {
@@ -43,6 +54,7 @@ public final class MinecraftPermissions {
     return hasPermission(player, config.get(type));
   }
 
+  /*? if >=1.21.11 {*/
   private static PermissionCheck checker(PermissionLevel level) {
     return switch (level) {
       case ALL -> Commands.LEVEL_ALL;
@@ -52,4 +64,5 @@ public final class MinecraftPermissions {
       case OWNERS -> Commands.LEVEL_OWNERS;
     };
   }
+  /*?}*/
 }

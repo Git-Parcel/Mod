@@ -53,6 +53,7 @@ public final class ModEntrypoint {
     var manager = OperationManager.get(server);
     for (var level : server.getAllLevels()) {
       var parcels = ParcelRegistry.get(level).parcels();
+      /*? if >=26.1 {*/
       manager.submit(
           "audit_repositories",
           level.dimension().identifier().toString(),
@@ -62,6 +63,17 @@ public final class ModEntrypoint {
             return "Audited " + parcels.size() + " parcel repositories";
           },
           ignored -> {});
+      /*?} else {*/
+      /*manager.submit(
+          "audit_repositories",
+          level.dimension().location().toString(),
+          "server",
+          () -> {
+            SnapshotService.get(level).auditRepositories(parcels);
+            return "Audited " + parcels.size() + " parcel repositories";
+          },
+          ignored -> {});
+      *//*?}*/
     }
   }
 
