@@ -47,6 +47,11 @@ val checkArchitectureBoundaries by tasks.registering {
                     violations += "$relativePath imports a loader API outside a platform package"
                 }
 
+                if (relativePath.contains("/common/api/") && content.contains("/*?")) {
+                    violations +=
+                        "$relativePath uses stonecutter conditionals; the API layer must stay version-neutral (move the version difference into a minecraft-layer seam or a replacement rule)"
+                }
+
                 if (relativePath.contains("/common/api/") &&
                     (
                         content.contains("import io.github.leawind.gitparcel.common.minecraft.") ||

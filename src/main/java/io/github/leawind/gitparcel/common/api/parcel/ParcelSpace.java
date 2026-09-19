@@ -38,37 +38,11 @@ public record ParcelSpace(ParcelTransform transform) {
   }
 
   public Direction toWorldDirection(Direction direction) {
-    Vec3 vector =
-        toWorldVector(
-            /*? if >=26.1 {*/
-            Vec3.atLowerCornerOf(direction.getUnitVec3i())
-            /*?} else {*/
-            /*Vec3.atLowerCornerOf(direction.getNormal())
-            *//*?}*/
-        );
-    /*? if >=26.1 {*/
-    return Direction.getNearest(
-        (int) Math.round(vector.x), (int) Math.round(vector.y), (int) Math.round(vector.z), direction);
-    /*?} else {*/
-    /*return Direction.getNearest(vector.x, vector.y, vector.z);
-    *//*?}*/
+    return nearest(toWorldVector(axisOf(direction)));
   }
 
   public Direction toParcelDirection(Direction direction) {
-    Vec3 vector =
-        toParcelVector(
-            /*? if >=26.1 {*/
-            Vec3.atLowerCornerOf(direction.getUnitVec3i())
-            /*?} else {*/
-            /*Vec3.atLowerCornerOf(direction.getNormal())
-            *//*?}*/
-        );
-    /*? if >=26.1 {*/
-    return Direction.getNearest(
-        (int) Math.round(vector.x), (int) Math.round(vector.y), (int) Math.round(vector.z), direction);
-    /*?} else {*/
-    /*return Direction.getNearest(vector.x, vector.y, vector.z);
-    *//*?}*/
+    return nearest(toParcelVector(axisOf(direction)));
   }
 
   public float toWorldYaw(float yaw) {
@@ -102,12 +76,7 @@ public record ParcelSpace(ParcelTransform transform) {
 
   /** The item's top direction for one frame facing and rotation step. */
   private static Vec3 itemTop(Direction facing, int step) {
-    /*? if >=26.1 {*/
-    return rotateAround(facing.getUnitVec3(), -45.0 * step, referenceTop(facing));
-    /*?} else {*/
-    /*return rotateAround(
-        Vec3.atLowerCornerOf(facing.getNormal()), -45.0 * step, referenceTop(facing));
-    *//*?}*/
+    return rotateAround(axisOf(facing), -45.0 * step, referenceTop(facing));
   }
 
   /**
@@ -125,11 +94,7 @@ public record ParcelSpace(ParcelTransform transform) {
   /** The 45°-quantized step whose item top matches {@code top}; nearest step on drift. */
   private static int stepFromTop(Direction facing, Vec3 top) {
     Vec3 reference = referenceTop(facing);
-    /*? if >=26.1 {*/
-    Vec3 axis = facing.getUnitVec3();
-    /*?} else {*/
-    /*Vec3 axis = Vec3.atLowerCornerOf(facing.getNormal());
-    *//*?}*/
+    Vec3 axis = axisOf(facing);
     int best = 0;
     double bestDistance = Double.MAX_VALUE;
     for (int candidate = 0; candidate < 8; candidate++) {
@@ -167,5 +132,28 @@ public record ParcelSpace(ParcelTransform transform) {
 
   private static float yaw(Vec3 direction) {
     return (float) Math.toDegrees(Math.atan2(-direction.x, direction.z));
+  }
+
+  /** The unit axis pointing along {@code direction}. */
+  private static Vec3 axisOf(Direction direction) {
+    return Vec3.atLowerCornerOf(direction.getUnitVec3i());
+  }
+
+  /**
+   * Quantizes a (near-unit) vector to its closest axis direction, matching the vanilla
+   * {@code getNearest} tie-break of preferring earlier enum constants.
+   */
+  private static Direction nearest(Vec3 vector) {
+    Direction best = Direction.DOWN;
+    double bestDot = -Double.MAX_VALUE;
+    for (Direction direction : Direction.values()) {
+      Vec3 axis = axisOf(direction);
+      double dot = axis.x * vector.x + axis.y * vector.y + axis.z * vector.z;
+      if (dot > bestDot) {
+        bestDot = dot;
+        best = direction;
+      }
+    }
+    return best;
   }
 }
