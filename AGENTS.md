@@ -163,3 +163,8 @@ stonecutter 的 `replacements.string` 是双向替换：条件为 true 时按 `r
 - Stonecutter 条件块的假分支是"注释包裹"语义：激活时 stonecutter 剥离 `/*` 与 `*/` 标记还原代码。多行假分支必须是 `/*` 开头、裸续行（不得加 javadoc 风格的 ` *` 前缀）、`*/` 结尾的单块注释，否则剥离标记后会残留 ` *`，生成非法 Java 导致"非法的类型开始"编译错误。
 - `replacements.string` 只作用于主源集，`src/gametest` 等附加源集不做字符串替换；附加源集里的版本差异要用条件块（或接缝类）维护。
 - ModStitch 锁定旧版 ModDevGradle，新 MC 版本发布后 NFRT 会因不识别版本号而 recompile 失败（日志先报 `Failed to parse MC version`，最终 `Node action for recompile failed`）。升级 ModStitch 常不足以跟进，需在 `stonecutter.gradle.kts` 的 plugins 块显式声明新版 `net.neoforged.moddev`（buildscript classpath 对同一模块取最高版本）。
+- `vcsVersion` 节点直接编译共享源文件而不经 stonecutter 处理：源文件必须始终保持为 vcs 节点（当前 26.3-fabric）的可编译形态。为其他版本准备的代码绝不能以裸代码形式写在"当前版本为假"的 `if` 主分支里，必须写成注释包裹的假分支（else 或 `/*? if 旧条件 {*/*...*//*?}*/`）。
+- 条件块包裹方法时，方法上的注解（如 `@VersionSensitive`）必须随方法一起进块；注解留在块外而方法被注释掉的节点上，注解悬空会产生"非法的类型开始"编译错误。
+- stonecutter 对嵌套条件块按内外条件组合求值，外层假分支内嵌套块的激活会导致注释结构破坏并生成非法 Java。版本×版本的两维差异要平铺为 `/*? if >=A {*//*?} else if >=B {*//*...*//*?}*/` 链，不做嵌套。
+- `replacements.string` 的文本替换无法区分同形调用链（如 DataResult 与 inventory-java Result 都有 `result()`），也会作用于条件注释内的代码；共享源码应统一写两版本皆可编译的形态（如 DataResult 用 `result().orElseThrow()` 而非 26.x 新增的无参 `getOrThrow()`），只对类名/方法名级别的纯文本差异使用替换。
+- Forge 1.20.1 适配要点：`NetworkRegistry.newSimpleChannel` 的 client/server 接受参数是 `Predicate<String>` 而非 `Supplier`；事件总线无 `addListener(Class, consumer)` 重载，用 `addListener(方法引用)` 或 `@Mod.EventBusSubscriber` + `@SubscribeEvent`；Forge 不捆绑 MixinExtras，需 `mixinextras-common` 注解处理器加 `mixinextras-forge` 运行时并 `modstitchJiJ` 打包。
