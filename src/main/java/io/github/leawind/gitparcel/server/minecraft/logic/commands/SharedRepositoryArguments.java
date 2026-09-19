@@ -27,7 +27,7 @@ public final class SharedRepositoryArguments {
     if (parcels.size() != 1) {
       throw ParcelArgument.ERROR_NOT_SINGLE_PARCEL.create();
     }
-    return parcels.getFirst();
+    return parcels.get(0);
   }
 
   public static CompletableFuture<Suggestions> suggestRepositories(

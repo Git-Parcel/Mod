@@ -86,7 +86,7 @@ public final class ParcelSelector {
     } else if (list.size() > 1) {
       throw ParcelArgument.ERROR_NOT_SINGLE_PARCEL.create();
     } else {
-      return list.getFirst();
+      return list.get(0);
     }
   }
 

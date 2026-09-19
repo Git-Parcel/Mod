@@ -152,15 +152,17 @@ public class BlockPalette extends IntIdPalette<BlockState> {
     }
 
     for (var entry : entries) {
-      var blockState =
-          switch (parseBlockState(entry.blockStateString)) {
-            case Result.Ok(BlockState value) -> value;
-            case Result.Err(String msg) -> {
-              ParcelStorage.LOGGER.error(
-                  "Skip because failed to parse block state '{}': {}", entry.blockStateString, msg);
-              yield null;
-            }
-          };
+      var result = parseBlockState(entry.blockStateString);
+      BlockState blockState;
+      if (result instanceof Result.Ok ok) {
+        blockState = (BlockState) ok.value();
+      } else {
+        ParcelStorage.LOGGER.error(
+            "Skip because failed to parse block state '{}': {}",
+            entry.blockStateString,
+            ((Result.Err) result).error());
+        blockState = null;
+      }
 
       palette.insert(entry.id, blockState);
       palette.lastId = entry.id;

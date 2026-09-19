@@ -142,7 +142,7 @@ public final class InternalRepository {
           diagnostics.add("Snapshot has multiple parents: " + commit.id());
         } else if (commit.parents().isEmpty()) {
           roots++;
-        } else if (!commits.containsKey(commit.parents().getFirst())) {
+        } else if (!commits.containsKey(commit.parents().get(0))) {
           diagnostics.add("Snapshot parent is not retained: " + commit.id());
         }
       }
@@ -269,7 +269,7 @@ public final class InternalRepository {
           }
           Optional<SnapshotId> next =
               end < commits.size() && !nodes.isEmpty()
-                  ? Optional.of(nodes.getLast().id())
+                  ? Optional.of(nodes.get(nodes.size() - 1).id())
                   : Optional.empty();
           return new SnapshotTreePage(
               parcelUuid, cursor, nodes, core.exactRef(CURRENT_REF), next, Optional.empty());

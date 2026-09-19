@@ -359,10 +359,10 @@ public final class SharedRepository {
 
             boolean hasMore = result.size() > limit;
             if (hasMore) {
-              result.removeLast();
+              result.remove(result.size() - 1);
             }
             Optional<String> nextCursor =
-                hasMore ? Optional.of(result.getLast().revision()) : Optional.empty();
+                hasMore ? Optional.of(result.get(result.size() - 1).revision()) : Optional.empty();
             return new HistoryPage(List.copyOf(result), nextCursor);
           }
         });
