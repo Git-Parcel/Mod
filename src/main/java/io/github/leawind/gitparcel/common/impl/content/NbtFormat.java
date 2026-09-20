@@ -82,7 +82,8 @@ public enum NbtFormat {
     /*try (var input = Files.newInputStream(path);
         var data = new java.io.DataInputStream(input)) {
       return Result.ok(NbtIo.read(data, new NbtAccounter(MAX_RECORD_BYTES)));
-    } catch (IOException e) {
+    } catch (IOException | RuntimeException e) {
+      // Pre-26.1 vanilla signals accounter quota and depth rejections as plain RuntimeExceptions.
       return Result.err(e.getMessage());
     }
     *//*?}*/

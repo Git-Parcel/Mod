@@ -83,8 +83,8 @@ public final class NbtReads {
     /*? if >=26.1 {*/
     return list.getDouble(index).orElse(fallback);
     /*?} else {*/
-    /*return index >= 0 && index < list.size() && list.get(index) instanceof NumericTag
-        ? list.getDouble(index)
+    /*return index >= 0 && index < list.size() && list.get(index) instanceof NumericTag number
+        ? number.getAsDouble()
         : fallback;
      *//*?}*/
   }
@@ -94,8 +94,8 @@ public final class NbtReads {
     /*? if >=26.1 {*/
     return list.getFloat(index).orElse(fallback);
     /*?} else {*/
-    /*return index >= 0 && index < list.size() && list.get(index) instanceof NumericTag
-        ? list.getFloat(index)
+    /*return index >= 0 && index < list.size() && list.get(index) instanceof NumericTag number
+        ? number.getAsFloat()
         : fallback;
      *//*?}*/
   }

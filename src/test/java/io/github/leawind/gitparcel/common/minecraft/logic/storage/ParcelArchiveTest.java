@@ -98,7 +98,7 @@ class ParcelArchiveTest extends AbstractGitParcelTest {
     Path root = Files.createTempDirectory(tempDir, "workspace-");
     Files.createDirectories(root.resolve("data"));
     var json =
-        (JsonObject) ParcelMeta.CODEC.encodeStart(JsonOps.INSTANCE, meta).getOrThrow();
+        (JsonObject) ParcelMeta.CODEC.encodeStart(JsonOps.INSTANCE, meta).result().orElseThrow();
     Files.writeString(root.resolve("parcel.json"), new Gson().toJson(json));
     Files.writeString(root.resolve("data/content.txt"), "content");
     return root;

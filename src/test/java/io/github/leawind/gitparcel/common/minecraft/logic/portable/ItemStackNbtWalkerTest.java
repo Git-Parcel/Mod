@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.common.minecraft.logic.portable;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.github.leawind.gitparcel.common.testutils.AbstractMinecraftTest;
+import io.github.leawind.gitparcel.common.testutils.TestNbt;
 import java.util.ArrayList;
 import java.util.List;
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
@@ -64,6 +65,6 @@ class ItemStackNbtWalkerTest extends AbstractMinecraftTest {
   }
 
   private static String nameOf(CompoundTag item) {
-    return item.getString("id").orElse("");
+    return TestNbt.getString(item, "id").orElse("");
   }
 }

@@ -163,16 +163,16 @@ public class ParcelTransformTest extends AbstractMinecraftTest {
   void testCodecRoundtrip() {
     var transform =
         new ParcelTransform(Mirror.FRONT_BACK, Rotation.CLOCKWISE_90, new Vec3i(1, 2, 3));
-    var json = ParcelTransform.CODEC.encodeStart(JsonOps.INSTANCE, transform).getOrThrow();
-    var decoded = ParcelTransform.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
+    var json = ParcelTransform.CODEC.encodeStart(JsonOps.INSTANCE, transform).result().orElseThrow();
+    var decoded = ParcelTransform.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
     assertEquals(transform, decoded);
   }
 
   @Test
   void testCodecRoundtripIdentity() {
     var json =
-        ParcelTransform.CODEC.encodeStart(JsonOps.INSTANCE, ParcelTransform.IDENTITY).getOrThrow();
-    var decoded = ParcelTransform.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
+        ParcelTransform.CODEC.encodeStart(JsonOps.INSTANCE, ParcelTransform.IDENTITY).result().orElseThrow();
+    var decoded = ParcelTransform.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
     assertEquals(ParcelTransform.IDENTITY, decoded);
   }
 
@@ -184,8 +184,8 @@ public class ParcelTransformTest extends AbstractMinecraftTest {
       var translation = random.nextVec3i(-100, 100);
       var transform = new ParcelTransform(mirror, rotation, translation);
 
-      var json = ParcelTransform.CODEC.encodeStart(JsonOps.INSTANCE, transform).getOrThrow();
-      var decoded = ParcelTransform.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
+      var json = ParcelTransform.CODEC.encodeStart(JsonOps.INSTANCE, transform).result().orElseThrow();
+      var decoded = ParcelTransform.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
       assertEquals(transform, decoded);
     }
   }

@@ -12,6 +12,7 @@ import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.SemanticData;
 import io.github.leawind.gitparcel.common.impl.extension.attachment.ParcelAttachmentSession;
 import io.github.leawind.gitparcel.common.testutils.AbstractMinecraftTest;
+import io.github.leawind.gitparcel.common.testutils.TestNbt;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -47,7 +48,7 @@ class PaintingRecordProcessorTest extends AbstractMinecraftTest {
 
     assertEquals(
         space.toWorldDirection(Direction.WEST).get2DDataValue(),
-        restored.data().getInt("facing").orElseThrow());
+        TestNbt.getInt(restored.data(), "facing").orElseThrow());
   }
 
   /**
@@ -71,7 +72,7 @@ class PaintingRecordProcessorTest extends AbstractMinecraftTest {
     var semantic = captured.semanticData().get(0);
     assertEquals(
         Direction.NORTH.getName(),
-        semantic.payload().getString("direction").orElseThrow());
+        TestNbt.getString(semantic.payload(), "direction").orElseThrow());
   }
 
   /** Records of other entity types pass through untouched. */

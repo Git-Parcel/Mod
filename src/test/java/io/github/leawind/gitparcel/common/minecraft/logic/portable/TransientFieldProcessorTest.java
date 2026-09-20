@@ -12,6 +12,7 @@ import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
 import io.github.leawind.gitparcel.common.impl.extension.attachment.ParcelAttachmentSession;
 import io.github.leawind.gitparcel.common.testutils.AbstractMinecraftTest;
+import io.github.leawind.gitparcel.common.testutils.TestNbt;
 import java.util.List;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelTransform;
@@ -75,7 +76,7 @@ class TransientFieldProcessorTest extends AbstractMinecraftTest {
     // hand-made or legacy record keeps its values.
     var restored = processor.restoreEntity(context(null), recordWithFire(10));
     assertTrue(restored.data().contains("Fire"));
-    var fire = restored.data().getShort("Fire").orElseThrow();
+    var fire = TestNbt.getShort(restored.data(), "Fire").orElseThrow();
     assertEquals(10, (int) fire);
   }
 
@@ -100,7 +101,9 @@ class TransientFieldProcessorTest extends AbstractMinecraftTest {
     var manifestless = context(null);
     var restored = processor.restoreEntity(manifestless, record(TEST_ENTITY, data.copy()));
     assertEquals(
-        5000L, restored.data().getLong("calm_end_time").orElseThrow(), "no manifest, no rewrite");
+        5000L,
+        TestNbt.getLong(restored.data(), "calm_end_time").orElseThrow(),
+        "no manifest, no rewrite");
 
     var declaring =
         new ParcelSemantics(
@@ -114,7 +117,7 @@ class TransientFieldProcessorTest extends AbstractMinecraftTest {
             SPACE, new ParcelAttachmentSession(), null, declaring, null, 0L);
     var reAnchored = processor.restoreEntity(withManifest, record(TEST_ENTITY, data.copy()));
     // The restore context anchors at game time 0, so the offset is re-anchored to value + 0.
-    assertEquals(5000L, reAnchored.data().getLong("calm_end_time").orElseThrow());
+    assertEquals(5000L, TestNbt.getLong(reAnchored.data(), "calm_end_time").orElseThrow());
   }
 
   /**
@@ -138,13 +141,13 @@ class TransientFieldProcessorTest extends AbstractMinecraftTest {
         new ParcelRecordProcessorContext(
             SPACE, new ParcelAttachmentSession(), new ParcelAttachmentSession(), null, null, 1000L);
     var captured = processor.captureEntity(captureContext, record(TEST_ENTITY, data));
-    assertEquals(4000L, captured.data().getLong("calm_end_time").orElseThrow());
+    assertEquals(4000L, TestNbt.getLong(captured.data(), "calm_end_time").orElseThrow());
 
     var restoreContext =
         new ParcelRecordProcessorContext(
             SPACE, new ParcelAttachmentSession(), null, declaring, null, 3000L);
     var restored = processor.restoreEntity(restoreContext, captured);
-    assertEquals(7000L, restored.data().getLong("calm_end_time").orElseThrow());
+    assertEquals(7000L, TestNbt.getLong(restored.data(), "calm_end_time").orElseThrow());
   }
 
   /** Elimination descends into the Passengers subtree filtered by each nested type. */
@@ -161,11 +164,8 @@ class TransientFieldProcessorTest extends AbstractMinecraftTest {
 
     assertFalse(captured.data().contains("HurtTime"));
     assertFalse(
-        captured
-            .data()
-            .getList("Passengers")
-            .orElseThrow()
-            .getCompound(0)
+        TestNbt.getCompound(
+                TestNbt.getList(captured.data(), "Passengers").orElseThrow(), 0)
             .orElseThrow()
             .contains("HurtTime"));
   }
@@ -183,10 +183,10 @@ class TransientFieldProcessorTest extends AbstractMinecraftTest {
 
     var captured = processor.captureBlockEntity(context(null), record);
     // The capture context anchors at game time 0: offset = value - 0.
-    var capturedServerData =
-        captured.data().getCompound("server_data").orElseThrow();
-    assertEquals(5000L, capturedServerData.getLong("state_updating_resumes_at").orElseThrow());
-    assertEquals("value", capturedServerData.getString("unchanged").orElseThrow());
+    var capturedServerData = TestNbt.getCompound(captured.data(), "server_data").orElseThrow();
+    assertEquals(
+        5000L, TestNbt.getLong(capturedServerData, "state_updating_resumes_at").orElseThrow());
+    assertEquals("value", TestNbt.getString(capturedServerData, "unchanged").orElseThrow());
 
     var declaring =
         new ParcelSemantics(
@@ -198,11 +198,9 @@ class TransientFieldProcessorTest extends AbstractMinecraftTest {
     var restored = processor.restoreBlockEntity(context(declaring), captured);
     assertEquals(
         5000L,
-        restored
-            .data()
-            .getCompound("server_data")
-            .orElseThrow()
-            .getLong("state_updating_resumes_at")
+        TestNbt.getLong(
+                TestNbt.getCompound(restored.data(), "server_data").orElseThrow(),
+                "state_updating_resumes_at")
             .orElseThrow());
   }
 

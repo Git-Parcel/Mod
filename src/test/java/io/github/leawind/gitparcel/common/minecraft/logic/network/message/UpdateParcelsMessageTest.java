@@ -48,9 +48,9 @@ class UpdateParcelsMessageTest extends AbstractGitParcelTest {
     var parcel = parcelAt(0);
     var expected =
         UpdateParcelsMessage.incrementalWithRemovals(List.of(parcel), List.of(parcelAt(10).uuid()));
-    var json = UpdateParcelsMessage.CODEC.encodeStart(JsonOps.INSTANCE, expected).getOrThrow();
+    var json = UpdateParcelsMessage.CODEC.encodeStart(JsonOps.INSTANCE, expected).result().orElseThrow();
 
-    var actual = UpdateParcelsMessage.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
+    var actual = UpdateParcelsMessage.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
 
     assertEquals(expected.fullSync(), actual.fullSync());
     assertEquals(expected.removedUuids(), actual.removedUuids());

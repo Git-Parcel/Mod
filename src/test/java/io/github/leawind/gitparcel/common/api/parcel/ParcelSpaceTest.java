@@ -20,8 +20,8 @@ class ParcelSpaceTest extends AbstractMinecraftTest {
       for (Rotation rotation : Rotation.values()) {
         var space = space(mirror, rotation);
 
-        assertEquals(new Vec3(ANCHOR_WORLD), space.toWorld(Vec3.ZERO));
-        assertVecEquals(Vec3.ZERO, space.toParcel(new Vec3(ANCHOR_WORLD)));
+        assertEquals(Vec3.atLowerCornerOf(ANCHOR_WORLD), space.toWorld(Vec3.ZERO));
+        assertVecEquals(Vec3.ZERO, space.toParcel(Vec3.atLowerCornerOf(ANCHOR_WORLD)));
       }
     }
   }

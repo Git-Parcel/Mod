@@ -33,8 +33,8 @@ public class ParcelMetaTest {
             new Vec3i(3, 5, 7),
             new Vec3i(1, 2, 3));
 
-    var encoded = ParcelMeta.CODEC.encodeStart(JsonOps.INSTANCE, original).getOrThrow();
-    var decoded = ParcelMeta.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow();
+    var encoded = ParcelMeta.CODEC.encodeStart(JsonOps.INSTANCE, original).result().orElseThrow();
+    var decoded = ParcelMeta.CODEC.parse(JsonOps.INSTANCE, encoded).result().orElseThrow();
 
     assertEquals(4321, encoded.getAsJsonObject().get("dataVersion").getAsInt());
     assertEquals(original.contents(), decoded.contents());

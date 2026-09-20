@@ -29,8 +29,8 @@ class ParcelSemanticsTest extends AbstractMinecraftTest {
                 new ParcelSemantics.AttachmentType(
                     Identifier.fromNamespaceAndPath("gitparcel", "map"), 1)));
 
-    var encoded = ParcelSemantics.CODEC.encodeStart(JsonOps.INSTANCE, semantics).getOrThrow();
-    var decoded = ParcelSemantics.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow();
+    var encoded = ParcelSemantics.CODEC.encodeStart(JsonOps.INSTANCE, semantics).result().orElseThrow();
+    var decoded = ParcelSemantics.CODEC.parse(JsonOps.INSTANCE, encoded).result().orElseThrow();
 
     assertEquals(semantics, decoded);
     assertTrue(decoded.declaresProcessor(PROCESSOR));

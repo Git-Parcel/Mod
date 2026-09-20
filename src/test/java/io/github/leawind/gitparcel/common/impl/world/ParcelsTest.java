@@ -31,8 +31,8 @@ public class ParcelsTest extends AbstractGitParcelTest {
     assertEquals(parcel, parcel2);
 
     // codec
-    var parcelsJson = Parcels.CODEC.encodeStart(JsonOps.INSTANCE, parcels).getOrThrow();
-    var parcels2 = Parcels.CODEC.parse(JsonOps.INSTANCE, parcelsJson).getOrThrow();
+    var parcelsJson = Parcels.CODEC.encodeStart(JsonOps.INSTANCE, parcels).result().orElseThrow();
+    var parcels2 = Parcels.CODEC.parse(JsonOps.INSTANCE, parcelsJson).result().orElseThrow();
     assertEquals(parcels.keySet(), parcels2.keySet());
   }
 

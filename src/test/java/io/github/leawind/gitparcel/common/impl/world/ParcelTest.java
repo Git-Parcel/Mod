@@ -206,9 +206,9 @@ public class ParcelTest extends AbstractGitParcelTest {
     var parcel =
         ParcelFactory.create(new BoundingBox(0, 0, 0, 1, 1, 1), Mirror.NONE, Rotation.NONE);
     parcel.assignDimension("minecraft:overworld");
-    var json = (JsonObject) Parcel.CODEC.encodeStart(JsonOps.INSTANCE, parcel).getOrThrow();
+    var json = (JsonObject) Parcel.CODEC.encodeStart(JsonOps.INSTANCE, parcel).result().orElseThrow();
     assertEquals(false, json.has("location"));
-    var decoded = Parcel.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
+    var decoded = Parcel.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
     assertEquals(parcel.uuid(), decoded.uuid());
     assertEquals(parcel.dimension(), decoded.dimension());
   }
@@ -218,9 +218,9 @@ public class ParcelTest extends AbstractGitParcelTest {
     var parcel =
         ParcelFactory.create(new BoundingBox(0, 0, 0, 1, 1, 1), Mirror.NONE, Rotation.NONE);
     assertTrue(parcel.archiveSync().isEmpty());
-    var json = (JsonObject) Parcel.CODEC.encodeStart(JsonOps.INSTANCE, parcel).getOrThrow();
+    var json = (JsonObject) Parcel.CODEC.encodeStart(JsonOps.INSTANCE, parcel).result().orElseThrow();
     assertFalse(json.has("archive_sync"));
-    assertTrue(Parcel.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow().archiveSync().isEmpty());
+    assertTrue(Parcel.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow().archiveSync().isEmpty());
   }
 
   @Test
@@ -230,8 +230,8 @@ public class ParcelTest extends AbstractGitParcelTest {
     parcel.setArchiveSync(
         new Parcel.ArchiveSync(new Vec3i(2, 3, 4), new Vec3i(1, 0, 2), 12345L));
 
-    var json = (JsonObject) Parcel.CODEC.encodeStart(JsonOps.INSTANCE, parcel).getOrThrow();
-    var decoded = Parcel.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
+    var json = (JsonObject) Parcel.CODEC.encodeStart(JsonOps.INSTANCE, parcel).result().orElseThrow();
+    var decoded = Parcel.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
 
     assertEquals(parcel.archiveSync(), decoded.archiveSync());
     assertEquals(new Vec3i(2, 3, 4), decoded.archiveSync().orElseThrow().size());

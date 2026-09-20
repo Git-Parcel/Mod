@@ -32,22 +32,22 @@ class SnapshotIntentCodecsTest {
     assertEquals(
         save,
         SaveSnapshotRequest.CODEC
-            .parse(JsonOps.INSTANCE, SaveSnapshotRequest.CODEC.encodeStart(JsonOps.INSTANCE, save).getOrThrow())
-            .getOrThrow());
+            .parse(JsonOps.INSTANCE, SaveSnapshotRequest.CODEC.encodeStart(JsonOps.INSTANCE, save).result().orElseThrow())
+            .result().orElseThrow());
     assertEquals(
         restore,
         RestoreSnapshotRequest.CODEC
             .parse(
                 JsonOps.INSTANCE,
-                RestoreSnapshotRequest.CODEC.encodeStart(JsonOps.INSTANCE, restore).getOrThrow())
-            .getOrThrow());
+                RestoreSnapshotRequest.CODEC.encodeStart(JsonOps.INSTANCE, restore).result().orElseThrow())
+            .result().orElseThrow());
     assertEquals(
         result,
         SnapshotOperationResult.CODEC
             .parse(
                 JsonOps.INSTANCE,
-                SnapshotOperationResult.CODEC.encodeStart(JsonOps.INSTANCE, result).getOrThrow())
-            .getOrThrow());
+                SnapshotOperationResult.CODEC.encodeStart(JsonOps.INSTANCE, result).result().orElseThrow())
+            .result().orElseThrow());
     assertThrows(IllegalArgumentException.class, () -> new SnapshotId("HEAD~1"));
   }
 }

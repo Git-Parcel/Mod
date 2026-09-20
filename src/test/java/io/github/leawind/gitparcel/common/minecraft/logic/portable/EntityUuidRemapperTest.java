@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefField;
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFieldRegistry;
 import io.github.leawind.gitparcel.common.testutils.AbstractMinecraftTest;
+import io.github.leawind.gitparcel.common.testutils.TestNbt;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,13 +68,20 @@ class EntityUuidRemapperTest extends AbstractMinecraftTest {
 
     assertEquals(
         remap.get(insideB),
-        readUuid(data.getCompound("leash").orElseThrow(), "UUID").orElseThrow());
+        readUuid(TestNbt.getCompound(data, "leash").orElseThrow(), "UUID").orElseThrow());
     assertEquals(remap.get(insideA), readUuid(data, "partner").orElseThrow());
-    assertEquals(outside, readUuid(data.getCompound("owner_external").orElseThrow(), "UUID").orElseThrow());
+    assertEquals(
+        outside,
+        readUuid(TestNbt.getCompound(data, "owner_external").orElseThrow(), "UUID").orElseThrow());
     assertEquals(
         remap.get(insideA),
         readUuid(
-                data.getCompound("memories").orElseThrow().getList("friends").orElseThrow().getCompound(0).orElseThrow(),
+                TestNbt.getCompound(
+                        TestNbt.getList(
+                                TestNbt.getCompound(data, "memories").orElseThrow(), "friends")
+                            .orElseThrow(),
+                        0)
+                    .orElseThrow(),
                 "id")
             .orElseThrow());
   }
@@ -105,7 +113,8 @@ class EntityUuidRemapperTest extends AbstractMinecraftTest {
 
     EntityUuidRemapper.rewriteReferences(data, TEST_ENTITY, new HashMap<>(remap), io.github.leawind.gitparcel.common.api.extension.field.ParcelEntityRefFieldRegistry.get().fields());
 
-    var passengerTag = data.getList("Passengers").orElseThrow().getCompound(0).orElseThrow();
+    var passengerTag =
+        TestNbt.getCompound(TestNbt.getList(data, "Passengers").orElseThrow(), 0).orElseThrow();
     assertTrue(readUuid(passengerTag, "partner").isPresent());
   }
 
@@ -116,7 +125,7 @@ class EntityUuidRemapperTest extends AbstractMinecraftTest {
   }
 
   private static void putUuid(CompoundTag data, String key, UUID value) {
-    data.put(key, UUIDUtil.CODEC.encodeStart(NbtOps.INSTANCE, value).getOrThrow());
+    data.put(key, UUIDUtil.CODEC.encodeStart(NbtOps.INSTANCE, value).result().orElseThrow());
   }
 
   private static java.util.Optional<UUID> readUuid(CompoundTag data, String key) {

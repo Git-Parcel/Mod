@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.github.leawind.gitparcel.common.testutils.AbstractMinecraftTest;
+import io.github.leawind.gitparcel.common.testutils.TestNbt;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.nbt.CompoundTag;
@@ -45,7 +46,7 @@ class NbtPathsTest extends AbstractMinecraftTest {
         });
 
     assertEquals(1, seen.size());
-    assertEquals(7, root.getInt("value").orElseThrow());
+    assertEquals(7, TestNbt.getInt(root, "value").orElseThrow());
   }
 
   @Test
@@ -64,10 +65,12 @@ class NbtPathsTest extends AbstractMinecraftTest {
         NbtPaths.parse("Items[].count"),
         slot ->
             slot.set(
-                IntTag.valueOf(((net.minecraft.nbt.NumericTag) slot.get()).intValue() + 10)));
+                IntTag.valueOf(
+                    NbtReads.intValue((net.minecraft.nbt.NumericTag) slot.get()) + 10)));
 
     for (int i = 0; i < 3; i++) {
-      assertEquals(i + 10, items.getCompound(i).orElseThrow().getInt("count").orElseThrow());
+      assertEquals(
+          i + 10, TestNbt.getInt(TestNbt.getCompound(items, i).orElseThrow(), "count").orElseThrow());
     }
   }
 

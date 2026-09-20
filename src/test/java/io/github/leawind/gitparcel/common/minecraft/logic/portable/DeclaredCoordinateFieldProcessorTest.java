@@ -18,6 +18,7 @@ import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
 import io.github.leawind.gitparcel.common.impl.extension.attachment.ParcelAttachmentSession;
 import io.github.leawind.gitparcel.common.testutils.AbstractMinecraftTest;
+import io.github.leawind.gitparcel.common.testutils.TestNbt;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -158,12 +159,14 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
 
     var restored = processor.restoreBlockEntity(context(), record);
 
-    var restoredItems = restored.data().getList("Items").orElseThrow();
+    var restoredItems = TestNbt.getList(restored.data(), "Items").orElseThrow();
     for (int i = 0; i < 2; i++) {
       assertEquals(
           space.toWorld(new Vec3(10 + i, 64, -5)),
           readPositionCodec(
-                  restoredItems.getCompound(i).orElseThrow().getCompound("tag").orElseThrow(),
+                  TestNbt.getCompound(
+                      TestNbt.getCompound(restoredItems, i).orElseThrow(), "tag")
+                      .orElseThrow(),
                   "waypoint")
               .orElseThrow());
     }
@@ -204,13 +207,15 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
 
     var restored = processor.restoreEntity(context(), record);
 
-    var restoredPassengers = restored.data().getList("Passengers").orElseThrow();
+    var restoredPassengers = TestNbt.getList(restored.data(), "Passengers").orElseThrow();
     assertEquals(
         space.toWorld(new BlockPos(4, -1, 2)),
-        readBlockPosCodec(restoredPassengers.getCompound(0).orElseThrow(), "home").orElseThrow());
+        readBlockPosCodec(TestNbt.getCompound(restoredPassengers, 0).orElseThrow(), "home")
+            .orElseThrow());
     assertEquals(
         new BlockPos(120, 70, -30),
-        readBlockPosCodec(restoredPassengers.getCompound(1).orElseThrow(), "home").orElseThrow());
+        readBlockPosCodec(TestNbt.getCompound(restoredPassengers, 1).orElseThrow(), "home")
+            .orElseThrow());
   }
 
   @Test
@@ -255,7 +260,7 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
     var restoredString = processor.restoreEntity(context(), stringRecord);
     assertEquals(
         space.toWorldDirection(Direction.NORTH).getName(),
-        restoredString.data().getString("Facing").orElseThrow());
+        TestNbt.getString(restoredString.data(), "Facing").orElseThrow());
 
     var byteData = entityData(TEST_ENTITY);
     byteData.put("Facing", ByteTag.valueOf((byte) Direction.NORTH.get3DDataValue()));
@@ -263,7 +268,7 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
     var restoredByte = processor.restoreEntity(context(), byteRecord);
     assertEquals(
         (byte) space.toWorldDirection(Direction.NORTH).get3DDataValue(),
-        restoredByte.data().getByte("Facing").orElseThrow());
+        TestNbt.getByte(restoredByte.data(), "Facing").orElseThrow());
   }
 
   /**
@@ -286,8 +291,9 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
 
     var restored = processor.restoreEntity(mirroredContext, record);
 
-    assertEquals(Direction.NORTH.getName(), restored.data().getString("Facing").orElseThrow());
-    assertEquals((byte) 5, restored.data().getByte("ItemRotation").orElseThrow());
+    assertEquals(
+        Direction.NORTH.getName(), TestNbt.getString(restored.data(), "Facing").orElseThrow());
+    assertEquals((byte) 5, TestNbt.getByte(restored.data(), "ItemRotation").orElseThrow());
   }
 
   private static ParcelSemantics fullSemantics() {
@@ -394,7 +400,7 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
 
     var restored = processor.restoreEntity(context(), record);
 
-    assertTrue(restored.data().getList("home").isEmpty());
+    assertTrue(TestNbt.getList(restored.data(), "home").isEmpty());
   }
 
   /**
@@ -488,7 +494,7 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
   }
 
   private static void putBlockPosCodec(CompoundTag data, String key, BlockPos pos) {
-    data.put(key, BlockPos.CODEC.encodeStart(NbtOps.INSTANCE, pos).getOrThrow());
+    data.put(key, BlockPos.CODEC.encodeStart(NbtOps.INSTANCE, pos).result().orElseThrow());
   }
 
   private static java.util.Optional<BlockPos> readBlockPosCodec(CompoundTag data, String key) {
@@ -505,18 +511,17 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
   }
 
   private static java.util.Optional<BlockPos> readBlockPosXyz(CompoundTag data, String key) {
-    return data
-        .getCompound(key)
+    return TestNbt.getCompound(data, key)
         .map(
             compound ->
                 new BlockPos(
-                    compound.getInt("X").orElseThrow(),
-                    compound.getInt("Y").orElseThrow(),
-                    compound.getInt("Z").orElseThrow()));
+                    TestNbt.getInt(compound, "X").orElseThrow(),
+                    TestNbt.getInt(compound, "Y").orElseThrow(),
+                    TestNbt.getInt(compound, "Z").orElseThrow()));
   }
 
   private static void putPositionCodec(CompoundTag data, String key, Vec3 pos) {
-    data.put(key, Vec3.CODEC.encodeStart(NbtOps.INSTANCE, pos).getOrThrow());
+    data.put(key, Vec3.CODEC.encodeStart(NbtOps.INSTANCE, pos).result().orElseThrow());
   }
 
   private static java.util.Optional<Vec3> readPositionCodec(CompoundTag data, String key) {

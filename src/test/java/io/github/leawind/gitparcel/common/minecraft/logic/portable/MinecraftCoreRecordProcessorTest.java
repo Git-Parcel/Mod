@@ -10,6 +10,7 @@ import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
 import io.github.leawind.gitparcel.common.impl.extension.attachment.ParcelAttachmentSession;
 import io.github.leawind.gitparcel.common.testutils.AbstractMinecraftTest;
+import io.github.leawind.gitparcel.common.testutils.TestNbt;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -49,9 +50,9 @@ class MinecraftCoreRecordProcessorTest extends AbstractMinecraftTest {
             context, new BlockEntityRecord(relative, data, List.of()));
     var world = space.toWorld(relative);
 
-    assertEquals(world.getX(), restored.data().getInt("x").orElseThrow());
-    assertEquals(world.getY(), restored.data().getInt("y").orElseThrow());
-    assertEquals(world.getZ(), restored.data().getInt("z").orElseThrow());
+    assertEquals(world.getX(), TestNbt.getInt(restored.data(), "x").orElseThrow());
+    assertEquals(world.getY(), TestNbt.getInt(restored.data(), "y").orElseThrow());
+    assertEquals(world.getZ(), TestNbt.getInt(restored.data(), "z").orElseThrow());
   }
 
   @Test
@@ -87,29 +88,19 @@ class MinecraftCoreRecordProcessorTest extends AbstractMinecraftTest {
     assertVecEquals(space.toWorldVector(localMotion), readVec(restored.data(), "Motion"));
     assertEquals(
         space.toWorldYaw(37.5F),
-        restored
-            .data()
-            .getList("Rotation")
-            .orElseThrow()
-            .getFloat(0)
+        TestNbt.getFloat(
+                TestNbt.getList(restored.data(), "Rotation").orElseThrow(), 0)
             .orElseThrow(),
         1.0E-5F);
     assertEquals(
         -12F,
-        restored
-            .data()
-            .getList("Rotation")
-            .orElseThrow()
-            .getFloat(1)
+        TestNbt.getFloat(
+                TestNbt.getList(restored.data(), "Rotation").orElseThrow(), 1)
             .orElseThrow());
     assertFalse(restored.data().contains("UUID"));
     assertFalse(restored.data().contains("block_pos"));
     var restoredPassenger =
-        restored
-            .data()
-            .getList("Passengers")
-            .orElseThrow()
-            .getCompound(0)
+        TestNbt.getCompound(TestNbt.getList(restored.data(), "Passengers").orElseThrow(), 0)
             .orElseThrow();
     assertVecEquals(space.toWorld(passengerPos), readVec(restoredPassenger, "Pos"));
     assertFalse(restoredPassenger.contains("UUID"));
@@ -126,9 +117,9 @@ class MinecraftCoreRecordProcessorTest extends AbstractMinecraftTest {
     var captured =
         processor.captureBlockEntity(context, new BlockEntityRecord(relative, data, List.of()));
 
-    assertEquals(relative.getX(), captured.data().getInt("x").orElseThrow());
-    assertEquals(relative.getY(), captured.data().getInt("y").orElseThrow());
-    assertEquals(relative.getZ(), captured.data().getInt("z").orElseThrow());
+    assertEquals(relative.getX(), TestNbt.getInt(captured.data(), "x").orElseThrow());
+    assertEquals(relative.getY(), TestNbt.getInt(captured.data(), "y").orElseThrow());
+    assertEquals(relative.getZ(), TestNbt.getInt(captured.data(), "z").orElseThrow());
   }
 
   /**
@@ -168,10 +159,13 @@ class MinecraftCoreRecordProcessorTest extends AbstractMinecraftTest {
     assertVecEquals(worldMotion, readVec(restored.data(), "Motion"));
     assertEquals(
         worldYaw,
-        restored.data().getList("Rotation").orElseThrow().getFloat(0).orElseThrow(),
+        TestNbt.getFloat(
+                TestNbt.getList(restored.data(), "Rotation").orElseThrow(), 0)
+            .orElseThrow(),
         1.0E-5F);
     var restoredPassenger =
-        restored.data().getList("Passengers").orElseThrow().getCompound(0).orElseThrow();
+        TestNbt.getCompound(TestNbt.getList(restored.data(), "Passengers").orElseThrow(), 0)
+            .orElseThrow();
     assertVecEquals(passengerWorldPos, readVec(restoredPassenger, "Pos"));
     assertVecEquals(new Vec3(-1, 0.25, 0.5), readVec(restoredPassenger, "Motion"));
   }
@@ -208,14 +202,13 @@ class MinecraftCoreRecordProcessorTest extends AbstractMinecraftTest {
         assertVecEquals(space.toWorldVector(localMotion), readVec(restored.data(), "Motion"));
         assertEquals(
             space.toWorldYaw(37.5F),
-            restored.data().getList("Rotation").orElseThrow().getFloat(0).orElseThrow(),
+            TestNbt.getFloat(TestNbt.getList(restored.data(), "Rotation").orElseThrow(), 0)
+                .orElseThrow(),
             1.0E-5F,
             "yaw for mirror=%s rotation=%s".formatted(mirror, rotation));
         assertEquals(
             space.toWorld(relativeBlockPos),
-            restored
-                .data()
-                .read("block_pos", BlockPos.CODEC)
+            NbtReads.read(restored.data(), "block_pos", BlockPos.CODEC)
                 .orElseThrow(() -> new AssertionError("block_pos lost for " + rotation)));
       }
     }
@@ -240,7 +233,9 @@ class MinecraftCoreRecordProcessorTest extends AbstractMinecraftTest {
             context, new BlockEntityRecord(new BlockPos(1, 2, 3), beData, List.of()));
 
     assertEquals(
-        customPos, restoredBe.data().getList("custom_pos").orElseThrow(), "undeclared nested fields must travel verbatim");
+        customPos,
+        TestNbt.getList(restoredBe.data(), "custom_pos").orElseThrow(),
+        "undeclared nested fields must travel verbatim");
 
     var leashPos = new CompoundTag();
     leashPos.putInt("X", 120);
@@ -262,7 +257,7 @@ class MinecraftCoreRecordProcessorTest extends AbstractMinecraftTest {
 
     assertEquals(
         leashPos,
-        restoredEntity.data().getCompound("leash").orElseThrow(),
+        TestNbt.getCompound(restoredEntity.data(), "leash").orElseThrow(),
         "leash position variant must travel verbatim");
   }
 
@@ -290,11 +285,11 @@ class MinecraftCoreRecordProcessorTest extends AbstractMinecraftTest {
   }
 
   private static Vec3 readVec(CompoundTag data, String key) {
-    var list = data.getList(key).orElseThrow();
+    var list = TestNbt.getList(data, key).orElseThrow();
     return new Vec3(
-        list.getDouble(0).orElseThrow(),
-        list.getDouble(1).orElseThrow(),
-        list.getDouble(2).orElseThrow());
+        TestNbt.getDouble(list, 0).orElseThrow(),
+        TestNbt.getDouble(list, 1).orElseThrow(),
+        TestNbt.getDouble(list, 2).orElseThrow());
   }
 
   private static void assertVecEquals(Vec3 expected, Vec3 actual) {

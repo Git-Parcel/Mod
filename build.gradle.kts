@@ -35,12 +35,12 @@ val loader = when {
     else -> error("Unknown loader")
 }
 
-// Unit testing: only Fabric on modern versions is supported for now.
+// Unit testing: only Fabric nodes are supported for now.
 // Fabric: unitTesting() adds fabric-loader-junit which causes ServiceLoader classloader
 // isolation issues, so we add JUnit dependencies manually instead.
 // NeoForge: unitTesting() requires a valid mod JAR but classes dir isn't recognized.
-// 1.20.1: test sources still use post-1.20.1 APIs and are ported separately.
-val supportsUnitTesting = isFabric && stonecutter.current.parsed >= "26.1"
+// Forge 1.20.1: same moddevgradle-legacy limitation as NeoForge.
+val supportsUnitTesting = isFabric
 // endregion
 
 // region ModStitch Setup
@@ -210,8 +210,9 @@ dependencies {
 // endregion
 
 // region Fabric Gametest
-// Gametest sources target the modern serialization APIs and are only compiled for 26.x.
-if (isFabric && stonecutter.current.parsed >= "26.1") {
+// Gametest sources compile on every Fabric node; version differences live behind
+// seams and stonecutter conditionals in the gametest sources themselves.
+if (isFabric) {
     the<net.fabricmc.loom.api.fabricapi.FabricApiExtension>().configureTests {
         createSourceSet.set(true)
         modId.set(project.property("mod.id") as String)

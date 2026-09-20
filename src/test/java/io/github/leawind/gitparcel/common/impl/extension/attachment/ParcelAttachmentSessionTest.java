@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.github.leawind.gitparcel.common.testutils.AbstractMinecraftTest;
+import io.github.leawind.gitparcel.common.testutils.TestNbt;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
@@ -36,13 +37,7 @@ class ParcelAttachmentSessionTest extends AbstractMinecraftTest {
     assertEquals("a00000002", otherType.value());
     assertEquals(3, session.captured().size());
     assertEquals(
-        "first",
-        session
-            .captured()
-            .getFirst()
-            .payload()
-            .getString("value")
-            .orElseThrow());
+        "first", TestNbt.getString(session.captured().getFirst().payload(), "value").orElseThrow());
   }
 
   @Test

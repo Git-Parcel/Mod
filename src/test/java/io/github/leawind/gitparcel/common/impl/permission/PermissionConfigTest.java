@@ -195,11 +195,11 @@ public class PermissionConfigTest {
     config.set(VIEW, PermissionLevel.MODERATORS);
 
     // Encode to map using DataResult
-    var encodedMap = codec.encodeStart(JsonOps.INSTANCE, config).getOrThrow();
+    var encodedMap = codec.encodeStart(JsonOps.INSTANCE, config).result().orElseThrow();
 
     // Decode back
     var decodedResult = codec.parse(JsonOps.INSTANCE, encodedMap);
-    var loadedConfig = decodedResult.getOrThrow();
+    var loadedConfig = decodedResult.result().orElseThrow();
 
     // Verify the decoded configs match the original
     assertEquals(PermissionLevel.OWNERS, loadedConfig.get(ADMIN));
