@@ -47,9 +47,10 @@ class BuiltinExtensionRegistrationTest extends AbstractMinecraftTest {
         declaresEntity(fields, "Leash", null, ParcelCoordinateField.Encoding.BLOCK_POS_XYZ));
     assertTrue(
         declaresEntity(fields, "Sleeping", null, ParcelCoordinateField.Encoding.BLOCK_POS_AXES));
+    // 1.20.1 single-tag positions are NbtUtils.writeBlockPos {X,Y,Z} compounds.
     for (String path : new String[] {"HivePos", "FlowerPos", "PatrolTarget", "WanderTarget", "BeamTarget"}) {
       assertTrue(
-          declaresEntity(fields, path, null, ParcelCoordinateField.Encoding.BLOCK_POS),
+          declaresEntity(fields, path, null, ParcelCoordinateField.Encoding.BLOCK_POS_XYZ),
           "missing declaration for " + path);
     }
     assertTrue(
@@ -61,11 +62,11 @@ class BuiltinExtensionRegistrationTest extends AbstractMinecraftTest {
     assertTrue(
         declaresEntity(fields, "Facing", "painting", ParcelCoordinateField.Encoding.DIRECTION));
     assertTrue(
-        declaresBe(fields, "ExitPortal", "end_gateway", ParcelCoordinateField.Encoding.BLOCK_POS));
+        declaresBe(fields, "ExitPortal", "end_gateway", ParcelCoordinateField.Encoding.BLOCK_POS_XYZ));
     assertTrue(
         declaresBe(
-            fields, "Bees[].EntityData.FlowerPos", "beehive", ParcelCoordinateField.Encoding.BLOCK_POS));
-    *//*? }*/
+            fields, "Bees[].EntityData.FlowerPos", "beehive", ParcelCoordinateField.Encoding.BLOCK_POS_XYZ));
+    *//*?}*/
 
     // Era-stable declarations: shulker attach face (key corrected from the never-written
     // "Facing"), structure-block origin axes, and vibration-listener positions.
@@ -148,7 +149,7 @@ class BuiltinExtensionRegistrationTest extends AbstractMinecraftTest {
                   field -> field.path().equals(path) && field.kind() == ParcelTransientField.Kind.ELIMINATE),
           "missing jukebox elimination for " + path);
     }
-    *//*? }*/
+    *//*?}*/
   }
 
   /** Registers the builtin extension once; the era-stable AttachFace key guards re-entry. */

@@ -80,20 +80,21 @@ final class VanillaFieldDeclarations {
     /*?} else {*/
     /*for (String hive : HIVES) {
       registrar.registerCoordinateField(
-          ParcelCoordinateField.forType(Target.BLOCK_ENTITY, mc(hive), "FlowerPos", Encoding.BLOCK_POS));
+          ParcelCoordinateField.forType(Target.BLOCK_ENTITY, mc(hive), "FlowerPos", Encoding.BLOCK_POS_XYZ));
       registrar.registerCoordinateField(
           ParcelCoordinateField.forType(
-              Target.BLOCK_ENTITY, mc(hive), "Bees[].EntityData.FlowerPos", Encoding.BLOCK_POS));
+              Target.BLOCK_ENTITY, mc(hive), "Bees[].EntityData.FlowerPos", Encoding.BLOCK_POS_XYZ));
     }
     registrar.registerCoordinateField(
-        ParcelCoordinateField.forType(Target.BLOCK_ENTITY, mc("end_gateway"), "ExitPortal", Encoding.BLOCK_POS));
+        ParcelCoordinateField.forType(Target.BLOCK_ENTITY, mc("end_gateway"), "ExitPortal", Encoding.BLOCK_POS_XYZ));
     registrar.registerCoordinateField(
         ParcelCoordinateField.forAny(Target.ENTITY, "Leash", Encoding.BLOCK_POS_XYZ));
     registrar.registerCoordinateField(
         ParcelCoordinateField.forAny(Target.ENTITY, "Sleeping", Encoding.BLOCK_POS_AXES));
+    // 1.20.1 writes single-tag positions through NbtUtils.writeBlockPos ({X,Y,Z} compounds).
     for (String field : new String[] {"HivePos", "FlowerPos", "PatrolTarget", "WanderTarget", "BeamTarget"}) {
       registrar.registerCoordinateField(
-          ParcelCoordinateField.forAny(Target.ENTITY, field, Encoding.BLOCK_POS));
+          ParcelCoordinateField.forAny(Target.ENTITY, field, Encoding.BLOCK_POS_XYZ));
     }
     registrar.registerCoordinateField(
         ParcelCoordinateField.forType(Target.ENTITY, mc("phantom"), "A", Encoding.BLOCK_POS_AXES));
