@@ -109,8 +109,10 @@ public final class MapItemProcessor implements ParcelRecordProcessor {
     if (tag == null) {
       return;
     }
-    int mapId = tag.getInt(LEGACY_MAP_KEY);
-    if (mapId <= 0) {
+    // Id 0 is what a fresh world hands out for its first map, so presence has to be tested
+    // explicitly: a non-positive test would silently drop that map's artwork.
+    Integer mapId = NbtReads.getIntOrNull(tag, LEGACY_MAP_KEY);
+    if (mapId == null) {
       return;
     }
     MapItemSavedData data = MapItem.getSavedData(mapId, context.requireCollector().level());
