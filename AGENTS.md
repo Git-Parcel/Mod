@@ -156,12 +156,17 @@ return currentVersion().dataVersion().version();
 
 stonecutter 的 `replacements.string` 是双向替换：条件为 true 时按 `replace(from, to)` 正向替换，为 false 时反向替换。因此源代码写任意一侧的名称都会被替换为正确值，旧版本条件分支中出现的旧类名（或看似未导入的类）不是错误，不要"修复"。建议共享源码统一使用新版本名称（如 `Identifier`、`GuiGraphicsExtractor`）：当前最高版本无需替换，旧版本自动反向替换；两个条件编译块的唯一区别是被替换的类型名时，可以合并为一个块。
 
+#### NBT 读取接缝
+
+- 共享代码读取 NBT 一律经 `common/minecraft/logic/portable/NbtReads`：CompoundTag getter 的 Optional/原生形态差异只存在于该工具类内部，语义统一为"键缺席或类型不符时回退（或返回 null）"。直接调用 `tag.getXxx(...)` 仅允许出现在已被版本条件块包住的单版本分支内。
+- 实体 NBT 树的 `Passengers` 递归与类型 id 解析经同包的 `EntityTrees`，不要在各处理器中复制遍历逻辑。
+
 ## 踩坑记录
 
 实现中踩过并确认的坑，供后续任务避让；条目应写清现象与结论，不罗列排查过程。
 
 - `ParcelTransform`/`ParcelSpace` 的 `BlockPos` 重载在旋转下带 −1 修正（方块网格到方块网格的映射），`Vec3` 重载是纯点映射。parcel 锚点是格点而非方块索引：断言或换算锚点自身必须走 `Vec3` 语义（`transform.translation()`），用 `BlockPos` 重载往返锚点会在带旋转的朝向下偏移一格。
-- Stonecutter 条件块的假分支是"注释包裹"语义：激活时 stonecutter 剥离 `/*` 与 `*/` 标记还原代码。多行假分支必须是 `/*` 开头、裸续行（不得加 javadoc 风格的 ` *` 前缀）、`*/` 结尾的单块注释，否则剥离标记后会残留 ` *`，生成非法 Java 导致"非法的类型开始"编译错误。
+- Stonecutter 条件块的假分支是"注释包裹"语义：激活时 stonecutter 剥离 `/*` 与 `*/` 标记还原代码。多行假分支必须是 `/*` 开头、裸续行（不得加 javadoc 风格的 `*` 前缀）、`*/` 结尾的单块注释，否则剥离标记后会残留 `*`，生成非法 Java 导致"非法的类型开始"编译错误。
 - `replacements.string` 只作用于主源集，`src/gametest` 等附加源集不做字符串替换；附加源集里的版本差异要用条件块（或接缝类）维护。
 - ModStitch 锁定旧版 ModDevGradle，新 MC 版本发布后 NFRT 会因不识别版本号而 recompile 失败（日志先报 `Failed to parse MC version`，最终 `Node action for recompile failed`）。升级 ModStitch 常不足以跟进，需在 `stonecutter.gradle.kts` 的 plugins 块显式声明新版 `net.neoforged.moddev`（buildscript classpath 对同一模块取最高版本）。
 - `vcsVersion` 节点直接编译共享源文件而不经 stonecutter 处理：源文件必须始终保持为 vcs 节点（当前 26.3-fabric）的可编译形态。为其他版本准备的代码绝不能以裸代码形式写在"当前版本为假"的 `if` 主分支里，必须写成注释包裹的假分支（else 或 `/*? if 旧条件 {*/*...*//*?}*/`）。

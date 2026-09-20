@@ -25,10 +25,6 @@
 
 `supportsUnitTesting` 与 gametest 配置目前仅对 26.x 节点启用，1.20.1 的保存/恢复核心路径没有 GameTest 回归覆盖（DESIGN.md 测试策略要求 P1/P2/P5 不变性与迁移正确性）。需要：`src/test`（39 个类引用 26.x 的 `Identifier` 与 NBT Optional API）与 `src/gametest`（fabric data attachment 扩展在 1.20.1 无对应物、`@GameTest(template=)` 注解差异、`AccessGameTestHelper` mixin 的字段适配、结构文件跨版本加载验证）两个源集的适配。
 
-### [agent] NBT 读取接缝工具类
-
-1.21.5 起 CompoundTag 的 getter 返回 Optional，1.20.1 返回原生值。当前差异以约 15 处独立条件块散布在 `portable` 包各处理器中（`getInt(...).orElse(...)` 与原生 `getInt(...)`）。应收拢为一个接缝工具类（如 `NbtReads.getInt(tag, key, fallback)`、`getCompound`、`getList`、`getDouble(list, i)`），条件块只保留在工具类一处；各处理器统一改走工具类。新增 NBT 读取时即走该工具类。
-
 ### [human] 渲染路径统一的触发评估
 
 parcel 线框在 26.x 走 vanilla gizmo 系统（`MixinLevelRenderer` → `Gizmos`），1.20.1 走 `RenderType.lines()` 手绘（无自定义线宽）。维持分叉的前提是 gizmo 仍是"无需调试开关即渲染"的官方入口。出现以下任一信号时应评估统一到 26.x 自绘（含自定义 `RenderType` 线宽支持，而非上提 1.20.1 的降级实现）：
