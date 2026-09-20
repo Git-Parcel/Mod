@@ -5,6 +5,7 @@ import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordPr
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.LocalAttachmentId;
+import io.github.leawind.gitparcel.common.minecraft.logic.portable.NbtReads;
 import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
@@ -43,7 +44,7 @@ public enum MarkerRecordProcessor implements ParcelRecordProcessor {
   @Override
   public EntityRecord restoreEntity(ParcelRecordProcessorContext context, EntityRecord record)
       throws ParcelException {
-    String ref = record.data().getString(REF_TAG).orElse("");
+    String ref = NbtReads.getString(record.data(), REF_TAG, "");
     if (ref.isEmpty()) {
       return record;
     }

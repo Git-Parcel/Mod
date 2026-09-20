@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.gametest.ext;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentRestoreContext;
 import io.github.leawind.gitparcel.common.api.extension.attachment.ParcelAttachmentType;
 import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
+import io.github.leawind.gitparcel.common.minecraft.logic.portable.NbtReads;
 import net.minecraft.resources.Identifier;
 
 /**
@@ -29,6 +30,6 @@ public enum MarkerAttachmentType implements ParcelAttachmentType {
   public void restore(ParcelAttachmentRestoreContext context, AttachmentRecord attachment)
       throws Exception {
     context.resolve(
-        attachment.id(), attachment.payload().getString(PAYLOAD_KEY).orElseThrow());
+        attachment.id(), NbtReads.getString(attachment.payload(), PAYLOAD_KEY, null));
   }
 }

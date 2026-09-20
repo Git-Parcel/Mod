@@ -19,6 +19,7 @@ import io.github.leawind.gitparcel.gametest.ext.RegionMarkerContributor;
 import io.github.leawind.gitparcel.gametest.utils.ChannelFlags;
 import io.github.leawind.gitparcel.gametest.utils.GameEntityTypes;
 import io.github.leawind.gitparcel.gametest.utils.GameTestHelpMore;
+import io.github.leawind.gitparcel.gametest.utils.GameTestUtils;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -26,16 +27,24 @@ import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+/*? if >=26.1 {*/
 import net.minecraft.core.component.DataComponents;
+/*?}*/
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.level.ServerLevel;
+/*? if >=26.1 {*/
 import net.minecraft.util.ProblemReporter;
+/*?}*/
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Leashable;
+/*? if >=26.1 {*/
 import net.minecraft.world.entity.animal.chicken.Chicken;
 import net.minecraft.world.entity.animal.cow.Cow;
+/*?} else {*/
+/*import net.minecraft.world.entity.animal.Chicken;
+import net.minecraft.world.entity.animal.Cow;
+*//*?}*/
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -50,9 +59,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
+/*? if >=26.1 {*/
+import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.storage.TagValueInput;
+/*?}*/
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.ticks.LevelChunkTicks;
@@ -398,7 +409,7 @@ public class GitParcelGameTest {
         .thenExecuteAfter(
             20,
             () -> {
-              var leashed = level.getEntities(GameEntityTypes.COW, area, Leashable::isLeashed);
+              var leashed = level.getEntities(GameEntityTypes.COW, area, e -> e.isLeashed());
               if (leashed.size() != 1) {
                 helper.fail(
                     "Exactly one cow must be leashed after reference remapping, got "
@@ -793,12 +804,12 @@ public class GitParcelGameTest {
     level.setBlock(
         helper.absolutePos(chestPos), Blocks.CHEST.defaultBlockState(), WORLD_UPDATE_FLAGS);
     var chest = (ChestBlockEntity) helper.getBlockEntity(chestPos);
-    var mapId = level.getFreeMapId();
+    var mapId = freshMapId(level);
     var mapData =
         MapItemSavedData.createFresh(0.5, 0.5, (byte) 0, false, true, Level.OVERWORLD);
-    level.setMapData(mapId, mapData);
+    putMapData(level, mapId, mapData);
     var map = new ItemStack(Items.FILLED_MAP);
-    map.set(DataComponents.MAP_ID, mapId);
+    setMapId(map, mapId);
     chest.setItem(0, map);
 
     var snapshot = service.saveSnapshot(parcel, "Maps", "", GAMETEST_IDENTITY, true);
@@ -810,14 +821,14 @@ public class GitParcelGameTest {
     if (!restoredMap.is(Items.FILLED_MAP)) {
       helper.fail("Filled map must survive the snapshot round trip");
     }
-    var restoredMapId = restoredMap.get(DataComponents.MAP_ID);
+    var restoredMapId = getMapId(restoredMap);
     if (restoredMapId == null) {
-      helper.fail("Restored filled map must keep a map id component");
+      helper.fail("Restored filled map must keep a map id");
     }
     if (restoredMapId.equals(mapId)) {
       helper.fail("Map item must receive a fresh map id through its attachment");
     }
-    var restoredData = level.getMapData(restoredMapId);
+    var restoredData = getMapData(level, restoredMapId);
     if (restoredData == null) {
       helper.fail("The map artwork must be copied into the level under the fresh id");
     }
@@ -828,7 +839,7 @@ public class GitParcelGameTest {
         || !java.util.Arrays.equals(restoredData.colors, mapData.colors)) {
       helper.fail("The copied map data must equal the original artwork");
     }
-    if (level.getMapData(mapId) != mapData) {
+    if (getMapData(level, mapId) != mapData) {
       helper.fail("The original map data instance must remain untouched");
     }
 
@@ -896,11 +907,16 @@ public class GitParcelGameTest {
     injected.putInt("y", hiveWorld.getY());
     injected.putInt("z", hiveWorld.getZ());
     injected.put(
-        "flower_pos", BlockPos.CODEC.encodeStart(NbtOps.INSTANCE, flowerWorld).getOrThrow());
+        "flower_pos",
+        BlockPos.CODEC.encodeStart(NbtOps.INSTANCE, flowerWorld).result().orElseThrow());
     injected.put("bees", new ListTag());
+    /*? if >=26.1 {*/
     try (var reporter = new ProblemReporter.ScopedCollector(LOGGER)) {
       hive.loadWithComponents(TagValueInput.create(reporter, level.registryAccess(), injected));
     }
+    /*?} else {*/
+    /*hive.load(injected);
+    *//*?}*/
     hive.setChanged();
 
     var source = ParcelFactory.create(helper.absoluteBoundingBox(bottomBox), Mirror.NONE, Rotation.NONE);
@@ -915,7 +931,7 @@ public class GitParcelGameTest {
     }
 
     var restoredHive = (BeehiveBlockEntity) helper.getBlockEntity(hivePos.offset(0, halfHeight, 0));
-    var restoredData = restoredHive.saveWithFullMetadata(level.registryAccess());
+    var restoredData = GameTestUtils.saveFullMetadata(level, restoredHive);
     var restoredFlower =
         BlockPos.CODEC
             .parse(NbtOps.INSTANCE, restoredData.get("flower_pos"))
@@ -949,7 +965,11 @@ public class GitParcelGameTest {
     service.restoreSnapshot(
         parcel, snapshot, RestoreSnapshotRequest.Mode.DIRECT, true, GAMETEST_IDENTITY);
 
+    /*? if >=26.1 {*/
     var dimension = level.dimension().identifier().toString();
+    /*?} else {*/
+    /*var dimension = level.dimension().location().toString();
+     *//*?}*/
     if (RegionMarkerContributor.restoreCalls != 1) {
       helper.fail(
           "Contributor restore hook must run exactly once, got "
@@ -1170,6 +1190,47 @@ public class GitParcelGameTest {
         new BlockPos(24, 24, 32),
         new BlockPos(24, 24, 24),
         new BlockPos(46, 46, 46));
+  }
+
+  /*
+   * Map ids are opaque across the version range: a MapId record on 26.x, a plain int in the item
+   * tag before that. The helpers keep the tests version-neutral while the access shape lives in
+   * one place.
+   */
+  private static Object freshMapId(ServerLevel level) {
+    return level.getFreeMapId();
+  }
+
+  private static void putMapData(ServerLevel level, Object id, MapItemSavedData data) {
+    /*? if >=26.1 {*/
+    level.setMapData((MapId) id, data);
+    /*?} else {*/
+    /*level.setMapData("map_" + (Integer) id, data);
+     *//*?}*/
+  }
+
+  private static MapItemSavedData getMapData(ServerLevel level, Object id) {
+    /*? if >=26.1 {*/
+    return level.getMapData((MapId) id);
+    /*?} else {*/
+    /*return level.getMapData("map_" + (Integer) id);
+     *//*?}*/
+  }
+
+  private static void setMapId(ItemStack map, Object id) {
+    /*? if >=26.1 {*/
+    map.set(DataComponents.MAP_ID, (MapId) id);
+    /*?} else {*/
+    /*map.getOrCreateTag().putInt("map", (Integer) id);
+     *//*?}*/
+  }
+
+  private static Object getMapId(ItemStack map) {
+    /*? if >=26.1 {*/
+    return map.get(DataComponents.MAP_ID);
+    /*?} else {*/
+    /*return map.hasTag() && map.getTag().contains("map") ? map.getTag().getInt("map") : null;
+     *//*?}*/
   }
 
   private record BlockSnapshot(List<BlockPos> positions, List<BlockState> states) {

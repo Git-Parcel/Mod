@@ -8,10 +8,30 @@ import java.util.Map;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jspecify.annotations.Nullable;
 
 public final class GameTestUtils {
   private GameTestUtils() {}
+
+  /** Saves with full metadata; the accessor takes the registry access only on 26.1+. */
+  public static CompoundTag saveFullMetadata(ServerLevel level, BlockEntity blockEntity) {
+    /*? if >=26.1 {*/
+    return blockEntity.saveWithFullMetadata(level.registryAccess());
+    /*?} else {*/
+    /*return blockEntity.saveWithFullMetadata();
+     *//*?}*/
+  }
+
+  /** CompoundTag key iteration: keySet on 26.x, getAllKeys before that. */
+  private static java.util.Set<String> keySetOf(CompoundTag tag) {
+    /*? if >=26.1 {*/
+    return tag.keySet();
+    /*?} else {*/
+    /*return tag.getAllKeys();
+     *//*?}*/
+  }
 
   public static List<Map<String, ?>> cartesianProduct(Map<String, List<?>> map) {
     if (map.isEmpty()) {
@@ -81,36 +101,34 @@ public final class GameTestUtils {
       return false;
     }
 
-    return switch (tagA) {
-      case CompoundTag expCompound -> {
-        CompoundTag actCompound = (CompoundTag) tagB;
-        if (actCompound.size() != expCompound.size()) {
-          yield false;
-        }
-        for (var entry : expCompound.entrySet()) {
-          Tag actTag = actCompound.get(entry.getKey());
-          if (actTag == null || !compareNbtStructure(entry.getValue(), actTag, compareListTag)) {
-            yield false;
-          }
-        }
-        yield true;
+    // Java 17 has no pattern switches: the same shape as an if-else chain with instanceof.
+    if (tagA instanceof CompoundTag expCompound) {
+      CompoundTag actCompound = (CompoundTag) tagB;
+      if (actCompound.size() != expCompound.size()) {
+        return false;
       }
-      case ListTag expList -> {
-        if (!compareListTag) {
-          yield true;
+      for (String key : keySetOf(expCompound)) {
+        Tag actTag = actCompound.get(key);
+        if (actTag == null || !compareNbtStructure(expCompound.get(key), actTag, compareListTag)) {
+          return false;
         }
-        ListTag actList = (ListTag) tagB;
-        if (actList.size() != expList.size()) {
-          yield false;
-        }
-        for (int i = 0; i < expList.size(); i++) {
-          if (!compareNbtStructure(expList.get(i), actList.get(i), compareListTag)) {
-            yield false;
-          }
-        }
-        yield true;
       }
-      default -> true;
-    };
+      return true;
+    } else if (tagA instanceof ListTag expList) {
+      if (!compareListTag) {
+        return true;
+      }
+      ListTag actList = (ListTag) tagB;
+      if (actList.size() != expList.size()) {
+        return false;
+      }
+      for (int i = 0; i < expList.size(); i++) {
+        if (!compareNbtStructure(expList.get(i), actList.get(i), compareListTag)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return true;
   }
 }

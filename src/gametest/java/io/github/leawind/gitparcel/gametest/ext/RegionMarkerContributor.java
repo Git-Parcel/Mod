@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.gametest.ext;
 import io.github.leawind.gitparcel.common.api.extension.contributor.ParcelCaptureContext;
 import io.github.leawind.gitparcel.common.api.extension.contributor.ParcelCaptureContributor;
 import io.github.leawind.gitparcel.common.api.extension.contributor.ParcelRestoreContext;
+import io.github.leawind.gitparcel.common.minecraft.logic.portable.NbtReads;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 
@@ -38,7 +39,11 @@ public enum RegionMarkerContributor implements ParcelCaptureContributor {
       throw new IllegalStateException("Capture contributors require a level");
     }
     var payload = new CompoundTag();
+    /*? if >=26.1 {*/
     payload.putString(DIMENSION_KEY, level.dimension().identifier().toString());
+    /*?} else {*/
+    /*payload.putString(DIMENSION_KEY, level.dimension().location().toString());
+     *//*?}*/
     payload.putDouble("bounds_min_x", context.bounds().minX);
     context
         .collector()
@@ -55,6 +60,8 @@ public enum RegionMarkerContributor implements ParcelCaptureContributor {
     restoreCalls++;
     restoredAttachmentCount = own.size();
     restoredDimension =
-        own.isEmpty() ? null : own.getFirst().payload().getString(DIMENSION_KEY).orElse(null);
+        own.isEmpty()
+            ? null
+            : NbtReads.getString(own.getFirst().payload(), DIMENSION_KEY, null);
   }
 }
