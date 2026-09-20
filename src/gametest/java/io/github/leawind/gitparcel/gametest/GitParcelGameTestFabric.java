@@ -190,4 +190,67 @@ public class GitParcelGameTestFabric extends GitParcelGameTest implements Custom
   public void testCaptureContributorRoundTrip(GameTestHelper helper) throws Exception {
     Tester.test(helper, super::testCaptureContributorRoundTrip);
   }
+
+  /*? if >=26.1 {*/
+  @GameTest(structure = "gametest:swamp_hut-7x8x9", maxTicks = 200)
+  /*?} else {*/
+  /*@GameTest(template = "gametest:swamp_hut-7x8x9", timeoutTicks = 200)
+  *//*?}*/
+  public void testPaintingFollowsPlacement(GameTestHelper helper) throws Exception {
+    Tester.test(helper, super::testPaintingFollowsPlacement);
+  }
+
+  /*? if >=26.1 {*/
+  @GameTest(structure = "gametest:swamp_hut-7x8x9", maxTicks = 200)
+  /*?} else {*/
+  /*@GameTest(template = "gametest:swamp_hut-7x8x9", timeoutTicks = 200)
+  *//*?}*/
+  public void testSpatialEdgesSnapshotRelativization(GameTestHelper helper) throws Exception {
+    Tester.test(helper, super::testSpatialEdgesSnapshotRelativization);
+  }
+
+  /*? if >=26.1 {*/
+  @GameTest(structure = "gametest:swamp_hut-7x8x9", maxTicks = 200)
+  /*?} else {*/
+  /*@GameTest(template = "gametest:swamp_hut-7x8x9", timeoutTicks = 200)
+  *//*?}*/
+  public void testEndGatewayAndStructureBlockFollowPlacement(GameTestHelper helper) throws Exception {
+    Tester.test(helper, super::testEndGatewayAndStructureBlockFollowPlacement);
+  }
+
+  /*? if >=26.1 {*/
+  @GameTest(structure = "gametest:swamp_hut-7x8x9", maxTicks = 200)
+  /*?} else {*/
+  /*@GameTest(template = "gametest:swamp_hut-7x8x9", timeoutTicks = 200)
+  *//*?}*/
+  public void testVibrationListenerRelativization(GameTestHelper helper) throws Exception {
+    Tester.test(helper, super::testVibrationListenerRelativization);
+  }
+
+  /*? if >=26.1 {*/
+  @GameTest(structure = "gametest:swamp_hut-7x8x9", maxTicks = 200)
+  /*?} else {*/
+  /*@GameTest(template = "gametest:swamp_hut-7x8x9", timeoutTicks = 200)
+  *//*?}*/
+  public void testIdentityEdgesFollowBatchRewrite(GameTestHelper helper) throws Exception {
+    Tester.test(helper, super::testIdentityEdgesFollowBatchRewrite);
+  }
+
+  /*? if >=26.1 {*/
+  @GameTest(structure = "gametest:swamp_hut-7x8x9", maxTicks = 200)
+  /*?} else {*/
+  /*@GameTest(template = "gametest:swamp_hut-7x8x9", timeoutTicks = 200)
+  *//*?}*/
+  public void testEmbeddedItemsTravelWithParcel(GameTestHelper helper) throws Exception {
+    Tester.test(helper, super::testEmbeddedItemsTravelWithParcel);
+  }
+
+  /*? if >=26.1 {*/
+  @GameTest(structure = "gametest:swamp_hut-7x8x9", maxTicks = 200)
+  /*?} else {*/
+  /*@GameTest(template = "gametest:swamp_hut-7x8x9", timeoutTicks = 200)
+  *//*?}*/
+  public void testNoiseFieldsEliminatedOnCapture(GameTestHelper helper) throws Exception {
+    Tester.test(helper, super::testNoiseFieldsEliminatedOnCapture);
+  }
 }

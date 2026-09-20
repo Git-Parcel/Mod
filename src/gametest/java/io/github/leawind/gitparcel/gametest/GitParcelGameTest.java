@@ -69,6 +69,33 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.ticks.LevelChunkTicks;
 import net.minecraft.world.ticks.ScheduledTick;
 import net.minecraft.world.ticks.TickPriority;
+import com.mojang.serialization.Codec;
+import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
+import io.github.leawind.gitparcel.common.minecraft.logic.portable.NbtReads;
+import java.util.UUID;
+import net.minecraft.nbt.Tag;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.decoration.LeashFenceKnotEntity;
+/*? if >=26.1 {*/
+import net.minecraft.world.entity.decoration.painting.Painting;
+/*?} else {*/
+/*import net.minecraft.world.entity.decoration.Painting;
+*//*?}*/
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.HopperBlockEntity;
+import net.minecraft.world.level.block.entity.JukeboxBlockEntity;
+import net.minecraft.world.level.block.entity.SculkSensorBlockEntity;
+import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
+import net.minecraft.world.level.block.entity.StructureBlockEntity;
+import net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity;
+/*? if >=26.1 {*/
+import net.minecraft.core.GlobalPos;
+import net.minecraft.world.entity.decoration.painting.PaintingVariants;
+import net.minecraft.world.item.component.LodestoneTracker;
+/*?} else {*/
+/*import net.minecraft.world.entity.decoration.PaintingVariants;
+*//*?}*/
 import org.slf4j.Logger;
 
 public class GitParcelGameTest {
@@ -877,8 +904,10 @@ public class GitParcelGameTest {
   }
 
   /**
-   * Declared coordinate fields must follow the parcel: a beehive's {@code flower_pos} is rebased
-   * when the snapshot is loaded into a parcel at a different world position.
+   * Declared coordinate fields must follow the parcel: a beehive's flower position (root and
+   * inside a stored bee occupant) is rebased when the snapshot is loaded into a parcel at a
+   * different world position. Injected NBT uses era-correct key names so the test exercises the
+   * vanilla serialization surface, not a parallel one.
    */
   public void testBeehiveFlowerPosFollowsParcel(GameTestHelpMore helper) throws Exception {
     var level = helper.getLevel();
@@ -898,6 +927,7 @@ public class GitParcelGameTest {
 
     var hivePos = new BlockPos(2, 0, 2);
     var flowerWorld = helper.absolutePos(new BlockPos(4, 1, 5));
+    var nestedFlowerWorld = helper.absolutePos(new BlockPos(1, 1, 3));
     level.setBlock(helper.absolutePos(hivePos), Blocks.BEEHIVE.defaultBlockState(), WORLD_UPDATE_FLAGS);
     var hive = (BeehiveBlockEntity) helper.getBlockEntity(hivePos);
     var hiveWorld = helper.absolutePos(hivePos);
@@ -906,16 +936,34 @@ public class GitParcelGameTest {
     injected.putInt("x", hiveWorld.getX());
     injected.putInt("y", hiveWorld.getY());
     injected.putInt("z", hiveWorld.getZ());
+    var nestedBee = new CompoundTag();
+    nestedBee.putString("id", "minecraft:bee");
+    var bees = new ListTag();
+    var occupant = new CompoundTag();
+    /*? if >=26.1 {*/
     injected.put(
         "flower_pos",
         BlockPos.CODEC.encodeStart(NbtOps.INSTANCE, flowerWorld).result().orElseThrow());
-    injected.put("bees", new ListTag());
-    /*? if >=26.1 {*/
+    nestedBee.put(
+        "flower_pos",
+        BlockPos.CODEC.encodeStart(NbtOps.INSTANCE, nestedFlowerWorld).result().orElseThrow());
+    occupant.put("entity_data", nestedBee);
+    occupant.putInt("ticks_in_hive", 1);
+    occupant.putInt("min_ticks_in_hive", 1);
+    bees.add(occupant);
+    injected.put("bees", bees);
     try (var reporter = new ProblemReporter.ScopedCollector(LOGGER)) {
       hive.loadWithComponents(TagValueInput.create(reporter, level.registryAccess(), injected));
     }
     /*?} else {*/
-    /*hive.load(injected);
+    /*injected.put("FlowerPos", blockPosCompound(flowerWorld));
+    nestedBee.put("FlowerPos", blockPosCompound(nestedFlowerWorld));
+    occupant.put("EntityData", nestedBee);
+    occupant.putInt("TicksInHive", 1);
+    occupant.putInt("MinOccupationTicks", 1);
+    bees.add(occupant);
+    injected.put("Bees", bees);
+    hive.load(injected);
     *//*?}*/
     hive.setChanged();
 
@@ -932,16 +980,43 @@ public class GitParcelGameTest {
 
     var restoredHive = (BeehiveBlockEntity) helper.getBlockEntity(hivePos.offset(0, halfHeight, 0));
     var restoredData = GameTestUtils.saveFullMetadata(level, restoredHive);
+    /*? if >=26.1 {*/
     var restoredFlower =
         BlockPos.CODEC
             .parse(NbtOps.INSTANCE, restoredData.get("flower_pos"))
             .result()
             .orElseThrow(() -> new AssertionError("Restored beehive lost its flower_pos"));
+    var restoredNested =
+        BlockPos.CODEC
+            .parse(
+                NbtOps.INSTANCE,
+                nestedBeeFlowerTag26(restoredData)
+                    .orElseThrow(() -> new AssertionError("Restored beehive lost its stored bee")))
+            .result()
+            .orElseThrow(() -> new AssertionError("Stored bee lost its flower_pos"));
+    /*?} else {*/
+    /*var restoredFlower =
+        readBlockPosCompound(
+            restoredData.getCompound("FlowerPos"), "FlowerPos");
+    var restoredNested =
+        readBlockPosCompound(
+            nestedBeeFlowerTag1201(restoredData)
+                .orElseThrow(() -> new AssertionError("Restored beehive lost its stored bee"))
+                .getCompound("EntityData")
+                .getCompound("FlowerPos"),
+            "stored bee FlowerPos");
+    *//*?}*/
     var expectedFlower = flowerWorld.offset(0, halfHeight, 0);
     if (!expectedFlower.equals(restoredFlower)) {
       helper.fail(
           "flower_pos must follow the parcel: expected %s, got %s"
               .formatted(expectedFlower.toShortString(), restoredFlower.toShortString()));
+    }
+    var expectedNested = nestedFlowerWorld.offset(0, halfHeight, 0);
+    if (!expectedNested.equals(restoredNested)) {
+      helper.fail(
+          "the stored bee's flower position must follow the parcel: expected %s, got %s"
+              .formatted(expectedNested.toShortString(), restoredNested.toShortString()));
     }
     helper.succeed();
   }
@@ -1233,10 +1308,708 @@ public class GitParcelGameTest {
      *//*?}*/
   }
 
+  /**
+   * Paintings keep their hanging position and facing across a mirrored migration. 1.20.1 carries
+   * the position in TileX/Y/Z (core processor) and the facing in the 3D-value Facing byte
+   * (declared field); 26.x uses block_pos and the 2D-value facing key handled by its processor.
+   */
+  public void testPaintingFollowsPlacement(GameTestHelpMore helper) throws Exception {
+    var level = helper.getLevel();
+    var registry = ParcelRegistry.get(level);
+    registry.reset();
+    var halves = verticalHalves(helper);
+    var source =
+        ParcelFactory.create(
+            helper.absoluteBoundingBox(halves.bottom()), Mirror.NONE, Rotation.NONE);
+    registry.addNewParcel(source);
+
+    var wallPos = new BlockPos(2, 1, 2);
+    helper.setBlock(wallPos, Blocks.STONE_BRICKS);
+    /*? if >=26.1 {*/
+    var variant =
+        level
+            .registryAccess()
+            .lookupOrThrow(net.minecraft.core.registries.Registries.PAINTING_VARIANT)
+            .getOrThrow(PaintingVariants.ALBAN);
+    /*?} else {*/
+    /*var variant =
+        level
+            .registryAccess()
+            .registryOrThrow(net.minecraft.core.registries.Registries.PAINTING_VARIANT)
+            .getHolderOrThrow(PaintingVariants.ALBAN);
+    *//*?}*/
+    var painting =
+        new Painting(level, helper.absolutePos(wallPos), Direction.SOUTH, variant);
+    level.addFreshEntity(painting);
+
+    var target =
+        ParcelFactory.create(
+            helper.absoluteBoundingBox(halves.top()), Mirror.LEFT_RIGHT, Rotation.NONE);
+    saveAndLoadAt(helper, level, source, target);
+
+    var paintings =
+        level.getEntities(GameEntityTypes.PAINTING, halves.targetArea(helper), e -> true);
+    if (paintings.size() != 1) {
+      helper.fail("Restored parcel must contain exactly one painting, got " + paintings.size());
+    }
+    var restored = paintings.getFirst();
+    var targetSpace = new ParcelSpace(target.transform());
+    var expectedPos = targetSpace.toWorld(helper.absolutePos(wallPos));
+    if (!restored.getPos().equals(expectedPos)) {
+      helper.fail(
+          "Painting must hang at the migrated position: expected %s, got %s"
+              .formatted(expectedPos.toShortString(), restored.getPos().toShortString()));
+    }
+    var expectedFacing = targetSpace.toWorldDirection(Direction.SOUTH);
+    if (restored.getDirection() != expectedFacing) {
+      helper.fail(
+          "Painting must follow the mirrored facing: expected %s, got %s"
+              .formatted(expectedFacing, restored.getDirection()));
+    }
+    registry.deleteParcel(source.uuid());
+    helper.succeed();
+  }
+
+  /**
+   * Spatial edges relativize on capture: the leash coordinate form, the turtle home axes, and the
+   * sleeping position all land in the snapshot as parcel-relative values, with era-correct key
+   * names.
+   */
+  public void testSpatialEdgesSnapshotRelativization(GameTestHelpMore helper) throws Exception {
+    var level = helper.getLevel();
+    var registry = ParcelRegistry.get(level);
+    registry.reset();
+    var halves = verticalHalves(helper);
+    var source =
+        ParcelFactory.create(
+            helper.absoluteBoundingBox(halves.bottom()), Mirror.NONE, Rotation.NONE);
+    registry.addNewParcel(source);
+    var space = new ParcelSpace(source.transform());
+
+    var fencePos = helper.absolutePos(new BlockPos(1, 1, 1));
+    level.setBlock(fencePos, Blocks.OAK_FENCE.defaultBlockState(), WORLD_UPDATE_FLAGS);
+    var knot = new LeashFenceKnotEntity(level, fencePos);
+    level.addFreshEntity(knot);
+    var cow = helper.spawn(GameEntityTypes.COW, new BlockPos(3, 1, 3));
+    cow.setLeashedTo(knot, true);
+
+    var turtle = helper.spawn(GameEntityTypes.TURTLE, new BlockPos(5, 1, 5));
+    turtle.setHomePos(helper.absolutePos(new BlockPos(2, 1, 4)));
+
+    var villager = helper.spawn(GameEntityTypes.VILLAGER, new BlockPos(4, 1, 1));
+    villager.startSleeping(helper.absolutePos(new BlockPos(3, 1, 2)));
+
+    try (var fs = Jimfs.newFileSystem()) {
+      Path tempDir = fs.getPath("/parcel");
+      Files.createDirectories(tempDir);
+      ParcelStorage.save(level, source, tempDir, false);
+
+      var knotLocal = space.toParcel(fencePos);
+      var cowSnbt = findEntitySnbt(tempDir, "minecraft:cow");
+      /*? if >=26.1 {*/
+      assertSnbtContains(
+          helper,
+          cowSnbt,
+          "leash:[I;"
+              + knotLocal.getX() + "," + knotLocal.getY() + "," + knotLocal.getZ() + "]");
+      /*?} else {*/
+      /*assertSnbtInt(helper, cowSnbt, "X", knotLocal.getX());
+      assertSnbtInt(helper, cowSnbt, "Y", knotLocal.getY());
+      assertSnbtInt(helper, cowSnbt, "Z", knotLocal.getZ());
+      *//*?}*/
+
+      var turtleSnbt = findEntitySnbt(tempDir, "minecraft:turtle");
+      var homeLocal = space.toParcel(helper.absolutePos(new BlockPos(2, 1, 4)));
+      /*? if >=26.1 {*/
+      assertSnbtContains(
+          helper,
+          turtleSnbt,
+          "home_pos:[I;"
+              + homeLocal.getX() + "," + homeLocal.getY() + "," + homeLocal.getZ() + "]");
+      /*?} else {*/
+      /*assertSnbtInt(helper, turtleSnbt, "HomePosX", homeLocal.getX());
+      assertSnbtInt(helper, turtleSnbt, "HomePosY", homeLocal.getY());
+      assertSnbtInt(helper, turtleSnbt, "HomePosZ", homeLocal.getZ());
+      *//*?}*/
+
+      var villagerSnbt = findEntitySnbt(tempDir, "minecraft:villager");
+      var sleepLocal = space.toParcel(helper.absolutePos(new BlockPos(3, 1, 2)));
+      /*? if >=26.1 {*/
+      assertSnbtContains(
+          helper,
+          villagerSnbt,
+          "sleeping_pos:[I;"
+              + sleepLocal.getX() + "," + sleepLocal.getY() + "," + sleepLocal.getZ() + "]");
+      /*?} else {*/
+      /*assertSnbtInt(helper, villagerSnbt, "SleepingX", sleepLocal.getX());
+      assertSnbtInt(helper, villagerSnbt, "SleepingY", sleepLocal.getY());
+      assertSnbtInt(helper, villagerSnbt, "SleepingZ", sleepLocal.getZ());
+      *//*?}*/
+    }
+    registry.deleteParcel(source.uuid());
+    helper.succeed();
+  }
+
+  /** The end gateway exit portal and the structure-block origin are spatial edges, not payloads. */
+  public void testEndGatewayAndStructureBlockFollowPlacement(GameTestHelpMore helper)
+      throws Exception {
+    var level = helper.getLevel();
+    var halves = verticalHalves(helper);
+    var source =
+        ParcelFactory.create(
+            helper.absoluteBoundingBox(halves.bottom()), Mirror.NONE, Rotation.NONE);
+
+    var gatewayPos = new BlockPos(1, 0, 1);
+    level.setBlock(
+        helper.absolutePos(gatewayPos), Blocks.END_GATEWAY.defaultBlockState(), WORLD_UPDATE_FLAGS);
+    var gateway = (TheEndGatewayBlockEntity) helper.getBlockEntity(gatewayPos);
+    var exitWorld = helper.absolutePos(new BlockPos(3, 1, 4));
+    gateway.setExitPosition(exitWorld, false);
+    gateway.setChanged();
+
+    var structPos = new BlockPos(5, 0, 1);
+    level.setBlock(
+        helper.absolutePos(structPos),
+        Blocks.STRUCTURE_BLOCK.defaultBlockState(),
+        WORLD_UPDATE_FLAGS);
+    var structure = (StructureBlockEntity) helper.getBlockEntity(structPos);
+    var originWorld = helper.absolutePos(new BlockPos(2, 1, 2));
+    structure.setStructurePos(originWorld);
+    structure.setChanged();
+
+    saveAndLoadAt(helper, level, source, halves.plainTarget(helper));
+
+    var restoredGateway =
+        (TheEndGatewayBlockEntity)
+            helper.getBlockEntity(gatewayPos.offset(0, halves.height(), 0));
+    var gatewayData = GameTestUtils.saveFullMetadata(level, restoredGateway);
+    /*? if >=26.1 {*/
+    var restoredExit =
+        BlockPos.CODEC
+            .parse(NbtOps.INSTANCE, gatewayData.get("exit_portal"))
+            .result()
+            .orElseThrow(() -> new AssertionError("Restored gateway lost its exit_portal"));
+    /*?} else {*/
+    /*var restoredExit =
+        readBlockPosCompound(
+            NbtReads.getCompound(gatewayData, "ExitPortal"), "ExitPortal");
+    *//*?}*/
+    var expectedExit = exitWorld.offset(0, halves.height(), 0);
+    if (!expectedExit.equals(restoredExit)) {
+      helper.fail(
+          "gateway exit must follow the parcel: expected %s, got %s"
+              .formatted(expectedExit.toShortString(), restoredExit.toShortString()));
+    }
+
+    var restoredStructure =
+        (StructureBlockEntity)
+            helper.getBlockEntity(structPos.offset(0, halves.height(), 0));
+    var structureData = GameTestUtils.saveFullMetadata(level, restoredStructure);
+    var expectedOrigin = originWorld.offset(0, halves.height(), 0);
+    int[] expectedAxes = {
+      expectedOrigin.getX(), expectedOrigin.getY(), expectedOrigin.getZ()};
+    for (int axis = 0; axis < 3; axis++) {
+      String key = "pos" + "XYZ".charAt(axis);
+      if (NbtReads.getInt(structureData, key, Integer.MIN_VALUE) != expectedAxes[axis]) {
+        helper.fail(
+            "structure origin "
+                + key
+                + " must follow the parcel: expected "
+                + expectedAxes[axis]);
+      }
+    }
+    helper.succeed();
+  }
+
+  /**
+   * Vibration-listener data relativizes on the three edges at once: the event position is a
+   * spatial edge, the selector tick a game-time offset (returning to its stored value because
+   * save and load run on the same tick), and the source UUID an identity edge kept verbatim.
+   */
+  public void testVibrationListenerRelativization(GameTestHelpMore helper) throws Exception {
+    var level = helper.getLevel();
+    var halves = verticalHalves(helper);
+    var source =
+        ParcelFactory.create(
+            helper.absoluteBoundingBox(halves.bottom()), Mirror.NONE, Rotation.NONE);
+
+    var sensorPos = new BlockPos(2, 0, 2);
+    level.setBlock(
+        helper.absolutePos(sensorPos),
+        Blocks.SCULK_SENSOR.defaultBlockState(),
+        WORLD_UPDATE_FLAGS);
+    var sensor = (SculkSensorBlockEntity) helper.getBlockEntity(sensorPos);
+    var eventPosWorld = Vec3.atCenterOf(helper.absolutePos(new BlockPos(3, 1, 4)));
+    var sourceId = UUID.randomUUID();
+    var event = new CompoundTag();
+    event.putString("game_event", "minecraft:block_open");
+    event.putFloat("distance", 2.0F);
+    event.put(
+        "pos", Vec3.CODEC.encodeStart(NbtOps.INSTANCE, eventPosWorld).result().orElseThrow());
+    event.put(
+        "source", UUIDUtil.CODEC.encodeStart(NbtOps.INSTANCE, sourceId).result().orElseThrow());
+    var selector = new CompoundTag();
+    selector.put("event", event.copy());
+    selector.putLong("tick", 12345L);
+    var listener = new CompoundTag();
+    listener.put("event", event);
+    listener.put("selector", selector);
+    listener.putInt("event_delay", 2);
+    var injected = beBaseTag(helper, sensorPos, "minecraft:sculk_sensor");
+    injected.put("listener", listener);
+    loadBlockEntityNbt(helper, level, sensor, injected);
+    sensor.setChanged();
+
+    saveAndLoadAt(helper, level, source, halves.plainTarget(helper));
+
+    var restoredSensor =
+        (SculkSensorBlockEntity)
+            helper.getBlockEntity(sensorPos.offset(0, halves.height(), 0));
+    var restored = GameTestUtils.saveFullMetadata(level, restoredSensor);
+    /*? if >=26.1 {*/
+    if (!(restored.get("listener") instanceof CompoundTag listenerData)) {
+      helper.fail("Restored sculk sensor lost its listener payload");
+      return;
+    }
+    /*?} else {*/
+    /*var listenerData = NbtReads.getCompound(restored, "listener");
+    if (listenerData == null) {
+      helper.fail("Restored sculk sensor lost its listener payload");
+      return;
+    }
+    *//*?}*/
+    var eventTag = NbtReads.getCompound(listenerData, "event");
+    var selectorTag = NbtReads.getCompound(listenerData, "selector");
+    if (eventTag == null || selectorTag == null) {
+      helper.fail("Restored listener lost its event or selector payload");
+      return;
+    }
+    var restoredPos =
+        Vec3.CODEC
+            .parse(NbtOps.INSTANCE, eventTag.get("pos"))
+            .result()
+            .orElseThrow(() -> new AssertionError("Restored event lost its pos"));
+    var expectedPos = eventPosWorld.add(0, halves.height(), 0);
+    if (!restoredPos.equals(expectedPos)) {
+      helper.fail(
+          "listener event pos must follow the parcel: expected %s, got %s"
+              .formatted(expectedPos, restoredPos));
+    }
+    var restoredTick =
+        NbtReads.read(selectorTag, "tick", Codec.LONG).orElse(Long.MIN_VALUE);
+    if (restoredTick != 12345L) {
+      helper.fail(
+          "listener selector tick must re-anchor to the same stored offset, got " + restoredTick);
+    }
+    var restoredSource =
+        UUIDUtil.CODEC
+            .parse(NbtOps.INSTANCE, eventTag.get("source"))
+            .result()
+            .orElseThrow(() -> new AssertionError("Restored event lost its source"));
+    if (!restoredSource.equals(sourceId)) {
+      helper.fail("listener source uuid must be kept verbatim");
+    }
+    helper.succeed();
+  }
+
+  /**
+   * Identity edges inside the batch are rewritten: the arrow's owner UUID points at the restored
+   * skeleton, and the shulker's attach face survives the mirrored round trip.
+   */
+  public void testIdentityEdgesFollowBatchRewrite(GameTestHelpMore helper) throws Exception {
+    var level = helper.getLevel();
+    var halves = verticalHalves(helper);
+    var source =
+        ParcelFactory.create(
+            helper.absoluteBoundingBox(halves.bottom()), Mirror.NONE, Rotation.NONE);
+
+    var skeleton = helper.spawn(GameEntityTypes.SKELETON, new BlockPos(2, 1, 2));
+    var arrow = helper.spawn(GameEntityTypes.ARROW, new BlockPos(3, 1, 3));
+    arrow.setOwner(skeleton);
+    var shulker = helper.spawn(GameEntityTypes.SHULKER, new BlockPos(5, 1, 5));
+    var originalAttachFace = shulker.getAttachFace();
+
+    var target =
+        ParcelFactory.create(
+            helper.absoluteBoundingBox(halves.top()), Mirror.FRONT_BACK, Rotation.NONE);
+    saveAndLoadAt(helper, level, source, target);
+
+    var area = halves.targetArea(helper);
+    var arrows = level.getEntities(GameEntityTypes.ARROW, area, e -> true);
+    var skeletons = level.getEntities(GameEntityTypes.SKELETON, area, e -> true);
+    if (arrows.size() != 1 || skeletons.size() != 1) {
+      helper.fail(
+          "Restored parcel must contain one arrow and one skeleton, got "
+              + arrows.size()
+              + "/"
+              + skeletons.size());
+    }
+    var owner = arrows.getFirst().getOwner();
+    if (owner == null || !owner.getUUID().equals(skeletons.getFirst().getUUID())) {
+      helper.fail("Arrow owner must be rewritten to the restored skeleton");
+    }
+    var shulkers = level.getEntities(GameEntityTypes.SHULKER, area, e -> true);
+    if (shulkers.size() != 1) {
+      helper.fail("Restored parcel must contain one shulker, got " + shulkers.size());
+    }
+    var expectedFace = new ParcelSpace(target.transform()).toWorldDirection(originalAttachFace);
+    if (shulkers.getFirst().getAttachFace() != expectedFace) {
+      helper.fail(
+          "Shulker attach face must follow the mirror: expected %s, got %s"
+              .formatted(expectedFace, shulkers.getFirst().getAttachFace()));
+    }
+    helper.succeed();
+  }
+
+  /**
+   * Embedded item data travels with the parcel: a filled map inside a villager's inventory gets a
+   * fresh map id through its attachment, and lodestone compasses rebase their inside-pointing
+   * lodestone while keeping the outside-pointing one identical.
+   */
+  public void testEmbeddedItemsTravelWithParcel(GameTestHelpMore helper) throws Exception {
+    var level = helper.getLevel();
+    var halves = verticalHalves(helper);
+    var source =
+        ParcelFactory.create(
+            helper.absoluteBoundingBox(halves.bottom()), Mirror.NONE, Rotation.NONE);
+
+    var mapId = freshMapId(level);
+    var mapData = MapItemSavedData.createFresh(0.5, 0.5, (byte) 0, false, true, Level.OVERWORLD);
+    putMapData(level, mapId, mapData);
+    var map = new ItemStack(Items.FILLED_MAP);
+    setMapId(map, mapId);
+    var villager = helper.spawn(GameEntityTypes.VILLAGER, new BlockPos(2, 1, 2));
+    villager.getInventory().setItem(0, map);
+
+    var chestPos = new BlockPos(4, 0, 4);
+    level.setBlock(
+        helper.absolutePos(chestPos), Blocks.CHEST.defaultBlockState(), WORLD_UPDATE_FLAGS);
+    var chest = (ChestBlockEntity) helper.getBlockEntity(chestPos);
+    var insideLodestone = helper.absolutePos(new BlockPos(1, 1, 1));
+    var outsideLodestone = new BlockPos(9000, 64, 9000);
+    chest.setItem(0, lodestoneCompass(insideLodestone));
+    chest.setItem(1, lodestoneCompass(outsideLodestone));
+    chest.setChanged();
+
+    saveAndLoadAt(helper, level, source, halves.plainTarget(helper));
+
+    var restoredVillager =
+        level
+            .getEntities(GameEntityTypes.VILLAGER, halves.targetArea(helper), e -> true)
+            .getFirst();
+    var carried = restoredVillager.getInventory().getItem(0);
+    var newMapId = getMapId(carried);
+    if (newMapId == null || newMapId.equals(mapId)) {
+      helper.fail("The map in the villager inventory must receive a fresh map id");
+    }
+    if (getMapData(level, newMapId) == null) {
+      helper.fail("The fresh map id must resolve to restored map data");
+    }
+
+    var restoredChest =
+        (ChestBlockEntity) helper.getBlockEntity(chestPos.offset(0, halves.height(), 0));
+    var restoredInside = lodestoneOf(restoredChest.getItem(0));
+    var restoredOutside = lodestoneOf(restoredChest.getItem(1));
+    var expectedInside = insideLodestone.offset(0, halves.height(), 0);
+    if (!expectedInside.equals(restoredInside)) {
+      helper.fail(
+          "The inside-pointing lodestone must follow the parcel: expected %s, got %s"
+              .formatted(expectedInside, restoredInside));
+    }
+    if (!outsideLodestone.equals(restoredOutside)) {
+      helper.fail(
+          "The outside-pointing lodestone must stay identical: expected %s, got %s"
+              .formatted(outsideLodestone, restoredOutside));
+    }
+    helper.succeed();
+  }
+
+  /**
+   * Time-noise fields never enter snapshots: jukebox playback progress, the hopper transfer
+   * cooldown, and the spawner delay are eliminated on capture.
+   */
+  public void testNoiseFieldsEliminatedOnCapture(GameTestHelpMore helper) throws Exception {
+    var level = helper.getLevel();
+    var halves = verticalHalves(helper);
+    var source =
+        ParcelFactory.create(
+            helper.absoluteBoundingBox(halves.bottom()), Mirror.NONE, Rotation.NONE);
+
+    var jukeboxPos = new BlockPos(1, 0, 1);
+    level.setBlock(
+        helper.absolutePos(jukeboxPos), Blocks.JUKEBOX.defaultBlockState(), WORLD_UPDATE_FLAGS);
+    var jukebox = (JukeboxBlockEntity) helper.getBlockEntity(jukeboxPos);
+    var jukeboxTag = beBaseTag(helper, jukeboxPos, "minecraft:jukebox");
+    /*? if >=26.1 {*/
+    jukeboxTag.putLong("ticks_since_song_started", 99L);
+    /*?} else {*/
+    /*jukeboxTag.putBoolean("IsPlaying", true);
+    jukeboxTag.putLong("RecordStartTick", 5L);
+    jukeboxTag.putLong("TickCount", 99L);
+    *//*?}*/
+    loadBlockEntityNbt(helper, level, jukebox, jukeboxTag);
+    jukebox.setChanged();
+
+    var hopperPos = new BlockPos(2, 0, 2);
+    level.setBlock(
+        helper.absolutePos(hopperPos), Blocks.HOPPER.defaultBlockState(), WORLD_UPDATE_FLAGS);
+    var hopper = (HopperBlockEntity) helper.getBlockEntity(hopperPos);
+    var hopperTag = beBaseTag(helper, hopperPos, "minecraft:hopper");
+    hopperTag.putInt("TransferCooldown", 8);
+    loadBlockEntityNbt(helper, level, hopper, hopperTag);
+    hopper.setChanged();
+
+    var spawnerPos = new BlockPos(3, 0, 3);
+    level.setBlock(
+        helper.absolutePos(spawnerPos), Blocks.SPAWNER.defaultBlockState(), WORLD_UPDATE_FLAGS);
+    var spawner = (SpawnerBlockEntity) helper.getBlockEntity(spawnerPos);
+    var spawnerTag = beBaseTag(helper, spawnerPos, "minecraft:spawner");
+    spawnerTag.putShort("Delay", (short) 5);
+    loadBlockEntityNbt(helper, level, spawner, spawnerTag);
+    spawner.setChanged();
+
+    try (var fs = Jimfs.newFileSystem()) {
+      Path tempDir = fs.getPath("/parcel");
+      Files.createDirectories(tempDir);
+      ParcelStorage.save(level, source, tempDir, true);
+
+      var jukeboxSnbt = findBlockEntitySnbt(tempDir, "minecraft:jukebox");
+      /*? if >=26.1 {*/
+      assertSnbtAbsent(helper, jukeboxSnbt, "ticks_since_song_started");
+      /*?} else {*/
+      /*assertSnbtAbsent(helper, jukeboxSnbt, "IsPlaying");
+      assertSnbtAbsent(helper, jukeboxSnbt, "RecordStartTick");
+      assertSnbtAbsent(helper, jukeboxSnbt, "TickCount");
+      *//*?}*/
+      var hopperSnbt = findBlockEntitySnbt(tempDir, "minecraft:hopper");
+      assertSnbtAbsent(helper, hopperSnbt, "TransferCooldown");
+      var spawnerSnbt = findBlockEntitySnbt(tempDir, "minecraft:spawner");
+      assertSnbtAbsent(helper, spawnerSnbt, "Delay");
+    }
+    helper.succeed();
+  }
+
   private record BlockSnapshot(List<BlockPos> positions, List<BlockState> states) {
     private BlockSnapshot {
       positions = List.copyOf(positions);
       states = List.copyOf(states);
     }
   }
+  /*? if >=26.1 {*/
+  private static final String BEES_KEY = "bees";
+  private static final String OCCUPANT_ENTITY_KEY = "entity_data";
+  private static final String OCCUPANT_FLOWER_KEY = "flower_pos";
+  /*?} else {*/
+  /*private static final String BEES_KEY = "Bees";
+  private static final String OCCUPANT_ENTITY_KEY = "EntityData";
+  private static final String OCCUPANT_FLOWER_KEY = "FlowerPos";
+  *//*?}*/
+
+  /** The two vertical halves of the template box, a common migration fixture. */
+  private record VerticalHalves(BoundingBox bottom, BoundingBox top, int height) {
+    private Parcel plainTarget(GameTestHelpMore helper) {
+      return ParcelFactory.create(
+          helper.absoluteBoundingBox(top), Mirror.NONE, Rotation.NONE);
+    }
+
+    private AABB targetArea(GameTestHelpMore helper) {
+      var box = helper.getRelativeBoundingBox();
+      return new AABB(
+          Vec3.atCenterOf(helper.absolutePos(new BlockPos(0, top.minY() - box.minY(), 0))),
+          Vec3.atCenterOf(
+              helper.absolutePos(
+                  new BlockPos(
+                      top.getXSpan(),
+                      top.getYSpan() + (top.minY() - box.minY()),
+                      top.getZSpan()))));
+    }
+  }
+
+  private static VerticalHalves verticalHalves(GameTestHelpMore helper) {
+    var box = helper.getRelativeBoundingBox();
+    int halfHeight = box.getYSpan() / 2;
+    return new VerticalHalves(
+        new BoundingBox(
+            box.minX(), box.minY(), box.minZ(), box.maxX(), box.minY() + halfHeight - 1, box.maxZ()),
+        new BoundingBox(
+            box.minX(),
+            box.maxY() + 1 - halfHeight,
+            box.minZ(),
+            box.maxX(),
+            box.maxY(),
+            box.maxZ()),
+        halfHeight);
+  }
+
+  /** Saves the source parcel into a fresh in-memory tree and loads it at the target placement. */
+  private static void saveAndLoadAt(
+      GameTestHelpMore helper, ServerLevel level, Parcel source, Parcel target) throws Exception {
+    try (var fs = Jimfs.newFileSystem()) {
+      Path tempDir = fs.getPath("/parcel");
+      Files.createDirectories(tempDir);
+      ParcelStorage.save(level, source, tempDir, false);
+      ParcelStorage.load(
+          level, target.transform(), tempDir, false, false, WORLD_UPDATE_FLAGS);
+    }
+  }
+
+  /** A base tag for injecting block-entity NBT: id plus world x/y/z. */
+  private static CompoundTag beBaseTag(GameTestHelpMore helper, BlockPos relativePos, String id) {
+    var world = helper.absolutePos(relativePos);
+    var tag = new CompoundTag();
+    tag.putString("id", id);
+    tag.putInt("x", world.getX());
+    tag.putInt("y", world.getY());
+    tag.putInt("z", world.getZ());
+    return tag;
+  }
+
+  /** Loads injected NBT into a placed block entity through the era's load entry point. */
+  private static void loadBlockEntityNbt(
+      GameTestHelpMore helper, ServerLevel level, BlockEntity be, CompoundTag tag) {
+    /*? if >=26.1 {*/
+    try (var reporter = new ProblemReporter.ScopedCollector(LOGGER)) {
+      be.loadWithComponents(TagValueInput.create(reporter, level.registryAccess(), tag));
+    }
+    /*?} else {*/
+    /*be.load(tag);
+    *//*?}*/
+  }
+
+  /** Writes a legacy {X,Y,Z} block-position compound (NbtUtils.writeBlockPos form). */
+  private static CompoundTag blockPosCompound(BlockPos pos) {
+    var compound = new CompoundTag();
+    compound.putInt("X", pos.getX());
+    compound.putInt("Y", pos.getY());
+    compound.putInt("Z", pos.getZ());
+    return compound;
+  }
+
+  private static BlockPos readBlockPosCompound(CompoundTag compound, String label) {
+    Integer x = NbtReads.getIntOrNull(compound, "X");
+    Integer y = NbtReads.getIntOrNull(compound, "Y");
+    Integer z = NbtReads.getIntOrNull(compound, "Z");
+    if (x == null || y == null || z == null) {
+      throw new AssertionError("Missing " + label + " axes");
+    }
+    return new BlockPos(x, y, z);
+  }
+
+  private static java.util.Optional<CompoundTag> firstStoredBee(CompoundTag hiveData) {
+    var bees = NbtReads.getList(hiveData, BEES_KEY);
+    if (bees == null) {
+      return java.util.Optional.empty();
+    }
+    for (var element : bees) {
+      if (element instanceof CompoundTag occupant) {
+        return java.util.Optional.of(occupant);
+      }
+    }
+    return java.util.Optional.empty();
+  }
+
+  /*? if >=26.1 {*/
+  private static java.util.Optional<Tag> nestedBeeFlowerTag26(CompoundTag hiveData) {
+    var bee = firstStoredBee(hiveData).orElse(null);
+    if (bee == null) {
+      return java.util.Optional.empty();
+    }
+    var entityData = NbtReads.getCompound(bee, OCCUPANT_ENTITY_KEY);
+    if (entityData == null) {
+      return java.util.Optional.empty();
+    }
+    var flower = entityData.get(OCCUPANT_FLOWER_KEY);
+    return flower == null ? java.util.Optional.empty() : java.util.Optional.of(flower);
+  }
+  /*?} else {*/
+  /*private static java.util.Optional<CompoundTag> nestedBeeFlowerTag1201(CompoundTag hiveData) {
+    var bee = firstStoredBee(hiveData).orElse(null);
+    if (bee == null) {
+      return java.util.Optional.empty();
+    }
+    var entityData = NbtReads.getCompound(bee, OCCUPANT_ENTITY_KEY);
+    if (entityData == null) {
+      return java.util.Optional.empty();
+    }
+    var flower = NbtReads.getCompound(entityData, OCCUPANT_FLOWER_KEY);
+    return flower == null ? java.util.Optional.empty() : java.util.Optional.of(flower);
+  }
+  *//*?}*/
+
+  /** Finds the entity snapshot record carrying the given type id, as snbt text. */
+  private static String findEntitySnbt(Path snapshotRoot, String entityId) throws Exception {
+    return findSnbt(snapshotRoot.resolve("data/entities"), entityId);
+  }
+
+  /** Finds the block-entity snapshot record carrying the given type id, as snbt text. */
+  private static String findBlockEntitySnbt(Path snapshotRoot, String beTypeId) throws Exception {
+    return findSnbt(snapshotRoot.resolve("data/blocks"), beTypeId);
+  }
+
+  private static String findSnbt(Path directory, String typeId) throws Exception {
+    String needle = "\"" + typeId + "\"";
+    try (var stream = Files.walk(directory)) {
+      for (Path file : stream.filter(path -> path.toString().endsWith(".snbt")).toList()) {
+        var text = Files.readString(file);
+        if (text.contains(typeId) || text.contains(needle)) {
+          return text;
+        }
+      }
+    }
+    throw new AssertionError("No snapshot record found for " + typeId);
+  }
+
+  /** Asserts an int value appears under the exact key in snbt text. */
+  private static void assertSnbtInt(GameTestHelpMore helper, String snbt, String key, int value) {
+    var pattern = java.util.regex.Pattern.compile(key + ":" + value + "(?=[,}\\s])");
+    if (!pattern.matcher(snbt).find()) {
+      helper.fail("Expected " + key + ":" + value + " in snapshot record");
+    }
+  }
+
+  private static void assertSnbtContains(GameTestHelpMore helper, String snbt, String token) {
+    if (!snbt.contains(token)) {
+      helper.fail("Expected token '" + token + "' in snapshot record");
+    }
+  }
+
+  /** Asserts a key is absent, with word boundaries so MinSpawnDelay does not match Delay. */
+  private static void assertSnbtAbsent(GameTestHelpMore helper, String snbt, String key) {
+    var pattern = java.util.regex.Pattern.compile("\\b" + key + "\\s*:");
+    if (pattern.matcher(snbt).find()) {
+      helper.fail("Eliminated key '" + key + "' must not appear in the snapshot record");
+    }
+  }
+
+  /** Builds a lodestone compass pointing at the given position, in the era's item form. */
+  private static ItemStack lodestoneCompass(BlockPos pos) {
+    var stack = new ItemStack(Items.COMPASS);
+    /*? if >=26.1 {*/
+    stack.set(
+        DataComponents.LODESTONE_TRACKER,
+        new LodestoneTracker(java.util.Optional.of(GlobalPos.of(Level.OVERWORLD, pos)), true));
+    return stack;
+    /*?} else {*/
+    /*var tag = stack.getOrCreateTag();
+    tag.put("LodestonePos", blockPosCompound(pos));
+    tag.putString("LodestoneDimension", "minecraft:overworld");
+    tag.putBoolean("LodestoneTracked", true);
+    return stack;
+    *//*?}*/
+  }
+
+  /*? if >=26.1 {*/
+  private static BlockPos lodestoneOf(ItemStack stack) {
+    var tracker = stack.get(DataComponents.LODESTONE_TRACKER);
+    return tracker == null ? null : tracker.target().map(GlobalPos::pos).orElse(null);
+  }
+  /*?} else {*/
+  /*private static BlockPos lodestoneOf(ItemStack stack) {
+    var tag = stack.getTag();
+    if (tag == null || !tag.contains("LodestonePos", 10)) {
+      return null;
+    }
+    return readBlockPosCompound(tag.getCompound("LodestonePos"), "LodestonePos");
+  }
+  *//*?}*/
 }
