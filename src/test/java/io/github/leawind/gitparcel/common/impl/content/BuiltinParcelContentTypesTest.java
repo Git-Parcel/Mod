@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import io.github.leawind.gitparcel.common.api.operation.ProgressReporter;
 import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
@@ -44,7 +45,7 @@ class BuiltinParcelContentTypesTest extends AbstractMinecraftTest {
       config.sectionSize.set(size);
       Path defaultData = Files.createTempDirectory(tempDir, "default-").resolve("data");
       String defaultDigest = roundTripAt(config, defaultData);
-      try (var fs = Jimfs.newFileSystem()) {
+      try (var fs = Jimfs.newFileSystem(Configuration.unix())) {
         assertEquals(defaultDigest, roundTripAt(config, fs.getPath("/data")));
       }
       Path zip = tempDir.resolve(UUID.randomUUID() + ".zip");

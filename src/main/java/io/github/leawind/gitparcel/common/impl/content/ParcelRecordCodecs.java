@@ -69,7 +69,7 @@ public final class ParcelRecordCodecs {
                   .apply(inst, ScheduledTickRecord::new));
       /*?} else {*/
       /*Codec.INT
-                  .xmap(TickPriority::byValue, TickPriority::ordinal)
+                  .xmap(TickPriority::byValue, TickPriority::getValue)
                   .optionalFieldOf("p", TickPriority.NORMAL)
                   .forGetter(ScheduledTickRecord::priority))
           .apply(inst, ScheduledTickRecord::new));

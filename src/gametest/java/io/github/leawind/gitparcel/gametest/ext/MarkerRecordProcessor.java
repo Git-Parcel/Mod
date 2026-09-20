@@ -38,7 +38,8 @@ public enum MarkerRecordProcessor implements ParcelRecordProcessor {
             .collect("marker", ATTACHMENT_TYPE, MarkerAttachmentType.INSTANCE.schemaVersion(), true, payload);
     var data = record.data().copy();
     data.putString(REF_TAG, ref.value());
-    return new EntityRecord(record.type(), record.pos(), record.blockPos(), data, List.of());
+    // Chain guests must forward the semantic data earlier processors attached.
+    return new EntityRecord(record.type(), record.pos(), record.blockPos(), data, record.semanticData());
   }
 
   @Override
@@ -59,6 +60,6 @@ public enum MarkerRecordProcessor implements ParcelRecordProcessor {
     var data = record.data().copy();
     data.remove(REF_TAG);
     data.putString("CustomName", resolved);
-    return new EntityRecord(record.type(), record.pos(), record.blockPos(), data, List.of());
+    return new EntityRecord(record.type(), record.pos(), record.blockPos(), data, record.semanticData());
   }
 }

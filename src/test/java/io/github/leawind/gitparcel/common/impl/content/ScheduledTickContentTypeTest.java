@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import io.github.leawind.gitparcel.common.api.exceptions.ParcelException;
 import io.github.leawind.gitparcel.common.api.operation.ProgressReporter;
@@ -46,7 +47,7 @@ class ScheduledTickContentTypeTest extends AbstractMinecraftTest {
             tick(true, "flowing_water", new BlockPos(2, 1, 1), 0));
     Path defaultData = Files.createTempDirectory(tempDir, "default-").resolve("data");
     String defaultDigest = roundTripAt(ticks, defaultData);
-    try (var fs = Jimfs.newFileSystem()) {
+    try (var fs = Jimfs.newFileSystem(Configuration.unix())) {
       assertEquals(defaultDigest, roundTripAt(ticks, fs.getPath("/data")));
     }
     Path zip = tempDir.resolve(java.util.UUID.randomUUID() + ".zip");

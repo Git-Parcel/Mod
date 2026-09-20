@@ -42,11 +42,10 @@ final class VanillaFieldDeclarations {
     registrar.registerCoordinateField(
         ParcelCoordinateField.forType(Target.ENTITY, mc("shulker"), "AttachFace", Encoding.DIRECTION));
 
-    // Structure-block origins (posX/posY/posZ) and vibration-listener event positions keep the
-    // same keys in both eras. Listener fields appear on sculk block entities and on
-    // allay/warden entities; both targets are declared so the paths resolve wherever they occur.
-    registrar.registerCoordinateField(
-        ParcelCoordinateField.forType(Target.BLOCK_ENTITY, mc("structure_block"), "pos", Encoding.BLOCK_POS_AXES));
+    // Vibration-listener event positions keep the same keys in both eras; they appear on sculk
+    // block entities and on allay/warden entities, so both targets are declared. Structure-block
+    // posX/Y/Z are offsets relative to the block itself (vanilla clamps them to +-48), not world
+    // coordinates: the origin travels with the block and needs no declaration.
     for (Target target : Target.values()) {
       registrar.registerCoordinateField(
           ParcelCoordinateField.forAny(target, "listener.event.pos", Encoding.POSITION));
@@ -179,9 +178,13 @@ final class VanillaFieldDeclarations {
             "Age",
             ParcelTransientField.Kind.ELIMINATE));
     // Progress counters whose only variation is the passage of time (SEMANTICS.md rule 2.2).
+    // The spawner block entity id has been minecraft:mob_spawner in both supported eras.
     registrar.registerTransientField(
         ParcelTransientField.forType(
-            ParcelTransientField.Target.BLOCK_ENTITY, mc("spawner"), "Delay", ParcelTransientField.Kind.ELIMINATE));
+            ParcelTransientField.Target.BLOCK_ENTITY,
+            mc("mob_spawner"),
+            "Delay",
+            ParcelTransientField.Kind.ELIMINATE));
     registrar.registerTransientField(
         ParcelTransientField.forType(
             ParcelTransientField.Target.BLOCK_ENTITY,

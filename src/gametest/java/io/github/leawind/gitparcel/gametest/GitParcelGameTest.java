@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.gametest;
 
 import io.github.leawind.gitparcel.server.minecraft.logic.world.ParcelRegistry;
 import io.github.leawind.gitparcel.server.minecraft.logic.world.SnapshotService;
+import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import com.mojang.logging.LogUtils;
 import io.github.leawind.gitparcel.common.api.operation.ProgressReporter;
@@ -62,6 +63,9 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 /*? if >=26.1 {*/
 import net.minecraft.world.level.saveddata.maps.MapId;
+/*? if >=26.1 {*/
+import net.minecraft.world.level.storage.TagValueOutput;
+/*?}*/
 import net.minecraft.world.level.storage.TagValueInput;
 /*?}*/
 import net.minecraft.world.phys.AABB;
@@ -226,7 +230,7 @@ public class GitParcelGameTest {
         ParcelFactory.create(helper.absoluteBoundingBox(box), Mirror.NONE, Rotation.NONE);
     configureBlockSectionSize(parcel, BlockContentType.BlockSectionSize.SIZE_16);
 
-    try (var fs = Jimfs.newFileSystem()) {
+    try (var fs = Jimfs.newFileSystem(Configuration.unix())) {
       Path tempDir = fs.getPath("/parcel");
       ParcelStorage.save(helper.getLevel(), parcel, tempDir, true);
 
@@ -489,7 +493,7 @@ public class GitParcelGameTest {
     var shrunkBox = new BoundingBox(0, 0, 0, 5, 3, 5);
     registry.resizeParcel(parcel, helper.absoluteBoundingBox(shrunkBox));
     helper.setBlock(new BlockPos(1, 1, 1), Blocks.STONE);
-    try (var fs = Jimfs.newFileSystem()) {
+    try (var fs = Jimfs.newFileSystem(Configuration.unix())) {
       Path tempDir = fs.getPath("/parcel");
       ParcelStorage.save(level, parcel, tempDir, true);
       fill(helper, helper.getRelativeBoundingBox(), Blocks.AIR.defaultBlockState());
@@ -520,7 +524,7 @@ public class GitParcelGameTest {
     var cow = helper.spawn(GameEntityTypes.COW, new BlockPos(2, 1, 4));
     cow.setRemainingFireTicks(100);
 
-    try (var fs = Jimfs.newFileSystem()) {
+    try (var fs = Jimfs.newFileSystem(Configuration.unix())) {
       var first = fs.getPath("/first");
       var second = fs.getPath("/second");
       ParcelStorage.captureSnapshot(level, parcel, first, false, ProgressReporter.NONE);
@@ -580,7 +584,7 @@ public class GitParcelGameTest {
             new ScheduledTick<>(
                 Blocks.REDSTONE_BLOCK, outsidePos, captureTime + 500, TickPriority.NORMAL, 0L));
 
-    try (var fs = Jimfs.newFileSystem()) {
+    try (var fs = Jimfs.newFileSystem(Configuration.unix())) {
       Path tempDir = fs.getPath("/parcel");
       ParcelStorage.save(level, parcel, tempDir, true);
 
@@ -643,7 +647,7 @@ public class GitParcelGameTest {
             new ScheduledTick<>(
                 Blocks.GOLD_BLOCK, markerPos, captureTime + 33, TickPriority.NORMAL, 0L));
 
-    try (var fs = Jimfs.newFileSystem()) {
+    try (var fs = Jimfs.newFileSystem(Configuration.unix())) {
       Path tempDir = fs.getPath("/parcel");
       ParcelStorage.save(level, sourceParcel, tempDir, true);
 
@@ -776,7 +780,7 @@ public class GitParcelGameTest {
     frame.setRotation(3);
     level.addFreshEntity(frame);
 
-    try (var fs = Jimfs.newFileSystem()) {
+    try (var fs = Jimfs.newFileSystem(Configuration.unix())) {
       Path tempDir = fs.getPath("/parcel");
       Files.createDirectories(tempDir);
       ParcelStorage.save(level, sourceParcel, tempDir, false);
@@ -969,7 +973,7 @@ public class GitParcelGameTest {
 
     var source = ParcelFactory.create(helper.absoluteBoundingBox(bottomBox), Mirror.NONE, Rotation.NONE);
     var target = ParcelFactory.create(helper.absoluteBoundingBox(topBox), Mirror.NONE, Rotation.NONE);
-    try (var fs = Jimfs.newFileSystem()) {
+    try (var fs = Jimfs.newFileSystem(Configuration.unix())) {
       Path tempDir = fs.getPath("/tmp");
       Files.createDirectories(tempDir);
       ParcelStorage.save(level, source, tempDir, true);
@@ -1080,7 +1084,7 @@ public class GitParcelGameTest {
       Mirror mirror,
       BlockContentType.BlockSectionSize sectionSize)
       throws Exception {
-    try (var fs = Jimfs.newFileSystem()) {
+    try (var fs = Jimfs.newFileSystem(Configuration.unix())) {
       Path tempDir = fs.getPath("/tmp");
       Files.createDirectories(tempDir);
 
@@ -1353,8 +1357,11 @@ public class GitParcelGameTest {
       helper.fail("Restored parcel must contain exactly one painting, got " + paintings.size());
     }
     var restored = paintings.getFirst();
+    // Migration correctness (P2): the expected position is the source-relative position of the
+    // painting mapped through the target placement, not the raw world coordinate.
     var targetSpace = new ParcelSpace(target.transform());
-    var expectedPos = targetSpace.toWorld(helper.absolutePos(wallPos));
+    var sourceSpace = new ParcelSpace(source.transform());
+    var expectedPos = targetSpace.toWorld(sourceSpace.toParcel(helper.absolutePos(wallPos)));
     if (!restored.getPos().equals(expectedPos)) {
       helper.fail(
           "Painting must hang at the migrated position: expected %s, got %s"
@@ -1396,10 +1403,19 @@ public class GitParcelGameTest {
     var turtle = helper.spawn(GameEntityTypes.TURTLE, new BlockPos(5, 1, 5));
     turtle.setHomePos(helper.absolutePos(new BlockPos(2, 1, 4)));
 
-    var villager = helper.spawn(GameEntityTypes.VILLAGER, new BlockPos(4, 1, 1));
-    villager.startSleeping(helper.absolutePos(new BlockPos(3, 1, 2)));
+    var bedPos = new BlockPos(3, 1, 2);
+    level.setBlock(
+        helper.absolutePos(bedPos), gametestBedBlock().defaultBlockState(), WORLD_UPDATE_FLAGS);
+    var villager = helper.spawn(GameEntityTypes.VILLAGER, new BlockPos(4, 1, 2));
+    /*? if >=26.3 {*/
+    if (!villager.startSleeping(helper.absolutePos(bedPos))) {
+      helper.fail("Villager must fall asleep on the bed before capture");
+    }
+    /*?} else {*/
+    /*villager.startSleeping(helper.absolutePos(bedPos));
+    *//*?}*/
 
-    try (var fs = Jimfs.newFileSystem()) {
+    try (var fs = Jimfs.newFileSystem(Configuration.unix())) {
       Path tempDir = fs.getPath("/parcel");
       Files.createDirectories(tempDir);
       ParcelStorage.save(level, source, tempDir, false);
@@ -1450,7 +1466,11 @@ public class GitParcelGameTest {
     helper.succeed();
   }
 
-  /** The end gateway exit portal and the structure-block origin are spatial edges, not payloads. */
+  /**
+   * The end gateway exit portal is a spatial edge. Structure-block posX/Y/Z, by contrast, are
+   * offsets relative to the block itself (vanilla clamps them to +-48): they are payload, not
+   * world coordinates, and must survive the migration untouched.
+   */
   public void testEndGatewayAndStructureBlockFollowPlacement(GameTestHelpMore helper)
       throws Exception {
     var level = helper.getLevel();
@@ -1473,8 +1493,8 @@ public class GitParcelGameTest {
         Blocks.STRUCTURE_BLOCK.defaultBlockState(),
         WORLD_UPDATE_FLAGS);
     var structure = (StructureBlockEntity) helper.getBlockEntity(structPos);
-    var originWorld = helper.absolutePos(new BlockPos(2, 1, 2));
-    structure.setStructurePos(originWorld);
+    var originOffset = new BlockPos(-3, 2, 1);
+    structure.setStructurePos(originOffset);
     structure.setChanged();
 
     saveAndLoadAt(helper, level, source, halves.plainTarget(helper));
@@ -1504,19 +1524,12 @@ public class GitParcelGameTest {
     var restoredStructure =
         (StructureBlockEntity)
             helper.getBlockEntity(structPos.offset(0, halves.height(), 0));
-    var structureData = GameTestUtils.saveFullMetadata(level, restoredStructure);
-    var expectedOrigin = originWorld.offset(0, halves.height(), 0);
-    int[] expectedAxes = {
-      expectedOrigin.getX(), expectedOrigin.getY(), expectedOrigin.getZ()};
-    for (int axis = 0; axis < 3; axis++) {
-      String key = "pos" + "XYZ".charAt(axis);
-      if (NbtReads.getInt(structureData, key, Integer.MIN_VALUE) != expectedAxes[axis]) {
-        helper.fail(
-            "structure origin "
-                + key
-                + " must follow the parcel: expected "
-                + expectedAxes[axis]);
-      }
+    if (!restoredStructure.getStructurePos().equals(originOffset)) {
+      helper.fail(
+          "structure-block origin offset is payload and must survive untouched: expected "
+              + originOffset
+              + ", got "
+              + restoredStructure.getStructurePos());
     }
     helper.succeed();
   }
@@ -1768,7 +1781,7 @@ public class GitParcelGameTest {
     loadBlockEntityNbt(helper, level, spawner, spawnerTag);
     spawner.setChanged();
 
-    try (var fs = Jimfs.newFileSystem()) {
+    try (var fs = Jimfs.newFileSystem(Configuration.unix())) {
       Path tempDir = fs.getPath("/parcel");
       Files.createDirectories(tempDir);
       ParcelStorage.save(level, source, tempDir, true);
@@ -1783,8 +1796,8 @@ public class GitParcelGameTest {
       *//*?}*/
       var hopperSnbt = findBlockEntitySnbt(tempDir, "minecraft:hopper");
       assertSnbtAbsent(helper, hopperSnbt, "TransferCooldown");
-      var spawnerSnbt = findBlockEntitySnbt(tempDir, "minecraft:spawner");
-      assertSnbtAbsent(helper, spawnerSnbt, "Delay");
+      var spawnerSnpt = findBlockEntitySnbt(tempDir, "minecraft:mob_spawner");
+      assertSnbtAbsent(helper, spawnerSnpt, "Delay");
     }
     helper.succeed();
   }
@@ -1841,10 +1854,36 @@ public class GitParcelGameTest {
         halfHeight);
   }
 
+  /** Saves entity payload NBT through the era's save entry point. */
+  private static CompoundTag saveEntityNbt(
+      ServerLevel level, net.minecraft.world.entity.Entity entity) {
+    /*? if >=26.1 {*/
+    try (var reporter = new ProblemReporter.ScopedCollector(LOGGER)) {
+      var output = TagValueOutput.createWithContext(reporter, level.registryAccess());
+      entity.saveWithoutId(output);
+      return output.buildResult();
+    }
+    /*?} else {*/
+    /*var tag = new CompoundTag();
+    entity.saveWithoutId(tag);
+    return tag;
+    *//*?}*/
+  }
+
+  /*? if >=26.3 {*/
+  private static net.minecraft.world.level.block.Block gametestBedBlock() {
+    return Blocks.STRAW_BED;
+  }
+  /*?} else {*/
+  /*private static net.minecraft.world.level.block.Block gametestBedBlock() {
+    return Blocks.RED_BED;
+  }
+  *//*?}*/
+
   /** Saves the source parcel into a fresh in-memory tree and loads it at the target placement. */
   private static void saveAndLoadAt(
       GameTestHelpMore helper, ServerLevel level, Parcel source, Parcel target) throws Exception {
-    try (var fs = Jimfs.newFileSystem()) {
+    try (var fs = Jimfs.newFileSystem(Configuration.unix())) {
       Path tempDir = fs.getPath("/parcel");
       Files.createDirectories(tempDir);
       ParcelStorage.save(level, source, tempDir, false);
@@ -1952,7 +1991,8 @@ public class GitParcelGameTest {
       for (Path file : stream.filter(path -> path.toString().endsWith(".snbt")).toList()) {
         var text = Files.readString(file);
         if (text.contains(typeId) || text.contains(needle)) {
-          return text;
+          // Snapshot snbt is pretty-printed; tokens match on whitespace-stripped text.
+          return text.replaceAll("\\s+", "");
         }
       }
     }
@@ -1961,7 +2001,7 @@ public class GitParcelGameTest {
 
   /** Asserts an int value appears under the exact key in snbt text. */
   private static void assertSnbtInt(GameTestHelpMore helper, String snbt, String key, int value) {
-    var pattern = java.util.regex.Pattern.compile(key + ":" + value + "(?=[,}\\s])");
+    var pattern = java.util.regex.Pattern.compile(key + ":" + value + "(?=[,}])");
     if (!pattern.matcher(snbt).find()) {
       helper.fail("Expected " + key + ":" + value + " in snapshot record");
     }
@@ -1975,7 +2015,7 @@ public class GitParcelGameTest {
 
   /** Asserts a key is absent, with word boundaries so MinSpawnDelay does not match Delay. */
   private static void assertSnbtAbsent(GameTestHelpMore helper, String snbt, String key) {
-    var pattern = java.util.regex.Pattern.compile("\\b" + key + "\\s*:");
+    var pattern = java.util.regex.Pattern.compile("\\b" + key + ":");
     if (pattern.matcher(snbt).find()) {
       helper.fail("Eliminated key '" + key + "' must not appear in the snapshot record");
     }

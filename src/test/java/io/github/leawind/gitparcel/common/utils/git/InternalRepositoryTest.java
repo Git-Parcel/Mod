@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.github.leawind.gitparcel.common.api.operation.ProgressReporter;
 import io.github.leawind.gitparcel.common.api.snapshot.SnapshotNode;
 import io.github.leawind.gitparcel.common.impl.snapshot.TemporarySnapshotWorkspaceFactory;
+import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -272,7 +273,7 @@ class InternalRepositoryTest {
   @Test
   void bridgesArbitraryNioWorkspacesWithoutMovingTheRepository() throws Exception {
     var repository = InternalRepository.at(tempDir, UUID.randomUUID());
-    try (var memory = Jimfs.newFileSystem()) {
+    try (var memory = Jimfs.newFileSystem(Configuration.unix())) {
       Path workspace = memory.getPath("/snapshot");
       Files.createDirectories(workspace.resolve("data"));
       Files.writeString(workspace.resolve("parcel.json"), "{}");

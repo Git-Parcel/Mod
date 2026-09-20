@@ -39,7 +39,11 @@ public final class PaintingRecordProcessor implements ParcelRecordProcessor {
     if (!PAINTING_TYPE.equals(record.type())) {
       return record;
     }
-    int facing = NbtReads.getInt(record.data(), "facing", -1);
+    // The 26.x facing key stores a legacy-id byte, so numeric reads must not assume an int tag.
+    if (!(record.data().get("facing") instanceof net.minecraft.nbt.NumericTag number)) {
+      return record;
+    }
+    int facing = NbtReads.intValue(number);
     if (facing < 0) {
       return record;
     }
@@ -70,7 +74,7 @@ public final class PaintingRecordProcessor implements ParcelRecordProcessor {
       }
       Direction world = context.space().toWorldDirection(local);
       var data = record.data().copy();
-      data.putInt("facing", world.get2DDataValue());
+      data.put("facing", net.minecraft.nbt.ByteTag.valueOf((byte) world.get2DDataValue()));
       return new EntityRecord(
           record.type(), record.pos(), record.blockPos(), data, record.semanticData());
     }

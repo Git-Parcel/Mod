@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.server.minecraft.logic.storage.cached;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -20,7 +21,7 @@ public class CachedContentTest {
 
   @BeforeEach
   void setUp() throws IOException {
-    fs = Jimfs.newFileSystem();
+    fs = Jimfs.newFileSystem(Configuration.unix());
     tempDir = fs.getPath("/cached");
     Files.createDirectories(tempDir);
     cachedContent = new CachedContent(tempDir);

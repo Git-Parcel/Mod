@@ -69,12 +69,10 @@ class BuiltinExtensionRegistrationTest extends AbstractMinecraftTest {
     *//*?}*/
 
     // Era-stable declarations: shulker attach face (key corrected from the never-written
-    // "Facing"), structure-block origin axes, and vibration-listener positions.
+    // "Facing") and vibration-listener positions. Structure-block posX/Y/Z stay undeclared:
+    // they are offsets relative to the block, not world coordinates.
     assertTrue(
         declaresEntity(fields, "AttachFace", "shulker", ParcelCoordinateField.Encoding.DIRECTION));
-    assertTrue(
-        declaresBe(
-            fields, "pos", "structure_block", ParcelCoordinateField.Encoding.BLOCK_POS_AXES));
     for (String path : new String[] {"listener.event.pos", "listener.selector.event.pos"}) {
       assertTrue(
           declaresEntity(fields, path, null, ParcelCoordinateField.Encoding.POSITION),

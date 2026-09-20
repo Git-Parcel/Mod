@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.server.minecraft.logic.storage;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import com.google.gson.JsonObject;
 import io.github.leawind.gitparcel.server.minecraft.logic.storage.GameStorageManager;
@@ -23,7 +24,7 @@ public class GameStorageUtilsTest {
 
   @BeforeEach
   void setUp() throws IOException {
-    fs = Jimfs.newFileSystem();
+    fs = Jimfs.newFileSystem(Configuration.unix());
     tempDir = fs.getPath("/tmp");
     Files.createDirectories(tempDir);
 

@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.server.minecraft.logic.storage.shared;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -22,7 +23,7 @@ public class SharedContentTest {
 
   @BeforeEach
   void setUp() throws IOException {
-    fs = Jimfs.newFileSystem();
+    fs = Jimfs.newFileSystem(Configuration.unix());
     tempDir = fs.getPath("/shared");
     Files.createDirectories(tempDir);
     sharedContent = new SharedContent(tempDir);
