@@ -223,6 +223,15 @@ if (isFabric) {
         username.set("Player0")
     }
 
+    // Loom's clearRunDirectory does not cover the game-test run directory, so the world left by
+    // the previous run carries its saved data (the map id counter, for one) into the next one and
+    // hides the bugs only a fresh world exposes - which is exactly what CI always runs. Clearing
+    // it puts local runs under the same condition. The path follows loom's <buildDir>/run/<run
+    // name>/ layout; the run name is gameTest.
+    tasks.matching { it.name == "runGameTest" }.configureEach {
+        doFirst { delete(layout.buildDirectory.dir("run/gameTest/world")) }
+    }
+
     dependencies {
         "gametestImplementation"("com.google.jimfs:jimfs:1.3.0") {
             exclude(group = "com.google.guava", module = "guava")
