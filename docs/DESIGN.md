@@ -104,7 +104,7 @@ Minecraft 世界适配       InternalRepository      SharedRepository
 本模组经 Stonecutter 按版本切分公共源集，并同时构建 Fabric 与 NeoForge。多版本架构遵循三条规则：
 
 - 公共契约不引用易变的游戏类型。领域模型、内容类型的 NIO 契约、`GitRepositoryCore`、`OperationManager` 和扩展 SPI 只依赖 JDK、NBT、`Identifier`、Mojang `Codec`、稳定值类型（坐标、向量、朝向、方块状态等数据与枚举值类型）及本模组自有类型；易变指活的游戏对象与随版本漂移的运行时 API。扩展接口以中立记录（记录种类、类型 ID、NBT 载荷）为载体，不暴露活的游戏对象。
-- 版本差异收敛于两个接缝：世界适配层（方块状态与 NBT 编解码、实体与方块实体存取、DataFixer 挂点、命令注册、生命周期与网络）与各内容类型的版本化编解码器；接缝内的差异用 Stonecutter 条件编译维护。
+- 版本差异收敛于两个接缝：世界适配层（方块状态与 NBT 编解码、实体与方块实体存取、DataFixer 挂点、命令注册、生命周期与网络）与各内容类型的版本化编解码器；接缝内的差异用 Stonecutter 条件编译维护。接缝内部的 NBT 读取形态差异（新版本的 Optional getter 与旧版本的原生 getter）进一步收拢到唯一的读取工具（`NbtReads`）：共享代码统一经它读取 NBT，getter 形态条件块只存在于工具类内部。
 - 双轴版本模型：内容类型版本（文件布局）与 Minecraft 数据版本（NBT schema）相互独立。`parcel.json` 记录数据版本，`contents` 清单记录每个目录的布局版本；读取时布局版本选择读取器实现，数据版本经 vanilla DataFixer 升级到当前 schema 后才进入处理器管线。
 
 理由：公共契约一旦耦合随游戏更新大幅变化的 API，每次版本升级都会波及全部扩展；把波动压进两个接缝后，升级成本集中在适配层，扩展接口与存储格式不受影响。

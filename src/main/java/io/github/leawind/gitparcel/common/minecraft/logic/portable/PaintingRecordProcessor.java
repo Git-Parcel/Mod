@@ -39,12 +39,7 @@ public final class PaintingRecordProcessor implements ParcelRecordProcessor {
     if (!PAINTING_TYPE.equals(record.type())) {
       return record;
     }
-    int facing =
-        /*? if >=26.1 {*/
-        record.data().getInt("facing").orElse(-1);
-    /*?} else {*/
-    /*record.data().contains("facing") ? record.data().getInt("facing") : -1;
-    *//*?}*/
+    int facing = NbtReads.getInt(record.data(), "facing", -1);
     if (facing < 0) {
       return record;
     }
@@ -68,13 +63,7 @@ public final class PaintingRecordProcessor implements ParcelRecordProcessor {
         throw new ParcelException(
             "Unsupported painting semantic schema version: " + semantic.schemaVersion());
       }
-      /*? if >=26.1 {*/
-      String name = semantic.payload().getString("direction").orElse("south");
-      /*?} else {*/
-      /*String name = semantic.payload().contains("direction")
-          ? semantic.payload().getString("direction")
-          : "south";
-      *//*?}*/
+      String name = NbtReads.getString(semantic.payload(), "direction", "south");
       Direction local = Direction.byName(name);
       if (local == null) {
         local = Direction.SOUTH;

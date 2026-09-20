@@ -12,7 +12,6 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
-
 /**
  * Rewrites entity-UUID references when a restore batch receives fresh UUIDs.
  *
@@ -44,30 +43,10 @@ final class EntityUuidRemapper {
       return;
     }
     rewriteTree(data, entityType, remap, declaredFields);
-    /*? if >=26.1 {*/
-    data.getList("Passengers")
-        .ifPresent(
-            passengers ->
-                passengers
-                    .compoundStream()
-                    .forEach(
-                        passenger ->
-                            rewriteTree(
-                                passenger,
-                                passenger.getString("id").map(Identifier::parse).orElse(null),
-                                remap,
-                                declaredFields)));
-    /*?} else {*/
-    /*var passengers = data.getList("Passengers", Tag.TAG_COMPOUND);
-    for (int i = 0; i < passengers.size(); i++) {
-      var passenger = passengers.getCompound(i);
-      rewriteTree(
-          passenger,
-          Identifier.tryParse(passenger.getString("id")),
-          remap,
-          declaredFields);
-    }
-    *//*?}*/
+    EntityTrees.forEachPassenger(
+        data,
+        passenger ->
+            rewriteTree(passenger, EntityTrees.typeIdOf(passenger), remap, declaredFields));
   }
 
   private static void rewriteTree(

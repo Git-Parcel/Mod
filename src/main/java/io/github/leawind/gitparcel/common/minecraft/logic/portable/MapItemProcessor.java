@@ -184,11 +184,7 @@ public final class MapItemProcessor implements ParcelRecordProcessor {
   }
 
   private static boolean isFilledMap(CompoundTag item) {
-    /*? if >=26.1 {*/
-    return FILLED_MAP.equals(item.getString("id").orElse(""));
-    /*?} else {*/
-    /*return FILLED_MAP.equals(item.getString("id"));
-    *//*?}*/
+    return FILLED_MAP.equals(NbtReads.getString(item, "id", ""));
   }
 
   /*? if >=26.1 {*/

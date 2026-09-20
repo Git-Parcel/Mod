@@ -380,18 +380,10 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
   }
 
   private static Optional<UUID> readEntityUuid(CompoundTag data) {
-    /*? if >=26.1 {*/
-    var uuid = data.getIntArray("UUID");
-    if (uuid.isEmpty() || uuid.orElseThrow().length != 4) {
+    int[] parts = NbtReads.getIntArray(data, "UUID");
+    if (parts == null || parts.length != 4) {
       return Optional.empty();
     }
-    int[] parts = uuid.orElseThrow();
-    /*?} else {*/
-    /*if (!data.contains("UUID") || data.getIntArray("UUID").length != 4) {
-      return Optional.empty();
-    }
-    int[] parts = data.getIntArray("UUID");
-    *//*?}*/
     return Optional.of(
         new UUID(
             ((long) parts[0] << 32) | (parts[1] & 0xFFFFFFFFL),

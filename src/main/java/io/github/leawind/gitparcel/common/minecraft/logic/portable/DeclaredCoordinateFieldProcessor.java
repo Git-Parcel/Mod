@@ -50,7 +50,7 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
   @Override
   public BlockEntityRecord captureBlockEntity(
       ParcelRecordProcessorContext context, BlockEntityRecord record) {
-    var typeId = typeIdOf(record.data());
+    var typeId = EntityTrees.typeIdOf(record.data());
     var data = record.data().copy();
     transformBlockEntity(context, data, typeId, context.space(), false);
     return new BlockEntityRecord(record.pos(), data, record.semanticData());
@@ -59,7 +59,7 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
   @Override
   public BlockEntityRecord restoreBlockEntity(
       ParcelRecordProcessorContext context, BlockEntityRecord record) {
-    var typeId = typeIdOf(record.data());
+    var typeId = EntityTrees.typeIdOf(record.data());
     var data = record.data().copy();
     transformBlockEntity(context, data, typeId, context.space(), true);
     return new BlockEntityRecord(record.pos(), data, record.semanticData());
@@ -117,40 +117,8 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
       NbtPaths.forEach(
           data, NbtPaths.parse(field.path()), slot -> rebaseSlot(context, field, slot, space, toWorld, frameFacing));
     }
-    /*? if >=26.1 {*/
-    data.getList("Passengers")
-        .ifPresent(
-            passengers ->
-                passengers
-                    .compoundStream()
-                    .forEach(
-                        passenger ->
-                            transformEntityTree(
-                                context,
-                                passenger,
-                                passenger.getString("id").map(Identifier::parse).orElse(null),
-                                space,
-                                toWorld)));
-    /*?} else {*/
-    /*var passengers = data.getList("Passengers", Tag.TAG_COMPOUND);
-    for (int i = 0; i < passengers.size(); i++) {
-      var passenger = passengers.getCompound(i);
-      transformEntityTree(
-          context,
-          passenger,
-          Identifier.tryParse(passenger.getString("id")),
-          space,
-          toWorld);
-    }
-    *//*?}*/
-  }
-
-  private static @Nullable Identifier typeIdOf(CompoundTag data) {
-    /*? if >=26.1 {*/
-    return data.getString("id").map(Identifier::parse).orElse(null);
-    /*?} else {*/
-    /*return Identifier.tryParse(data.getString("id"));
-    *//*?}*/
+    EntityTrees.forEachPassenger(
+        data, passenger -> transformEntityTree(context, passenger, EntityTrees.typeIdOf(passenger), space, toWorld));
   }
 
   /**
@@ -340,11 +308,7 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
 
   private static @Nullable Integer numericValue(Tag tag) {
     if (tag instanceof net.minecraft.nbt.NumericTag value) {
-      /*? if >=26.1 {*/
-      return value.intValue();
-      /*?} else {*/
-      /*return value.getAsInt();
-      *//*?}*/
+      return NbtReads.intValue(value);
     }
     return null;
   }
@@ -361,20 +325,13 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
     if (!(tag instanceof CompoundTag compound)) {
       return Optional.empty();
     }
-    /*? if >=26.1 {*/
-    var x = compound.getInt("X");
-    var y = compound.getInt("Y");
-    var z = compound.getInt("Z");
-    if (x.isEmpty() || y.isEmpty() || z.isEmpty()) {
+    Integer x = NbtReads.getIntOrNull(compound, "X");
+    Integer y = NbtReads.getIntOrNull(compound, "Y");
+    Integer z = NbtReads.getIntOrNull(compound, "Z");
+    if (x == null || y == null || z == null) {
       return Optional.empty();
     }
-    return Optional.of(new BlockPos(x.orElseThrow(), y.orElseThrow(), z.orElseThrow()));
-    /*?} else {*/
-    /*if (!compound.contains("X") || !compound.contains("Y") || !compound.contains("Z")) {
-      return Optional.empty();
-    }
-    return Optional.of(new BlockPos(compound.getInt("X"), compound.getInt("Y"), compound.getInt("Z")));
-    *//*?}*/
+    return Optional.of(new BlockPos(x, y, z));
   }
 
   private static Tag encodeBlockPosXyz(BlockPos pos) {

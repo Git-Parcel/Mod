@@ -41,42 +41,25 @@ public final class ItemStackNbtWalker {
   private static void visitLists(CompoundTag data, List<String> keys, ItemVisitor item)
       throws ParcelException {
     for (String key : keys) {
-      /*? if >=26.1 {*/
-      var list = data.getList(key);
-      if (list.isEmpty()) {
+      var list = NbtReads.getList(data, key);
+      if (list == null) {
         continue;
       }
-      for (var element : list.orElseThrow()) {
+      for (Tag element : list) {
         if (element instanceof CompoundTag compound && !compound.isEmpty()) {
           item.accept(compound);
         }
       }
-      /*?} else {*/
-      /*var list = data.getList(key, Tag.TAG_COMPOUND);
-      for (int i = 0; i < list.size(); i++) {
-        var compound = list.getCompound(i);
-        if (!compound.isEmpty()) {
-          item.accept(compound);
-        }
-      }
-      *//*?}*/
     }
   }
 
   private static void visitCompounds(CompoundTag data, List<String> keys, ItemVisitor item)
       throws ParcelException {
     for (String key : keys) {
-      /*? if >=26.1 {*/
-      var compound = data.getCompound(key);
-      if (compound.isPresent()) {
-        item.accept(compound.orElseThrow());
-      }
-      /*?} else {*/
-      /*var compound = data.getCompound(key);
-      if (!compound.isEmpty()) {
+      var compound = NbtReads.getCompound(data, key);
+      if (compound != null && !compound.isEmpty()) {
         item.accept(compound);
       }
-      *//*?}*/
     }
   }
 }

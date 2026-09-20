@@ -11,9 +11,6 @@ import net.minecraft.nbt.DoubleTag;
 import net.minecraft.nbt.FloatTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
-/*? if <26.1 {*/
-/*import net.minecraft.nbt.Tag;
- *//*?}*/
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 
@@ -75,7 +72,6 @@ public final class MinecraftCoreRecordProcessor implements ParcelRecordProcessor
 
   private static void transformEntityTree(
       CompoundTag data, ParcelSpace space, boolean toWorld) {
-    /*? if >=26.1 {*/
     readVec3(data, "Pos")
         .map(value -> toWorld ? space.toWorld(value) : space.toParcel(value))
         .ifPresent(value -> putVec3(data, "Pos", value));
@@ -89,49 +85,13 @@ public final class MinecraftCoreRecordProcessor implements ParcelRecordProcessor
                     data,
                     toWorld ? space.toWorldYaw(yaw) : space.toParcelYaw(yaw),
                     readPitch(data)));
-    data.read("block_pos", BlockPos.CODEC)
+    NbtReads.read(data, "block_pos", BlockPos.CODEC)
         .map(value -> toWorld ? space.toWorld(value) : space.toParcel(value))
         .ifPresent(value -> putBlockPos(data, "block_pos", value));
     if (toWorld) {
       data.remove("UUID");
     }
-    data.getList("Passengers")
-        .ifPresent(
-            passengers ->
-                passengers
-                    .compoundStream()
-                    .forEach(passenger -> transformEntityTree(passenger, space, toWorld)));
-    /*?} else {*/
-    /*readVec3(data, "Pos")
-        .ifPresent(
-            value -> putVec3(data, "Pos", toWorld ? space.toWorld(value) : space.toParcel(value)));
-    readVec3(data, "Motion")
-        .ifPresent(
-            value ->
-                putVec3(
-                    data,
-                    "Motion",
-                    toWorld ? space.toWorldVector(value) : space.toParcelVector(value)));
-    java.util.Optional<Float> yaw = readYaw(data);
-    if (yaw.isPresent()) {
-      putRotation(
-          data,
-          toWorld ? space.toWorldYaw(yaw.get()) : space.toParcelYaw(yaw.get()),
-          readPitch(data));
-    }
-    BlockPos.CODEC
-        .parse(NbtOps.INSTANCE, data.get("block_pos"))
-        .result()
-        .map(value -> toWorld ? space.toWorld(value) : space.toParcel(value))
-        .ifPresent(value -> putBlockPos(data, "block_pos", value));
-    if (toWorld) {
-      data.remove("UUID");
-    }
-    var passengers = data.getList("Passengers", Tag.TAG_COMPOUND);
-    for (int i = 0; i < passengers.size(); i++) {
-      transformEntityTree(passengers.getCompound(i), space, toWorld);
-    }
-    *//*?}*/
+    EntityTrees.forEachPassenger(data, passenger -> transformEntityTree(passenger, space, toWorld));
   }
 
   private static void putBlockPos(CompoundTag data, BlockPos pos) {
@@ -153,23 +113,15 @@ public final class MinecraftCoreRecordProcessor implements ParcelRecordProcessor
   }
 
   private static java.util.Optional<Vec3> readVec3(CompoundTag data, String key) {
-    /*? if >=26.1 {*/
-    return data.getList(key)
-        .filter(list -> list.size() >= 3)
-        .map(
-            list ->
-                new Vec3(
-                    list.getDouble(0).orElse(0.0),
-                    list.getDouble(1).orElse(0.0),
-                    list.getDouble(2).orElse(0.0)));
-    /*?} else {*/
-    /*var list = data.getList(key, Tag.TAG_DOUBLE);
-    if (list.size() < 3) {
+    var list = NbtReads.getList(data, key);
+    if (list == null || list.size() < 3) {
       return java.util.Optional.empty();
     }
     return java.util.Optional.of(
-        new Vec3(list.getDouble(0), list.getDouble(1), list.getDouble(2)));
-    *//*?}*/
+        new Vec3(
+            NbtReads.getDouble(list, 0, 0.0),
+            NbtReads.getDouble(list, 1, 0.0),
+            NbtReads.getDouble(list, 2, 0.0)));
   }
 
   private static void putRotation(CompoundTag data, float yaw, float pitch) {
@@ -180,28 +132,15 @@ public final class MinecraftCoreRecordProcessor implements ParcelRecordProcessor
   }
 
   private static java.util.Optional<Float> readYaw(CompoundTag data) {
-    /*? if >=26.1 {*/
-    return data.getList("Rotation")
-        .filter(list -> !list.isEmpty())
-        .map(list -> list.getFloat(0).orElse(0.0F));
-    /*?} else {*/
-    /*var list = data.getList("Rotation", Tag.TAG_FLOAT);
-    if (list.isEmpty()) {
+    var list = NbtReads.getList(data, "Rotation");
+    if (list == null || list.isEmpty()) {
       return java.util.Optional.empty();
     }
-    return java.util.Optional.of(list.getFloat(0));
-    *//*?}*/
+    return java.util.Optional.of(NbtReads.getFloat(list, 0, 0.0F));
   }
 
   private static float readPitch(CompoundTag data) {
-    /*? if >=26.1 {*/
-    return data.getList("Rotation")
-        .filter(list -> list.size() >= 2)
-        .map(list -> list.getFloat(1).orElse(0.0F))
-        .orElse(0.0F);
-    /*?} else {*/
-    /*var list = data.getList("Rotation", Tag.TAG_FLOAT);
-    return list.size() >= 2 ? list.getFloat(1) : 0.0F;
-    *//*?}*/
+    var list = NbtReads.getList(data, "Rotation");
+    return list != null && list.size() >= 2 ? NbtReads.getFloat(list, 1, 0.0F) : 0.0F;
   }
 }
