@@ -21,10 +21,6 @@
 
 26.1/26.3 与 1.20.1 产生的快照相互读取时，部分内容类型的落盘位置随版本不同（已知案例：`map_items` 处理器在 26.x 把附件引用写进物品 `custom_data` 组件、1.20.1 写进物品 `tag`；当前降级为静默丢失引用，数据不损坏）。DESIGN.md 的双轴版本模型只有 Minecraft 数据版本经 vanilla DataFixer 升级一条通路，内容类型的跨 MC 版本迁移没有机制。需要设计：迁移挂点（读取时按快照 `dataVersion` 分叉？布局版本 bump？）、覆盖范围（还有哪些处理器存在同类差异）、以及是否承诺跨大版本的快照互通。人类决策设计取向后，Agent 可协助实现。**人类指示：暂缓。**
 
-### [agent] 1.20.1 的单元测试与 GameTest 源集适配
-
-`supportsUnitTesting` 与 gametest 配置目前仅对 26.x 节点启用，1.20.1 的保存/恢复核心路径没有 GameTest 回归覆盖（DESIGN.md 测试策略要求 P1/P2/P5 不变性与迁移正确性）。需要：`src/test`（39 个类引用 26.x 的 `Identifier` 与 NBT Optional API）与 `src/gametest`（fabric data attachment 扩展在 1.20.1 无对应物、`@GameTest(template=)` 注解差异、`AccessGameTestHelper` mixin 的字段适配、结构文件跨版本加载验证）两个源集的适配。
-
 ### [human] 渲染路径统一的触发评估
 
 parcel 线框在 26.x 走 vanilla gizmo 系统（`MixinLevelRenderer` → `Gizmos`），1.20.1 走 `RenderType.lines()` 手绘（无自定义线宽）。维持分叉的前提是 gizmo 仍是"无需调试开关即渲染"的官方入口。出现以下任一信号时应评估统一到 26.x 自绘（含自定义 `RenderType` 线宽支持，而非上提 1.20.1 的降级实现）：

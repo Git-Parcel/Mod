@@ -160,6 +160,7 @@ stonecutter 的 `replacements.string` 是双向替换：条件为 true 时按 `r
 
 - 共享代码读取 NBT 一律经 `common/minecraft/logic/portable/NbtReads`：CompoundTag getter 的 Optional/原生形态差异只存在于该工具类内部，语义统一为"键缺席或类型不符时回退（或返回 null）"。直接调用 `tag.getXxx(...)` 仅允许出现在已被版本条件块包住的单版本分支内。
 - 实体 NBT 树的 `Passengers` 递归与类型 id 解析经同包的 `EntityTrees`，不要在各处理器中复制遍历逻辑。
+- 测试源集断言 Optional 形态经 `common/testutils/TestNbt`（镜像 26.x 的 Optional 签名）；gametest 源集读 NBT 直接用主源集的 `NbtReads`。
 
 ## 踩坑记录
 
@@ -167,7 +168,11 @@ stonecutter 的 `replacements.string` 是双向替换：条件为 true 时按 `r
 
 - `ParcelTransform`/`ParcelSpace` 的 `BlockPos` 重载在旋转下带 −1 修正（方块网格到方块网格的映射），`Vec3` 重载是纯点映射。parcel 锚点是格点而非方块索引：断言或换算锚点自身必须走 `Vec3` 语义（`transform.translation()`），用 `BlockPos` 重载往返锚点会在带旋转的朝向下偏移一格。
 - Stonecutter 条件块的假分支是"注释包裹"语义：激活时 stonecutter 剥离 `/*` 与 `*/` 标记还原代码。多行假分支必须是 `/*` 开头、裸续行（不得加 javadoc 风格的 `*` 前缀）、`*/` 结尾的单块注释，否则剥离标记后会残留 `*`，生成非法 Java 导致"非法的类型开始"编译错误。
-- `replacements.string` 只作用于主源集，`src/gametest` 等附加源集不做字符串替换；附加源集里的版本差异要用条件块（或接缝类）维护。
+- stonecutter 0.9.8 处理**所有**源集（含 `src/test` 与动态创建的 `gametest` 源集）：`replacements.string` 与 `/*? */` 条件块在附加源集同样生效，各节点的生成树位于 `versions/<node>/build/generated/stonecutter/<源集>/`。此前"替换只作用于主源集"的记录已过时。
+- 1.20.1 的 `ListTag.getFloat/getDouble(int)` 严格按 tag id 匹配（Double 元素取 float 返回 0），26.x 对任意数值做强制转换：列表元素数值读取必须经 `NbtReads`（其 1.20.1 分支从 `NumericTag` 直接强转），不得直接调用原版 ListTag getter。
+- CompoundTag 键迭代：26.x 实现了 Map（`keySet()`/`entrySet()`），1.20.1 只有 `getAllKeys()` 且不是 Map——共享代码迭代键要经接缝方法（如 gametest 的 `GameTestUtils.keySetOf`）。
+- `ResourceKey` 取命名空间 id：26.x 为 `.identifier()`，1.20.1 为 `.location()`，共享代码用条件块收敛在单点。
+- gametest 源集 1.20.1 适配要点：fabric-gametest-api 1.2.x 只有 `FabricGameTest` 入口接口（没有 26.x 的 fabric `@GameTest` 注解与 `CustomTestMethodInvoker`），配原版注解 `@GameTest(template=, timeoutTicks=)`（26.x fabric 注解属性名为 `structure=`/`maxTicks=`）；结构模板数据包目录 26.x 为单数 `structure/`、1.20.1 为复数 `structures/`（fixture 双份存放）；1.20.1 节点是 Java 17，禁用模式 switch 等 21+ 语法。
 - ModStitch 锁定旧版 ModDevGradle，新 MC 版本发布后 NFRT 会因不识别版本号而 recompile 失败（日志先报 `Failed to parse MC version`，最终 `Node action for recompile failed`）。升级 ModStitch 常不足以跟进，需在 `stonecutter.gradle.kts` 的 plugins 块显式声明新版 `net.neoforged.moddev`（buildscript classpath 对同一模块取最高版本）。
 - `vcsVersion` 节点直接编译共享源文件而不经 stonecutter 处理：源文件必须始终保持为 vcs 节点（当前 26.3-fabric）的可编译形态。为其他版本准备的代码绝不能以裸代码形式写在"当前版本为假"的 `if` 主分支里，必须写成注释包裹的假分支（else 或 `/*? if 旧条件 {*/*...*//*?}*/`）。
 - 条件块包裹方法时，方法上的注解（如 `@VersionSensitive`）必须随方法一起进块；注解留在块外而方法被注释掉的节点上，注解悬空会产生"非法的类型开始"编译错误。
