@@ -219,15 +219,15 @@ if (isFabric) {
         enableGameTests.set(true)
         enableClientGameTests.set(false)
         eula.set(true)
-        clearRunDirectory.set(true)
         username.set("Player0")
     }
 
-    // Loom's clearRunDirectory does not cover the game-test run directory, so the world left by
-    // the previous run carries its saved data (the map id counter, for one) into the next one and
-    // hides the bugs only a fresh world exposes - which is exactly what CI always runs. Clearing
-    // it puts local runs under the same condition. The path follows loom's <buildDir>/run/<run
-    // name>/ layout; the run name is gameTest.
+    // Loom's clearRunDirectory would register a deleteGameTestRunDir task ahead of runGameTest,
+    // but modstitch's fabric-loom-remap platform bypasses that wiring, so the flag is dead here.
+    // Without this delete, the world left by the previous run carries its saved data (the map id
+    // counter, for one) into the next one and hides the bugs only a fresh world exposes - which
+    // is exactly what CI always runs. The path follows loom's <buildDir>/run/<run name>/ layout;
+    // the run name is gameTest.
     tasks.matching { it.name == "runGameTest" }.configureEach {
         doFirst { delete(layout.buildDirectory.dir("run/gameTest/world")) }
     }
