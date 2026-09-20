@@ -144,16 +144,20 @@ P1、P2、P5 进入 GameTest 基座并对扩展注册的处理器自动生效；
 
 审计方法：对目标版本每个方块实体与实体的序列化方法（保存侧与加载侧）做静态清单，把其中每个语境依赖字段按四类边归档，与已注册处理器的覆盖对账；版本升级时重跑。
 
-已确认缺口（实现应向本节收敛）：
+覆盖登记（实现应向本节收敛；键名随版本漂移，登记以语义为准、键名以各版本源码为准）：
 
-- 时间边：计划刻（方块刻与流体刻）经 `scheduled_ticks` 内容类型搬运（规则 6.3）：内指计划刻随 parcel 变换坐标，触发时刻按规则 2.3 相对化，恢复时清除后重灌。方块实体内的时间边字段已按审计补齐相对化声明（Vault `state_updating_resumes_at`、TrialSpawner `next_mob_spawns_at` 与 `cooldown_ends_at`、Interaction `attack`/`interaction.timestamp`）。
-- 空间边：声明字段通道已按审计补齐原版位置字段（`home_pos`、蜜蜂 `hive_pos`/`flower_pos`、`sleeping_pos`、`anchor_pos`、`patrol_target`、`bound_pos`、`wander_target`、`beam_target`、末地折跃门 `exit_portal`）；`TileX/Y/Z` 在 26.x 已演进为 `block_pos` 并由核心处理器无条件重写。Brain 记忆中的位置类记忆（GlobalPos 复合、跨维度）登记为不处理，村民迁移评为透传。
-- 瞬态与派生处理：消除与偏移相对化已实现；按持有者 tickCount 折算的相对计数、Brain 记忆 `ttl`、物品冷却与熔炉键名核对、以及浮点归一化仍未处理。
+- 时间边：计划刻（方块刻与流体刻）经 `scheduled_ticks` 内容类型搬运（规则 6.3）：内指计划刻随 parcel 变换坐标，触发时刻按规则 2.3 相对化，恢复时清除后重灌。方块实体内的时间边字段已按审计补齐相对化声明（Vault `state_updating_resumes_at`、TrialSpawner `next_mob_spawns_at` 与 `cooldown_ends_at`、Interaction `attack`/`interaction.timestamp`、振动系统 `listener` 的 `selector.tick`）。
+- 空间边（声明字段通道）：原版位置字段已覆盖——Mob `home_pos`、蜜蜂 `hive_pos`/`flower_pos`、`sleeping_pos`、`anchor_pos`、`patrol_target`、`bound_pos`、`wander_target`、`beam_target`、末地折跃门 `exit_portal`、海龟 home/travel、结构方块原点（`pos` 前缀三键，两版本同键名）、蜂巢内嵌蜜蜂的 flower 位置（列表路径）、振动系统 `listener` 的 `event.pos` 与 `selector.event.pos`。朝向覆盖物品展示框 `Facing`/`ItemRotation`、潜影贝 `AttachFace`、画（26.x `facing` 由专用处理器按 2D 编码处理，1.20.1 `Facing` 走声明字段 3D 编码）。1.20.1 的键名与形态差异（PascalCase、平铺三 int 前缀键、拴绳 `{X,Y,Z}` 复合）由版本化声明收敛；平铺三 int 形态使用 `BLOCK_POS_AXES` 编码（路径为字段前缀）。悬挂实体定位：26.x 为 `block_pos`、1.20.1 为 `TileX/Y/Z`，均由核心处理器无条件重写。Brain 记忆中的位置类记忆（GlobalPos 复合、跨维度）登记为不处理，村民迁移评为透传。
+- 身份边（声明引用字段通道）：拴绳 UUID、投射物 `Owner`、物品实体 `Owner`/`Thrower`、唤魔者之牙 `Owner`、效果云 `Owner`、潜影贝导弹 `Target`、驯服/马属 `Owner`、僵尸村民 `ConversionPlayer`、动物 `LoveCause`、中立生物愤怒目标、狐狸信任列表、监守者 `anger.suspects`、振动系统 `listener` 的 `source`/`projectile_owner`。指向批次内实体时经句柄翻译表重写，表外恒等（不变式 4.2）。
+- 资源边（物品内嵌空间边）：磁石指南针的磁石位置（1.20.1 物品 `tag`、26.x `lodestone_tracker` 组件）由 `gitparcel:lodestone_compass` 处理器按几何内外指变换；维度标识透传。探险家地图的宝藏坐标为外指，登记为透传。
+- 瞬态与派生处理：消除已覆盖受击伴生时间戳（`HurtByTimestamp`，26.3 起原版不再持久化）、唱片机播放态、刷怪笼 `Delay`、漏斗 `TransferCooldown`、物品实体 `PickupDelay` 及既有受击/坠落/冷却类字段；偏移相对化已覆盖愤怒结束时刻与上述时间边。仍未处理：按持有者 tickCount 折算的其他相对计数、Brain 记忆 `ttl`、以及浮点归一化。熔炉/酿造/营火等自包含相对进度按规则 2.3 原样保留（已核对非缺口）。
 - 实体替换：恢复已按 AABB 相交、非玩家的谓词清除区域内旧实体，不变式 6.2 与 P5 成立；清除尚未按捕获谓词的根实体判定执行——乘客被逐个清除而非随根整树搬运，跨界载具的边界乘客存在重复或悬空的边角情形。
 
-世界级数据审计（基于 1.20.1-fabric 反编译源码，2026-09）：
+已知键名陷阱：同一字段的 NBT 键名与形态在 1.20.1 与 26.x 之间成对漂移（如蜂巢 `FlowerPos`/`flower_pos`、幻翼 `AX..AZ`/`anchor_pos`、拴绳 `{X,Y,Z}` 复合与 int 数组），声明必须逐版本对照源码键名注册；GameTest 注入 NBT 时键名必须与目标版本的写侧一致，否则测试与原版序列化脱钩。
 
-- 方块实体与实体：1.20.1 全部方块实体的 `saveAdditional` 均只写自身 NBT——结构方块是唯一把有效数据放在外部文件的原版方块实体（见下条资源边）。实体指向批次外对象的引用（拴绳、驯服主人、投射物所有者）全部以 UUID 或坐标形态存于自身 NBT，已由身份边翻译与空间边换算覆盖；箱子、物品展示框、讲台等容器中的成图地图均为携带地图 id 的物品栈，由地图处理器统一覆盖。
+世界级数据审计（基于 1.20.1-fabric 反编译源码，2026-09，键名差异按 26.1/26.3-fabric 源码复核）：
+
+- 方块实体与实体：1.20.1 全部方块实体的 `saveAdditional` 均只写自身 NBT——结构方块是唯一把有效数据放在外部文件的原版方块实体（见下条资源边）；其结构原点 `posX/Y/Z` 为空间边，随声明字段变换。实体指向批次外对象的引用（拴绳、驯服主人、投射物所有者）全部以 UUID 或坐标形态存于自身 NBT，已由身份边翻译与空间边换算覆盖；箱子、物品展示框、讲台等容器中的成图地图均为携带地图 id 的物品栈，由地图处理器统一覆盖（村民交易 `Offers` 与随身 `Inventory` 中的物品栈同样在遍历范围内）。蜂巢内嵌蜜蜂经原版 IGNORED 清单过滤后仅保留 flower 位置一类语境依赖字段，以列表路径声明覆盖。
 - 资源边对账：地图 id（26.x 的 `minecraft:map_id` 组件、旧版的 `map` 物品 NBT 标签）经 `gitparcel:map_data` 附件搬运，恢复时分配新地图 id 并经原版计数器推进 `idcounts`；结构模板 `name` 引用登记为不搬运（DESIGN.md 非目标），数据包提供的模板本就不属于世界数据。
 - 维度数据存储（`data/` 目录）全清单：`map_<id>` 随附件搬运；`idcounts` 仅在恢复时消费计数器，不整体搬运；`random_sequences`（按战利品表键控的随机序列）、`raids`、`chunks`（强制加载）、`command_storage_<ns>`、`scoreboard` 及世界根的 bossbar 与末影龙战记均为全局或瞬态状态，登记为不搬运（DESIGN.md 非目标）。
 - 区块级额外数据：计划刻已搬运（规则 6.3）；生物群系为非目标（DESIGN.md）；高度图与光照由引擎重算；结构 starts/references、POI 认领、InhabitedTime 为区块级衍生状态，登记为不搬运（见第 10 节）。
@@ -161,6 +165,7 @@ P1、P2、P5 进入 GameTest 基座并对扩展注册的处理器自动生效；
 ## 10. 已知局限
 
 - **反向边不可见**：parcel 外对象指向 parcel 内记录的边不随恢复更新。原版数据大多把引用存在从属一方（拴绳边在被拴者身上），因此此类案例稀少；模组可能不遵循该惯例，扩展作者应知晓此局限。替换语义（规则 6.2）下，parcel 外对象指向被替换实体的边（如玩家拴向 parcel 内动物的拴绳）会在恢复后悬空，这是替换的必然代价。
+- **方块实体内 UUID 引用不重写**：批次句柄翻译只发生在实体批次 commit（规则 4.1），方块实体记录在此之前落位。潮涌核心 `Target`、蜂巢内嵌蜜蜂的愤怒目标等方块实体内的实体引用保持原值；指向批次内被替换实体时同样悬空，与反向边不可见同类。
 - **实体模型不镜像**：镜像放置只变换实体的位置与朝向，实体模型的手性（不对称的外观细节）不翻转；Minecraft 不提供镜像实体渲染的能力，几何上的完美镜像对实体外观不可达。
 - **不透明载荷**：见推论 2。
 - **方块状态透传**：未覆写 `rotate`/`mirror` 的模组方块在迁移恢复下保持捕获时朝向（规则 3.4、规则 7.1 评为透传）。这是接受的已知行为，不做恢复前告知；其判定依赖对模组类的反射式检查且可操作性弱，规则 7.2 的告知义务不涵盖此类固有行为。
@@ -172,15 +177,16 @@ P1、P2、P5 进入 GameTest 基座并对扩展注册的处理器自动生效；
 
 ## 11. 机制映射
 
-| 规约元素         | 实现                                                            |
-| ---------------- | --------------------------------------------------------------- |
-| 定位字段归一化   | `MinecraftCoreRecordProcessor`                                  |
-| 空间边换算       | 记录处理器经 `ParcelSpace` 施加变换                             |
-| 方块状态变换     | `ParcelBlockTransform`（原版 `rotate`/`mirror`）                |
-| 身份边翻译       | 记录处理器经 `EntityUuidRemapper` 重写（批次两阶段）            |
-| 资源边物化与回填 | `ParcelAttachmentType` 与附件内容类型                           |
-| 区域贡献         | `ParcelCaptureContributor`                                      |
-| 处理器次序       | `ParcelRecordProcessorRegistry` 的拓扑排序                      |
-| 瞬态与派生处理   | `TransientFieldProcessor`（声明通道 `ParcelTransientField`）    |
-| 计划刻替换       | `scheduled_ticks` 内容类型 + `ParcelStorage` 恢复侧区域清除     |
-| 实体替换         | `ParcelStorage` 恢复侧清除 + `MinecraftParcelDataSink` 批次生成 |
+| 规约元素         | 实现                                                               |
+| ---------------- | ------------------------------------------------------------------ |
+| 定位字段归一化   | `MinecraftCoreRecordProcessor`                                     |
+| 空间边换算       | 记录处理器经 `ParcelSpace` 施加变换                                |
+| 物品内嵌空间边   | `LodestoneCompassProcessor`（磁石指南针，经 `ItemStackNbtWalker`） |
+| 方块状态变换     | `ParcelBlockTransform`（原版 `rotate`/`mirror`）                   |
+| 身份边翻译       | 记录处理器经 `EntityUuidRemapper` 重写（批次两阶段）               |
+| 资源边物化与回填 | `ParcelAttachmentType` 与附件内容类型                              |
+| 区域贡献         | `ParcelCaptureContributor`                                         |
+| 处理器次序       | `ParcelRecordProcessorRegistry` 的拓扑排序                         |
+| 瞬态与派生处理   | `TransientFieldProcessor`（声明通道 `ParcelTransientField`）       |
+| 计划刻替换       | `scheduled_ticks` 内容类型 + `ParcelStorage` 恢复侧区域清除        |
+| 实体替换         | `ParcelStorage` 恢复侧清除 + `MinecraftParcelDataSink` 批次生成    |
