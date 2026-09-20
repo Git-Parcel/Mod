@@ -59,7 +59,12 @@ public enum MarkerRecordProcessor implements ParcelRecordProcessor {
                         "Marker attachment was not resolved before entity restore: " + ref));
     var data = record.data().copy();
     data.remove(REF_TAG);
+    /*? if >=26.1 {*/
     data.putString("CustomName", resolved);
+    /*?} else {*/
+    /*// 1.20.1 parses the custom name as a JSON text component string.
+    data.putString("CustomName", "\"" + resolved + "\"");
+    *//*?}*/
     return new EntityRecord(record.type(), record.pos(), record.blockPos(), data, record.semanticData());
   }
 }

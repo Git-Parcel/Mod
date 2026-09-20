@@ -60,6 +60,7 @@ class PaintingByteFacingTest extends AbstractMinecraftTest {
     var facing = restored.data().get("facing");
     assertTrue(facing instanceof ByteTag, "facing must stay a byte");
     assertEquals(
-        (byte) Direction.NORTH.get2DDataValue(), ((ByteTag) facing).byteValue());
+        Direction.NORTH.get2DDataValue(),
+        NbtReads.intValue((net.minecraft.nbt.NumericTag) facing));
   }
 }

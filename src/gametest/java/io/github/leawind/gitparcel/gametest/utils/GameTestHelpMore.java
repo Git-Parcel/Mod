@@ -47,6 +47,8 @@ public class GameTestHelpMore extends GameTestHelper {
     var aabb = this.getBounds();
     /*?} else {*/
     /*var aabb = this.accessor().getTestInfo().getStructureBounds();
+    // 1.20.1 bounds use the inclusive corner block; expand to the exclusive form 26.x returns.
+    aabb = aabb.expandTowards(1.0, 1.0, 1.0);
      *//*?}*/
     return new BoundingBox(
         (int) aabb.minX,

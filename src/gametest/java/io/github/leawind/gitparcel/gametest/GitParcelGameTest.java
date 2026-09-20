@@ -777,6 +777,8 @@ public class GitParcelGameTest {
     var wallPos = new BlockPos(1, 1, 1);
     helper.setBlock(wallPos, Blocks.STONE);
     var frame = new ItemFrame(level, helper.absolutePos(wallPos), Direction.SOUTH);
+    // 1.20.1 only writes ItemRotation when the frame holds an item; 26.x writes it always.
+    frame.setItem(new ItemStack(Items.STONE));
     frame.setRotation(3);
     level.addFreshEntity(frame);
 
@@ -1005,9 +1007,7 @@ public class GitParcelGameTest {
     var restoredNested =
         readBlockPosCompound(
             nestedBeeFlowerTag1201(restoredData)
-                .orElseThrow(() -> new AssertionError("Restored beehive lost its stored bee"))
-                .getCompound("EntityData")
-                .getCompound("FlowerPos"),
+                .orElseThrow(() -> new AssertionError("Restored beehive lost its stored bee")),
             "stored bee FlowerPos");
     *//*?}*/
     var expectedFlower = flowerWorld.offset(0, halfHeight, 0);

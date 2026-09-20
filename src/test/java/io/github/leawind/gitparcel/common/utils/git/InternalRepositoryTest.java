@@ -24,6 +24,8 @@ import java.util.UUID;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.RefUpdate;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 class InternalRepositoryTest {
@@ -374,6 +376,8 @@ class InternalRepositoryTest {
             .resolve("objects")
             .resolve(snapshot.value().substring(0, 2))
             .resolve(snapshot.value().substring(2));
+    // JGit marks loose objects read-only on write; NTFS refuses to delete read-only files.
+    assertTrue(looseObject.toFile().setWritable(true), "object file must be made writable");
     Files.delete(looseObject);
 
     var state = repository.inspect();
@@ -384,7 +388,14 @@ class InternalRepositoryTest {
         () -> repository.saveSnapshot(workspace("two"), metadata("Two"), ProgressReporter.NONE));
   }
 
+  /**
+   * Case-ambiguity rejection over a real on-disk workspace. The precondition — two sibling
+   * directory entries differing only in case — cannot exist on case-insensitive filesystems (NTFS
+   * folds the second create silently), so this end-to-end form only runs on case-sensitive ones;
+   * {@link #rejectsCaseAmbiguousAuthoredTrees} covers the check itself on every platform.
+   */
   @Test
+  @DisabledOnOs(OS.WINDOWS)
   void rejectsCaseAmbiguousWorkspaceTrees() throws Exception {
     var repository = InternalRepository.at(tempDir, UUID.randomUUID());
     Path workspace = workspace("safe");
@@ -396,6 +407,30 @@ class InternalRepositoryTest {
     assertThrows(
         java.io.IOException.class,
         () -> repository.saveSnapshot(workspace, metadata("Ambiguous"), ProgressReporter.NONE));
+  }
+
+  /**
+   * The case-ambiguity guard is a pure path-string check, which is exactly the Windows-relevant
+   * scenario: a tree authored on a case-sensitive system must be rejected before it reaches the
+   * local filesystem. Feeding the paths through writeSmallTree keeps the check exercised on every
+   * platform.
+   */
+  @Test
+  void rejectsCaseAmbiguousAuthoredTrees() throws Exception {
+    var repository = InternalRepository.at(tempDir, UUID.randomUUID());
+    repository.saveSnapshot(workspace("one"), metadata("One"), ProgressReporter.NONE);
+    var core = new GitRepositoryCore(repository.path(), RepositoryPolicy.INTERNAL);
+
+    assertThrows(
+        IOException.class,
+        () ->
+            core.writeSmallTree(
+                Map.of(
+                    "data/A/value.txt",
+                    "one".getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                    "data/a/value.txt",
+                    "two".getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                SnapshotTreeLimits.DEFAULT));
   }
 
   private Path workspace(String content) throws Exception {
