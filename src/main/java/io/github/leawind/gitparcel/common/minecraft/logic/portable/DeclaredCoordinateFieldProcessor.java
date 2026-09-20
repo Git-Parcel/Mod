@@ -4,7 +4,6 @@ import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateFi
 import io.github.leawind.gitparcel.common.api.extension.field.ParcelCoordinateFieldRegistry;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessor;
 import io.github.leawind.gitparcel.common.api.extension.processor.ParcelRecordProcessorContext;
-import io.github.leawind.gitparcel.common.api.parcel.ParcelExtent;
 import io.github.leawind.gitparcel.common.api.parcel.ParcelSpace;
 import io.github.leawind.gitparcel.common.api.parcel.content.BlockEntityRecord;
 import io.github.leawind.gitparcel.common.api.parcel.content.EntityRecord;
@@ -94,14 +93,36 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
     if (fields.isEmpty()) {
       return;
     }
-    // Step fields are rewritten before direction fields so they still see the original facing.
-    var frameFacing = firstDeclaredDirection(fields, data);
-    for (var field : stepFieldsFirst(fields)) {
-      NbtPaths.forEach(
-          data,
-          NbtPaths.parse(field.path()),
-          slot -> rebaseSlot(context, field, slot, space, toWorld, frameFacing));
+    applyFields(context, fields, data, space, toWorld);
+  }
+
+  /**
+   * Flat-axes form (SEMANTICS.md audit): the path is a key prefix and the position lives in three
+   * sibling {@code <prefix>X/Y/Z} integer keys, all of which must be present. Geometric pointing
+   * is adjudicated on the assembled position, mirroring the single-tag encodings.
+   */
+  private static void rebaseAxesField(
+      ParcelRecordProcessorContext context,
+      ParcelCoordinateField field,
+      CompoundTag data,
+      ParcelSpace space,
+      boolean toWorld) {
+    String prefix = field.path();
+    Integer x = NbtReads.getIntOrNull(data, prefix + "X");
+    Integer y = NbtReads.getIntOrNull(data, prefix + "Y");
+    Integer z = NbtReads.getIntOrNull(data, prefix + "Z");
+    if (x == null || y == null || z == null) {
+      return;
     }
+    var value = new Vec3(x, y, z);
+    if (!shouldTransform(context, field, space, value, toWorld)) {
+      return;
+    }
+    BlockPos pos = new BlockPos(x, y, z);
+    BlockPos rebased = toWorld ? space.toWorld(pos) : space.toParcel(pos);
+    data.putInt(prefix + "X", rebased.getX());
+    data.putInt(prefix + "Y", rebased.getY());
+    data.putInt(prefix + "Z", rebased.getZ());
   }
 
   private static void transformEntityTree(
@@ -111,14 +132,29 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
       ParcelSpace space,
       boolean toWorld) {
     var fields = applicableFields(context, ParcelCoordinateField.Target.ENTITY, typeId);
+    applyFields(context, fields, data, space, toWorld);
+    EntityTrees.forEachPassenger(
+        data, passenger -> transformEntityTree(context, passenger, EntityTrees.typeIdOf(passenger), space, toWorld));
+  }
+
+  private static void applyFields(
+      ParcelRecordProcessorContext context,
+      List<ParcelCoordinateField> fields,
+      CompoundTag data,
+      ParcelSpace space,
+      boolean toWorld) {
     // Step fields are rewritten before direction fields so they still see the original facing.
     var frameFacing = firstDeclaredDirection(fields, data);
     for (var field : stepFieldsFirst(fields)) {
-      NbtPaths.forEach(
-          data, NbtPaths.parse(field.path()), slot -> rebaseSlot(context, field, slot, space, toWorld, frameFacing));
+      if (field.encoding() == ParcelCoordinateField.Encoding.BLOCK_POS_AXES) {
+        rebaseAxesField(context, field, data, space, toWorld);
+      } else {
+        NbtPaths.forEach(
+            data,
+            NbtPaths.parse(field.path()),
+            slot -> rebaseSlot(context, field, slot, space, toWorld, frameFacing));
+      }
     }
-    EntityTrees.forEachPassenger(
-        data, passenger -> transformEntityTree(context, passenger, EntityTrees.typeIdOf(passenger), space, toWorld));
   }
 
   /**
@@ -210,15 +246,9 @@ public final class DeclaredCoordinateFieldProcessor implements ParcelRecordProce
       case OUTSIDE:
         return false;
       case GEOMETRIC:
-        var extent = context.extent();
-        return extent == null || extentContains(extent, space, value, toWorld);
+        return SpatialEdges.shouldRebase(context, space, value, toWorld);
     }
     return true;
-  }
-
-  private static boolean extentContains(
-      ParcelExtent extent, ParcelSpace space, Vec3 value, boolean toWorld) {
-    return toWorld ? extent.contains(value) : extent.contains(space.toParcel(value));
   }
 
   /** Reads the raw value of the first applicable direction field, before any rewrite. */

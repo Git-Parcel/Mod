@@ -96,6 +96,12 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
             "forced_inside",
             ParcelCoordinateField.Encoding.POSITION,
             ParcelCoordinateField.Pointing.INSIDE));
+    registry.register(
+        ParcelCoordinateField.forType(
+            ParcelCoordinateField.Target.ENTITY,
+            TEST_ENTITY,
+            "anchor_axes",
+            ParcelCoordinateField.Encoding.BLOCK_POS_AXES));
   }
 
   @Test
@@ -481,6 +487,61 @@ class DeclaredCoordinateFieldProcessorTest extends AbstractMinecraftTest {
 
     var restored = processor.restoreEntity(manifestlessContext, record);
     assertEquals(new BlockPos(4, -1, 2), readBlockPosCodec(restored.data(), "home").orElseThrow());
+  }
+
+  /** Flat-axes fields rebase through the same pipeline as the single-tag encodings. */
+  @Test
+  void transformsFlatAxesFieldsOnCaptureAndRestore() {
+    var captureData = entityData(TEST_ENTITY);
+    putAxes(captureData, "anchor_axes", new BlockPos(120, 70, -30));
+    var captureRecord =
+        new EntityRecord(TEST_ENTITY, Vec3.ZERO, BlockPos.ZERO, captureData, List.of());
+
+    var captured = processor.captureEntity(captureContext(), captureRecord);
+    assertEquals(
+        space.toParcel(new BlockPos(120, 70, -30)),
+        readAxes(captured.data(), "anchor_axes").orElseThrow());
+
+    var restoreData = entityData(TEST_ENTITY);
+    putAxes(restoreData, "anchor_axes", new BlockPos(4, -1, 2));
+    var restoreRecord =
+        new EntityRecord(TEST_ENTITY, Vec3.ZERO, BlockPos.ZERO, restoreData, List.of());
+
+    var restored = processor.restoreEntity(context(), restoreRecord);
+    assertEquals(
+        space.toWorld(new BlockPos(4, -1, 2)),
+        readAxes(restored.data(), "anchor_axes").orElseThrow());
+  }
+
+  /** Partial axes are skipped: all three sibling keys must be present to rebase. */
+  @Test
+  void skipsFlatAxesFieldsWhenAnyAxisKeyIsMissing() {
+    var data = entityData(TEST_ENTITY);
+    data.putInt("anchor_axesX", 4);
+    data.putInt("anchor_axesY", -1);
+    var record = new EntityRecord(TEST_ENTITY, Vec3.ZERO, BlockPos.ZERO, data, List.of());
+
+    var restored = processor.restoreEntity(context(), record);
+
+    assertEquals(4, TestNbt.getInt(restored.data(), "anchor_axesX").orElseThrow());
+    assertEquals(-1, TestNbt.getInt(restored.data(), "anchor_axesY").orElseThrow());
+    assertTrue(TestNbt.getInt(restored.data(), "anchor_axesZ").isEmpty());
+  }
+
+  private static void putAxes(CompoundTag data, String prefix, BlockPos pos) {
+    data.putInt(prefix + "X", pos.getX());
+    data.putInt(prefix + "Y", pos.getY());
+    data.putInt(prefix + "Z", pos.getZ());
+  }
+
+  private static java.util.Optional<BlockPos> readAxes(CompoundTag data, String prefix) {
+    var x = TestNbt.getInt(data, prefix + "X");
+    var y = TestNbt.getInt(data, prefix + "Y");
+    var z = TestNbt.getInt(data, prefix + "Z");
+    if (x.isEmpty() || y.isEmpty() || z.isEmpty()) {
+      return java.util.Optional.empty();
+    }
+    return java.util.Optional.of(new BlockPos(x.orElseThrow(), y.orElseThrow(), z.orElseThrow()));
   }
 
   private static Identifier id(String path) {

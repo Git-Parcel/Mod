@@ -45,6 +45,12 @@ public record ParcelCoordinateField(
     BLOCK_POS,
     /** Compound with integer {@code X}, {@code Y}, {@code Z} keys, a common modding convention. */
     BLOCK_POS_XYZ,
+    /**
+     * Three sibling integer keys {@code <path>X}, {@code <path>Y}, {@code <path>Z} rooted at the
+     * record compound, the legacy vanilla flat-axes form (for example {@code HomePosX/Y/Z} or
+     * {@code posX/Y/Z}); the path is the shared key prefix and must not contain dots.
+     */
+    BLOCK_POS_AXES,
     /** List of three doubles, the {@link net.minecraft.world.phys.Vec3#CODEC} form. */
     POSITION,
     /**
@@ -69,6 +75,9 @@ public record ParcelCoordinateField(
     }
     if (!path.matches(PATH_PATTERN)) {
       throw new IllegalArgumentException("Invalid NBT path: " + path);
+    }
+    if (encoding == Encoding.BLOCK_POS_AXES && path.contains(".")) {
+      throw new IllegalArgumentException("BLOCK_POS_AXES requires a root-level key prefix: " + path);
     }
   }
 

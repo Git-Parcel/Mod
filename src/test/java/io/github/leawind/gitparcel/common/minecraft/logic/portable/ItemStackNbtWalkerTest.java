@@ -58,6 +58,44 @@ class ItemStackNbtWalkerTest extends AbstractMinecraftTest {
     assertEquals(List.of(), visited);
   }
 
+  @Test
+  void visitsEntityInventoryAndTradeOffers() throws ParcelException {
+    var entity = new CompoundTag();
+    var inventory = new ListTag();
+    inventory.add(item("minecraft:filled_map"));
+    entity.put("Inventory", inventory);
+    var recipe = new CompoundTag();
+    recipe.put("buy", item("minecraft:emerald"));
+    recipe.put("buyB", item("minecraft:paper"));
+    recipe.put("sell", item("minecraft:filled_map"));
+    var recipes = new ListTag();
+    recipes.add(recipe);
+    var offers = new CompoundTag();
+    offers.put("Recipes", recipes);
+    entity.put("Offers", offers);
+
+    var visited = new ArrayList<String>();
+    ItemStackNbtWalker.forEachEntityItem(entity, item -> visited.add(nameOf(item)));
+
+    assertEquals(
+        List.of(
+            "minecraft:filled_map", "minecraft:emerald", "minecraft:paper", "minecraft:filled_map"),
+        visited);
+  }
+
+  @Test
+  void visitsBlockEntityRecordAndBrushableItems() throws ParcelException {
+    var blockEntity = new CompoundTag();
+    blockEntity.put("RecordItem", item("minecraft:music_disc_cat"));
+    blockEntity.put("item", item("minecraft:filled_map"));
+
+    var visited = new ArrayList<String>();
+    ItemStackNbtWalker.forEachBlockEntityItem(blockEntity, item -> visited.add(nameOf(item)));
+
+    assertEquals(
+        List.of("minecraft:music_disc_cat", "minecraft:filled_map"), visited);
+  }
+
   private static CompoundTag item(String id) {
     var item = new CompoundTag();
     item.putString("id", id);

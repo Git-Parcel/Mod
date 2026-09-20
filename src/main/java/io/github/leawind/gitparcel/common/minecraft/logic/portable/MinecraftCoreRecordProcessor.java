@@ -88,11 +88,34 @@ public final class MinecraftCoreRecordProcessor implements ParcelRecordProcessor
     NbtReads.read(data, "block_pos", BlockPos.CODEC)
         .map(value -> toWorld ? space.toWorld(value) : space.toParcel(value))
         .ifPresent(value -> putBlockPos(data, "block_pos", value));
+    /*? if <26.1 {*/
+    /*transformTilePos(data, space, toWorld);
+    *//*?}*/
     if (toWorld) {
       data.remove("UUID");
     }
     EntityTrees.forEachPassenger(data, passenger -> transformEntityTree(passenger, space, toWorld));
   }
+
+  /**
+   * 1.20.1 keeps the authoritative position of hanging entities (paintings, item frames, leash
+   * knots) in the flat {@code TileX/TileY/TileZ} keys; 26.x moved it to {@code block_pos}.
+   */
+  /*? if <26.1 {*/
+  /*private static void transformTilePos(CompoundTag data, ParcelSpace space, boolean toWorld) {
+    Integer x = NbtReads.getIntOrNull(data, "TileX");
+    Integer y = NbtReads.getIntOrNull(data, "TileY");
+    Integer z = NbtReads.getIntOrNull(data, "TileZ");
+    if (x == null || y == null || z == null) {
+      return;
+    }
+    BlockPos rebased =
+        toWorld ? space.toWorld(new BlockPos(x, y, z)) : space.toParcel(new BlockPos(x, y, z));
+    data.putInt("TileX", rebased.getX());
+    data.putInt("TileY", rebased.getY());
+    data.putInt("TileZ", rebased.getZ());
+  }
+  *//*?}*/
 
   private static void putBlockPos(CompoundTag data, BlockPos pos) {
     data.putInt("x", pos.getX());

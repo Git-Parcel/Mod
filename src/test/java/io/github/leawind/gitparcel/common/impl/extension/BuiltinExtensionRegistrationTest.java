@@ -15,49 +15,78 @@ import io.github.leawind.gitparcel.common.testutils.AbstractMinecraftTest;
 import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
-/** Pins the audited vanilla spatial-edge declarations. */
+/**
+ * Pins the audited vanilla declarations. Key names are era-dependent (26.x snake_case codec forms,
+ * 1.20.1 PascalCase and flat-axes compounds), so each node asserts its own era's keys plus the
+ * era-stable ones.
+ */
 class BuiltinExtensionRegistrationTest extends AbstractMinecraftTest {
 
   @Test
   void declaresAuditedSpatialEdgeFields() {
-    var registry = ParcelCoordinateFieldRegistry.get();
-    if (registry.fields().stream().noneMatch(field -> field.path().equals("home_pos"))) {
-      var extension = new BuiltinExtension();
-      var registrar = new ParcelExtensionRegistrarImpl(extension);
-      extension.register(registrar);
-      registrar.commit(ParcelContentTypeRegistry.get());
-    }
-    var fields = registry.fields();
+    registerOnce();
+    var fields = ParcelCoordinateFieldRegistry.get().fields();
 
-    assertTrue(declares(fields, "home_pos"));
-    assertTrue(declares(fields, "sleeping_pos"));
-    for (String path : new String[] {
-      "hive_pos", "flower_pos", "anchor_pos", "patrol_target", "bound_pos", "wander_target",
-      "beam_target"
-    }) {
-      assertTrue(declares(fields, path), "missing declaration for " + path);
+    /*? if >=26.1 {*/
+    for (String path :
+        new String[] {
+          "home_pos", "sleeping_pos", "anchor_pos", "hive_pos", "flower_pos", "patrol_target",
+          "bound_pos", "wander_target", "beam_target"
+        }) {
+      assertTrue(
+          declaresEntity(fields, path, null, ParcelCoordinateField.Encoding.BLOCK_POS),
+          "missing declaration for " + path);
     }
-
     assertTrue(
-        fields.stream()
-            .anyMatch(
-                field ->
-                    field.path().equals("exit_portal")
-                        && field.target() == ParcelCoordinateField.Target.BLOCK_ENTITY
-                        && field
-                            .type()
-                            .equals(java.util.Optional.of(
-                                Identifier.fromNamespaceAndPath("minecraft", "end_gateway")))));
+        declaresBe(fields, "exit_portal", "end_gateway", ParcelCoordinateField.Encoding.BLOCK_POS));
+    assertTrue(
+        declaresBe(
+            fields, "bees[].entity_data.flower_pos", "beehive", ParcelCoordinateField.Encoding.BLOCK_POS));
+    /*?} else {*/
+    /*assertTrue(
+        declaresEntity(fields, "Leash", null, ParcelCoordinateField.Encoding.BLOCK_POS_XYZ));
+    assertTrue(
+        declaresEntity(fields, "Sleeping", null, ParcelCoordinateField.Encoding.BLOCK_POS_AXES));
+    for (String path : new String[] {"HivePos", "FlowerPos", "PatrolTarget", "WanderTarget", "BeamTarget"}) {
+      assertTrue(
+          declaresEntity(fields, path, null, ParcelCoordinateField.Encoding.BLOCK_POS),
+          "missing declaration for " + path);
+    }
+    assertTrue(
+        declaresEntity(fields, "A", "phantom", ParcelCoordinateField.Encoding.BLOCK_POS_AXES));
+    assertTrue(
+        declaresEntity(fields, "HomePos", "turtle", ParcelCoordinateField.Encoding.BLOCK_POS_AXES));
+    assertTrue(
+        declaresEntity(fields, "TravelPos", "turtle", ParcelCoordinateField.Encoding.BLOCK_POS_AXES));
+    assertTrue(
+        declaresEntity(fields, "Facing", "painting", ParcelCoordinateField.Encoding.DIRECTION));
+    assertTrue(
+        declaresBe(fields, "ExitPortal", "end_gateway", ParcelCoordinateField.Encoding.BLOCK_POS));
+    assertTrue(
+        declaresBe(
+            fields, "Bees[].EntityData.FlowerPos", "beehive", ParcelCoordinateField.Encoding.BLOCK_POS));
+    *//*? }*/
+
+    // Era-stable declarations: shulker attach face (key corrected from the never-written
+    // "Facing"), structure-block origin axes, and vibration-listener positions.
+    assertTrue(
+        declaresEntity(fields, "AttachFace", "shulker", ParcelCoordinateField.Encoding.DIRECTION));
+    assertTrue(
+        declaresBe(
+            fields, "pos", "structure_block", ParcelCoordinateField.Encoding.BLOCK_POS_AXES));
+    for (String path : new String[] {"listener.event.pos", "listener.selector.event.pos"}) {
+      assertTrue(
+          declaresEntity(fields, path, null, ParcelCoordinateField.Encoding.POSITION),
+          "missing declaration for " + path);
+      assertTrue(
+          declaresBe(fields, path, null, ParcelCoordinateField.Encoding.POSITION),
+          "missing block-entity declaration for " + path);
+    }
   }
 
   @Test
   void registersTransientFieldProcessor() {
-    if (ParcelRecordProcessorRegistry.get().get(TransientFieldProcessor.ID) == null) {
-      var extension = new BuiltinExtension();
-      var registrar = new ParcelExtensionRegistrarImpl(extension);
-      extension.register(registrar);
-      registrar.commit(ParcelContentTypeRegistry.get());
-    }
+    registerOnce();
     assertNotNull(
         ParcelRecordProcessorRegistry.get().get(TransientFieldProcessor.ID),
         "the builtin extension must register the transient-field processor");
@@ -66,64 +95,115 @@ class BuiltinExtensionRegistrationTest extends AbstractMinecraftTest {
   /** Pins the audited game-time offset declarations. */
   @Test
   void declaresAuditedGameTimeOffsetFields() {
-    var registry = ParcelTransientFieldRegistry.get();
-    if (registry.fields().stream().noneMatch(field -> field.path().equals("anger_end_time"))) {
+    registerOnce();
+    var fields = ParcelTransientFieldRegistry.get().fields();
+
+    assertTrue(
+        declaresTransient(fields, "server_data.state_updating_resumes_at", "vault",
+            ParcelTransientField.Kind.OFFSET_GAME_TIME));
+    for (String path : new String[] {"next_mob_spawns_at", "cooldown_ends_at"}) {
+      assertTrue(
+          declaresTransient(fields, path, "trial_spawner", ParcelTransientField.Kind.OFFSET_GAME_TIME),
+          "missing declaration for " + path);
+    }
+    for (String path : new String[] {"attack.timestamp", "interaction.timestamp"}) {
+      assertTrue(
+          declaresTransient(fields, path, "interaction", ParcelTransientField.Kind.OFFSET_GAME_TIME),
+          "missing declaration for " + path);
+    }
+    assertTrue(
+        declaresTransient(
+            fields, "listener.selector.tick", null, ParcelTransientField.Kind.OFFSET_GAME_TIME),
+        "the vibration selector tick must travel as a game-time offset");
+    // Time-noise eliminations from the audit.
+    for (String path : new String[] {"Delay", "TransferCooldown"}) {
+      assertTrue(
+          fields.stream()
+              .anyMatch(
+                  field ->
+                      field.path().equals(path)
+                          && field.kind() == ParcelTransientField.Kind.ELIMINATE),
+          "missing elimination for " + path);
+    }
+    assertTrue(
+        fields.stream()
+            .anyMatch(
+                field ->
+                    field.path().equals("PickupDelay")
+                        && field.target() == ParcelTransientField.Target.ENTITY
+                        && field.kind() == ParcelTransientField.Kind.ELIMINATE),
+        "missing PickupDelay elimination");
+    /*? if >=26.1 {*/
+    assertTrue(
+        fields.stream()
+            .anyMatch(
+                field ->
+                    field.path().equals("ticks_since_song_started")
+                        && field.kind() == ParcelTransientField.Kind.ELIMINATE));
+    /*?} else {*/
+    /*for (String path : new String[] {"IsPlaying", "RecordStartTick", "TickCount"}) {
+      assertTrue(
+          fields.stream()
+              .anyMatch(
+                  field -> field.path().equals(path) && field.kind() == ParcelTransientField.Kind.ELIMINATE),
+          "missing jukebox elimination for " + path);
+    }
+    *//*? }*/
+  }
+
+  /** Registers the builtin extension once; the era-stable AttachFace key guards re-entry. */
+  private static void registerOnce() {
+    var registry = ParcelCoordinateFieldRegistry.get();
+    if (registry.fields().stream().noneMatch(field -> field.path().equals("AttachFace"))) {
       var extension = new BuiltinExtension();
       var registrar = new ParcelExtensionRegistrarImpl(extension);
       extension.register(registrar);
       registrar.commit(ParcelContentTypeRegistry.get());
     }
-    var fields = registry.fields();
-
-    assertTrue(
-        fields.stream()
-            .anyMatch(
-                field ->
-                    field.path().equals("server_data.state_updating_resumes_at")
-                        && field.target() == ParcelTransientField.Target.BLOCK_ENTITY
-                        && field
-                            .type()
-                            .equals(java.util.Optional.of(id("minecraft", "vault")))
-                        && field.kind() == ParcelTransientField.Kind.OFFSET_GAME_TIME));
-    for (String path : new String[] {"next_mob_spawns_at", "cooldown_ends_at"}) {
-      assertTrue(
-          fields.stream()
-              .anyMatch(
-                  field ->
-                      field.path().equals(path)
-                          && field.target() == ParcelTransientField.Target.BLOCK_ENTITY
-                          && field
-                              .type()
-                              .equals(java.util.Optional.of(id("minecraft", "trial_spawner")))
-                          && field.kind() == ParcelTransientField.Kind.OFFSET_GAME_TIME),
-          "missing declaration for " + path);
-    }
-    for (String path : new String[] {"attack.timestamp", "interaction.timestamp"}) {
-      assertTrue(
-          fields.stream()
-              .anyMatch(
-                  field ->
-                      field.path().equals(path)
-                          && field.target() == ParcelTransientField.Target.ENTITY
-                          && field
-                              .type()
-                              .equals(java.util.Optional.of(id("minecraft", "interaction")))
-                          && field.kind() == ParcelTransientField.Kind.OFFSET_GAME_TIME),
-          "missing declaration for " + path);
-    }
   }
 
-  private static Identifier id(String namespace, String path) {
-    return Identifier.fromNamespaceAndPath(namespace, path);
+  private static Identifier id(String path) {
+    return Identifier.fromNamespaceAndPath("minecraft", path);
   }
 
-  private static boolean declares(
-      java.util.List<ParcelCoordinateField> fields, String path) {
+  private static boolean declaresEntity(
+      java.util.List<ParcelCoordinateField> fields,
+      String path,
+      String type,
+      ParcelCoordinateField.Encoding encoding) {
     return fields.stream()
         .anyMatch(
             field ->
                 field.path().equals(path)
-                    && field.encoding() == ParcelCoordinateField.Encoding.BLOCK_POS
-                    && field.target() == ParcelCoordinateField.Target.ENTITY);
+                    && field.encoding() == encoding
+                    && field.target() == ParcelCoordinateField.Target.ENTITY
+                    && (type == null || field.type().equals(java.util.Optional.of(id(type)))));
+  }
+
+  private static boolean declaresBe(
+      java.util.List<ParcelCoordinateField> fields,
+      String path,
+      String type,
+      ParcelCoordinateField.Encoding encoding) {
+    return fields.stream()
+        .anyMatch(
+            field ->
+                field.path().equals(path)
+                    && field.encoding() == encoding
+                    && field.target() == ParcelCoordinateField.Target.BLOCK_ENTITY
+                    && (type == null || field.type().equals(java.util.Optional.of(id(type)))));
+  }
+
+  private static boolean declaresTransient(
+      java.util.List<ParcelTransientField> fields,
+      String path,
+      String type,
+      ParcelTransientField.Kind kind) {
+    return fields.stream()
+        .anyMatch(
+            field ->
+                field.path().equals(path)
+                    && field.kind() == kind
+                    && (type == null || field.type().equals(java.util.Optional.of(id(type)))));
   }
 }
