@@ -190,8 +190,34 @@ public final class ParcelRenderer {
       }
       buffers.endBatch(RenderType.lines());
     }
+    *//*?}*/
 
-    private static void drawLineVertex(
+    /**
+     * Emits one line vertex; the pre-26.1 renderer calls this from {@code drawSegments}. Vertex
+     * emission was renamed in 1.21.1 ({@code vertex}, {@code color}, {@code normal} and {@code
+     * endVertex} became {@code addVertex}, {@code setColor} and {@code setNormal}, with no final
+     * call), so the 1.21 line uses the pose-taking overloads. The 26.x gizmo path renders
+     * nothing per vertex, so both arms are absent there.
+     */
+    /*? if >=1.20.5 <26.1 {*/
+    /*private static void drawLineVertex(
+        VertexConsumer consumer,
+        PoseStack.Pose pose,
+        Vec3 position,
+        int r,
+        int g,
+        int b,
+        int a,
+        float nx,
+        float ny,
+        float nz) {
+      consumer
+          .addVertex(pose, (float) position.x, (float) position.y, (float) position.z)
+          .setColor(r, g, b, a)
+          .setNormal(pose, nx, ny, nz);
+    }
+    *//*?} else if <1.20.5 {*/
+    /*private static void drawLineVertex(
         VertexConsumer consumer,
         PoseStack.Pose pose,
         Vec3 position,

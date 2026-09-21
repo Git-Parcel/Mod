@@ -30,7 +30,12 @@ public final class GitParcelLevelSavedData extends SavedData {
     this.parcels = parcels;
   }
 
-  /*? if <26.1 {*/
+  /*? if >=1.20.5 <26.1 {*/
+  /*@Override
+  public CompoundTag save(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+    return CodecSavedData.encode(CODEC, this);
+  }
+  *//*?} else if <1.20.5 {*/
   /*@Override
   public CompoundTag save(CompoundTag tag) {
     return CodecSavedData.encode(CODEC, this);

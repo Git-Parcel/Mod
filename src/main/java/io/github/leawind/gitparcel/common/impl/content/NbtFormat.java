@@ -78,7 +78,15 @@ public enum NbtFormat {
     } catch (IOException | net.minecraft.nbt.NbtException e) {
       return Result.err(e.getMessage());
     }
-    /*?} else {*/
+    /*?} else if >=1.20.5 {*/
+    /*try (var input = Files.newInputStream(path);
+        var data = new java.io.DataInputStream(input)) {
+      return Result.ok(NbtIo.read(data, NbtAccounter.create(MAX_RECORD_BYTES)));
+    } catch (IOException | RuntimeException e) {
+      // The 1.21 accounter still signals quota and depth rejections as plain RuntimeExceptions.
+      return Result.err(e.getMessage());
+    }
+    *//*?} else {*/
     /*try (var input = Files.newInputStream(path);
         var data = new java.io.DataInputStream(input)) {
       return Result.ok(NbtIo.read(data, new NbtAccounter(MAX_RECORD_BYTES)));

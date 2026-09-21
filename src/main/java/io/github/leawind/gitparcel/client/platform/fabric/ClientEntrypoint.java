@@ -13,7 +13,7 @@ public class ClientEntrypoint implements ClientModInitializer {
   public void onInitializeClient() {
     ModClientEntrypoint.initialize();
 
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     ClientPlayNetworking.registerGlobalReceiver(
         MinecraftPayloads.PARCELS_TYPE,
         (payload, context) -> ClientPayloadHandler.handle(payload.message()));

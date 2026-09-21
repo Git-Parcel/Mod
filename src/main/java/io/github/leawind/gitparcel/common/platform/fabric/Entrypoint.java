@@ -9,9 +9,11 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 /*?}*/
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-/*? if >=1.20.4 {*/
+/*? if >=26.1 {*/
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents;
-/*?} else {*/
+/*?} else if >=1.20.4 {*/
+/*import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
+*//*?} else {*/
 /*import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.minecraft.server.level.ServerPlayer;
  *//*?}*/
@@ -34,10 +36,13 @@ public class Entrypoint implements ModInitializer {
     CommandRegistrationCallback.EVENT.register(ModEntrypoint::registerCommands);
     ServerPlayConnectionEvents.JOIN.register(
         (listener, sender, server) -> ModEntrypoint.onPlayerJoin(listener.getPlayer()));
-    /*? if >=1.20.4 {*/
+    /*? if >=26.1 {*/
     ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(
         (player, origin, destination) -> ModEntrypoint.onPlayerChangeDimension(player));
-    /*?} else {*/
+    /*?} else if >=1.20.4 {*/
+    /*ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register(
+        (player, origin, destination) -> ModEntrypoint.onPlayerChangeDimension(player));
+    *//*?} else {*/
     /*ServerEntityEvents.ENTITY_LOAD.register(
         (entity, world) -> {
           if (entity instanceof ServerPlayer player) {

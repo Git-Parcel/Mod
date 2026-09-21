@@ -8,7 +8,9 @@ import net.minecraft.server.level.ServerLevel;
 /*? if >=26.1 {*/
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedDataType;
-/*?}*/
+/*?} else if >=1.20.5 {*/
+/*import net.minecraft.util.datafix.DataFixTypes;
+ *//*?}*/
 
 /**
  * Owns Minecraft's version-specific saved-data type declarations and storage access.
@@ -41,14 +43,28 @@ final class GitParcelSavedDataAccess {
           GitParcelWorldSavedData::new,
           GitParcelWorldSavedData.CODEC,
           PASS_THROUGH_DATA_FIX);
-  /*?}*/
+  /*?} else if >=1.20.5 {*/
+  /*// Same remainder-schema rationale as above; the vanilla Factory record requires a
+  // non-null DataFixTypes and the command-storage schema applies no content fixes.
+  private static final DataFixTypes PASS_THROUGH_DATA_FIX =
+      DataFixTypes.SAVED_DATA_COMMAND_STORAGE;
+  *//*?}*/
 
   private GitParcelSavedDataAccess() {}
 
   static GitParcelLevelSavedData level(ServerLevel level) {
     /*? if >=26.1 {*/
     return level.getDataStorage().computeIfAbsent(LEVEL_TYPE);
-    /*?} else {*/
+    /*?} else if >=1.20.5 {*/
+    /*return level
+        .getDataStorage()
+        .computeIfAbsent(
+            new net.minecraft.world.level.saveddata.SavedData.Factory<>(
+                GitParcelLevelSavedData::new,
+                (tag, registries) -> CodecSavedData.decode(GitParcelLevelSavedData.CODEC, tag),
+                PASS_THROUGH_DATA_FIX),
+            GitParcel.MOD_ID + "_level");
+    *//*?} else {*/
     /*return level
         .getDataStorage()
         .computeIfAbsent(
@@ -61,7 +77,17 @@ final class GitParcelSavedDataAccess {
   static GitParcelWorldSavedData world(MinecraftServer server) {
     /*? if >=26.1 {*/
     return server.overworld().getDataStorage().computeIfAbsent(WORLD_TYPE);
-    /*?} else {*/
+    /*?} else if >=1.20.5 {*/
+    /*return server
+        .overworld()
+        .getDataStorage()
+        .computeIfAbsent(
+            new net.minecraft.world.level.saveddata.SavedData.Factory<>(
+                GitParcelWorldSavedData::new,
+                (tag, registries) -> CodecSavedData.decode(GitParcelWorldSavedData.CODEC, tag),
+                PASS_THROUGH_DATA_FIX),
+            GitParcel.MOD_ID + "_world");
+    *//*?} else {*/
     /*return server
         .overworld()
         .getDataStorage()

@@ -95,7 +95,7 @@ public final class MinecraftParcelDataSource implements ParcelDataSource {
                     space.transform(), level.getBlockState(worldPos)));
             BlockEntity blockEntity = level.getBlockEntity(worldPos);
             if (blockEntity != null) {
-              /*? if >=26.1 {*/
+              /*? if >=1.20.5 {*/
               CompoundTag data = blockEntity.saveWithFullMetadata(level.registryAccess());
               /*?} else {*/
               /*CompoundTag data = blockEntity.saveWithFullMetadata();

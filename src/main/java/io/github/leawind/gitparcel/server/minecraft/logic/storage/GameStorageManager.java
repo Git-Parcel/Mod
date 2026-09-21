@@ -41,7 +41,7 @@ public class GameStorageManager {
       new ConcurrentHashMap<>();
 
   public static GameStorageManager getInstance(MinecraftServer server) {
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     return CACHE.computeIfAbsent(
         server.getServerDirectory().resolve(DIR_NAME).normalize(), GameStorageManager::new);
     /*?} else {*/
