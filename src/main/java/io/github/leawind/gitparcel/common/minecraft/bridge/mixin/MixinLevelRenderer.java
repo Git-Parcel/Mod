@@ -5,7 +5,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.leawind.gitparcel.client.minecraft.bridge.GameClientApi;
 import io.github.leawind.gitparcel.common.utils.anno.VersionSensitive;
 import net.minecraft.client.Minecraft;
-/*? if <26.3 {*/
+/*? if <26.2 {*/
 /*import net.minecraft.client.multiplayer.ClientLevel;
  *//*?}*/
 import net.minecraft.client.renderer.LevelRenderer;
@@ -23,7 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * The gizmo collection hook moved across versions: 1.20.1 draws in the frame-graph-less
- * {@code renderLevel}, 26.1 injected into the {@code addMainPass} lambda, and 26.3 moved that hook
+ * {@code renderLevel}, 26.1 injected into the {@code addMainPass} lambda, and 26.2 moved that hook
  * into {@code submitFeatures}, which also dropped the renderer's {@code minecraft} and {@code
  * level} fields in favour of the shared render state.
  */
@@ -31,7 +31,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @VersionSensitive("LevelRenderer render internals; keep this as the remaining render seam")
 @Mixin(LevelRenderer.class)
 public class MixinLevelRenderer {
-  /*? if >=26.3 {*/
+  /*? if >=26.2 {*/
   @Unique private static final String INJECT_METHOD = "submitFeatures";
   /*?} else if >=26.1 {*/
   /*@Unique private static final String INJECT_METHOD = "lambda$addMainPass$0";
@@ -39,7 +39,7 @@ public class MixinLevelRenderer {
   /*@Unique private static final String INJECT_METHOD = "renderLevel";
   *//*?}*/
 
-  /*? if >=26.3 {*/
+  /*? if >=26.2 {*/
   @Shadow @Final private LevelRenderState levelRenderState;
   /*?} else if >=26.1 {*/
   /*@Shadow @Final private Minecraft minecraft;
@@ -55,7 +55,7 @@ public class MixinLevelRenderer {
 
   @Unique
   private void doBeforeFinalizeGizmoCollection(PoseStack matrices) {
-    /*? if >=26.3 {*/
+    /*? if >=26.2 {*/
     var minecraft = Minecraft.getInstance();
     gitparcel$context.prepare(minecraft, minecraft.level, levelRenderState, matrices);
     /*?} else if >=26.1 {*/

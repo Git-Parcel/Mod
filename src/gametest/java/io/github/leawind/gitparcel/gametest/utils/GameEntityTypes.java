@@ -8,7 +8,7 @@ import net.minecraft.world.entity.animal.cow.Cow;
 /*import net.minecraft.world.entity.animal.Chicken;
 import net.minecraft.world.entity.animal.Cow;
 *//*?}*/
-/*? if >=26.3 {*/
+/*? if >=26.2 {*/
 import net.minecraft.world.entity.EntityTypes;
 /*?}*/
 import net.minecraft.world.entity.decoration.ItemFrame;
@@ -31,11 +31,11 @@ import net.minecraft.world.entity.npc.villager.Villager;
 *//*?}*/
 
 /**
- * Version seam for entity type constants, which 26.3 moved from {@link EntityType}, and for the
+ * Version seam for entity type constants, which 26.2 moved from {@link EntityType}, and for the
  * animal classes, which 26.1 split into per-species packages.
  */
 public final class GameEntityTypes {
-  /*? if >=26.3 {*/
+  /*? if >=26.2 {*/
   public static final EntityType<Cow> COW = EntityTypes.COW;
   public static final EntityType<Chicken> CHICKEN = EntityTypes.CHICKEN;
   public static final EntityType<ItemFrame> ITEM_FRAME = EntityTypes.ITEM_FRAME;

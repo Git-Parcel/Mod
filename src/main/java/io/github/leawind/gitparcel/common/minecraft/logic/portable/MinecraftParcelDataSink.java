@@ -43,7 +43,7 @@ import net.minecraft.world.entity.EntityProcessor;
 import net.minecraft.world.entity.EntitySpawnReason;
 /*?}*/
 import net.minecraft.world.entity.EntityType;
-/*? if >=26.3 {*/
+/*? if >=26.2 {*/
 import net.minecraft.world.entity.EntitySpawnRequest;
 /*?}*/
 import net.minecraft.world.level.block.Block;
@@ -203,7 +203,9 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
         /*? if >=26.1 {*/
         blockEntity.loadWithComponents(
             TagValueInput.create(reporter, level.registryAccess(), record.data()));
-        /*?} else {*/
+        /*?} else if >=1.20.5 {*/
+        /*blockEntity.loadWithComponents(record.data(), level.registryAccess());
+        *//*?} else {*/
         /*blockEntity.load(record.data());
         *//*?}*/
         blockEntity.setChanged();
@@ -265,7 +267,7 @@ public final class MinecraftParcelDataSink implements ParcelDataSink {
             data, buffered.record().type(), remap, declaredRefFields);
         data.putString("id", buffered.record().type().toString());
         var entity =
-            /*? if >=26.3 {*/
+            /*? if >=26.2 {*/
             EntityType.loadEntityRecursive(
                 data,
                 level.getLevel(),
