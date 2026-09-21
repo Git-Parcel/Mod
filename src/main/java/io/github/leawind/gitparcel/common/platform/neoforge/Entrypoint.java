@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.common.platform.neoforge;
 
 /*? if neoforge {*/
 /*
+import io.github.leawind.gitparcel.client.minecraft.logic.network.ClientPayloadHandler;
 import io.github.leawind.gitparcel.common.api.GitParcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.ModEntrypoint;
 import io.github.leawind.gitparcel.common.minecraft.logic.network.payload.MinecraftPayloads;
@@ -44,7 +45,17 @@ public class Entrypoint {
     ModEntrypoint.LOGGER.debug("Register payload handlers");
     var registrar = event.registrar(GitParcel.MOD_ID).versioned(GitParcel.PROTOCOL_VERSION);
 
+/^?   if >=1.21.11 {^/
     registrar.playToClient(MinecraftPayloads.PARCELS_TYPE, MinecraftPayloads.PARCELS_CODEC);
+/^?   } else {^/
+/^registrar.playToClient(
+        MinecraftPayloads.PARCELS_TYPE,
+        MinecraftPayloads.PARCELS_CODEC,
+        // Pre-1.21.11 NeoForge registers the codec and the client handler in one call; the
+        // handler only runs on the client, so the referenced class never loads on a server.
+        (payload, context) ->
+            context.enqueueWork(() -> ClientPayloadHandler.handle(payload.message())));
+^//^?   }^/
   }
 
   private static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
