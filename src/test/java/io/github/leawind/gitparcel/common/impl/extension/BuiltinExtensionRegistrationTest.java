@@ -16,9 +16,9 @@ import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 /**
- * Pins the audited vanilla declarations. Key names are era-dependent (26.x snake_case codec forms,
- * 1.20.1 PascalCase and flat-axes compounds), so each node asserts its own era's keys plus the
- * era-stable ones.
+ * Pins the audited vanilla declarations. Key names are era-dependent (26.x snake_case codec
+ * forms, 1.20.1 PascalCase and flat-axes compounds, 1.21.1 a mix of the two), so each node
+ * asserts its own era's keys plus the era-stable ones.
  */
 class BuiltinExtensionRegistrationTest extends AbstractMinecraftTest {
 
@@ -27,7 +27,7 @@ class BuiltinExtensionRegistrationTest extends AbstractMinecraftTest {
     registerOnce();
     var fields = ParcelCoordinateFieldRegistry.get().fields();
 
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     for (String path :
         new String[] {
           "home_pos", "sleeping_pos", "anchor_pos", "hive_pos", "flower_pos", "patrol_target",
@@ -66,6 +66,20 @@ class BuiltinExtensionRegistrationTest extends AbstractMinecraftTest {
     assertTrue(
         declaresBe(
             fields, "Bees[].EntityData.FlowerPos", "beehive", ParcelCoordinateField.Encoding.BLOCK_POS_XYZ));
+    *//*?}*/
+
+    // 1.21.1 kept these entity-side keys in their pre-1.21.2 flat-axes spellings.
+    /*? if >=1.20.5 <26.1 {*/
+    /*assertTrue(
+        declaresEntity(fields, "Sleeping", null, ParcelCoordinateField.Encoding.BLOCK_POS_AXES));
+    assertTrue(
+        declaresEntity(fields, "A", "phantom", ParcelCoordinateField.Encoding.BLOCK_POS_AXES));
+    assertTrue(
+        declaresEntity(fields, "HomePos", "turtle", ParcelCoordinateField.Encoding.BLOCK_POS_AXES));
+    assertTrue(
+        declaresEntity(fields, "TravelPos", "turtle", ParcelCoordinateField.Encoding.BLOCK_POS_AXES));
+    assertTrue(
+        declaresEntity(fields, "Bound", null, ParcelCoordinateField.Encoding.BLOCK_POS_AXES));
     *//*?}*/
 
     // Era-stable declarations: shulker attach face (key corrected from the never-written
@@ -132,7 +146,7 @@ class BuiltinExtensionRegistrationTest extends AbstractMinecraftTest {
                         && field.target() == ParcelTransientField.Target.ENTITY
                         && field.kind() == ParcelTransientField.Kind.ELIMINATE),
         "missing PickupDelay elimination");
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     assertTrue(
         fields.stream()
             .anyMatch(

@@ -1,8 +1,8 @@
 # 用于 gametest 的结构体
 
-文件同时存在于 `structure/` 与 `structures/` 两处：26.x 的原版模板目录为单数 `structure`，1.20.1 为复数 `structures`，两目录内容保持一致。
+文件同时存在于 `structure/` 与 `structures/` 两处：1.21.1 与 26.x 的原版模板目录为单数 `structure`，1.20.1 为复数 `structures`，两目录内容保持一致。
 
-结构文件由 26.x 生成；1.20.1 读取高 DataVersion 的模板时 DFU 静默透传，palette 中 1.20.1 后新增的方块在放置时以原版 barrier 兜底。往返类测试自洽（捕获什么就恢复什么），不影响正确性断言。
+结构文件由 26.x 生成；1.20.1 与 1.21.1 读取高 DataVersion 的模板时 DFU 静默透传，palette 中各自版本后新增的方块在放置时以原版 barrier 兜底。往返类测试自洽（捕获什么就恢复什么），不影响正确性断言。
 
 ## 从 26.x 导出模板后的兼容步骤
 

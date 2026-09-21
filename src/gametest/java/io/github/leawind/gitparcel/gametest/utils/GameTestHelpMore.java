@@ -45,9 +45,16 @@ public class GameTestHelpMore extends GameTestHelper {
   public BoundingBox getBoundingBox() {
     /*? if >=26.1 {*/
     var aabb = this.getBounds();
-    /*?} else {*/
+    /*?} else if >=1.20.5 {*/
     /*var aabb = this.accessor().getTestInfo().getStructureBounds();
-    // 1.20.1 bounds use the inclusive corner block; expand to the exclusive form 26.x returns.
+    // 1.21 anchors helper coordinates (absolutePos) at the structure block, which vanilla puts
+    // one row below the structure bounds; slide the box down the same row so the parcel frame
+    // matches the helper frame, as it already does on 1.20.1 and 26.x.
+    aabb = aabb.move(0.0, -1.0, 0.0);
+     *//*?} else {*/
+    /*var aabb = this.accessor().getTestInfo().getStructureBounds();
+    // 1.20.1 bounds use the inclusive corner block; expand to the exclusive form newer
+    // versions return directly.
     aabb = aabb.expandTowards(1.0, 1.0, 1.0);
      *//*?}*/
     return new BoundingBox(
@@ -63,7 +70,16 @@ public class GameTestHelpMore extends GameTestHelper {
   public BoundingBox getRelativeBoundingBox() {
     /*? if >=26.1 {*/
     var aabb = this.getRelativeBounds();
-    /*?} else {*/
+    /*?} else if >=1.20.5 {*/
+    /*// 1.21 dropped GameTestInfo.getStructureSize; derive the span from the bounds instead,
+    // anchored at the structure-block row like the absolute box.
+    var bounds = this.accessor().getTestInfo().getStructureBounds();
+    var aabb = new AABB(
+        0, 0, 0,
+        bounds.maxX - bounds.minX,
+        bounds.maxY - bounds.minY,
+        bounds.maxZ - bounds.minZ);
+     *//*?} else {*/
     /*var size = this.accessor().getTestInfo().getStructureSize();
     var aabb = new AABB(0, 0, 0, size.getX(), size.getY(), size.getZ());
      *//*?}*/

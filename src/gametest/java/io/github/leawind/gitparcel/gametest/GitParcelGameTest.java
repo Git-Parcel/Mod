@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-/*? if >=26.1 {*/
+/*? if >=1.20.5 {*/
 import net.minecraft.core.component.DataComponents;
 /*?}*/
 import net.minecraft.nbt.CompoundTag;
@@ -61,11 +61,11 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
-/*? if >=26.1 {*/
+/*? if >=1.20.5 {*/
 import net.minecraft.world.level.saveddata.maps.MapId;
+/*?}*/
 /*? if >=26.1 {*/
 import net.minecraft.world.level.storage.TagValueOutput;
-/*?}*/
 import net.minecraft.world.level.storage.TagValueInput;
 /*?}*/
 import net.minecraft.world.phys.AABB;
@@ -93,10 +93,12 @@ import net.minecraft.world.level.block.entity.SculkSensorBlockEntity;
 import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.block.entity.StructureBlockEntity;
 import net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity;
-/*? if >=26.1 {*/
+/*? if >=1.20.5 {*/
 import net.minecraft.core.GlobalPos;
-import net.minecraft.world.entity.decoration.painting.PaintingVariants;
 import net.minecraft.world.item.component.LodestoneTracker;
+/*?}*/
+/*? if >=26.1 {*/
+import net.minecraft.world.entity.decoration.painting.PaintingVariants;
 /*?} else {*/
 /*import net.minecraft.world.entity.decoration.PaintingVariants;
 *//*?}*/
@@ -946,7 +948,7 @@ public class GitParcelGameTest {
     nestedBee.putString("id", "minecraft:bee");
     var bees = new ListTag();
     var occupant = new CompoundTag();
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     injected.put(
         "flower_pos",
         BlockPos.CODEC.encodeStart(NbtOps.INSTANCE, flowerWorld).result().orElseThrow());
@@ -958,9 +960,6 @@ public class GitParcelGameTest {
     occupant.putInt("min_ticks_in_hive", 1);
     bees.add(occupant);
     injected.put("bees", bees);
-    try (var reporter = new ProblemReporter.ScopedCollector(LOGGER)) {
-      hive.loadWithComponents(TagValueInput.create(reporter, level.registryAccess(), injected));
-    }
     /*?} else {*/
     /*injected.put("FlowerPos", blockPosCompound(flowerWorld));
     nestedBee.put("FlowerPos", blockPosCompound(nestedFlowerWorld));
@@ -969,7 +968,15 @@ public class GitParcelGameTest {
     occupant.putInt("MinOccupationTicks", 1);
     bees.add(occupant);
     injected.put("Bees", bees);
-    hive.load(injected);
+    *//*?}*/
+    /*? if >=26.1 {*/
+    try (var reporter = new ProblemReporter.ScopedCollector(LOGGER)) {
+      hive.loadWithComponents(TagValueInput.create(reporter, level.registryAccess(), injected));
+    }
+    /*?} else if >=1.20.5 {*/
+    /*hive.loadWithComponents(injected, level.registryAccess());
+    *//*?} else {*/
+    /*hive.load(injected);
     *//*?}*/
     hive.setChanged();
 
@@ -986,7 +993,7 @@ public class GitParcelGameTest {
 
     var restoredHive = (BeehiveBlockEntity) helper.getBlockEntity(hivePos.offset(0, halfHeight, 0));
     var restoredData = GameTestUtils.saveFullMetadata(level, restoredHive);
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     var restoredFlower =
         BlockPos.CODEC
             .parse(NbtOps.INSTANCE, restoredData.get("flower_pos"))
@@ -1272,16 +1279,16 @@ public class GitParcelGameTest {
   }
 
   /*
-   * Map ids are opaque across the version range: a MapId record on 26.x, a plain int in the item
-   * tag before that. The helpers keep the tests version-neutral while the access shape lives in
-   * one place.
+   * Map ids are opaque across the version range: a MapId record on 1.20.5+, a plain int in the
+   * item tag before that. The helpers keep the tests version-neutral while the access shape lives
+   * in one place.
    */
   private static Object freshMapId(ServerLevel level) {
     return level.getFreeMapId();
   }
 
   private static void putMapData(ServerLevel level, Object id, MapItemSavedData data) {
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     level.setMapData((MapId) id, data);
     /*?} else {*/
     /*level.setMapData("map_" + (Integer) id, data);
@@ -1289,7 +1296,7 @@ public class GitParcelGameTest {
   }
 
   private static MapItemSavedData getMapData(ServerLevel level, Object id) {
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     return level.getMapData((MapId) id);
     /*?} else {*/
     /*return level.getMapData("map_" + (Integer) id);
@@ -1297,7 +1304,7 @@ public class GitParcelGameTest {
   }
 
   private static void setMapId(ItemStack map, Object id) {
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     map.set(DataComponents.MAP_ID, (MapId) id);
     /*?} else {*/
     /*map.getOrCreateTag().putInt("map", (Integer) id);
@@ -1305,7 +1312,7 @@ public class GitParcelGameTest {
   }
 
   private static Object getMapId(ItemStack map) {
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     return map.get(DataComponents.MAP_ID);
     /*?} else {*/
     /*return map.hasTag() && map.getTag().contains("map") ? map.getTag().getInt("map") : null;
@@ -1336,7 +1343,8 @@ public class GitParcelGameTest {
             .lookupOrThrow(net.minecraft.core.registries.Registries.PAINTING_VARIANT)
             .getOrThrow(PaintingVariants.ALBAN);
     /*?} else {*/
-    /*var variant =
+    /*// registryOrThrow + getHolderOrThrow covers 1.21.1 as well; only 26.x renamed them.
+    var variant =
         level
             .registryAccess()
             .registryOrThrow(net.minecraft.core.registries.Registries.PAINTING_VARIANT)
@@ -1422,7 +1430,7 @@ public class GitParcelGameTest {
 
       var knotLocal = space.toParcel(fencePos);
       var cowSnbt = findEntitySnbt(tempDir, "minecraft:cow");
-      /*? if >=26.1 {*/
+      /*? if >=1.20.5 {*/
       assertSnbtContains(
           helper,
           cowSnbt,
@@ -1503,7 +1511,7 @@ public class GitParcelGameTest {
         (TheEndGatewayBlockEntity)
             helper.getBlockEntity(gatewayPos.offset(0, halves.height(), 0));
     var gatewayData = GameTestUtils.saveFullMetadata(level, restoredGateway);
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     var restoredExit =
         BlockPos.CODEC
             .parse(NbtOps.INSTANCE, gatewayData.get("exit_portal"))
@@ -1753,7 +1761,7 @@ public class GitParcelGameTest {
         helper.absolutePos(jukeboxPos), Blocks.JUKEBOX.defaultBlockState(), WORLD_UPDATE_FLAGS);
     var jukebox = (JukeboxBlockEntity) helper.getBlockEntity(jukeboxPos);
     var jukeboxTag = beBaseTag(helper, jukeboxPos, "minecraft:jukebox");
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     jukeboxTag.putLong("ticks_since_song_started", 99L);
     /*?} else {*/
     /*jukeboxTag.putBoolean("IsPlaying", true);
@@ -1787,7 +1795,7 @@ public class GitParcelGameTest {
       ParcelStorage.save(level, source, tempDir, true);
 
       var jukeboxSnbt = findBlockEntitySnbt(tempDir, "minecraft:jukebox");
-      /*? if >=26.1 {*/
+      /*? if >=1.20.5 {*/
       assertSnbtAbsent(helper, jukeboxSnbt, "ticks_since_song_started");
       /*?} else {*/
       /*assertSnbtAbsent(helper, jukeboxSnbt, "IsPlaying");
@@ -1808,7 +1816,7 @@ public class GitParcelGameTest {
       states = List.copyOf(states);
     }
   }
-  /*? if >=26.1 {*/
+  /*? if >=1.20.5 {*/
   private static final String BEES_KEY = "bees";
   private static final String OCCUPANT_ENTITY_KEY = "entity_data";
   private static final String OCCUPANT_FLOWER_KEY = "flower_pos";
@@ -1874,7 +1882,11 @@ public class GitParcelGameTest {
   private static net.minecraft.world.level.block.Block gametestBedBlock() {
     return Blocks.STRAW_BED;
   }
-  /*?} else {*/
+  /*?} else if >=26.2 {*/
+  /*private static net.minecraft.world.level.block.Block gametestBedBlock() {
+    return Blocks.BED.red();
+  }
+  *//*?} else {*/
   /*private static net.minecraft.world.level.block.Block gametestBedBlock() {
     return Blocks.RED_BED;
   }
@@ -1910,7 +1922,9 @@ public class GitParcelGameTest {
     try (var reporter = new ProblemReporter.ScopedCollector(LOGGER)) {
       be.loadWithComponents(TagValueInput.create(reporter, level.registryAccess(), tag));
     }
-    /*?} else {*/
+    /*?} else if >=1.20.5 {*/
+    /*be.loadWithComponents(tag, level.registryAccess());
+    *//*?} else {*/
     /*be.load(tag);
     *//*?}*/
   }
@@ -1947,7 +1961,7 @@ public class GitParcelGameTest {
     return java.util.Optional.empty();
   }
 
-  /*? if >=26.1 {*/
+  /*? if >=1.20.5 {*/
   private static java.util.Optional<Tag> nestedBeeFlowerTag26(CompoundTag hiveData) {
     var bee = firstStoredBee(hiveData).orElse(null);
     if (bee == null) {
@@ -2024,7 +2038,7 @@ public class GitParcelGameTest {
   /** Builds a lodestone compass pointing at the given position, in the era's item form. */
   private static ItemStack lodestoneCompass(BlockPos pos) {
     var stack = new ItemStack(Items.COMPASS);
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     stack.set(
         DataComponents.LODESTONE_TRACKER,
         new LodestoneTracker(java.util.Optional.of(GlobalPos.of(Level.OVERWORLD, pos)), true));
@@ -2038,7 +2052,7 @@ public class GitParcelGameTest {
     *//*?}*/
   }
 
-  /*? if >=26.1 {*/
+  /*? if >=1.20.5 {*/
   private static BlockPos lodestoneOf(ItemStack stack) {
     var tracker = stack.get(DataComponents.LODESTONE_TRACKER);
     return tracker == null ? null : tracker.target().map(GlobalPos::pos).orElse(null);

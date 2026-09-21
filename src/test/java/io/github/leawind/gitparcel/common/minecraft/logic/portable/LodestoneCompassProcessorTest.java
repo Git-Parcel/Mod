@@ -113,7 +113,7 @@ class LodestoneCompassProcessorTest extends AbstractMinecraftTest {
   private static CompoundTag compassAt(BlockPos pos) {
     var item = new CompoundTag();
     item.putString("id", "minecraft:compass");
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     var target = new CompoundTag();
     target.put("pos", BlockPos.CODEC.encodeStart(NbtOps.INSTANCE, pos).result().orElseThrow());
     target.putString("dimension", "minecraft:overworld");
@@ -138,7 +138,7 @@ class LodestoneCompassProcessorTest extends AbstractMinecraftTest {
   }
 
   private static java.util.Optional<BlockPos> lodestoneOf(CompoundTag item) {
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     var tracker =
         TestNbt.getCompound(
             TestNbt.getCompound(item, "components").orElseThrow(),

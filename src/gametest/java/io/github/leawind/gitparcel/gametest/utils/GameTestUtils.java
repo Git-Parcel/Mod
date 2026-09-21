@@ -15,9 +15,9 @@ import org.jspecify.annotations.Nullable;
 public final class GameTestUtils {
   private GameTestUtils() {}
 
-  /** Saves with full metadata; the accessor takes the registry access only on 26.1+. */
+  /** Saves with full metadata; the accessor takes the registry access only on 1.20.5+. */
   public static CompoundTag saveFullMetadata(ServerLevel level, BlockEntity blockEntity) {
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     return blockEntity.saveWithFullMetadata(level.registryAccess());
     /*?} else {*/
     /*return blockEntity.saveWithFullMetadata();
