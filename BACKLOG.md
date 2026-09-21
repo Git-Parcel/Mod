@@ -33,7 +33,3 @@ parcel 线框在 26.x 走 vanilla gizmo 系统（`MixinLevelRenderer` → `Gizmo
 ### [agent] NeoForge 26.3 依赖升级为正式版
 
 `versions/26.3-neoforge/gradle.properties` 目前锁定 `26.3.0.6-beta`（截至 2026-09，26.3 系仅有 beta）。NeoForge 发布 26.3 正式版后更新该属性并验证构建。
-
-### [agent] 补齐 1.20.1 的 vex `Bound*` 声明
-
-1.20.1 的 Vex 以平铺三 int 写入 `BoundX/Y/Z`（锚点方块位置），但 `VanillaFieldDeclarations` 的 1.20.1 分支没有对应声明——包裹迁移时该坐标不会被空间边重定基（26.x 声明了 `bound_pos`，1.21.1 已补 `Bound`+`BLOCK_POS_AXES`，唯 1.20.1 缺失）。补 `Bound` 声明即可；属既有缺口、非某次回归引入。

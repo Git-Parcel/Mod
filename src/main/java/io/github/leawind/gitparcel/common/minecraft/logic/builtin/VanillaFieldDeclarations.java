@@ -103,6 +103,8 @@ final class VanillaFieldDeclarations {
         ParcelCoordinateField.forType(Target.ENTITY, mc("turtle"), "HomePos", Encoding.BLOCK_POS_AXES));
     registrar.registerCoordinateField(
         ParcelCoordinateField.forType(Target.ENTITY, mc("turtle"), "TravelPos", Encoding.BLOCK_POS_AXES));
+    registrar.registerCoordinateField(
+        ParcelCoordinateField.forAny(Target.ENTITY, "Bound", Encoding.BLOCK_POS_AXES));
     // Paintings hang off a 3D-data-value facing in this era; the 26.x painting uses the 2D-value
     // `facing` key handled by PaintingRecordProcessor.
     registrar.registerCoordinateField(

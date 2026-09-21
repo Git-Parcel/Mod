@@ -60,6 +60,8 @@ class BuiltinExtensionRegistrationTest extends AbstractMinecraftTest {
     assertTrue(
         declaresEntity(fields, "TravelPos", "turtle", ParcelCoordinateField.Encoding.BLOCK_POS_AXES));
     assertTrue(
+        declaresEntity(fields, "Bound", null, ParcelCoordinateField.Encoding.BLOCK_POS_AXES));
+    assertTrue(
         declaresEntity(fields, "Facing", "painting", ParcelCoordinateField.Encoding.DIRECTION));
     assertTrue(
         declaresBe(fields, "ExitPortal", "end_gateway", ParcelCoordinateField.Encoding.BLOCK_POS_XYZ));
