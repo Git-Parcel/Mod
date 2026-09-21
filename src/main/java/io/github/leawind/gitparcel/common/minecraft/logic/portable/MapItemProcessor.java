@@ -10,7 +10,7 @@ import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.MapItem;
-/*? if >=26.1 {*/
+/*? if >=1.20.5 {*/
 import net.minecraft.world.level.saveddata.maps.MapId;
 /*?}*/
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
@@ -28,15 +28,14 @@ public final class MapItemProcessor implements ParcelRecordProcessor {
   public static final Identifier ID = Identifier.fromNamespaceAndPath("gitparcel", "map_items");
 
   private static final String FILLED_MAP = "minecraft:filled_map";
-  /*? if >=26.1 {*/
+  private static final String REF_KEY = "gitparcel:map_attachment";
+  /*? if >=1.20.5 {*/
   private static final String COMPONENTS = "components";
   private static final String MAP_ID_COMPONENT = "minecraft:map_id";
   private static final String CUSTOM_DATA_COMPONENT = "minecraft:custom_data";
-  private static final String REF_KEY = "gitparcel:map_attachment";
   /*?} else {*/
   /*private static final String TAG = "tag";
   private static final String LEGACY_MAP_KEY = "map";
-  private static final String REF_KEY = "gitparcel:map_attachment";
   *//*?}*/
 
   @Override
@@ -102,9 +101,37 @@ public final class MapItemProcessor implements ParcelRecordProcessor {
                 MapDataAttachmentType.ID,
                 MapDataAttachmentType.SCHEMA_VERSION,
                 true,
-                MapDataAttachmentType.payloadOf(data));
+                MapDataAttachmentType.payloadOf(
+                    data, context.requireCollector().level().registryAccess()));
     customDataOf(components).putString(REF_KEY, ref.value());
-    /*?} else {*/
+    /*?} else if >=1.20.5 {*/
+    /*var components = item.getCompound(COMPONENTS);
+    if (components.isEmpty() || !components.contains(MAP_ID_COMPONENT)) {
+      return;
+    }
+    // Presence is tested explicitly: a fresh world hands out id 0 for its first map, so a
+    // non-positive test would silently drop that map's artwork.
+    int mapId = components.getInt(MAP_ID_COMPONENT);
+    if (mapId < 0) {
+      return;
+    }
+    MapItemSavedData data =
+        MapItem.getSavedData(new MapId(mapId), context.requireCollector().level());
+    if (data == null) {
+      return;
+    }
+    LocalAttachmentId ref =
+        context
+            .requireCollector()
+            .collect(
+                mapId,
+                MapDataAttachmentType.ID,
+                MapDataAttachmentType.SCHEMA_VERSION,
+                true,
+                MapDataAttachmentType.payloadOf(
+                    data, context.requireCollector().level().registryAccess()));
+    customDataOf(components).putString(REF_KEY, ref.value());
+    *//*?} else {*/
     /*var tag = item.contains(TAG) ? item.getCompound(TAG) : null;
     if (tag == null) {
       return;
@@ -127,7 +154,8 @@ public final class MapItemProcessor implements ParcelRecordProcessor {
                 MapDataAttachmentType.ID,
                 MapDataAttachmentType.SCHEMA_VERSION,
                 true,
-                MapDataAttachmentType.payloadOf(data));
+                MapDataAttachmentType.payloadOf(
+                    data, context.requireCollector().level().registryAccess()));
     tag.putString(REF_KEY, ref.value());
     *//*?}*/
   }
@@ -162,7 +190,30 @@ public final class MapItemProcessor implements ParcelRecordProcessor {
     if (mapCustomData.isEmpty()) {
       mapComponents.remove(CUSTOM_DATA_COMPONENT);
     }
-    /*?} else {*/
+    /*?} else if >=1.20.5 {*/
+    /*var components = item.getCompound(COMPONENTS);
+    if (components.isEmpty() || !components.contains(CUSTOM_DATA_COMPONENT)) {
+      return;
+    }
+    var customData = components.getCompound(CUSTOM_DATA_COMPONENT);
+    String ref = customData.getString(REF_KEY);
+    if (ref.isEmpty()) {
+      return;
+    }
+    MapId newId =
+        context
+            .attachments()
+            .findResolved(new LocalAttachmentId(ref), MapId.class)
+            .orElseThrow(
+                () ->
+                    new ParcelException(
+                        "Map attachment was not restored before its item: " + ref));
+    components.putInt(MAP_ID_COMPONENT, newId.id());
+    customData.remove(REF_KEY);
+    if (customData.isEmpty()) {
+      components.remove(CUSTOM_DATA_COMPONENT);
+    }
+    *//*?} else {*/
     /*var tag = item.contains(TAG) ? item.getCompound(TAG) : null;
     if (tag == null) {
       return;
@@ -199,5 +250,14 @@ public final class MapItemProcessor implements ParcelRecordProcessor {
     components.put(CUSTOM_DATA_COMPONENT, customData);
     return customData;
   }
-  /*?}*/
+  /*?} else if >=1.20.5 {*/
+  /*private static CompoundTag customDataOf(CompoundTag components) {
+    if (components.contains(CUSTOM_DATA_COMPONENT)) {
+      return components.getCompound(CUSTOM_DATA_COMPONENT);
+    }
+    var customData = new CompoundTag();
+    components.put(CUSTOM_DATA_COMPONENT, customData);
+    return customData;
+  }
+  *//*?}*/
 }

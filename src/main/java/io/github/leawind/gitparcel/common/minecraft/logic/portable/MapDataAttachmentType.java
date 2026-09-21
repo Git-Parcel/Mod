@@ -7,7 +7,7 @@ import io.github.leawind.gitparcel.common.api.parcel.content.AttachmentRecord;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.Identifier;
-/*? if >=26.1 {*/
+/*? if >=1.20.5 {*/
 import net.minecraft.world.level.saveddata.maps.MapId;
 /*?}*/
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
@@ -38,6 +38,7 @@ public enum MapDataAttachmentType implements ParcelAttachmentType {
   @Override
   public void restore(ParcelAttachmentRestoreContext context, AttachmentRecord attachment)
       throws Exception {
+    var level = context.level();
     /*? if >=26.1 {*/
     MapItemSavedData data =
         MapItemSavedData.CODEC
@@ -47,15 +48,22 @@ public enum MapDataAttachmentType implements ParcelAttachmentType {
                 () ->
                     new ParcelException(
                         "Corrupt map payload for attachment " + attachment.id()));
-    var level = context.level();
     MapId newId = level.getServer().overworld().getFreeMapId();
     level.setMapData(newId, data);
-    /*?} else {*/
+    /*?} else if >=1.20.5 {*/
+    /*MapItemSavedData data =
+        MapItemSavedData.load(
+            attachment.payload(), level.getServer().registryAccess());
+    if (data == null) {
+      throw new ParcelException("Corrupt map payload for attachment " + attachment.id());
+    }
+    MapId newId = level.getServer().overworld().getFreeMapId();
+    level.setMapData(newId, data);
+    *//*?} else {*/
     /*MapItemSavedData data = MapItemSavedData.load(attachment.payload());
     if (data == null) {
       throw new ParcelException("Corrupt map payload for attachment " + attachment.id());
     }
-    var level = context.level();
     int newId = level.getServer().overworld().getFreeMapId();
     level.setMapData("map_" + newId, data);
     *//*?}*/
@@ -63,11 +71,14 @@ public enum MapDataAttachmentType implements ParcelAttachmentType {
   }
 
   /** Serializes map data for the attachment payload. */
-  public static CompoundTag payloadOf(MapItemSavedData data) {
+  public static CompoundTag payloadOf(
+      MapItemSavedData data, net.minecraft.core.HolderLookup.Provider registries) {
     /*? if >=26.1 {*/
     return (CompoundTag)
         MapItemSavedData.CODEC.encodeStart(NbtOps.INSTANCE, data).result().orElseThrow();
-    /*?} else {*/
+    /*?} else if >=1.20.5 {*/
+    /*return data.save(new CompoundTag(), registries);
+    *//*?} else {*/
     /*return data.save(new CompoundTag());
     *//*?}*/
   }

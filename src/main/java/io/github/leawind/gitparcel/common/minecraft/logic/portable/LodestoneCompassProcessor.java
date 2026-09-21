@@ -18,7 +18,7 @@ import net.minecraft.world.phys.Vec3;
  * identifier travels unchanged; a cross-dimension lodestone whose coordinates happen to fall
  * inside the extent is accepted per rule 3.2's ambiguity note.
  *
- * <p>Vanilla forms: 26.x stores the tracker as the {@code minecraft:lodestone_tracker}
+ * <p>Vanilla forms: 1.20.5+ stores the tracker as the {@code minecraft:lodestone_tracker}
  * component with {@code target.pos} in {@link BlockPos#CODEC} form; 1.20.1 stores
  * {@code tag.LodestonePos} as an {@code X/Y/Z} compound.
  */
@@ -27,7 +27,7 @@ public final class LodestoneCompassProcessor implements ParcelRecordProcessor {
       Identifier.fromNamespaceAndPath("gitparcel", "lodestone_compass");
 
   private static final String COMPASS = "minecraft:compass";
-  /*? if >=26.1 {*/
+  /*? if >=1.20.5 {*/
   private static final String COMPONENTS = "components";
   private static final String TRACKER_COMPONENT = "minecraft:lodestone_tracker";
   private static final String TARGET_KEY = "target";
@@ -82,7 +82,7 @@ public final class LodestoneCompassProcessor implements ParcelRecordProcessor {
     if (!COMPASS.equals(NbtReads.getString(item, "id", ""))) {
       return;
     }
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     var components = NbtReads.getCompound(item, COMPONENTS);
     if (components == null) {
       return;
@@ -118,9 +118,9 @@ public final class LodestoneCompassProcessor implements ParcelRecordProcessor {
 
   /**
    * Rebases one lodestone position and writes it back in the era's own form: the codec-encoded
-   * int array on 26.x, the legacy {@code X/Y/Z} compound on 1.20.1.
+   * int array on 1.20.5+, the legacy {@code X/Y/Z} compound on 1.20.1.
    */
-  /*? if >=26.1 {*/
+  /*? if >=1.20.5 {*/
   private static void rebasePosition(
       CompoundTag container,
       String key,

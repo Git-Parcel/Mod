@@ -11,11 +11,13 @@ import net.minecraft.resources.Identifier;
 /**
  * Vanilla semantic field declarations from the SEMANTICS.md section 9 audit.
  *
- * <p>Key names drift between the supported eras: 26.x writes snake_case keys with codec forms
- * while 1.20.1 writes PascalCase keys and legacy flat-axes compounds, so era-dependent keys are
- * declared on each side of the {@code >=26.1} boundary. Every key here was verified against that
- * version's serialization source; GameTests that inject NBT must use the same era-correct keys or
- * they decouple from vanilla serialization.
+ * <p>Key names drift across three supported eras: 26.x and 1.20.5+ share most snake_case codec
+ * keys, while several entity-side keys only became snake_case in 1.21.2 and stayed flat-axes or
+ * PascalCase through 1.21.1 (sleeping, phantom/turtle positions, vex bound origin, the anger
+ * reference). 1.20.1 writes PascalCase keys and legacy flat-axes compounds throughout, so
+ * era-dependent keys are declared on each side of the version boundaries. Every key here was
+ * verified against that version's serialization source; GameTests that inject NBT must use the
+ * same era-correct keys or they decouple from vanilla serialization.
  */
 final class VanillaFieldDeclarations {
   private static final String[] HIVES = {"beehive", "bee_nest"};
@@ -53,7 +55,7 @@ final class VanillaFieldDeclarations {
           ParcelCoordinateField.forAny(target, "listener.selector.event.pos", Encoding.POSITION));
     }
 
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     for (String hive : HIVES) {
       registrar.registerCoordinateField(
           ParcelCoordinateField.forType(Target.BLOCK_ENTITY, mc(hive), "flower_pos", Encoding.BLOCK_POS));
@@ -106,6 +108,22 @@ final class VanillaFieldDeclarations {
     registrar.registerCoordinateField(
         ParcelCoordinateField.forType(Target.ENTITY, mc("painting"), "Facing", Encoding.DIRECTION));
     *//*?}*/
+
+    // 1.21.1 straddles the two dialects: the 1.20.5 codec rework renamed the hive/gateway/leash
+    // and bee keys above, while these entity-side keys only became snake_case in 1.21.2 and keep
+    // their legacy flat-axes or PascalCase spellings.
+    /*? if >=1.20.5 <26.1 {*/
+    /*registrar.registerCoordinateField(
+        ParcelCoordinateField.forAny(Target.ENTITY, "Sleeping", Encoding.BLOCK_POS_AXES));
+    registrar.registerCoordinateField(
+        ParcelCoordinateField.forType(Target.ENTITY, mc("phantom"), "A", Encoding.BLOCK_POS_AXES));
+    registrar.registerCoordinateField(
+        ParcelCoordinateField.forType(Target.ENTITY, mc("turtle"), "HomePos", Encoding.BLOCK_POS_AXES));
+    registrar.registerCoordinateField(
+        ParcelCoordinateField.forType(Target.ENTITY, mc("turtle"), "TravelPos", Encoding.BLOCK_POS_AXES));
+    registrar.registerCoordinateField(
+        ParcelCoordinateField.forAny(Target.ENTITY, "Bound", Encoding.BLOCK_POS_AXES));
+    *//*?}*/
   }
 
   private static void registerIdentityEdges(ParcelExtensionRegistrar registrar) {
@@ -126,7 +144,7 @@ final class VanillaFieldDeclarations {
       registrar.registerEntityRefField(ParcelEntityRefField.forAny(path));
     }
 
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     registrar.registerEntityRefField(ParcelEntityRefField.forAny("leash.UUID"));
     registrar.registerEntityRefField(ParcelEntityRefField.forAny("angry_at"));
     registrar.registerEntityRefField(ParcelEntityRefField.forType(mc("fox"), "Trusted[]"));
@@ -134,6 +152,10 @@ final class VanillaFieldDeclarations {
     /*registrar.registerEntityRefField(ParcelEntityRefField.forAny("Leash.UUID"));
     registrar.registerEntityRefField(ParcelEntityRefField.forAny("AngryAt"));
     registrar.registerEntityRefField(ParcelEntityRefField.forType(mc("fox"), "TrustedUUIDs[]"));
+    *//*?}*/
+    // 1.21.1 kept the pre-1.21.2 PascalCase anger reference alongside the renamed leash key.
+    /*? if >=1.20.5 <26.1 {*/
+    /*registrar.registerEntityRefField(ParcelEntityRefField.forAny("AngryAt"));
     *//*?}*/
   }
 
@@ -223,7 +245,7 @@ final class VanillaFieldDeclarations {
               ParcelTransientField.Kind.OFFSET_GAME_TIME));
     }
 
-    /*? if >=26.1 {*/
+    /*? if >=1.20.5 {*/
     registrar.registerTransientField(
         ParcelTransientField.forType(
             ParcelTransientField.Target.BLOCK_ENTITY,
