@@ -122,10 +122,15 @@ stonecutter {
     }
 
     // Identifier is the 26.1 rename of ResourceLocation; shared sources write the new name and
-    // pre-rename targets get it reversed, including the constructor-style static factory.
+    // pre-rename targets get it reversed, including the static factory call. The pre-rename
+    // spelling differs per era: 1.20.5+ (so 1.21.1) already uses the fromNamespaceAndPath
+    // factory, while 1.20.1 keeps the public constructor.
     replacements.string(current.parsed >= "1.21.11") {
         replace("net.minecraft.resources.ResourceLocation", "net.minecraft.resources.Identifier")
-        replace("new ResourceLocation", "Identifier.fromNamespaceAndPath")
+        replace(
+            if (current.parsed >= "1.20.5") "ResourceLocation.fromNamespaceAndPath" else "new ResourceLocation",
+            "Identifier.fromNamespaceAndPath",
+        )
         replace("ResourceLocation", "Identifier")
     }
 
