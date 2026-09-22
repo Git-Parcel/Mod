@@ -21,6 +21,13 @@ jobs:
             java-version: 25
             distribution: temurin
 
+      -   name: Setup Node
+          uses: actions/setup-node@v5
+          with:
+            node-version: 22
+            cache: npm
+            cache-dependency-path: web/package-lock.json
+
       -   name: Setup Gradle
           uses: gradle/actions/setup-gradle@v5
           with:

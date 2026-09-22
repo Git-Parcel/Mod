@@ -14,6 +14,15 @@ public final class MinecraftVersion {
     return SharedConstants.getCurrentVersion().dataVersion().version();
     /*?} else {*/
     /*return SharedConstants.getCurrentVersion().getDataVersion().getVersion();
-     *//*?}*/
+     *//*? }*/
+  }
+
+  /** Returns the human-readable version name of the active Minecraft runtime. */
+  public static String currentVersionName() {
+    /*? if >=1.21.11 {*/
+    return SharedConstants.getCurrentVersion().name();
+    /*?} else {*/
+    /*return SharedConstants.getCurrentVersion().getName();
+     *//*? }*/
   }
 }

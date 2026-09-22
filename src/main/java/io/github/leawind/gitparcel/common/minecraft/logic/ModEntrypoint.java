@@ -11,6 +11,7 @@ import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.Parcel
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parceldebug.ParcelDebugCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcels.ParcelsCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.operation.OperationManager;
+import io.github.leawind.gitparcel.server.minecraft.logic.web.WebServiceManager;
 import io.github.leawind.gitparcel.server.minecraft.logic.world.ParcelRegistry;
 import io.github.leawind.gitparcel.server.minecraft.logic.world.SnapshotService;
 import io.github.leawind.gitparcel.server.minecraft.logic.network.ParcelSynchronization;
@@ -79,6 +80,7 @@ public final class ModEntrypoint {
 
   /** Cancels queued work and releases operation worker threads for this server. */
   public static void onServerStopping(MinecraftServer server) {
+    WebServiceManager.shutdown(server);
     OperationManager.shutdown(server);
   }
 

@@ -28,6 +28,10 @@ build/
 .gradle/
 .kotlin/
 
+# web console
+web/node_modules/
+web/dist/
+
 # other
 run
 runs

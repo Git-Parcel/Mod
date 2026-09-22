@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.Exec
+
 plugins {
     id("dev.kikugie.stonecutter")
 
@@ -21,6 +23,62 @@ val buildAndCollect by tasks.registering(Sync::class) {
     description = "Builds and collects all distributable jars."
     into(layout.buildDirectory.dir("libs"))
 }
+
+// region Web console build
+// Registered on the root project (this script) so every stonecutter node shares one
+// npm install and one bundle output (web/dist) instead of racing on those directories.
+// Node projects wire these into processResources from the central script.
+val modVersionString: String =
+    providers.gradleProperty("mod.version").get()
+
+val webDir = layout.projectDirectory.dir("web")
+
+fun npmCommandLine(vararg args: String): List<String> =
+    if (System.getProperty("os.name").lowercase().contains("windows")) {
+        listOf("cmd", "/c", "npm", *args)
+    } else {
+        listOf("npm", *args)
+    }
+
+val webNpmInstall by tasks.registering(Exec::class) {
+    group = "build"
+    description = "Installs the web console npm dependencies."
+    workingDir(webDir)
+    commandLine(npmCommandLine("install", "--no-audit", "--no-fund"))
+    inputs.file(webDir.file("package.json"))
+    inputs.file(webDir.file("package-lock.json"))
+    outputs.dir(webDir.dir("node_modules"))
+}
+
+val buildWebUi by tasks.registering(Exec::class) {
+    group = "build"
+    description = "Type-checks and builds the web console static bundle."
+    workingDir(webDir)
+    commandLine(npmCommandLine("run", "build"))
+    dependsOn(webNpmInstall)
+    inputs.dir(webDir.dir("src"))
+    inputs.file(webDir.file("index.html"))
+    inputs.file(webDir.file("vite.config.ts"))
+    inputs.file(webDir.file("tsconfig.json"))
+    inputs.file(webDir.file("package.json"))
+    outputs.dir(webDir.dir("dist"))
+    // Vite emits content-hashed asset names; drop stale files so the packaged
+    // bundle never accumulates outdated assets.
+    doFirst { delete(webDir.dir("dist")) }
+}
+
+val generateWebConsoleMeta by tasks.registering {
+    description = "Writes the mod metadata file consumed by the web console."
+    inputs.property("mod.version", modVersionString)
+    val output = layout.buildDirectory.file("gitparcel-meta/gitparcel/gitparcel.properties")
+    outputs.file(output)
+    doLast {
+        val file = output.get().asFile
+        file.parentFile.mkdirs()
+        file.writeText("# gitparcel web console metadata\nmod.version=$modVersionString\n")
+    }
+}
+// endregion
 
 val checkArchitectureBoundaries by tasks.registering {
     group = "verification"

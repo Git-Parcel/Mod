@@ -347,6 +347,17 @@ tasks.named<ProcessResources>("processResources") {
     filesMatching("**/*.mixins.json") {
         expand(resourceProps)
     }
+
+    // Web console: bundle the built SPA and the loader-neutral metadata file from
+    // the root project's shared web build tasks.
+    dependsOn(
+        rootProject.tasks.named("buildWebUi"),
+        rootProject.tasks.named("generateWebConsoleMeta"),
+    )
+    from(rootProject.layout.buildDirectory.dir("gitparcel-meta"))
+    from(rootProject.layout.projectDirectory.dir("web/dist")) {
+        into("gitparcel/web")
+    }
 }
 
 java {
