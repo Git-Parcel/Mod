@@ -33,3 +33,23 @@ parcel 线框在 26.x 走 vanilla gizmo 系统（`MixinLevelRenderer` → `Gizmo
 ### [agent] NeoForge 26.3 依赖升级为正式版
 
 `versions/26.3-neoforge/gradle.properties` 目前锁定 `26.3.0.6-beta`（截至 2026-09，26.3 系仅有 beta）。NeoForge 发布 26.3 正式版后更新该属性并验证构建。
+
+### [agent] history 分页游标接通与截断提示
+
+`history` 命令面只有 `[limit]`，树查询的游标在代码中固定为空（`HistorySubcommand` 传 `Optional.empty()`），超过 limit 的节点被静默截断且无法翻页；DESIGN.md 已要求"分页加载较大的树，同时保持游标稳定"。需要决策：在客户端树 UI 落地前，命令面先补 `[cursor]` 参数并在页脚回显下一页游标，还是只显示"共 M 条、已显示 N 条"。
+
+### [agent] 面向玩家消息以 parcel 名称替代 UUID
+
+保存成功、history 头部、operations 的 target 等消息用 parcel UUID 作为身份展示，与"免 Git 心智"的目标用户定位不符（玩家的交互凭据是名称）。改为 `meta.name()`，UUID 退到悬停提示或括号内。
+
+### [agent] 未完成恢复操作的可发现性
+
+`/parcels operations` 只列内存中的近期操作，服务器崩溃重启后列表为空；未完成恢复只存在于日志与 operation ref 中。应把启动审计发现的 pending 恢复合并展示（或增加 pending 子命令），并为 `restore recover` 的 operation_id 提供补全。
+
+### [agent] parcels contents 改名或迁移
+
+该命令实际列出内容类型注册表（blocks/entities/scheduled_ticks/attachments），名称读作"parcel 里有什么"对玩家有误导。改为 `content-types` 或挪入 `parceldebug`。
+
+### [agent] 重名场景下的选择器消歧
+
+已决策允许 parcel 重名（2026-09）。两处后续：(1) `#a[name=X]` 目前强制 `maxResults=1`，重名时静默截断成一个，应按谓词语义返回全部匹配；(2) 要求恰好一个 parcel 的命令在重名失败时，错误消息应列出候选（位置、维度）帮助消歧，而不是只报"匹配过多"。
