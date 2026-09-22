@@ -10,6 +10,7 @@ import io.github.leawind.gitparcel.common.api.operation.OperationSnapshot;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
+import io.github.leawind.gitparcel.server.minecraft.logic.commands.SnapshotIdText;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.ParcelCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.operation.OperationManager;
 import net.minecraft.commands.CommandSourceStack;
@@ -69,7 +70,7 @@ public final class SaveSubcommand extends GitParcelBaseCommand {
                       Translations.of(
                           "command.gitparcel.parcel.save.success",
                           parcel.uuid().toString(),
-                          abbreviate(snapshot)));
+                          SnapshotIdText.abbreviatedCopyable(snapshot)));
                 } else {
                   source.sendFailure(
                       Translations.of(

@@ -12,6 +12,7 @@ import io.github.leawind.gitparcel.common.api.snapshot.SnapshotId;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.SharedRepositoryArguments;
+import io.github.leawind.gitparcel.server.minecraft.logic.commands.SnapshotIdText;
 import io.github.leawind.gitparcel.server.minecraft.logic.operation.OperationManager;
 import java.util.UUID;
 import net.minecraft.commands.CommandSourceStack;
@@ -83,7 +84,7 @@ public final class RestoreSubcommand extends GitParcelBaseCommand {
                     Translations.of(
                         "command.gitparcel.parcel.restore.success",
                         parcel.uuid().toString(),
-                        snapshot.abbreviate()));
+                        SnapshotIdText.abbreviatedCopyable(snapshot)));
               } else {
                 source.sendFailure(
                     Translations.of(
@@ -139,7 +140,8 @@ public final class RestoreSubcommand extends GitParcelBaseCommand {
                         "command.gitparcel.parcel.restore.recovery_success",
                         operationId,
                         parcel.uuid().toString(),
-                        new SnapshotId(completed.result().orElseThrow()).abbreviate()));
+                        SnapshotIdText.abbreviatedCopyable(
+                            new SnapshotId(completed.result().orElseThrow()))));
               } else {
                 source.sendFailure(
                     Translations.of(

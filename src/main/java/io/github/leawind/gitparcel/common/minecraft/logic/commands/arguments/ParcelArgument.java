@@ -40,7 +40,7 @@ public class ParcelArgument implements ArgumentType<ParcelSelector> {
           "#a",
           "#p",
           "#s",
-          "#a[name=Base*,limit=3]",
+          "#a[name=Base,limit=3]",
           "dd12be42-52a9-4a91-a8a1-11c01849e498");
 
   public static final SimpleCommandExceptionType ERROR_NOT_SINGLE_PARCEL =

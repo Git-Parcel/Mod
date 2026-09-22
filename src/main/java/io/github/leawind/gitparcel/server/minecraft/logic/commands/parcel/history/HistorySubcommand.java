@@ -12,12 +12,14 @@ import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
 import io.github.leawind.gitparcel.common.utils.Translations;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
+import io.github.leawind.gitparcel.server.minecraft.logic.commands.SnapshotIdText;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.ParcelCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.operation.OperationManager;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
 
 /** Displays the logical snapshot tree, including parent and current-baseline information. */
 public final class HistorySubcommand extends GitParcelBaseCommand {
@@ -98,15 +100,21 @@ public final class HistorySubcommand extends GitParcelBaseCommand {
             parcel.uuid().toString(),
             tree.nodes().size()));
     for (var node : tree.nodes()) {
-      String parent = node.parentId().map(id -> id.abbreviate()).orElse("root");
-      String current = tree.current().filter(node.id()::equals).isPresent() ? "*" : " ";
+      String marker = tree.current().filter(node.id()::equals).isPresent() ? "*" : " ";
+      var id = Component.literal(marker).append(SnapshotIdText.abbreviatedCopyable(node.id()));
+      var nameAndParent = Component.literal(node.name() + " [parent: ");
+      node.parentId()
+          .ifPresentOrElse(
+              parent -> nameAndParent.append(SnapshotIdText.abbreviatedCopyable(parent)),
+              () -> nameAndParent.append("root"));
+      nameAndParent.append("]");
       source.sendSystemMessage(
           Translations.of(
               "command.gitparcel.parcel.history.entry",
-              current + node.id().abbreviate(),
+              id,
               node.createdAt(),
               node.author(),
-              node.name() + " [parent: " + parent + "]"));
+              nameAndParent));
     }
   }
 }
