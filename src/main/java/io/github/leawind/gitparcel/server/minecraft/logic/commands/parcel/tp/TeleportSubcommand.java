@@ -3,8 +3,12 @@ package io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.tp;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.github.leawind.gitparcel.common.api.permission.ParcelPermissions;
+import io.github.leawind.gitparcel.common.api.permission.PermissionLevel;
 import io.github.leawind.gitparcel.common.api.world.Parcel;
 import io.github.leawind.gitparcel.common.minecraft.logic.commands.arguments.ParcelArgument;
+import io.github.leawind.gitparcel.common.minecraft.logic.permission.MinecraftPermissions;
+import io.github.leawind.gitparcel.server.minecraft.logic.commands.GitParcelBaseCommand;
 import io.github.leawind.gitparcel.server.minecraft.logic.commands.parcel.ParcelCommand;
 import java.util.Locale;
 import net.minecraft.commands.CommandSourceStack;
@@ -17,9 +21,10 @@ import net.minecraft.world.phys.Vec3;
 /**
  * @see TeleportCommand
  */
-public class TeleportSubcommand {
+public class TeleportSubcommand extends GitParcelBaseCommand {
   public static ArgumentBuilder<CommandSourceStack, ?> build() {
     return Commands.literal("teleport")
+        .requires(MinecraftPermissions.require(PermissionLevel.GAMEMASTERS))
         .executes(TeleportSubcommand::teleportSelf)
         .then(
             Commands.argument("players", EntityArgument.players())
@@ -29,7 +34,10 @@ public class TeleportSubcommand {
   private static int teleportSelf(CommandContext<CommandSourceStack> ctx)
       throws CommandSyntaxException {
     var source = ctx.getSource();
-    var parcel = ParcelArgument.getSingleParcel(ctx, ParcelCommand.ARG_PARCELS);
+    var parcel = requireViewableParcel(ctx);
+    if (parcel == null) {
+      return 0;
+    }
     var player = source.getPlayerOrException();
 
     var pos = getTeleportPos(parcel);
@@ -52,7 +60,10 @@ public class TeleportSubcommand {
   private static int teleportPlayers(CommandContext<CommandSourceStack> ctx)
       throws CommandSyntaxException {
     var source = ctx.getSource();
-    var parcel = ParcelArgument.getSingleParcel(ctx, ParcelCommand.ARG_PARCELS);
+    var parcel = requireViewableParcel(ctx);
+    if (parcel == null) {
+      return 0;
+    }
     var players = EntityArgument.getPlayers(ctx, "players");
 
     var pos = getTeleportPos(parcel);
@@ -71,6 +82,17 @@ public class TeleportSubcommand {
         true);
 
     return players.size();
+  }
+
+  /** Parcel VIEW is checked at the execution entry, on top of the registration-level check. */
+  private static Parcel requireViewableParcel(CommandContext<CommandSourceStack> ctx)
+      throws CommandSyntaxException {
+    var source = ctx.getSource();
+    var parcel = ParcelArgument.getSingleParcel(ctx, ParcelCommand.ARG_PARCELS);
+    if (!validateParcelPermission(source, parcel, ParcelPermissions.VIEW)) {
+      return null;
+    }
+    return parcel;
   }
 
   private static Vec3 getTeleportPos(Parcel parcel) {
