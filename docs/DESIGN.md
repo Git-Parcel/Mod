@@ -836,17 +836,94 @@ parcel 不绑定到共享工作树，普通保存也不直接写入共享仓库�
 
 ### HTTP 服务与线程模型
 
-HTTP 层使用 JDK 内置 HttpServer 与独立的守护线程池，不占用服务器线程，也不引入第三方服务端依赖。处理请求时，读取服务器状态的 API 把采集工作经 `MinecraftServer.submit` 提交到服务器主线程并等待有界时间；超时或服务器无响应时返回 503，而不是无限占用 HTTP 线程。HTTP 线程绝不直接触碰 Minecraft 状态。
+HTTP 层使用 JDK 内置 HttpServer 与独立的守护线程池，不占用服务器线程，也不引入第三方服务端依赖。HTTP 线程绝不直接触碰 Minecraft 状态：
 
-### API 与静态资源
+- 读取端点把采集工作经 `MinecraftServer.submit` 提交到服务器主线程并等待有界时间；超时或服务器无响应时返回 503 `server_busy`，而不是无限占用 HTTP 线程。
+- 写操作分两类。同步操作（创建、配置、resize、删除、传送）在服务器线程执行并返回最终结果；异步操作（保存、恢复、发布、导入、共享仓库变更）经 `OperationManager` 提交为后台操作，立即返回 202 与操作快照，进度经操作记录端点轮询。
 
-- API 位于 `/api/*`，请求与响应均为 UTF-8 JSON，未匹配的路径返回 404。基础阶段只提供 `GET /api/status`：模组版本、Minecraft 版本（名称与数据版本）、在线玩家数、各维度 parcel 计数和近期操作统计。
+### 权限与身份
+
+Web 令牌持有者视为 OWNERS（4 级）：4 是最高权限等级，因此能通过全部世界权限与 parcel 权限检查，与「启动权限与原版 `/publish` 同级」的所有权语义一致。Web 请求不携带玩家身份，不做基于玩家的权限区分。
+
+经 Web 提交的后台操作 owner 记为 `web-console`；保存与恢复产生的 Git 身份为 name `Web Console`、email `web-console@gitparcel.local`。
+
+### 页面与功能
+
+前端为单页应用，页面：总览、Parcel 管理（列表与详情）、操作记录、共享仓库。
+
+#### 全局
+
+- 界面语言支持中文与英文：首次访问按浏览器语言选择，可手动切换并持久化；日期时间按当前语言格式化。
+- 任一请求返回 401 时进入引导页，提示从游戏内 `/parcel web start` 输出的链接重新进入。
+- 后端只返回稳定错误码；全部界面文案（含错误文案、操作类型名、维度名）由前端语言包渲染。
+- UUID 与快照 ID 点击复制完整值，悬停显示完整值。
+- 危险操作（恢复、删除、批量删除）统一二次确认，正文写明后果。
+- 已知维度（主世界、下界、末地）显示本地化名称，其余显示原始 id。
+
+#### 总览
+
+服务器信息（Minecraft 版本名与数据版本、模组版本、在线玩家数、服务器时间）、各维度 parcel 计数（点击跳转对应维度列表）、进行中操作数（点击跳转操作记录）。自动轮询。
+
+#### Parcel 管理（列表）
+
+按维度分组展示 parcel：名称、UUID、边界、尺寸（parcel 本地与世界向）、体积、锚点、旋转与镜像、作者、归档同步状态（尺寸与锚点是否与归档一致）。支持名称过滤、排序、多选批量删除（仅解除注册，内部仓库保留，需确认）。创建表单：维度、from、to、名称、镜像、旋转，服务端校验失败回显具体原因（正尺寸、体积上限、不重叠、名称合法）。从共享仓库导入表单：仓库、revision、path、目标维度与放置位置、镜像、旋转，提交为后台操作。
+
+#### Parcel 详情
+
+- 信息：本地与世界尺寸、内容范围、边界、锚点、旋转、镜像、内容类型清单、数据版本、excludeEntities、归档同步（仓库大小、是否失同步）。
+- 配置：与 `config set` 相同的键（`meta.name`、`meta.author`、`meta.description`、`meta.excludeEntities`、`visual.showWireframe`、`visual.showAnchor`、`content.blocks.sectionSize`），逐项保存。
+- 快照：保存快照（可选名称）。历史以树形分支图展示——前端按稳定游标分页聚合后按父子关系重建树，节点显示当前基准标记、来源（SAVED/IMPORTED）、快照 ID（可复制）、父 ID、名称、作者、创建时间与内容摘要，分支可折叠，当前基准路径默认展开。恢复可从树节点发起或输入完整快照 ID，模式为直接恢复或先保存再恢复（自动创建保护快照），需破坏性确认（覆盖世界）。
+- 管理操作：resize（新边界 + 语义提示：纯注册、可逆、新范围在下次保存时捕获）、删除（确认，仅解除注册）、传送在线玩家（多选）、发布到共享仓库（仓库下拉、路径、消息）。
+
+#### 操作记录
+
+全部操作的表格：ID、类型、目标、发起者、状态（queued/running/succeeded/failed/canceled）、当前阶段、进度与单位、时间。不同阶段的单位不合成百分比：无总量时显示阶段与进行中状态（进度协议）。有活动操作时高频轮询，全部终态后降低频率。行展开显示 result、error 与 errorCode。
+
+#### 共享仓库
+
+仓库列表（名称、类型、远程 URL、上次同步）。创建、克隆（URL）、fetch、pull、push；变更均提交为后台操作。
+
+### API 约定
+
+- 全部端点位于 `/api/*`，需会话令牌；未匹配的路径返回 404。
+- JSON 约定：字段 camelCase，时间戳 ISO-8601 字符串，坐标为 `[x,y,z]` 数组。
+- 错误体 `{"error":"<code>"}`，错误码：`unauthorized`、`not_found`、`bad_request`、`invalid_body`、`invalid_name`、`invalid_value`、`overlap`、`volume_limit`、`busy`、`server_busy`、`stale_cursor`、`internal_error`。
+- 端点：
+
+```text
+GET  /api/status                                    总览（已有）
+GET  /api/parcels?dimension=                        parcel 列表
+GET  /api/parcels/{uuid}                            parcel 详情
+POST /api/parcels                                   创建（同步）
+POST /api/parcels/batch-delete                      批量删除（同步）
+POST /api/parcels/{uuid}/config                     修改配置（同步）
+POST /api/parcels/{uuid}/resize                     调整边界（同步；占用时 409 busy）
+POST /api/parcels/{uuid}/save                       保存快照（异步）
+POST /api/parcels/{uuid}/restore                    恢复快照（异步）
+POST /api/parcels/{uuid}/publish                    发布到共享仓库（异步）
+POST /api/parcels/{uuid}/teleport                   传送在线玩家（同步）
+GET  /api/parcels/{uuid}/history?limit=&cursor=     快照树分页（稳定游标）
+POST /api/import                                    从共享仓库导入创建（异步）
+GET  /api/players                                   在线玩家
+GET  /api/operations?limit=                         近期操作
+GET  /api/operations/{uuid}                         单个操作
+GET  /api/repositories                              共享仓库列表
+POST /api/repositories                              创建仓库（异步）
+POST /api/repositories/{name}/clone|fetch|pull|push 仓库变更（异步）
+```
+
 - 静态资源从模组 jar 内 `gitparcel/web/` 伺服，未知路径回退到 `index.html`（单页应用路由）。资源路径按不可信输入处理：解码后拒绝绝对路径、空段与 `..`。
 - 模组版本等构建期元数据由构建脚本写入 jar 内 properties 文件并在运行时读取，不经加载器 API，保持三加载器行为一致。
 
 ### 前端
 
-前端源码位于仓库 `web/` 目录（Vue 3 + TypeScript + Vite）。`npm run build` 产出静态文件；Gradle 构建在处理资源前自动安装依赖并构建，把产物打包进 jar。开发时运行 `npm run dev` 启动 Vite 开发服务器，`/api` 请求代理到本地 5639 端口，配合游戏内 `web start` 实现前端热更新。
+前端源码位于仓库 `web/` 目录：Vue 3 + TypeScript + Vite，组件库 Naive UI，路由 vue-router，多语言 vue-i18n（zh-CN / en-US 语言包）。`npm run build` 产出静态文件；Gradle 构建在处理资源前自动安装依赖并构建，把产物打包进 jar。开发时运行 `npm run dev` 启动 Vite 开发服务器，`/api` 请求代理到本地 5639 端口，配合游戏内 `web start` 实现前端热更新。
+
+数据刷新采用轮询而非推送：页面可见时按页面语义轮询（总览约 10 秒；操作记录在有活动操作时约 3 秒、全部终态后降频），并提供手动刷新。
+
+### 非目标
+
+实时推送（SSE/WebSocket，轮询已满足需求）、parcel 权限编辑（命令层未暴露该能力）、内部仓库永久删除（命令层不存在该操作）、界面视觉细节打磨。
 
 ## 路径与内容安全
 
