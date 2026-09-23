@@ -34,11 +34,13 @@ public final class WebService implements AutoCloseable {
 
   /** JSON API surface; implemented by the Minecraft-facing layer. */
   public interface ApiHandler {
+    /** An API request with its raw JSON body (empty for body-less methods). */
+    record Request(String method, String path, Map<String, String> query, byte[] body) {}
+
     /**
-     * @param query decoded query parameters; later keys overwrite earlier ones
      * @return empty when the method/path pair is not a known API route
      */
-    Optional<WebResponse> handle(String method, String path, Map<String, String> query);
+    Optional<WebResponse> handle(Request request);
   }
 
   /** An already rendered HTTP response body. */
@@ -137,15 +139,38 @@ public final class WebService implements AutoCloseable {
   }
 
   private void serveApi(HttpExchange exchange) throws IOException {
-    if (!isAuthorized(exchange)) {
-      respond(exchange, WebResponse.jsonError(401, "unauthorized"));
-      return;
+    try {
+      if (!isAuthorized(exchange)) {
+        respond(exchange, WebResponse.jsonError(401, "unauthorized"));
+        return;
+      }
+      var uri = exchange.getRequestURI();
+      var request =
+          new ApiHandler.Request(
+              exchange.getRequestMethod(),
+              uri.getPath(),
+              decodeQuery(uri.getRawQuery()),
+              readBody(exchange));
+      var response = apiHandler.handle(request);
+      respond(exchange, response.orElseGet(() -> WebResponse.jsonError(404, "not_found")));
+    } catch (ApiException e) {
+      respond(exchange, WebResponse.jsonError(e.status(), e.code()));
+    } catch (Exception e) {
+      LOGGER.error("Web console request failed: {}", exchange.getRequestURI(), e);
+      respond(exchange, WebResponse.jsonError(500, "internal_error"));
     }
-    var uri = exchange.getRequestURI();
-    var query = decodeQuery(uri.getRawQuery());
-    var response =
-        apiHandler.handle(exchange.getRequestMethod(), uri.getPath(), query);
-    respond(exchange, response.orElseGet(() -> WebResponse.jsonError(404, "not_found")));
+  }
+
+  private static final int MAX_BODY_BYTES = 1024 * 1024;
+
+  private static byte[] readBody(HttpExchange exchange) throws IOException {
+    try (var in = exchange.getRequestBody()) {
+      var body = in.readNBytes(MAX_BODY_BYTES + 1);
+      if (body.length > MAX_BODY_BYTES) {
+        throw new ApiException(400, "invalid_body");
+      }
+      return body;
+    }
   }
 
   private boolean isAuthorized(HttpExchange exchange) {

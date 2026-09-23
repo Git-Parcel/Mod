@@ -36,8 +36,8 @@ class WebServiceTest {
         WebService.start(
             new InetSocketAddress(InetAddress.getLoopbackAddress(), 0),
             TOKEN,
-            (method, path, query) ->
-                "/api/status".equals(path) && "GET".equals(method)
+            request ->
+                "/api/status".equals(request.path()) && "GET".equals(request.method())
                     ? Optional.of(WebService.WebResponse.json(200, "{\"ok\":true}"))
                     : Optional.empty(),
             "gitparcel/web/");

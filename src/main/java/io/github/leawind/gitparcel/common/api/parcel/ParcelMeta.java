@@ -162,6 +162,14 @@ public final class ParcelMeta {
     return Boolean.TRUE.equals(excludeEntities);
   }
 
+  public @Nullable String author() {
+    return author;
+  }
+
+  public @Nullable List<String> tags() {
+    return tags == null ? null : List.copyOf(tags);
+  }
+
   public void setContents(Map<String, ParcelContentManifest> contents) {
     this.contents = Map.copyOf(contents);
   }
