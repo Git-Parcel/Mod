@@ -41,6 +41,7 @@ final class ParcelJson {
     o.addProperty("mirror", lowerName(transform.mirror()));
     o.addProperty("rotation", lowerName(transform.rotation()));
     o.add("anchorWorld", vec3(transform.translation()));
+    o.add("anchorParcel", vec3(meta.anchor()));
 
     o.add(
         "bounds",

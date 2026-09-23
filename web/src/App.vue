@@ -1,88 +1,89 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { captureTokenFromUrl, fetchStatus, hasToken, type Status } from './api';
+import { computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { dateEnUS, dateZhCN, enUS, zhCN } from 'naive-ui';
+import { unauthorized } from './api/client';
+import { LOCALES, setLocale, type Locale } from './i18n';
 
-// Scaffold page: verifies token flow and API wiring; layout and further
-// management views are designed separately.
-captureTokenFromUrl();
+const { t, locale } = useI18n();
+const route = useRoute();
+const router = useRouter();
 
-const status = ref<Status | null>(null);
-const error = ref<string | null>(null);
-const loading = ref(true);
+const naiveLocale = computed(() => (locale.value === 'zh-CN' ? zhCN : enUS));
+const naiveDateLocale = computed(() => (locale.value === 'zh-CN' ? dateZhCN : dateEnUS));
 
-onMounted(async () => {
-  try {
-    status.value = await fetchStatus();
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e);
-  } finally {
-    loading.value = false;
-  }
-});
+const activeKey = computed(() => '/' + (route.path.split('/')[1] ?? ''));
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleString();
+const menuOptions = computed(() => [
+  { label: t('nav.overview'), key: '/' },
+  { label: t('nav.parcels'), key: '/parcels' },
+  { label: t('nav.operations'), key: '/operations' },
+  { label: t('nav.repositories'), key: '/repositories' },
+]);
+
+function onMenuSelect(key: string) {
+  void router.push(key);
+}
+
+const currentLocale = computed(() => locale.value as Locale);
+const localeOptions = LOCALES.map((value) => ({ label: value === 'zh-CN' ? '中文' : 'English', value }));
+
+function onLocaleChange(value: Locale) {
+  setLocale(value);
 }
 </script>
 
 <template>
-  <main class="console">
-    <h1>Git Parcel 控制台</h1>
-
-    <p v-if="loading">加载中……</p>
-    <p v-else-if="error" class="error">
-      {{ error }}
-      <span v-if="!hasToken()"><br />请从游戏内 <code>/parcel web start</code> 输出的链接进入。</span>
-    </p>
-    <dl v-else-if="status">
-      <dt>模组版本</dt>
-      <dd>{{ status.gitparcel.version }}</dd>
-      <dt>Minecraft 版本</dt>
-      <dd>{{ status.minecraft.name }}（数据版本 {{ status.minecraft.dataVersion }}）</dd>
-      <dt>在线玩家</dt>
-      <dd>{{ status.onlinePlayers }} / {{ status.maxPlayers }}</dd>
-      <dt>Parcel</dt>
-      <dd>
-        <span v-for="entry in status.parcels" :key="entry.dimension" class="parcel-count">
-          {{ entry.dimension }}：{{ entry.count }}
-        </span>
-        <span v-if="status.parcels.length === 0">无</span>
-      </dd>
-      <dt>后台操作</dt>
-      <dd>{{ status.operations.active }} 个进行中（近期保留 {{ status.operations.retained }} 个）</dd>
-      <dt>服务器时间</dt>
-      <dd>{{ formatTime(status.serverTime) }}</dd>
-    </dl>
-  </main>
+  <n-config-provider :locale="naiveLocale" :date-locale="naiveDateLocale">
+    <n-message-provider>
+      <n-dialog-provider>
+        <n-result
+          v-if="unauthorized"
+          status="403"
+          :title="t('auth.invalid')"
+          :description="t('auth.hint')"
+          style="margin-top: 6rem"
+        />
+        <n-layout v-else has-sider style="height: 100vh">
+          <n-layout-sider bordered :width="220" content-style="display:flex;flex-direction:column;height:100%">
+            <div class="brand">
+              <span class="brand-title">{{ t('app.title') }}</span>
+            </div>
+            <n-menu :value="activeKey" :options="menuOptions" @update:value="onMenuSelect" />
+            <div class="sider-footer">
+              <span>{{ t('nav.language') }}</span>
+              <n-select
+                :value="currentLocale"
+                :options="localeOptions"
+                size="small"
+                style="width: 7.5rem"
+                @update:value="onLocaleChange"
+              />
+            </div>
+          </n-layout-sider>
+          <n-layout-content content-style="padding: 1.25rem 1.5rem; height: 100vh; overflow: auto">
+            <router-view />
+          </n-layout-content>
+        </n-layout>
+      </n-dialog-provider>
+    </n-message-provider>
+  </n-config-provider>
 </template>
 
 <style scoped>
-.console {
-  max-width: 40rem;
-  margin: 2rem auto;
-  padding: 0 1rem;
-  font-family: system-ui, sans-serif;
+.brand {
+  padding: 1rem 1.25rem;
+  font-weight: 600;
+  font-size: 1.05rem;
 }
-
-dl {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 0.5rem 1.5rem;
-}
-
-dt {
+.sider-footer {
+  margin-top: auto;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   color: #666;
-}
-
-dd {
-  margin: 0;
-}
-
-.parcel-count:not(:last-child)::after {
-  content: '；';
-}
-
-.error {
-  color: #b00020;
 }
 </style>
