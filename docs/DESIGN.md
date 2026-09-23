@@ -908,6 +908,7 @@ GET  /api/players                                   在线玩家
 GET  /api/operations?limit=                         近期操作
 GET  /api/operations/{uuid}                         单个操作
 GET  /api/repositories                              共享仓库列表
+GET  /api/repositories/{name}/paths?revision=       parcel 路径候选
 POST /api/repositories                              创建仓库（异步）
 POST /api/repositories/{name}/clone|fetch|pull|push 仓库变更（异步）
 ```

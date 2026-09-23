@@ -197,6 +197,7 @@ public final class WebApi implements WebService.ApiHandler {
       case OPERATIONS_LIST -> OperationEndpoints.list(this, query);
       case OPERATION_GET -> OperationEndpoints.get(this, params.get("uuid"));
       case REPOSITORIES_LIST -> RepositoryEndpoints.list(this);
+      case REPOSITORY_PATHS -> RepositoryEndpoints.paths(this, params.get("name"), query);
       case REPOSITORY_CREATE -> RepositoryEndpoints.create(this, body);
       case REPOSITORY_CLONE -> RepositoryEndpoints.cloneRepository(this, params.get("name"), body);
       case REPOSITORY_FETCH -> RepositoryEndpoints.fetch(this, params.get("name"));

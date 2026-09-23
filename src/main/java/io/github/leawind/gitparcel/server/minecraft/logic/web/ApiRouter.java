@@ -33,6 +33,7 @@ public final class ApiRouter {
     OPERATIONS_LIST("GET", "operations"),
     OPERATION_GET("GET", "operations", "{uuid}"),
     REPOSITORIES_LIST("GET", "repositories"),
+    REPOSITORY_PATHS("GET", "repositories", "{name}", "paths"),
     REPOSITORY_CREATE("POST", "repositories"),
     REPOSITORY_CLONE("POST", "repositories", "{name}", "clone"),
     REPOSITORY_FETCH("POST", "repositories", "{name}", "fetch"),

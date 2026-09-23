@@ -24,6 +24,26 @@ final class RepositoryEndpoints {
     return WebResponse.json(200, ApiJson.GSON.toJson(body));
   }
 
+  static WebResponse paths(WebApi api, String name, java.util.Map<String, String> query) {
+    var revision = query.get("revision");
+    var paths =
+        api.onServerThread(
+            () -> {
+              var service = SharedRepositoryService.get(api.server());
+              var array = new JsonArray();
+              for (var path :
+                  revision == null || revision.isBlank()
+                      ? service.parcelPaths(name)
+                      : service.parcelPaths(name, revision)) {
+                array.add(path);
+              }
+              return array;
+            });
+    var body = new JsonObject();
+    body.add("paths", paths);
+    return WebResponse.json(200, ApiJson.GSON.toJson(body));
+  }
+
   static WebResponse create(WebApi api, JsonObject request) {
     var name = ApiJson.requireString(request, "name");
     return api.submitOperation(
