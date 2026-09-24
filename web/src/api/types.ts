@@ -22,8 +22,8 @@ export interface ParcelDto {
   excludeEntities: boolean;
   dataVersion: number;
   contents: string[];
-  mirror: 'none' | 'left_right' | 'front_back';
-  rotation: 'none' | 'clockwise_90' | 'clockwise_180' | 'counterclockwise_90';
+  mirror: "none" | "left_right" | "front_back";
+  rotation: "none" | "clockwise_90" | "clockwise_180" | "counterclockwise_90";
   anchorWorld: Vec3;
   anchorParcel: Vec3;
   bounds: { from: Vec3; to: Vec3 };
@@ -38,7 +38,12 @@ export interface ParcelDto {
   } | null;
 }
 
-export type OperationState = 'queued' | 'running' | 'succeeded' | 'failed' | 'canceled';
+export type OperationState =
+  | "queued"
+  | "running"
+  | "succeeded"
+  | "failed"
+  | "canceled";
 
 export interface OperationDto {
   operationId: string;
@@ -59,7 +64,7 @@ export interface OperationDto {
   errorCode: string | null;
 }
 
-export type SnapshotSource = 'saved' | 'imported';
+export type SnapshotSource = "saved" | "imported";
 
 export interface SnapshotNodeDto {
   id: string;

@@ -82,7 +82,11 @@ const parcels = [
   }),
   parcel(P_LONG, {
     name: "Long History",
-    archiveSync: { size: [16, 6, 16], anchor: [0, 0, 0], repositorySizeBytes: 500000 },
+    archiveSync: {
+      size: [16, 6, 16],
+      anchor: [0, 0, 0],
+      repositorySizeBytes: 500000,
+    },
   }),
   parcel(P_EMPTY, {
     name: "Empty Yard",
@@ -154,7 +158,9 @@ const currentByParcel = new Map([[P_MAIN, P_ROOF]]);
 {
   const long = [node(snapshotId(), null, "Genesis", 3000)];
   for (let i = 1; i < 130; i++) {
-    long.push(node(snapshotId(), long[i - 1].id, `Revision ${i}`, 3000 - i * 20));
+    long.push(
+      node(snapshotId(), long[i - 1].id, `Revision ${i}`, 3000 - i * 20),
+    );
   }
   historyByParcel.set(P_LONG, long);
   currentByParcel.set(P_LONG, long[long.length - 1].id);

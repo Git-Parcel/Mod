@@ -1,5 +1,5 @@
-import { currentLocale } from '../i18n';
-import type { OperationDto, Vec3 } from '../api/types';
+import { currentLocale } from "../i18n";
+import type { OperationDto, Vec3 } from "../api/types";
 
 export function formatCoord(vec: Vec3): string {
   return `(${vec[0]}, ${vec[1]}, ${vec[2]})`;
@@ -28,9 +28,9 @@ export function boxSize(from: Vec3, to: Vec3): Vec3 {
 
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
-  const units = ['KiB', 'MiB', 'GiB', 'TiB'];
+  const units = ["KiB", "MiB", "GiB", "TiB"];
   let value = bytes;
-  let unit = 'B';
+  let unit = "B";
   for (const next of units) {
     if (value < 1024) break;
     value /= 1024;
@@ -42,13 +42,13 @@ export function formatBytes(bytes: number): string {
 const timeFormats = new Map<string, Intl.DateTimeFormat>();
 
 export function formatTime(iso: string | null): string {
-  if (!iso) return '—';
+  if (!iso) return "—";
   const locale = currentLocale();
   let formatter = timeFormats.get(locale);
   if (!formatter) {
     formatter = new Intl.DateTimeFormat(locale, {
-      dateStyle: 'short',
-      timeStyle: 'medium',
+      dateStyle: "short",
+      timeStyle: "medium",
     });
     timeFormats.set(locale, formatter);
   }
@@ -61,12 +61,12 @@ export function abbreviate(id: string): string {
 }
 
 export function isOperationActive(operation: OperationDto): boolean {
-  return operation.state === 'queued' || operation.state === 'running';
+  return operation.state === "queued" || operation.state === "running";
 }
 
 /** Phase plus counters; units are never merged into a fake overall percentage. */
 export function formatProgress(operation: OperationDto): string {
-  const unit = operation.unit ?? '';
+  const unit = operation.unit ?? "";
   if (operation.total === null) {
     return `${operation.completed} ${unit}`.trim();
   }

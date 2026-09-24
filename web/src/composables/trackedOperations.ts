@@ -46,7 +46,10 @@ export function trackSubmitted<P extends Promise<OperationDto>>(promise: P): P {
  */
 export function announceSettledTracked(all: OperationDto[]): void {
   for (const operation of all) {
-    if (!tracked.has(operation.operationId) || announced.has(operation.operationId)) {
+    if (
+      !tracked.has(operation.operationId) ||
+      announced.has(operation.operationId)
+    ) {
       continue;
     }
     if (isPendingState(operation.state)) {

@@ -14,7 +14,9 @@ export interface SnapshotTreeStructure {
  * Nodes whose parent has not been loaded yet surface as roots so partial
  * aggregates still render.
  */
-export function buildSnapshotTree(nodes: SnapshotNodeDto[]): SnapshotTreeStructure {
+export function buildSnapshotTree(
+  nodes: SnapshotNodeDto[],
+): SnapshotTreeStructure {
   const ids = new Set(nodes.map((node) => node.id));
   const childrenOf = new Map<string, SnapshotNodeDto[]>();
   const roots: SnapshotNodeDto[] = [];

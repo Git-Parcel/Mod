@@ -24,7 +24,9 @@ describe("buildSnapshotTree", () => {
     ]);
     expect(tree.roots.map((n) => n.id)).toEqual(["root"]);
     expect(tree.childrenOf.get("root")?.map((n) => n.id)).toEqual(["child"]);
-    expect(tree.childrenOf.get("child")?.map((n) => n.id)).toEqual(["grandchild"]);
+    expect(tree.childrenOf.get("child")?.map((n) => n.id)).toEqual([
+      "grandchild",
+    ]);
   });
 
   it("surfaces children whose parent is not loaded yet as roots", () => {

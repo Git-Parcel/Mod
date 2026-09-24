@@ -4,8 +4,8 @@ import {
   announceSettledTracked,
   onOperationTracked,
   onTrackedSettled,
-  trackSubmitted,
   trackedCount,
+  trackSubmitted,
 } from "./trackedOperations";
 
 function operation(id: string, state: OperationDto["state"]): OperationDto {

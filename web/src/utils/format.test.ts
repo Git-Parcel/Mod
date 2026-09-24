@@ -11,7 +11,8 @@ import {
   isOperationActive,
 } from "./format";
 
-const vec = (x: number, y: number, z: number): Vec3 => [x, y, z];describe("formatBytes", () => {
+const vec = (x: number, y: number, z: number): Vec3 => [x, y, z];
+describe("formatBytes", () => {
   it("keeps bytes below 1 KiB unscaled", () => {
     expect(formatBytes(0)).toBe("0 B");
     expect(formatBytes(1023)).toBe("1023 B");
@@ -61,12 +62,16 @@ function operation(overrides: Partial<OperationDto>): OperationDto {
 
 describe("formatProgress", () => {
   it("shows the phase count without a total", () => {
-    expect(formatProgress(operation({ completed: 12, unit: "blocks" }))).toBe("12 blocks");
+    expect(formatProgress(operation({ completed: 12, unit: "blocks" }))).toBe(
+      "12 blocks",
+    );
   });
 
   it("shows the fraction and unit with a total", () => {
     expect(
-      formatProgress(operation({ completed: 90, total: 240, unit: "sections" })),
+      formatProgress(
+        operation({ completed: 90, total: 240, unit: "sections" }),
+      ),
     ).toBe("90 / 240 sections");
   });
 });
