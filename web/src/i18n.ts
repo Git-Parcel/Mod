@@ -7,11 +7,15 @@ export const LOCALES: Locale[] = ['zh-CN', 'en-US'];
 const LOCALE_STORAGE_KEY = 'gitparcel-locale';
 
 function detectLocale(): Locale {
-  const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
+  // Guarded so the module can load outside a browser (unit tests).
+  const stored =
+    typeof localStorage === 'undefined' ? null : localStorage.getItem(LOCALE_STORAGE_KEY);
   if (stored === 'zh-CN' || stored === 'en-US') {
     return stored;
   }
-  return navigator.language.toLowerCase().startsWith('zh') ? 'zh-CN' : 'en-US';
+  return typeof navigator === 'undefined' || !navigator.language.toLowerCase().startsWith('zh')
+    ? 'en-US'
+    : 'zh-CN';
 }
 
 export const i18n = createI18n({

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, provide, ref } from 'vue';
 import type { SnapshotNodeDto } from '../api/types';
-import { SNAPSHOT_TREE_KEY } from './snapshotTree';
+import { buildSnapshotTree, SNAPSHOT_TREE_KEY } from './snapshotTree';
 import SnapshotTreeNode from './SnapshotTreeNode.vue';
 
 const props = defineProps<{
@@ -11,25 +11,9 @@ const props = defineProps<{
 
 const emit = defineEmits<{ (e: 'restore', node: SnapshotNodeDto): void }>();
 
-const ids = computed(() => new Set(props.nodes.map((node) => node.id)));
-
-const childrenOf = computed(() => {
-  const map = new Map<string, SnapshotNodeDto[]>();
-  for (const node of props.nodes) {
-    // A parent outside the loaded set is rendered as a root once it loads.
-    if (node.parentId === null || !ids.value.has(node.parentId)) {
-      continue;
-    }
-    const list = map.get(node.parentId) ?? [];
-    list.push(node);
-    map.set(node.parentId, list);
-  }
-  return map;
-});
-
-const roots = computed(() =>
-  props.nodes.filter((node) => node.parentId === null || !ids.value.has(node.parentId)),
-);
+const tree = computed(() => buildSnapshotTree(props.nodes));
+const childrenOf = computed(() => tree.value.childrenOf);
+const roots = computed(() => tree.value.roots);
 
 const collapsed = ref(new Set<string>());
 
