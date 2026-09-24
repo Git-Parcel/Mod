@@ -17,6 +17,9 @@ export class ApiError extends Error {
 
 const TOKEN_STORAGE_KEY = 'gitparcel-token'
 
+/** Requests outliving this window are treated as a network failure. */
+const REQUEST_TIMEOUT_MS = 20000
+
 /** Captures the token from the entry URL into sessionStorage and strips it from the bar. */
 export function captureTokenFromUrl(): void {
   const token = new URLSearchParams(window.location.search).get('token')
@@ -43,14 +46,19 @@ async function request<T>(
   }
 
   let response: Response
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
   try {
     response = await fetch(path, {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
+      signal: controller.signal,
     })
   } catch {
     throw new ApiError(0, 'network')
+  } finally {
+    clearTimeout(timeout)
   }
 
   if (response.status === 401) {
