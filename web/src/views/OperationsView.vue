@@ -3,6 +3,7 @@ import { computed, h, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import type { DataTableColumns } from 'naive-ui';
+import { api } from '../api/client';
 import type { OperationDto, OperationState } from '../api/types';
 import CopyText from '../components/CopyText.vue';
 import ProgressCell from '../components/ProgressCell.vue';
@@ -20,11 +21,34 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 const { operations, failed, refresh } = useOperationsFeed();
 const stateFilter = ref<OperationState | ''>('');
 
-const visibleOperations = computed(() =>
-  stateFilter.value
-    ? (operations.value ?? []).filter((operation) => operation.state === stateFilter.value)
-    : (operations.value ?? []),
-);
+/** Parcel names for readable targets; names fall back to the raw UUID. */
+const parcelNames = ref(new Map<string, string>());
+void (async () => {
+  try {
+    const { parcels: list } = await api.parcels();
+    const map = new Map<string, string>();
+    for (const parcel of list) {
+      map.set(parcel.uuid, parcel.name ?? parcel.uuid);
+    }
+    parcelNames.value = map;
+  } catch {
+    // Names are best-effort decoration for the target column.
+  }
+})();
+
+const visibleOperations = computed(() => {
+  const list = operations.value ?? [];
+  const filtered = stateFilter.value
+    ? list.filter((operation) => operation.state === stateFilter.value)
+    : list;
+  // Resolve display labels here so later parcel loads re-render the table.
+  return filtered.map((operation) => ({
+    ...operation,
+    targetLabel: UUID_PATTERN.test(operation.target)
+      ? (parcelNames.value.get(operation.target) ?? abbreviate(operation.target))
+      : operation.target,
+  }));
+});
 
 const stateOptions = (['', 'queued', 'running', 'succeeded', 'failed', 'canceled'] as const).map(
   (value) => ({
@@ -32,6 +56,8 @@ const stateOptions = (['', 'queued', 'running', 'succeeded', 'failed', 'canceled
     value,
   }),
 );
+
+type OperationRow = OperationDto & { targetLabel: string };
 
 const columns = computed<DataTableColumns<OperationDto>>(() => [
   {
@@ -73,7 +99,7 @@ const columns = computed<DataTableColumns<OperationDto>>(() => [
           class: 'link-button',
           onClick: () => router.push(`/parcels/${operation.target}`),
         },
-        abbreviate(operation.target),
+        (operation as OperationRow).targetLabel,
       );
     },
   },
