@@ -129,7 +129,7 @@ function confirmRestore(snapshotId: string) {
   dialog.warning({
     title: t('snapshots.restoreConfirmTitle'),
     content: t('snapshots.restoreConfirm', { id: abbreviate(snapshotId) }),
-    positiveText: t('common.confirm'),
+    positiveText: t('snapshots.restoreConfirmAction'),
     negativeText: t('common.cancel'),
     onPositiveClick: async () => {
       const operation = await run(() =>

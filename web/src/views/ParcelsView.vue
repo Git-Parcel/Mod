@@ -189,7 +189,7 @@ function confirmBatchDelete() {
   dialog.warning({
     title: t('parcels.batchDelete'),
     content: t('parcels.batchDeleteConfirm', { count }),
-    positiveText: t('common.confirm'),
+    positiveText: t('parcels.batchDeleteConfirmAction'),
     negativeText: t('common.cancel'),
     onPositiveClick: async () => {
       const result = await run(() => api.batchDeleteParcels([...checkedKeys.value]));

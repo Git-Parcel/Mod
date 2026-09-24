@@ -59,7 +59,7 @@ function confirmDelete() {
   dialog.warning({
     title: t('manage.delete'),
     content: t('manage.deleteConfirm', { name: props.parcel.name ?? props.parcel.uuid }),
-    positiveText: t('common.confirm'),
+    positiveText: t('parcels.deleteConfirmAction'),
     negativeText: t('common.cancel'),
     onPositiveClick: async () => {
       const deleted = await run(() => api.deleteParcel(props.parcel.uuid));
