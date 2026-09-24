@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { useMessage } from 'naive-ui';
 import { useI18n } from 'vue-i18n';
 
@@ -10,18 +9,13 @@ const props = defineProps<{
 
 const { t } = useI18n();
 const message = useMessage();
-const copied = ref(false);
 
 async function copy() {
   try {
     await navigator.clipboard.writeText(props.value);
-    copied.value = true;
     message.success(t('common.copied'));
-    setTimeout(() => {
-      copied.value = false;
-    }, 1500);
   } catch {
-    message.error(t("common.copyFailed"));
+    message.error(t('common.copyFailed'));
   }
 }
 </script>
