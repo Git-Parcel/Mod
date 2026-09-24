@@ -37,12 +37,19 @@ const checkedKeys = ref<string[]>([]);
 const activeDimension = ref<string>((route.query.dimension as string) ?? '');
 
 // Keep the address bar in step so dimension views survive reloads and
-// back/forward navigation.
+// back/forward navigation. The route watch makes the tabs follow history
+// navigation; the ref watch makes tab clicks write history.
 watch(activeDimension, (value) => {
   void router.replace({
     query: value ? { dimension: value } : {},
   });
 });
+watch(
+  () => route.query.dimension,
+  (value) => {
+    activeDimension.value = (value as string) ?? '';
+  },
+);
 
 usePolling(refresh, 15000);
 
