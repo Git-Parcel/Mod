@@ -115,12 +115,17 @@ const restoreForm = ref<{ snapshotId: string; mode: 'direct' | 'save-first' }>({
 const restoreIdValid = computed(() =>
   SNAPSHOT_ID_PATTERN.test(restoreForm.value.snapshotId.trim().toLowerCase()),
 );
+const restorePending = ref(false);
 
 function confirmRestore(snapshotId: string) {
   if (!SNAPSHOT_ID_PATTERN.test(snapshotId)) {
     message.error(t('apiErrors.invalid_value'));
     return;
   }
+  if (restorePending.value) {
+    return;
+  }
+  restorePending.value = true;
   dialog.warning({
     title: t('snapshots.restoreConfirmTitle'),
     content: t('snapshots.restoreConfirm', { id: abbreviate(snapshotId) }),
@@ -133,6 +138,9 @@ function confirmRestore(snapshotId: string) {
       if (operation) {
         message.success(t('common.operationStarted'));
       }
+    },
+    onAfterLeave: () => {
+      restorePending.value = false;
     },
   });
 }
@@ -212,7 +220,12 @@ function restoreFromNode(node: SnapshotNodeDto) {
         </n-radio-group>
       </n-form-item>
       <n-form-item :label="' '">
-        <n-button type="warning" :disabled="!restoreIdValid" @click="restoreFromInput">
+        <n-button
+          type="warning"
+          :loading="restorePending"
+          :disabled="!restoreIdValid"
+          @click="restoreFromInput"
+        >
           {{ t('snapshots.restore') }}
         </n-button>
       </n-form-item>

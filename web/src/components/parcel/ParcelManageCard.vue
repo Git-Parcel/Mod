@@ -32,13 +32,24 @@ watch(
   { immediate: true },
 );
 
+// Pending guards keep double-clicks from queueing duplicate operations.
+const resizePending = ref(false);
+const teleportPending = ref(false);
+const publishPending = ref(false);
+
 async function submitResize() {
-  const updated = await run(() =>
-    api.resizeParcel(props.parcel.uuid, resizeForm.value.from, resizeForm.value.to),
-  );
-  if (updated) {
-    emit('update', updated);
-    message.success(t('common.success'));
+  if (resizePending.value) return;
+  resizePending.value = true;
+  try {
+    const updated = await run(() =>
+      api.resizeParcel(props.parcel.uuid, resizeForm.value.from, resizeForm.value.to),
+    );
+    if (updated) {
+      emit('update', updated);
+      message.success(t('common.success'));
+    }
+  } finally {
+    resizePending.value = false;
   }
 }
 // endregion
@@ -75,10 +86,15 @@ async function loadPlayers() {
 }
 
 async function submitTeleport() {
-  if (teleportSelection.value.length === 0) return;
-  const result = await run(() => api.teleportParcel(props.parcel.uuid, teleportSelection.value));
-  if (result) {
-    message.success(t('common.success') + ` (${result.count})`);
+  if (teleportPending.value || teleportSelection.value.length === 0) return;
+  teleportPending.value = true;
+  try {
+    const result = await run(() => api.teleportParcel(props.parcel.uuid, teleportSelection.value));
+    if (result) {
+      message.success(t('common.success') + ` (${result.count})`);
+    }
+  } finally {
+    teleportPending.value = false;
   }
 }
 
@@ -102,16 +118,22 @@ async function loadRepositories() {
 }
 
 async function submitPublish() {
-  const operation = await run(() =>
-    api.publishParcel(
-      props.parcel.uuid,
-      publishForm.value.repository,
-      publishForm.value.path,
-      publishForm.value.message || undefined,
-    ),
-  );
-  if (operation) {
-    message.success(t('common.operationStarted'));
+  if (publishPending.value) return;
+  publishPending.value = true;
+  try {
+    const operation = await run(() =>
+      api.publishParcel(
+        props.parcel.uuid,
+        publishForm.value.repository,
+        publishForm.value.path,
+        publishForm.value.message || undefined,
+      ),
+    );
+    if (operation) {
+      message.success(t('common.operationStarted'));
+    }
+  } finally {
+    publishPending.value = false;
   }
 }
 
@@ -158,6 +180,7 @@ loadAuxiliaryData();
           />
           <n-button
             size="small"
+            :loading="teleportPending"
             :disabled="teleportSelection.length === 0"
             @click="submitTeleport"
           >
@@ -193,6 +216,7 @@ loadAuxiliaryData();
             <n-button
               size="small"
               type="primary"
+              :loading="publishPending"
               :disabled="publishNeedsRepository || !publishForm.path"
               @click="submitPublish"
             >

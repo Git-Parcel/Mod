@@ -51,21 +51,29 @@ function close() {
   emit('update:show', false);
 }
 
+const submitting = ref(false);
+
 async function submit() {
-  const parcel = await run(() =>
-    api.createParcel({
-      dimension: form.value.dimension,
-      from: form.value.from,
-      to: form.value.to,
-      name: form.value.name,
-      mirror: form.value.mirror,
-      rotation: form.value.rotation,
-    }),
-  );
-  if (parcel) {
-    message.success(t('common.success'));
-    close();
-    emit('created', parcel);
+  if (submitting.value) return;
+  submitting.value = true;
+  try {
+    const parcel = await run(() =>
+      api.createParcel({
+        dimension: form.value.dimension,
+        from: form.value.from,
+        to: form.value.to,
+        name: form.value.name,
+        mirror: form.value.mirror,
+        rotation: form.value.rotation,
+      }),
+    );
+    if (parcel) {
+      message.success(t('common.success'));
+      close();
+      emit('created', parcel);
+    }
+  } finally {
+    submitting.value = false;
   }
 }
 </script>
@@ -101,7 +109,12 @@ async function submit() {
     <template #footer>
       <n-space justify="end">
         <n-button @click="close">{{ t('common.cancel') }}</n-button>
-        <n-button type="primary" :disabled="!form.name" @click="submit">
+        <n-button
+          type="primary"
+          :disabled="!form.name"
+          :loading="submitting"
+          @click="submit"
+        >
           {{ t('create.submit') }}
         </n-button>
       </n-space>
