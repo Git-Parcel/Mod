@@ -48,6 +48,8 @@ function parcel(id, overrides = {}) {
 const P_MAIN = "3f0eab4f-9a2b-4c1d-8e3f-a1b2c3d4e5f1";
 const P_TOWER = "77c1e2a9-0b3d-4e5f-8a9b-1c2d3e4f5a6b";
 const P_EMPTY = "cc00ff11-2233-4455-8677-8899aabbccdd";
+const P_LONG = "dddd4444-5555-4666-8777-888899990000";
+const P_HUGE = "eeee5555-6666-4777-9888-99990000aaaa";
 
 const parcels = [
   parcel(P_MAIN, {
@@ -74,6 +76,13 @@ const parcels = [
       anchor: [0, 0, 0],
       repositorySizeBytes: 1200455,
     },
+  }),
+  parcel(P_HUGE, {
+    name: "Monument (huge history)",
+  }),
+  parcel(P_LONG, {
+    name: "Long History",
+    archiveSync: { size: [16, 6, 16], anchor: [0, 0, 0], repositorySizeBytes: 500000 },
   }),
   parcel(P_EMPTY, {
     name: "Empty Yard",
@@ -128,6 +137,28 @@ const historyByParcel = new Map([
   [P_EMPTY, []],
 ]);
 const currentByParcel = new Map([[P_MAIN, P_ROOF]]);
+
+/** Beyond the 1000-node aggregation cap, so the load-more path is reachable. */
+{
+  const huge = [node(snapshotId(), null, "Genesis", 9000)];
+  for (let i = 1; i < 1200; i++) {
+    huge.push(node(snapshotId(), huge[i - 1].id, `Phase ${i}`, 9000 - i * 7));
+  }
+  historyByParcel.set(P_HUGE, huge);
+  currentByParcel.set(P_HUGE, huge[huge.length - 1].id);
+}
+
+/** A long linear history so pagination aggregation and the load-more button
+ * get exercised for real (130 nodes > the 1000-node cap is unnecessary; any
+ * count above HISTORY_PAGE_LIMIT splits into multiple pages). */
+{
+  const long = [node(snapshotId(), null, "Genesis", 3000)];
+  for (let i = 1; i < 130; i++) {
+    long.push(node(snapshotId(), long[i - 1].id, `Revision ${i}`, 3000 - i * 20));
+  }
+  historyByParcel.set(P_LONG, long);
+  currentByParcel.set(P_LONG, long[long.length - 1].id);
+}
 
 const repositories = new Map([
   ["community-pack", { type: "local", remoteUrl: null, lastSync: null }],

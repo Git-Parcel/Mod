@@ -1,17 +1,27 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useMessage } from 'naive-ui';
 import { useI18n } from 'vue-i18n';
 import type { SnapshotNodeDto } from '../api/types';
 import { useSnapshotTree } from './snapshotTree';
 import { translateId } from '../i18n';
 import { abbreviate, formatTime } from '../utils/format';
-import CopyText from './CopyText.vue';
 
 const props = defineProps<{ node: SnapshotNodeDto }>();
 const emit = defineEmits<{ (e: 'restore', node: SnapshotNodeDto): void }>();
 
 const { t } = useI18n();
+const message = useMessage();
 const tree = useSnapshotTree();
+
+async function copyId() {
+  try {
+    await navigator.clipboard.writeText(props.node.id);
+    message.success(t('common.copied'));
+  } catch {
+    message.error('Copy failed');
+  }
+}
 
 const children = computed(() => tree.childrenOf.value.get(props.node.id) ?? []);
 const hasChildren = computed(() => children.value.length > 0);
@@ -31,26 +41,25 @@ const sourceLabel = computed(() => translateId('snapshots.source', props.node.so
       <span class="caret" @click="hasChildren && tree.toggle(node.id)">
         {{ hasChildren ? (isCollapsed ? '▶' : '▼') : '·' }}
       </span>
-      <n-tag v-if="isCurrent" size="small" type="success" :bordered="false">
-        ★ {{ t('snapshots.current') }}
-      </n-tag>
-      <copy-text :value="node.id" :display="abbreviate(node.id)" />
-      <n-tooltip v-if="node.description" trigger="hover">
-        <template #trigger>
-          <span class="name">{{ node.name }}</span>
-        </template>
-        {{ node.description }}
-      </n-tooltip>
+      <span v-if="isCurrent" class="current-mark">★ {{ t('snapshots.current') }}</span>
+      <!-- Lightweight copy chip: a per-node tooltip component is too heavy for
+           histories with thousands of nodes. -->
+      <span
+        class="copy-id"
+        :title="node.id"
+        @click.stop="copyId"
+      >{{ abbreviate(node.id) }}</span>
+      <span v-if="node.description" class="name" :title="node.description">{{ node.name }}</span>
       <span v-else class="name">{{ node.name }}</span>
-      <n-tag size="small" :bordered="false">{{ sourceLabel }}</n-tag>
+      <span class="tag" :class="'source-' + node.source">{{ sourceLabel }}</span>
       <span class="meta">
         {{ node.author }} · {{ formatTime(node.createdAt) }} ·
         {{ t('snapshots.files', { n: node.content.files }) }}
       </span>
       <span class="spacer" />
-      <n-button size="tiny" secondary type="warning" @click="emit('restore', node)">
+      <button class="restore-button" type="button" @click.stop="emit('restore', node)">
         {{ t('snapshots.restoreTo') }}
-      </n-button>
+      </button>
     </div>
     <div v-if="hasChildren && !isCollapsed" class="children">
       <snapshot-tree-node
@@ -91,6 +100,43 @@ const sourceLabel = computed(() => translateId('snapshots.source', props.node.so
 }
 .spacer {
   flex: 1;
+}
+.copy-id {
+  font-family: monospace;
+  cursor: pointer;
+}
+.copy-id:hover {
+  text-decoration: underline;
+}
+.current-mark {
+  color: #18a058;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.tag {
+  font-size: 0.8rem;
+  color: #888;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  padding: 0 0.3rem;
+}
+.source-saved {
+  color: #2080f0;
+}
+.source-imported {
+  color: #f0a020;
+}
+.restore-button {
+  border: 1px solid #f0a020;
+  background: none;
+  color: #f0a020;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.1rem 0.4rem;
+}
+.restore-button:hover {
+  background: rgba(240, 160, 32, 0.12);
 }
 .children {
   margin-left: 0.9rem;

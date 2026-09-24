@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, provide, ref } from 'vue';
+import { computed, nextTick, onMounted, provide, ref, watch } from 'vue';
 import type { SnapshotNodeDto } from '../api/types';
 import { buildSnapshotTree, SNAPSHOT_TREE_KEY } from './snapshotTree';
 import SnapshotTreeNode from './SnapshotTreeNode.vue';
+
+/** Trees above this size start fully collapsed except the baseline path. */
+const COLLAPSE_THRESHOLD = 300;
 
 const props = defineProps<{
   nodes: SnapshotNodeDto[];
@@ -16,6 +19,23 @@ const childrenOf = computed(() => tree.value.childrenOf);
 const roots = computed(() => tree.value.roots);
 
 const collapsed = ref(new Set<string>());
+let collapseInitialized = false;
+
+// A large history renders thousands of DOM nodes if fully expanded; start
+// collapsed and let the user open branches on demand. The current baseline
+// stays reachable through the summary line below.
+watch(
+  () => props.nodes.length,
+  (count) => {
+    if (collapseInitialized || count <= COLLAPSE_THRESHOLD) return;
+    collapseInitialized = true;
+    const collapsedIds = new Set<string>();
+    for (const id of childrenOf.value.keys()) {
+      collapsedIds.add(id);
+    }
+    collapsed.value = collapsedIds;
+  },
+);
 
 function toggle(id: string) {
   const next = new Set(collapsed.value);
@@ -48,6 +68,10 @@ onMounted(() => {
 
 <template>
   <div class="snapshot-tree">
+    <div v-if="current" class="current-line">
+      ★ {{ $t('snapshots.current') }}:
+      <copy-text :value="current" :display="current.slice(0, 8)" />
+    </div>
     <snapshot-tree-node
       v-for="root in roots"
       :key="root.id"
@@ -56,3 +80,17 @@ onMounted(() => {
     />
   </div>
 </template>
+
+<style scoped>
+.current-line {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.4rem;
+  margin-bottom: 0.35rem;
+  border: 1px solid rgba(24, 160, 88, 0.4);
+  border-radius: 4px;
+  color: #18a058;
+  font-size: 0.9rem;
+}
+</style>
