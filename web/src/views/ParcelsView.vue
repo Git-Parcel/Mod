@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h, ref } from 'vue';
+import { computed, h, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useDialog, useMessage } from 'naive-ui';
 import { useI18n } from 'vue-i18n';
@@ -34,6 +34,14 @@ const { data: parcels, failed, refresh } = useApiData(() => api.parcels().then((
 const search = ref('');
 const checkedKeys = ref<string[]>([]);
 const activeDimension = ref<string>((route.query.dimension as string) ?? '');
+
+// Keep the address bar in step so dimension views survive reloads and
+// back/forward navigation.
+watch(activeDimension, (value) => {
+  void router.replace({
+    query: value ? { dimension: value } : {},
+  });
+});
 
 usePolling(refresh, 15000);
 

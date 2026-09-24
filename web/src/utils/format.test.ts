@@ -5,13 +5,12 @@ import {
   formatBytes,
   formatProgress,
   formatSize,
+  formatTime,
   formatVolume,
   isOperationActive,
 } from "./format";
 
-const vec = (x: number, y: number, z: number): Vec3 => [x, y, z];
-
-describe("formatBytes", () => {
+const vec = (x: number, y: number, z: number): Vec3 => [x, y, z];describe("formatBytes", () => {
   it("keeps bytes below 1 KiB unscaled", () => {
     expect(formatBytes(0)).toBe("0 B");
     expect(formatBytes(1023)).toBe("1023 B");
@@ -68,6 +67,22 @@ describe("formatProgress", () => {
     expect(
       formatProgress(operation({ completed: 90, total: 240, unit: "sections" })),
     ).toBe("90 / 240 sections");
+  });
+});
+
+describe("formatTime", () => {
+  it("renders an em dash for missing timestamps", () => {
+    expect(formatTime(null)).toBe("—");
+  });
+
+  it("returns unparsable input unchanged", () => {
+    expect(formatTime("not-a-date")).toBe("not-a-date");
+  });
+
+  it("formats valid ISO timestamps", () => {
+    const out = formatTime("2026-09-24T00:00:00Z");
+    expect(out).not.toBe("2026-09-24T00:00:00Z");
+    expect(out.length).toBeGreaterThan(0);
   });
 });
 
