@@ -32,6 +32,10 @@ class ApiRouterTest {
     var operation = match("GET", "/api/operations/abc").orElseThrow();
     assertEquals(ApiRouter.Route.OPERATION_GET, operation.route());
     assertEquals("abc", operation.params().get("uuid"));
+
+    var recover = match("POST", "/api/operations/abc/recover").orElseThrow();
+    assertEquals(ApiRouter.Route.OPERATION_RECOVER, recover.route());
+    assertEquals("abc", recover.params().get("uuid"));
   }
 
   @Test
