@@ -32,11 +32,6 @@ function close() {
 }
 
 async function submit() {
-  const size = [0, 1, 2].map((axis) => Math.abs(form.value.to[axis] - form.value.from[axis]) + 1);
-  if (size.some((value) => value <= 0)) {
-    message.error(t('create.invalidSize'));
-    return;
-  }
   const parcel = await run(() =>
     api.createParcel({
       dimension: form.value.dimension,

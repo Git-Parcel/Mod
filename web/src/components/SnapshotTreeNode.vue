@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { SnapshotNodeDto } from '../api/types';
 import { useSnapshotTree } from './snapshotTree';
+import { translateId } from '../i18n';
 import { abbreviate, formatTime } from '../utils/format';
 import CopyText from './CopyText.vue';
 
@@ -17,10 +18,7 @@ const hasChildren = computed(() => children.value.length > 0);
 const isCollapsed = computed(() => tree.collapsed.value.has(props.node.id));
 const isCurrent = computed(() => tree.current.value === props.node.id);
 
-const sourceKey = computed(() => `snapshots.source.${props.node.source}`);
-const sourceLabel = computed(() =>
-  t(sourceKey.value) === sourceKey.value ? props.node.source : t(sourceKey.value),
-);
+const sourceLabel = computed(() => translateId('snapshots.source', props.node.source));
 </script>
 
 <template>

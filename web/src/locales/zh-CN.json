@@ -62,7 +62,6 @@
   "config.visual.showWireframe": "显示线框",
   "create.dimension": "维度",
   "create.from": "起始坐标 (from)",
-  "create.invalidSize": "边界坐标无效：尺寸必须为正",
   "create.mirror": "镜像",
   "create.name": "名称",
   "create.namePlaceholder": "parcel 显示名称",

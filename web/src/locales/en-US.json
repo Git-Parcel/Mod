@@ -62,7 +62,6 @@
   "config.visual.showWireframe": "Show wireframe",
   "create.dimension": "Dimension",
   "create.from": "From corner",
-  "create.invalidSize": "Invalid bounds: the size must be positive",
   "create.mirror": "Mirror",
   "create.name": "Name",
   "create.namePlaceholder": "Display name",

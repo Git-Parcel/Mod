@@ -1,17 +1,25 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
-import OperationsView from './views/OperationsView.vue';
-import OverviewView from './views/OverviewView.vue';
-import ParcelDetailView from './views/ParcelDetailView.vue';
-import ParcelsView from './views/ParcelsView.vue';
-import RepositoriesView from './views/RepositoriesView.vue';
 
+// Route-level code splitting: each view loads on first visit.
 export const router = createRouter({
   history: createWebHashHistory(),
   routes: [
-    { path: '/', name: 'overview', component: OverviewView },
-    { path: '/parcels', name: 'parcels', component: ParcelsView },
-    { path: '/parcels/:uuid', name: 'parcel-detail', component: ParcelDetailView },
-    { path: '/operations', name: 'operations', component: OperationsView },
-    { path: '/repositories', name: 'repositories', component: RepositoriesView },
+    { path: '/', name: 'overview', component: () => import('./views/OverviewView.vue') },
+    { path: '/parcels', name: 'parcels', component: () => import('./views/ParcelsView.vue') },
+    {
+      path: '/parcels/:uuid',
+      name: 'parcel-detail',
+      component: () => import('./views/ParcelDetailView.vue'),
+    },
+    {
+      path: '/operations',
+      name: 'operations',
+      component: () => import('./views/OperationsView.vue'),
+    },
+    {
+      path: '/repositories',
+      name: 'repositories',
+      component: () => import('./views/RepositoriesView.vue'),
+    },
   ],
 });
