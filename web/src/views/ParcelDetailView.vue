@@ -22,15 +22,21 @@ const uuid = computed(() => route.params.uuid as string);
 
 const parcel = ref<ParcelDto | null>(null);
 const notFound = ref(false);
+const loadFailed = ref(false);
 const recentOperations = ref<OperationDto[]>([]);
 
 async function refresh() {
   try {
     parcel.value = await api.parcel(uuid.value);
     notFound.value = false;
+    loadFailed.value = false;
   } catch (error) {
     if (error instanceof ApiError && error.code === 'not_found') {
       notFound.value = true;
+    } else if (!parcel.value) {
+      // First load failed for another reason (network, server busy) — show a
+      // retry instead of spinning forever.
+      loadFailed.value = true;
     }
     return;
   }
@@ -55,10 +61,20 @@ function onDeleted() {
 
 <template>
   <div>
-    <n-spin v-if="!parcel && !notFound" style="margin-top: 3rem" />
+    <n-spin v-if="!parcel && !notFound && !loadFailed" style="margin-top: 3rem" />
     <n-result v-else-if="notFound" status="404" :title="t('detail.notFound')">
       <template #footer>
         <n-button @click="router.push('/parcels')">{{ t('nav.parcels') }}</n-button>
+      </template>
+    </n-result>
+    <n-result
+      v-else-if="loadFailed && !parcel"
+      status="warning"
+      :title="t('common.error')"
+      :description="t('apiErrors.network')"
+    >
+      <template #footer>
+        <n-button type="primary" @click="refresh">{{ t('common.refresh') }}</n-button>
       </template>
     </n-result>
 
