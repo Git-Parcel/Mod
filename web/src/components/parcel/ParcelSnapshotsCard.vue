@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onUnmounted, ref } from 'vue';
 import { useDialog, useMessage } from 'naive-ui';
 import { useI18n } from 'vue-i18n';
 import { ApiError, api } from '../../api/client';
 import type { SnapshotNodeDto, TreePageDto } from '../../api/types';
 import { SNAPSHOT_ID_PATTERN } from '../../api/types';
 import { useErrorToast } from '../../composables/errorToast';
+import { onTrackedSettled } from '../../composables/trackedOperations';
 import { errorText } from '../../utils/errors';
 import { abbreviate } from '../../utils/format';
 import SnapshotTree from '../SnapshotTree.vue';
@@ -27,10 +28,11 @@ const savingSnapshot = ref(false);
 async function saveSnapshot() {
   savingSnapshot.value = true;
   try {
-    const operation = await api.saveParcel(props.parcelUuid, snapshotName.value || undefined);
+    const operation = await run(() =>
+      api.saveParcel(props.parcelUuid, snapshotName.value || undefined),
+    );
     if (operation) {
       message.success(t('common.operationStarted'));
-      scheduleHistoryReload();
     }
   } finally {
     savingSnapshot.value = false;
@@ -45,13 +47,18 @@ const historyLoaded = ref(false);
 /** True when pagination stopped at the aggregation cap with more pages available. */
 const historyHasMore = ref(false);
 
-/** Schedules a history refresh once a submitted snapshot op had time to finish. */
-function scheduleHistoryReload() {
-  if (!historyLoaded.value) return;
-  window.setTimeout(() => {
+// When a snapshot op submitted from this page finishes for this parcel, the
+// loaded tree is stale — reload it exactly when the operation settles.
+const offSettled = onTrackedSettled((operation) => {
+  if (
+    historyLoaded.value &&
+    operation.target === props.parcelUuid &&
+    (operation.kind === 'save_snapshot' || operation.kind.startsWith('restore'))
+  ) {
     void loadHistory(true);
-  }, 8000);
-}
+  }
+});
+onUnmounted(offSettled);
 
 async function loadHistory(reset: boolean) {
   if (historyLoading.value) return;
@@ -125,7 +132,6 @@ function confirmRestore(snapshotId: string) {
       );
       if (operation) {
         message.success(t('common.operationStarted'));
-        scheduleHistoryReload();
       }
     },
   });

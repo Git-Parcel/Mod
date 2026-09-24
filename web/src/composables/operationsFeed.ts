@@ -2,7 +2,11 @@ import { ref } from "vue";
 import { api } from "../api/client";
 import type { OperationDto } from "../api/types";
 import { isOperationActive } from "../utils/format";
-import { onOperationTracked, trackedCount } from "./trackedOperations";
+import {
+  announceSettledTracked,
+  onOperationTracked,
+  trackedCount,
+} from "./trackedOperations";
 
 /**
  * Single shared feed of recent operations.
@@ -34,6 +38,7 @@ async function refresh(): Promise<void> {
   try {
     operations.value = (await api.operations(100)).operations;
     failed.value = false;
+    announceSettledTracked(operations.value);
   } catch {
     failed.value = true;
   } finally {

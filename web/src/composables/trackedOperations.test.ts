@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { OperationDto } from "../api/types";
 import {
-  collectSettledTracked,
+  announceSettledTracked,
   onOperationTracked,
+  onTrackedSettled,
   trackSubmitted,
   trackedCount,
 } from "./trackedOperations";
@@ -52,21 +53,27 @@ describe("trackedOperations", () => {
     expect(fired).toBe(1);
   });
 
-  it("collects only settled tracked operations and forgets them", async () => {
-    trackSubmitted(trackedOperation("running-1"));
-    trackSubmitted(trackedOperation("done-1"));
+  it("announces settled tracked operations exactly once", async () => {
+    const listener = vi.fn();
+    onTrackedSettled(listener);
+
+    trackSubmitted(trackedOperation("evt-running"));
+    trackSubmitted(trackedOperation("evt-done"));
     await Promise.resolve();
     await Promise.resolve();
 
-    const all = [
-      operation("running-1", "running"),
-      operation("done-1", "succeeded"),
+    const feed = [
+      operation("evt-running", "running"),
+      operation("evt-done", "succeeded"),
       operation("stranger", "failed"),
     ];
-    const settled = collectSettledTracked(all);
-    expect(settled.map((op) => op.operationId)).toEqual(["done-1"]);
 
-    // Already-reported operations are never collected twice.
-    expect(collectSettledTracked(all)).toEqual([]);
+    announceSettledTracked(feed);
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener.mock.calls[0][0].operationId).toBe("evt-done");
+
+    // Announced operations are never announced twice.
+    announceSettledTracked(feed);
+    expect(listener).toHaveBeenCalledTimes(1);
   });
 });
