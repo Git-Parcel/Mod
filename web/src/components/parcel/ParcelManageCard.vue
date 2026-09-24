@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useDialog, useMessage } from 'naive-ui';
 import { useI18n } from 'vue-i18n';
 import { api } from '../../api/client';
@@ -21,11 +21,16 @@ const run = useErrorToast();
 // region resize
 const resizeForm = ref<{ from: Vec3; to: Vec3 }>({ from: [0, 0, 0], to: [0, 0, 0] });
 
-function syncResizeForm() {
-  resizeForm.value.from = [...props.parcel.bounds.from] as Vec3;
-  resizeForm.value.to = [...props.parcel.bounds.to] as Vec3;
-}
-syncResizeForm();
+// Track the polled parcel so bounds changed elsewhere (another admin, a
+// restore) refresh the form instead of targeting stale coordinates.
+watch(
+  () => [props.parcel.bounds.from, props.parcel.bounds.to],
+  () => {
+    resizeForm.value.from = [...props.parcel.bounds.from] as Vec3;
+    resizeForm.value.to = [...props.parcel.bounds.to] as Vec3;
+  },
+  { immediate: true },
+);
 
 async function submitResize() {
   const updated = await run(() =>
@@ -34,7 +39,6 @@ async function submitResize() {
   if (updated) {
     emit('update', updated);
     message.success(t('common.success'));
-    syncResizeForm();
   }
 }
 // endregion
