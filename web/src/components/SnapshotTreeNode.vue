@@ -38,16 +38,30 @@ const sourceLabel = computed(() => translateId('snapshots.source', props.node.so
       :class="{ current: isCurrent }"
       :id="isCurrent ? `snapshot-node-${node.id}` : undefined"
     >
-      <span class="caret" @click="hasChildren && tree.toggle(node.id)">
-        {{ hasChildren ? (isCollapsed ? '▶' : '▼') : '·' }}
+      <span
+        v-if="hasChildren"
+        class="caret"
+        role="button"
+        tabindex="0"
+        :aria-expanded="!isCollapsed"
+        @click="tree.toggle(node.id)"
+        @keydown.enter="tree.toggle(node.id)"
+        @keydown.space.prevent="tree.toggle(node.id)"
+      >
+        {{ isCollapsed ? '▶' : '▼' }}
       </span>
+      <span v-else class="caret" aria-hidden="true">·</span>
       <span v-if="isCurrent" class="current-mark">★ {{ t('snapshots.current') }}</span>
       <!-- Lightweight copy chip: a per-node tooltip component is too heavy for
            histories with thousands of nodes. -->
       <span
         class="copy-id"
+        role="button"
+        tabindex="0"
+        :aria-label="t('common.copy')"
         :title="node.id"
         @click.stop="copyId"
+        @keydown.enter.stop="copyId"
       >{{ abbreviate(node.id) }}</span>
       <span v-if="node.description" class="name" :title="node.description">{{ node.name }}</span>
       <span v-else class="name">{{ node.name }}</span>
@@ -96,6 +110,12 @@ const sourceLabel = computed(() => translateId('snapshots.source', props.node.so
   user-select: none;
   color: var(--muted);
 }
+.caret[aria-hidden='true'] {
+  cursor: default;
+}
+.caret:focus-visible {
+  outline: 1px solid var(--link);
+}
 .name {
   font-weight: 500;
 }
@@ -112,6 +132,9 @@ const sourceLabel = computed(() => translateId('snapshots.source', props.node.so
 }
 .copy-id:hover {
   text-decoration: underline;
+}
+.copy-id:focus-visible {
+  outline: 1px solid var(--link);
 }
 .current-mark {
   color: var(--success);

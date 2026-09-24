@@ -57,10 +57,10 @@ function walk(dir) {
 }
 walk(srcDir);
 
-const staticKeyPattern = /\bt\(\s*'([^']+)'/g;
-const dynamicPrefixPattern = /\bt\(\s*'([^']*)\.\$\{/g;
-const translatePrefixPattern = /translateId\(\s*'([^']+)'/g;
-const hasPrefixPattern = /hasTranslation\(\s*'([^']+)'/g;
+const staticKeyPattern = /\bt\(\s*['\"]([^'\"]+)['\"]\s*,?/g;
+const dynamicPrefixPattern = /\bt\(\s*['\"]([^']*)\.\$\{/g;
+const translatePrefixPattern = /translateId\(\s*['\"]([^'\"]+)['\"/]/g;
+const hasPrefixPattern = /hasTranslation\(\s*['\"]([^'\"]+)['\"/]/g;
 
 for (const file of sourceFiles) {
   const text = readFileSync(file, "utf-8");
