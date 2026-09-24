@@ -31,13 +31,23 @@ watch(
   { immediate: true },
 );
 
+const savingKeys = ref(new Set<string>());
+
 async function saveConfig(key: string, value: string | number | boolean) {
-  const updated = await run(() => api.updateConfig(props.parcel.uuid, key, value));
-  if (updated) {
-    message.success(t('common.saved'));
-    emit('update', updated);
+  if (savingKeys.value.has(key)) return;
+  savingKeys.value.add(key);
+  try {
+    const updated = await run(() => api.updateConfig(props.parcel.uuid, key, value));
+    if (updated) {
+      message.success(t('common.saved'));
+      emit('update', updated);
+    }
+  } finally {
+    savingKeys.value.delete(key);
   }
 }
+
+const isSaving = (key: string) => savingKeys.value.has(key);
 </script>
 
 <template>
@@ -47,7 +57,7 @@ async function saveConfig(key: string, value: string | number | boolean) {
       <n-form-item :label="t('config.meta.name')">
         <div class="inline-form">
           <n-input v-model:value="form.name" maxlength="255" style="width: 16rem" />
-          <n-button size="small" @click="saveConfig('meta.name', form.name)">
+          <n-button size="small" :loading="isSaving('meta.name')" @click="saveConfig('meta.name', form.name)">
             {{ t('common.save') }}
           </n-button>
         </div>
@@ -55,7 +65,7 @@ async function saveConfig(key: string, value: string | number | boolean) {
       <n-form-item :label="t('config.meta.author')">
         <div class="inline-form">
           <n-input v-model:value="form.author" style="width: 16rem" />
-          <n-button size="small" @click="saveConfig('meta.author', form.author)">
+          <n-button size="small" :loading="isSaving('meta.author')" @click="saveConfig('meta.author', form.author)">
             {{ t('common.save') }}
           </n-button>
         </div>
@@ -63,7 +73,7 @@ async function saveConfig(key: string, value: string | number | boolean) {
       <n-form-item :label="t('config.meta.description')">
         <div class="inline-form">
           <n-input v-model:value="form.description" type="textarea" style="width: 16rem" />
-          <n-button size="small" @click="saveConfig('meta.description', form.description)">
+          <n-button size="small" :loading="isSaving('meta.description')" @click="saveConfig('meta.description', form.description)">
             {{ t('common.save') }}
           </n-button>
         </div>
