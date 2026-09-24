@@ -158,7 +158,7 @@ watch(
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  color: #666;
+  color: var(--muted);
 }
 </style>
 
@@ -166,7 +166,7 @@ watch(
 .notification-link {
   border: none;
   background: none;
-  color: #2080f0;
+  color: var(--link);
   cursor: pointer;
   padding: 0;
 }
