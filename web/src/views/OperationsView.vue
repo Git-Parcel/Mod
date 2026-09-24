@@ -21,9 +21,15 @@ const run = useErrorToast();
 
 /** Resumes a failed restore; mirrors /parcel restore recover. */
 async function recover(operation: OperationDto, action: 'retry' | 'rollback') {
-  const submitted = await run(() => api.recoverOperation(operation.operationId, action));
-  if (submitted) {
-    message.success(t('common.operationStarted'));
+  if (recoverPending.value) return;
+  recoverPending.value = true;
+  try {
+    const submitted = await run(() => api.recoverOperation(operation.operationId, action));
+    if (submitted) {
+      message.success(t('common.operationStarted'));
+    }
+  } finally {
+    recoverPending.value = false;
   }
 }
 
@@ -32,6 +38,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 
 const { operations, failed, refresh } = useOperationsFeed();
 const stateFilter = ref<OperationState | ''>('');
+const recoverPending = ref(false);
 
 /** Parcel names for readable targets; names fall back to the raw UUID. */
 const parcelNames = ref(new Map<string, string>());
