@@ -98,12 +98,14 @@ const columns = computed<DataTableColumns<ParcelDto>>(() => [
   {
     title: t('col.name'),
     key: 'name',
+    sorter: (a, b) => (a.name ?? '').localeCompare(b.name ?? ''),
     render: (parcel) =>
       h('span', { class: 'parcel-name' }, parcel.name ?? h('i', { class: 'muted' }, '—')),
   },
   {
     title: t('col.uuid'),
     key: 'uuid',
+    width: 110,
     render: (parcel) => h(CopyText, { value: parcel.uuid, display: abbreviate(parcel.uuid) }),
   },
   {
@@ -119,11 +121,14 @@ const columns = computed<DataTableColumns<ParcelDto>>(() => [
   {
     title: t('col.size'),
     key: 'size',
+    sorter: (a, b) => formatVolume(a.sizeParcel) - formatVolume(b.sizeParcel),
     render: (parcel) => formatSize(parcel.sizeParcel),
   },
   {
     title: t('col.volume'),
     key: 'volume',
+    width: 100,
+    sorter: (a, b) => formatVolume(a.sizeParcel) - formatVolume(b.sizeParcel),
     render: (parcel) => formatVolume(parcel.sizeParcel).toLocaleString(),
   },
   {
@@ -333,7 +338,7 @@ async function submitImport() {
       style="margin: 0.75rem 0"
       @update:value="(value: string) => (activeDimension = value)"
     >
-      <n-tab name="">{{ t('operations.filterAll') }}</n-tab>
+      <n-tab name="">{{ t('common.all') }}</n-tab>
       <n-tab v-for="entry in dimensions" :key="entry.dimension" :name="entry.dimension">
         <dimension-tag :dimension="entry.dimension" /> {{ entry.count }}
       </n-tab>

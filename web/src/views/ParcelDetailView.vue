@@ -116,11 +116,20 @@ const saveSectionSize = (value: number) => saveConfig('content.blocks.sectionSiz
 const snapshotName = ref('');
 const savingSnapshot = ref(false);
 
+/** Schedules a history refresh once a submitted snapshot op had time to finish. */
+function scheduleHistoryReload() {
+  if (!historyLoaded.value) return;
+  window.setTimeout(() => {
+    void loadHistory(true);
+  }, 8000);
+}
+
 async function saveSnapshot() {
   savingSnapshot.value = true;
   try {
     await api.saveParcel(uuid.value, snapshotName.value || undefined);
     message.success(t('common.operationStarted'));
+    scheduleHistoryReload();
   } catch (error) {
     message.error(errorText(error));
   } finally {
@@ -208,6 +217,7 @@ function confirmRestore(snapshotId: string) {
       try {
         await api.restoreParcel(uuid.value, snapshotId, restoreForm.value.mode);
         message.success(t('common.operationStarted'));
+        scheduleHistoryReload();
       } catch (error) {
         message.error(errorText(error));
       }
@@ -450,6 +460,7 @@ const repositoryOptions = computed(() =>
             v-model:value="snapshotName"
             :placeholder="t('snapshots.saveName')"
             style="width: 14rem"
+            @keyup.enter="saveSnapshot"
           />
           <n-button type="primary" :loading="savingSnapshot" @click="saveSnapshot">
             {{ t('snapshots.saveSubmit') }}
@@ -467,6 +478,9 @@ const repositoryOptions = computed(() =>
         <div v-if="historyLoading && historyNodes.length === 0" class="muted" style="margin: 1rem 0">
           {{ t('snapshots.loading') }}
         </div>
+        <p v-else-if="historyLoaded && historyNodes.length === 0" class="muted" style="margin: 1rem 0">
+          {{ t('snapshots.empty') }}
+        </p>
         <snapshot-tree
           v-else-if="historyNodes.length > 0"
           :nodes="historyNodes"

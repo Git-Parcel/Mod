@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, provide, ref } from 'vue';
+import { computed, nextTick, onMounted, provide, ref } from 'vue';
 import type { SnapshotNodeDto } from '../api/types';
 import SnapshotTreeNode from './SnapshotTreeNode.vue';
 
@@ -47,6 +47,17 @@ provide('snapshot-tree', {
   current: computed(() => props.current),
   collapsed,
   toggle,
+});
+
+// Bring the current baseline into view once rendered, per the design's
+// "current path expanded and located" promise.
+onMounted(() => {
+  void nextTick(() => {
+    if (!props.current) return;
+    document
+      .getElementById(`snapshot-node-${props.current}`)
+      ?.scrollIntoView({ block: 'nearest' });
+  });
 });
 </script>
 

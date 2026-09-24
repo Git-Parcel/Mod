@@ -150,6 +150,7 @@ function detailLine(label: string, value: string | null) {
       :columns="columns"
       :data="visibleOperations"
       :row-key="(operation: OperationDto) => operation.operationId"
+      :pagination="visibleOperations.length > 20 ? { pageSize: 20 } : false"
       :bordered="false"
       size="small"
       style="margin-top: 0.75rem"

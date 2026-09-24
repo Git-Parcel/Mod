@@ -32,7 +32,11 @@ const sourceLabel = computed(() =>
 
 <template>
   <div class="tree-node">
-    <div class="node-row" :class="{ current: isCurrent }">
+    <div
+      class="node-row"
+      :class="{ current: isCurrent }"
+      :id="isCurrent ? `snapshot-node-${node.id}` : undefined"
+    >
       <span class="caret" @click="hasChildren && tree.toggle(node.id)">
         {{ hasChildren ? (isCollapsed ? '▶' : '▼') : '·' }}
       </span>

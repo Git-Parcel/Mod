@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref } from "vue";
 import type {
   OperationDto,
   ParcelDto,
@@ -6,7 +6,7 @@ import type {
   RepoDto,
   Status,
   TreePageDto,
-} from './types';
+} from "./types";
 
 /** Set once any request comes back 401; App.vue switches to the re-entry guide. */
 export const unauthorized = ref(false);
@@ -17,31 +17,35 @@ export class ApiError extends Error {
     readonly code: string,
   ) {
     super(`API ${status}: ${code}`);
-    this.name = 'ApiError';
+    this.name = "ApiError";
   }
 }
 
-const TOKEN_STORAGE_KEY = 'gitparcel-token';
+const TOKEN_STORAGE_KEY = "gitparcel-token";
 
 /** Captures the token from the entry URL into sessionStorage and strips it from the bar. */
 export function captureTokenFromUrl(): void {
-  const token = new URLSearchParams(window.location.search).get('token');
+  const token = new URLSearchParams(window.location.search).get("token");
   if (token) {
     sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
     const url = new URL(window.location.href);
-    url.searchParams.delete('token');
-    window.history.replaceState(null, '', url);
+    url.searchParams.delete("token");
+    window.history.replaceState(null, "", url);
   }
 }
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+async function request<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+): Promise<T> {
   const headers: Record<string, string> = {};
   const token = sessionStorage.getItem(TOKEN_STORAGE_KEY);
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers["Authorization"] = `Bearer ${token}`;
   }
   if (body !== undefined) {
-    headers['Content-Type'] = 'application/json';
+    headers["Content-Type"] = "application/json";
   }
 
   let response: Response;
@@ -52,15 +56,15 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
-    throw new ApiError(0, 'network');
+    throw new ApiError(0, "network");
   }
 
   if (response.status === 401) {
     unauthorized.value = true;
-    throw new ApiError(401, 'unauthorized');
+    throw new ApiError(401, "unauthorized");
   }
   if (!response.ok) {
-    let code = 'http_error';
+    let code = "http_error";
     try {
       const payload = (await response.json()) as { error?: string };
       if (payload.error) code = payload.error;
@@ -92,7 +96,8 @@ function trackSubmitted(promise: Promise<OperationDto>): Promise<OperationDto> {
  */
 export function collectSettledTracked(all: OperationDto[]): OperationDto[] {
   const settled = all.filter(
-    (operation) => tracked.has(operation.operationId) && !isPendingState(operation.state),
+    (operation) =>
+      tracked.has(operation.operationId) && !isPendingState(operation.state),
   );
   for (const operation of settled) {
     tracked.delete(operation.operationId);
@@ -100,19 +105,21 @@ export function collectSettledTracked(all: OperationDto[]): OperationDto[] {
   return settled;
 }
 
-function isPendingState(state: OperationDto['state']): boolean {
-  return state === 'queued' || state === 'running';
+function isPendingState(state: OperationDto["state"]): boolean {
+  return state === "queued" || state === "running";
 }
 
 export const api = {
-  status: () => request<Status>('GET', '/api/status'),
+  status: () => request<Status>("GET", "/api/status"),
 
   parcels: (dimension?: string) =>
     request<{ parcels: ParcelDto[] }>(
-      'GET',
-      dimension ? `/api/parcels?dimension=${encodeURIComponent(dimension)}` : '/api/parcels',
+      "GET",
+      dimension
+        ? `/api/parcels?dimension=${encodeURIComponent(dimension)}`
+        : "/api/parcels",
     ),
-  parcel: (uuid: string) => request<ParcelDto>('GET', `/api/parcels/${uuid}`),
+  parcel: (uuid: string) => request<ParcelDto>("GET", `/api/parcels/${uuid}`),
   createParcel: (body: {
     dimension: string;
     from: [number, number, number];
@@ -120,40 +127,70 @@ export const api = {
     name: string;
     mirror?: string;
     rotation?: string;
-  }) => request<ParcelDto>('POST', '/api/parcels', body),
+  }) => request<ParcelDto>("POST", "/api/parcels", body),
   batchDeleteParcels: (uuids: string[]) =>
-    request<{ count: number }>('POST', '/api/parcels/batch-delete', { uuids }),
+    request<{ count: number }>("POST", "/api/parcels/batch-delete", { uuids }),
   updateConfig: (uuid: string, key: string, value: string | number | boolean) =>
-    request<ParcelDto>('POST', `/api/parcels/${uuid}/config`, { key, value }),
-  resizeParcel: (uuid: string, from: [number, number, number], to: [number, number, number]) =>
-    request<ParcelDto>('POST', `/api/parcels/${uuid}/resize`, { from, to }),
-  deleteParcel: (uuid: string) => request<void>('DELETE', `/api/parcels/${uuid}`),
+    request<ParcelDto>("POST", `/api/parcels/${uuid}/config`, { key, value }),
+  resizeParcel: (
+    uuid: string,
+    from: [number, number, number],
+    to: [number, number, number],
+  ) => request<ParcelDto>("POST", `/api/parcels/${uuid}/resize`, { from, to }),
+  deleteParcel: (uuid: string) =>
+    request<void>("DELETE", `/api/parcels/${uuid}`),
   saveParcel: (uuid: string, name?: string) => {
-    const promise = request<OperationDto>('POST', `/api/parcels/${uuid}/save`, name ? { name } : {});
+    const promise = request<OperationDto>(
+      "POST",
+      `/api/parcels/${uuid}/save`,
+      name ? { name } : {},
+    );
     return trackSubmitted(promise);
   },
   history: (uuid: string, limit?: number, cursor?: string) => {
     const params = new URLSearchParams();
-    if (limit !== undefined) params.set('limit', String(limit));
-    if (cursor) params.set('cursor', cursor);
+    if (limit !== undefined) params.set("limit", String(limit));
+    if (cursor) params.set("cursor", cursor);
     const query = params.toString();
-    return request<TreePageDto>('GET', `/api/parcels/${uuid}/history${query ? `?${query}` : ''}`);
+    return request<TreePageDto>(
+      "GET",
+      `/api/parcels/${uuid}/history${query ? `?${query}` : ""}`,
+    );
   },
-  restoreParcel: (uuid: string, snapshotId: string, mode: 'direct' | 'save-first') => {
-    const promise = request<OperationDto>('POST', `/api/parcels/${uuid}/restore`, {
-      snapshotId,
-      mode,
-    });
+  restoreParcel: (
+    uuid: string,
+    snapshotId: string,
+    mode: "direct" | "save-first",
+  ) => {
+    const promise = request<OperationDto>(
+      "POST",
+      `/api/parcels/${uuid}/restore`,
+      {
+        snapshotId,
+        mode,
+      },
+    );
     return trackSubmitted(promise);
   },
   teleportParcel: (uuid: string, players: string[]) =>
-    request<{ count: number }>('POST', `/api/parcels/${uuid}/teleport`, { players }),
-  publishParcel: (uuid: string, repository: string, path: string, message?: string) => {
-    const promise = request<OperationDto>('POST', `/api/parcels/${uuid}/publish`, {
-      repository,
-      path,
-      message,
-    });
+    request<{ count: number }>("POST", `/api/parcels/${uuid}/teleport`, {
+      players,
+    }),
+  publishParcel: (
+    uuid: string,
+    repository: string,
+    path: string,
+    message?: string,
+  ) => {
+    const promise = request<OperationDto>(
+      "POST",
+      `/api/parcels/${uuid}/publish`,
+      {
+        repository,
+        path,
+        message,
+      },
+    );
     return trackSubmitted(promise);
   },
 
@@ -166,38 +203,44 @@ export const api = {
     mirror?: string;
     rotation?: string;
   }) => {
-    const promise = request<OperationDto>('POST', '/api/import', body);
+    const promise = request<OperationDto>("POST", "/api/import", body);
     return trackSubmitted(promise);
   },
 
-  players: () => request<{ players: PlayerDto[] }>('GET', '/api/players'),
+  players: () => request<{ players: PlayerDto[] }>("GET", "/api/players"),
 
   operations: (limit?: number) =>
     request<{ operations: OperationDto[] }>(
-      'GET',
-      limit === undefined ? '/api/operations' : `/api/operations?limit=${limit}`,
+      "GET",
+      limit === undefined
+        ? "/api/operations"
+        : `/api/operations?limit=${limit}`,
     ),
-  operation: (uuid: string) => request<OperationDto>('GET', `/api/operations/${uuid}`),
+  operation: (uuid: string) =>
+    request<OperationDto>("GET", `/api/operations/${uuid}`),
 
-  repositories: () => request<{ repositories: RepoDto[] }>('GET', '/api/repositories'),
+  repositories: () =>
+    request<{ repositories: RepoDto[] }>("GET", "/api/repositories"),
   repoPaths: (name: string, revision?: string) =>
     request<{ paths: string[] }>(
-      'GET',
+      "GET",
       `/api/repositories/${encodeURIComponent(name)}/paths${
-        revision ? `?revision=${encodeURIComponent(revision)}` : ''
+        revision ? `?revision=${encodeURIComponent(revision)}` : ""
       }`,
     ),
   createRepository: (name: string) => {
-    const promise = request<OperationDto>('POST', '/api/repositories', { name });
+    const promise = request<OperationDto>("POST", "/api/repositories", {
+      name,
+    });
     return trackSubmitted(promise);
   },
   repositoryAction: (
     name: string,
-    action: 'clone' | 'fetch' | 'pull' | 'push',
+    action: "clone" | "fetch" | "pull" | "push",
     url?: string,
   ) => {
     const promise = request<OperationDto>(
-      'POST',
+      "POST",
       `/api/repositories/${encodeURIComponent(name)}/${action}`,
       url === undefined ? {} : { url },
     );
