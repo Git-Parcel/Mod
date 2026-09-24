@@ -191,8 +191,13 @@ function restoreFromNode(node: SnapshotNodeDto) {
       </n-button>
     </div>
 
-    <n-divider style="margin: 1rem 0" />
-    <n-form label-placement="left" label-width="11rem" inline>
+    <n-divider v-if="!historyLoaded || historyNodes.length > 0" style="margin: 1rem 0" />
+    <n-form
+      v-if="!historyLoaded || historyNodes.length > 0"
+      label-placement="left"
+      label-width="11rem"
+      inline
+>
       <n-form-item :label="t('snapshots.restoreId')" style="width: 100%">
         <n-input
           v-model:value="restoreForm.snapshotId"
