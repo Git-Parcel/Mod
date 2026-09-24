@@ -2,6 +2,7 @@ package io.github.leawind.gitparcel.server.minecraft.logic.web;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import io.github.leawind.gitparcel.common.api.operation.OperationSnapshot;
 import io.github.leawind.gitparcel.server.minecraft.logic.web.WebService.WebResponse;
 import io.github.leawind.gitparcel.server.minecraft.logic.world.SnapshotService;
 import java.util.Map;
@@ -60,7 +61,13 @@ final class OperationEndpoints {
         };
 
     var source = api.manager().get(operationId);
-    if (source.isEmpty() || !"restore_snapshot".equals(source.get().kind())) {
+    if (
+      source.isEmpty()
+        || !"restore_snapshot".equals(source.get().kind())
+        || source.get().state() != OperationSnapshot.State.FAILED
+    ) {
+      // Only a failed restore can be resumed; recovering anything else (or a
+      // restore that already succeeded) is a client error.
       throw new ApiException(400, "invalid_value");
     }
     var targetUuid = source.get().target();
