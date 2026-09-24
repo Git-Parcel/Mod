@@ -54,6 +54,7 @@ Agent 指南文件分工：
   - 大括号：K&R 风格（左括号不换行）
   - 导入语句：禁止使用通配符导入（如 `import java.util.*`）
 - md, yml, json, toml 等文件用 deno 进行格式化：`deno fmt`
+- web/ 前端的 ts 与 mjs 文件用 `web/deno.json` 的专属 fmt 配置：在 `web/` 目录内执行 `deno fmt`（双引号、分号、100 列）；`.vue` 文件暂无格式化工具，保持手写风格
 
 ### Stonecutter 指南
 
