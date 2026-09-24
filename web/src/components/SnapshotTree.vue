@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, provide, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import type { SnapshotNodeDto } from '../api/types';
 import { buildSnapshotTree, SNAPSHOT_TREE_KEY } from './snapshotTree';
 import SnapshotTreeNode from './SnapshotTreeNode.vue';
@@ -12,6 +13,7 @@ const props = defineProps<{
   current: string | null;
 }>();
 
+const { t } = useI18n();
 const emit = defineEmits<{ (e: 'restore', node: SnapshotNodeDto): void }>();
 
 const tree = computed(() => buildSnapshotTree(props.nodes));
@@ -73,7 +75,7 @@ watch(
 <template>
   <div class="snapshot-tree">
     <div v-if="current" class="current-line">
-      ★ {{ $t('snapshots.current') }}:
+      ★ {{ t('snapshots.current') }}:
       <copy-text :value="current" :display="current.slice(0, 8)" />
     </div>
     <snapshot-tree-node
