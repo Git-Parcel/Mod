@@ -40,7 +40,13 @@ const sourceLabel = computed(() =>
         ★ {{ t('snapshots.current') }}
       </n-tag>
       <copy-text :value="node.id" :display="abbreviate(node.id)" />
-      <span class="name">{{ node.name }}</span>
+      <n-tooltip v-if="node.description" trigger="hover">
+        <template #trigger>
+          <span class="name">{{ node.name }}</span>
+        </template>
+        {{ node.description }}
+      </n-tooltip>
+      <span v-else class="name">{{ node.name }}</span>
       <n-tag size="small" :bordered="false">{{ sourceLabel }}</n-tag>
       <span class="meta">
         {{ node.author }} · {{ formatTime(node.createdAt) }} ·

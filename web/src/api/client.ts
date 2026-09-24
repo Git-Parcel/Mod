@@ -75,6 +75,35 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   return (await response.json()) as T;
 }
 
+/** Operations submitted this session, watched so their completion can be reported. */
+const tracked = new Map<string, { kind: string }>();
+
+function trackSubmitted(promise: Promise<OperationDto>): Promise<OperationDto> {
+  promise.then(
+    (operation) => tracked.set(operation.operationId, { kind: operation.kind }),
+    () => {}, // request-level failures are surfaced by the caller's own error handling
+  );
+  return promise;
+}
+
+/**
+ * Returns operations tracked this session that have reached a terminal state,
+ * removing them from the watch list.
+ */
+export function collectSettledTracked(all: OperationDto[]): OperationDto[] {
+  const settled = all.filter(
+    (operation) => tracked.has(operation.operationId) && !isPendingState(operation.state),
+  );
+  for (const operation of settled) {
+    tracked.delete(operation.operationId);
+  }
+  return settled;
+}
+
+function isPendingState(state: OperationDto['state']): boolean {
+  return state === 'queued' || state === 'running';
+}
+
 export const api = {
   status: () => request<Status>('GET', '/api/status'),
 
@@ -99,8 +128,10 @@ export const api = {
   resizeParcel: (uuid: string, from: [number, number, number], to: [number, number, number]) =>
     request<ParcelDto>('POST', `/api/parcels/${uuid}/resize`, { from, to }),
   deleteParcel: (uuid: string) => request<void>('DELETE', `/api/parcels/${uuid}`),
-  saveParcel: (uuid: string, name?: string) =>
-    request<OperationDto>('POST', `/api/parcels/${uuid}/save`, name ? { name } : {}),
+  saveParcel: (uuid: string, name?: string) => {
+    const promise = request<OperationDto>('POST', `/api/parcels/${uuid}/save`, name ? { name } : {});
+    return trackSubmitted(promise);
+  },
   history: (uuid: string, limit?: number, cursor?: string) => {
     const params = new URLSearchParams();
     if (limit !== undefined) params.set('limit', String(limit));
@@ -108,12 +139,23 @@ export const api = {
     const query = params.toString();
     return request<TreePageDto>('GET', `/api/parcels/${uuid}/history${query ? `?${query}` : ''}`);
   },
-  restoreParcel: (uuid: string, snapshotId: string, mode: 'direct' | 'save-first') =>
-    request<OperationDto>('POST', `/api/parcels/${uuid}/restore`, { snapshotId, mode }),
+  restoreParcel: (uuid: string, snapshotId: string, mode: 'direct' | 'save-first') => {
+    const promise = request<OperationDto>('POST', `/api/parcels/${uuid}/restore`, {
+      snapshotId,
+      mode,
+    });
+    return trackSubmitted(promise);
+  },
   teleportParcel: (uuid: string, players: string[]) =>
     request<{ count: number }>('POST', `/api/parcels/${uuid}/teleport`, { players }),
-  publishParcel: (uuid: string, repository: string, path: string, message?: string) =>
-    request<OperationDto>('POST', `/api/parcels/${uuid}/publish`, { repository, path, message }),
+  publishParcel: (uuid: string, repository: string, path: string, message?: string) => {
+    const promise = request<OperationDto>('POST', `/api/parcels/${uuid}/publish`, {
+      repository,
+      path,
+      message,
+    });
+    return trackSubmitted(promise);
+  },
 
   importParcel: (body: {
     repository: string;
@@ -123,7 +165,10 @@ export const api = {
     at: [number, number, number];
     mirror?: string;
     rotation?: string;
-  }) => request<OperationDto>('POST', '/api/import', body),
+  }) => {
+    const promise = request<OperationDto>('POST', '/api/import', body);
+    return trackSubmitted(promise);
+  },
 
   players: () => request<{ players: PlayerDto[] }>('GET', '/api/players'),
 
@@ -142,16 +187,20 @@ export const api = {
         revision ? `?revision=${encodeURIComponent(revision)}` : ''
       }`,
     ),
-  createRepository: (name: string) =>
-    request<OperationDto>('POST', '/api/repositories', { name }),
+  createRepository: (name: string) => {
+    const promise = request<OperationDto>('POST', '/api/repositories', { name });
+    return trackSubmitted(promise);
+  },
   repositoryAction: (
     name: string,
     action: 'clone' | 'fetch' | 'pull' | 'push',
     url?: string,
-  ) =>
-    request<OperationDto>(
+  ) => {
+    const promise = request<OperationDto>(
       'POST',
       `/api/repositories/${encodeURIComponent(name)}/${action}`,
       url === undefined ? {} : { url },
-    ),
+    );
+    return trackSubmitted(promise);
+  },
 };

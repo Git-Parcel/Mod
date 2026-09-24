@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useDialog, useMessage } from 'naive-ui';
 import { useI18n } from 'vue-i18n';
 import { api } from '../api/client';
+import { ApiError } from '../api/client';
 import type {
   OperationDto,
   ParcelDto,
@@ -13,6 +14,7 @@ import type {
   TreePageDto,
   Vec3,
 } from '../api/types';
+import { SNAPSHOT_ID_PATTERN } from '../api/types';
 import CopyText from '../components/CopyText.vue';
 import CoordInput from '../components/CoordInput.vue';
 import DimensionTag from '../components/DimensionTag.vue';
@@ -131,6 +133,10 @@ const historyCurrent = ref<string | null>(null);
 const historyCursor = ref<string | null>(null);
 const historyLoading = ref(false);
 const historyLoaded = ref(false);
+/** True when pagination stopped at the aggregation cap with more pages available. */
+const historyHasMore = ref(false);
+
+const HISTORY_ERROR_MAX_RETRIES = 2;
 
 async function loadHistory(reset: boolean) {
   if (historyLoading.value) return;
@@ -140,18 +146,38 @@ async function loadHistory(reset: boolean) {
       historyNodes.value = [];
       historyCursor.value = null;
     }
+    let retries = 0;
     let guard = 0;
     do {
-      const page: TreePageDto = await api.history(
-        uuid.value,
-        HISTORY_PAGE_LIMIT,
-        historyCursor.value ?? undefined,
-      );
-      historyNodes.value.push(...page.nodes);
-      historyCurrent.value = page.current;
-      historyCursor.value = page.nextCursor;
+      try {
+        const page: TreePageDto = await api.history(
+          uuid.value,
+          HISTORY_PAGE_LIMIT,
+          historyCursor.value ?? undefined,
+        );
+        historyNodes.value.push(...page.nodes);
+        historyCurrent.value = page.current;
+        historyCursor.value = page.nextCursor;
+        retries = 0;
+      } catch (error) {
+        // A cursor can go stale between page loads (history rewritten by a
+        // save); restart pagination from the newest snapshot instead of
+        // bothering the user about it.
+        if (error instanceof ApiError && error.code === 'stale_cursor' && retries < HISTORY_ERROR_MAX_RETRIES) {
+          retries += 1;
+          historyNodes.value = [];
+          historyCursor.value = null;
+          continue;
+        }
+        throw error;
+      }
       guard += 1;
-    } while (historyCursor.value && historyNodes.value.length < HISTORY_MAX_NODES && guard < 32);
+    } while (
+      historyCursor.value &&
+      historyNodes.value.length < HISTORY_MAX_NODES &&
+      guard < 32
+    );
+    historyHasMore.value = Boolean(historyCursor.value);
     historyLoaded.value = true;
   } catch (error) {
     message.error(errorText(error));
@@ -164,8 +190,15 @@ const restoreForm = ref<{ snapshotId: string; mode: 'direct' | 'save-first' }>({
   snapshotId: '',
   mode: 'save-first',
 });
+const restoreIdValid = computed(() =>
+  SNAPSHOT_ID_PATTERN.test(restoreForm.value.snapshotId.trim().toLowerCase()),
+);
 
 function confirmRestore(snapshotId: string) {
+  if (!SNAPSHOT_ID_PATTERN.test(snapshotId)) {
+    message.error(t('apiErrors.invalid_value'));
+    return;
+  }
   dialog.warning({
     title: t('snapshots.restoreConfirmTitle'),
     content: t('snapshots.restoreConfirm', { id: abbreviate(snapshotId) }),
@@ -183,8 +216,7 @@ function confirmRestore(snapshotId: string) {
 }
 
 function restoreFromInput() {
-  const id = restoreForm.value.snapshotId.trim().toLowerCase();
-  confirmRestore(id);
+  confirmRestore(restoreForm.value.snapshotId.trim().toLowerCase());
 }
 
 function restoreFromNode(node: SnapshotNodeDto) {
@@ -441,9 +473,11 @@ const repositoryOptions = computed(() =>
           :current="historyCurrent"
           @restore="restoreFromNode"
         />
-        <p v-if="historyCursor" class="muted" style="margin: 0.5rem 0 0">
-          … {{ historyNodes.length }}+
-        </p>
+        <div v-if="historyHasMore" style="margin-top: 0.5rem">
+          <n-button size="small" :loading="historyLoading" @click="loadHistory(false)">
+            {{ t('snapshots.loadMore') }} ({{ historyNodes.length }}+)
+          </n-button>
+        </div>
 
         <n-divider style="margin: 1rem 0" />
         <n-form label-placement="left" label-width="11rem" inline>
@@ -463,7 +497,7 @@ const repositoryOptions = computed(() =>
           <n-form-item :label="' '">
             <n-button
               type="warning"
-              :disabled="restoreForm.snapshotId.trim().length < 40"
+              :disabled="!restoreIdValid"
               @click="restoreFromInput"
             >
               {{ t('snapshots.restore') }}

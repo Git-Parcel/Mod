@@ -64,6 +64,24 @@ const visibleParcels = computed(() => {
     );
 });
 
+function openDetail(parcel: ParcelDto) {
+  void router.push(`/parcels/${parcel.uuid}`);
+}
+
+function rowProps(parcel: ParcelDto) {
+  return {
+    style: 'cursor: pointer',
+    onClick: (event: MouseEvent) => {
+      // Row selection checkboxes, action buttons and copy chips keep their own behavior.
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('.n-checkbox, button, code')) {
+        return;
+      }
+      openDetail(parcel);
+    },
+  };
+}
+
 function syncState(parcel: ParcelDto): 'synced' | 'outOfSync' | 'never' {
   if (!parcel.archiveSync) return 'never';
   const sync = parcel.archiveSync;
@@ -200,6 +218,11 @@ const rotationOptions = ['none', 'clockwise_90', 'clockwise_180', 'counterclockw
 );
 
 async function submitCreate() {
+  const size = [0, 1, 2].map((axis) => Math.abs(createForm.value.to[axis] - createForm.value.from[axis]) + 1);
+  if (size.some((value) => value <= 0)) {
+    message.error(t('create.invalidSize'));
+    return;
+  }
   try {
     const parcel = await api.createParcel({
       dimension: createForm.value.dimension,
@@ -324,7 +347,9 @@ async function submitImport() {
       :columns="columns"
       :data="visibleParcels"
       :row-key="(parcel: ParcelDto) => parcel.uuid"
+      :row-props="rowProps"
       v-model:checked-row-keys="checkedKeys"
+      :pagination="visibleParcels.length > 20 ? { pageSize: 20 } : false"
       :bordered="false"
       size="small"
     />

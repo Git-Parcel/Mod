@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, h, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import type { DataTableColumns } from 'naive-ui';
 import { api } from '../api/client';
 import type { OperationDto, OperationState } from '../api/types';
@@ -12,6 +13,10 @@ import { translateId } from '../i18n';
 import { abbreviate, formatTime, isOperationActive } from '../utils/format';
 
 const { t } = useI18n();
+const router = useRouter();
+
+/** Parcel-scoped operations carry the parcel UUID as their target. */
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 const operations = ref<OperationDto[]>([]);
 const failed = ref(false);
@@ -71,7 +76,23 @@ const columns = computed<DataTableColumns<OperationDto>>(() => [
     key: 'kind',
     render: (operation) => translateId('opKind', operation.kind),
   },
-  { title: t('col.target'), key: 'target' },
+  {
+    title: t('col.target'),
+    key: 'target',
+    render: (operation) => {
+      if (!UUID_PATTERN.test(operation.target)) {
+        return operation.target;
+      }
+      return h(
+        'button',
+        {
+          class: 'link-button',
+          onClick: () => router.push(`/parcels/${operation.target}`),
+        },
+        abbreviate(operation.target),
+      );
+    },
+  },
   { title: t('col.owner'), key: 'owner' },
   {
     title: t('col.state'),
@@ -87,6 +108,11 @@ const columns = computed<DataTableColumns<OperationDto>>(() => [
     title: t('col.submittedAt'),
     key: 'submittedAt',
     render: (operation) => formatTime(operation.submittedAt),
+  },
+  {
+    title: t('col.startedAt'),
+    key: 'startedAt',
+    render: (operation) => formatTime(operation.startedAt),
   },
   {
     title: t('col.completedAt'),
@@ -140,5 +166,15 @@ function detailLine(label: string, value: string | null) {
 .expand-body {
   padding: 0.25rem 1rem;
   max-width: 48rem;
+}
+.link-button {
+  border: none;
+  background: none;
+  color: #2080f0;
+  cursor: pointer;
+  padding: 0;
+}
+.link-button:hover {
+  text-decoration: underline;
 }
 </style>

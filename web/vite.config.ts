@@ -12,6 +12,21 @@ export default defineConfig({
     vue(),
     Components({ resolvers: [NaiveUiResolver()], dts: 'src/components.d.ts' }),
   ],
+  build: {
+    // The UI-local naive-ui chunk is ~700 kB minified (~200 kB gzip); fine for
+    // a console served from the mod jar on localhost.
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        // Keep the framework and the component library in cacheable chunks
+        // separate from the small application code.
+        manualChunks: {
+          vendor: ['vue', 'vue-router', 'vue-i18n'],
+          'naive-ui': ['naive-ui'],
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       '/api': { target: apiTarget },

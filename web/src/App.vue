@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { dateEnUS, dateZhCN, enUS, zhCN } from 'naive-ui';
-import { unauthorized } from './api/client';
+import { darkTheme, dateEnUS, dateZhCN, enUS, zhCN } from 'naive-ui';
+import { captureTokenFromUrl, unauthorized } from './api/client';
 import { LOCALES, setLocale, type Locale } from './i18n';
+
+captureTokenFromUrl();
 
 const { t, locale } = useI18n();
 const route = useRoute();
@@ -27,45 +29,75 @@ function onMenuSelect(key: string) {
 }
 
 const currentLocale = computed(() => locale.value as Locale);
-const localeOptions = LOCALES.map((value) => ({ label: value === 'zh-CN' ? '中文' : 'English', value }));
+const localeOptions = LOCALES.map((value) => ({
+  label: value === 'zh-CN' ? '中文' : 'English',
+  value,
+}));
 
 function onLocaleChange(value: Locale) {
   setLocale(value);
 }
+
+// region appearance
+const THEME_KEY = 'gitparcel-theme';
+type ThemeName = 'light' | 'dark';
+const theme = ref<ThemeName>(localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light');
+const naiveTheme = computed(() => (theme.value === 'dark' ? darkTheme : null));
+const darkMode = computed({
+  get: () => theme.value === 'dark',
+  set: (value: boolean) => {
+    theme.value = value ? 'dark' : 'light';
+  },
+});
+watch(theme, (value) => localStorage.setItem(THEME_KEY, value));
+// endregion
 </script>
 
 <template>
-  <n-config-provider :locale="naiveLocale" :date-locale="naiveDateLocale">
+  <n-config-provider :locale="naiveLocale" :date-locale="naiveDateLocale" :theme="naiveTheme">
     <n-message-provider>
       <n-dialog-provider>
-        <n-result
-          v-if="unauthorized"
-          status="403"
-          :title="t('auth.invalid')"
-          :description="t('auth.hint')"
-          style="margin-top: 6rem"
-        />
-        <n-layout v-else has-sider style="height: 100vh">
-          <n-layout-sider bordered :width="220" content-style="display:flex;flex-direction:column;height:100%">
-            <div class="brand">
-              <span class="brand-title">{{ t('app.title') }}</span>
-            </div>
-            <n-menu :value="activeKey" :options="menuOptions" @update:value="onMenuSelect" />
-            <div class="sider-footer">
-              <span>{{ t('nav.language') }}</span>
-              <n-select
-                :value="currentLocale"
-                :options="localeOptions"
-                size="small"
-                style="width: 7.5rem"
-                @update:value="onLocaleChange"
-              />
-            </div>
-          </n-layout-sider>
-          <n-layout-content content-style="padding: 1.25rem 1.5rem; height: 100vh; overflow: auto">
-            <router-view />
-          </n-layout-content>
-        </n-layout>
+        <n-notification-provider :max="4">
+          <operation-notifier />
+          <n-result
+            v-if="unauthorized"
+            status="403"
+            :title="t('auth.invalid')"
+            :description="t('auth.hint')"
+            style="margin-top: 6rem"
+          />
+          <n-layout v-else has-sider style="height: 100vh">
+            <n-layout-sider
+              bordered
+              :width="220"
+              content-style="display:flex;flex-direction:column;height:100%"
+            >
+              <div class="brand">
+                <span class="brand-title">{{ t('app.title') }}</span>
+              </div>
+              <n-menu :value="activeKey" :options="menuOptions" @update:value="onMenuSelect" />
+              <div class="sider-footer">
+                <span>{{ t('nav.language') }}</span>
+                <n-select
+                  :value="currentLocale"
+                  :options="localeOptions"
+                  size="small"
+                  style="width: 7.5rem"
+                  @update:value="onLocaleChange"
+                />
+                <n-switch v-model:value="darkMode" size="small">
+                  <template #checked>🌙</template>
+                  <template #unchecked>☀️</template>
+                </n-switch>
+              </div>
+            </n-layout-sider>
+            <n-layout-content
+              content-style="padding: 1.25rem 1.5rem; height: 100vh; overflow: auto"
+            >
+              <router-view />
+            </n-layout-content>
+          </n-layout>
+        </n-notification-provider>
       </n-dialog-provider>
     </n-message-provider>
   </n-config-provider>
@@ -85,5 +117,15 @@ function onLocaleChange(value: Locale) {
   justify-content: space-between;
   gap: 0.5rem;
   color: #666;
+}
+</style>
+
+<style>
+.notification-link {
+  border: none;
+  background: none;
+  color: #2080f0;
+  cursor: pointer;
+  padding: 0;
 }
 </style>
