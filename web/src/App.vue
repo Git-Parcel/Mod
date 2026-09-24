@@ -67,6 +67,15 @@ function recoverFromCrash() {
   renderError.value = null;
   void router.push('/');
 }
+
+// A new route starts scrolled to the top; the layout content is the scroller.
+const contentRef = ref<InstanceType<typeof import('naive-ui')['NLayoutContent']>>();
+watch(
+  () => route.fullPath,
+  () => {
+    contentRef.value?.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+  },
+);
 </script>
 
 <template>
@@ -108,6 +117,7 @@ function recoverFromCrash() {
               </div>
             </n-layout-sider>
             <n-layout-content
+              ref="contentRef"
               content-style="padding: 1.25rem 1.5rem; height: 100vh; overflow: auto"
             >
               <n-result
