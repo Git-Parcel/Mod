@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onErrorCaptured, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { darkTheme, dateEnUS, dateZhCN, enUS, zhCN } from 'naive-ui';
@@ -51,6 +51,22 @@ const darkMode = computed({
 });
 watch(theme, (value) => localStorage.setItem(THEME_KEY, value));
 // endregion
+
+// Render-crash containment: a broken view shows an error card with a way
+// back instead of blanking the whole console.
+const renderCrashed = ref(false);
+const renderError = ref<string | null>(null);
+onErrorCaptured((error) => {
+  renderCrashed.value = true;
+  renderError.value = error instanceof Error ? error.message : String(error);
+  return false;
+});
+
+function recoverFromCrash() {
+  renderCrashed.value = false;
+  renderError.value = null;
+  void router.push('/');
+}
 </script>
 
 <template>
@@ -94,7 +110,19 @@ watch(theme, (value) => localStorage.setItem(THEME_KEY, value));
             <n-layout-content
               content-style="padding: 1.25rem 1.5rem; height: 100vh; overflow: auto"
             >
-              <router-view />
+              <n-result
+                v-if="renderCrashed"
+                status="500"
+                :title="t('common.error')"
+                :description="renderError ?? ''"
+              >
+                <template #footer>
+                  <n-button type="primary" @click="recoverFromCrash">
+                    {{ t('nav.overview') }}
+                  </n-button>
+                </template>
+              </n-result>
+              <router-view v-else :key="route.fullPath" />
             </n-layout-content>
           </n-layout>
         </n-notification-provider>
