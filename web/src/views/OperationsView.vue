@@ -73,7 +73,7 @@ const stateOptions = (['', 'queued', 'running', 'succeeded', 'failed', 'canceled
 
 type OperationRow = OperationDto & { targetLabel: string };
 
-const columns = computed<DataTableColumns<OperationDto>>(() => [
+const columns = computed<DataTableColumns<OperationRow>>(() => [
   {
     type: 'expand',
     renderExpand: (operation) =>
@@ -114,7 +114,7 @@ const columns = computed<DataTableColumns<OperationDto>>(() => [
           class: 'link-button',
           onClick: () => router.push(`/parcels/${operation.target}`),
         },
-        (operation as OperationRow).targetLabel,
+        operation.targetLabel,
       );
     },
   },
