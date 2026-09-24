@@ -24,7 +24,7 @@ const resizeForm = ref<{ from: Vec3; to: Vec3 }>({ from: [0, 0, 0], to: [0, 0, 0
 // Track the polled parcel so bounds changed elsewhere (another admin, a
 // restore) refresh the form instead of targeting stale coordinates.
 watch(
-  () => [props.parcel.bounds.from, props.parcel.bounds.to],
+  () => props.parcel.uuid,
   () => {
     resizeForm.value.from = [...props.parcel.bounds.from] as Vec3;
     resizeForm.value.to = [...props.parcel.bounds.to] as Vec3;

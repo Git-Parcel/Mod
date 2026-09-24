@@ -19,12 +19,14 @@ const form = ref({
   description: '',
 });
 
+// Re-seed only when switching parcels: the 15s polling refresh must not
+// wipe out unsaved edits in the middle of typing.
 watch(
-  () => props.parcel,
-  (value) => {
-    form.value.name = value.name ?? '';
-    form.value.author = value.author ?? '';
-    form.value.description = value.description ?? '';
+  () => props.parcel?.uuid,
+  () => {
+    form.value.name = props.parcel?.name ?? '';
+    form.value.author = props.parcel?.author ?? '';
+    form.value.description = props.parcel?.description ?? '';
   },
   { immediate: true },
 );
