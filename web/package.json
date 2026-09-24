@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "mock": "node scripts/mock-server.mjs",
+    "check-i18n": "node scripts/check-i18n.mjs"
   },
   "dependencies": {
     "naive-ui": "^2.45.3",
