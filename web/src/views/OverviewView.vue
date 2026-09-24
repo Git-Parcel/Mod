@@ -89,7 +89,7 @@ const totalParcels = computed(() =>
 
 <style scoped>
 .muted {
-  color: #888;
+  color: var(--muted);
 }
 .count {
   margin-left: 0.5rem;

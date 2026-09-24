@@ -49,7 +49,11 @@ const darkMode = computed({
     theme.value = value ? 'dark' : 'light';
   },
 });
-watch(theme, (value) => localStorage.setItem(THEME_KEY, value));
+watch(theme, (value) => {
+  localStorage.setItem(THEME_KEY, value);
+  document.documentElement.dataset.theme = value;
+});
+document.documentElement.dataset.theme = theme.value;
 // endregion
 
 // Render-crash containment: a broken view shows an error card with a way
@@ -165,5 +169,27 @@ watch(
   color: #2080f0;
   cursor: pointer;
   padding: 0;
+}
+</style>
+
+<style>
+/* Theme-aware custom properties for component styles that naive-ui
+   variables do not reach. */
+:root {
+  --muted: #888;
+  --faint: #999;
+  --link: #2080f0;
+  --success: #18a058;
+  --warning: #f0a020;
+  --line: #ddd;
+}
+
+:root[data-theme='dark'] {
+  --muted: #9aa2ad;
+  --faint: #7d8590;
+  --link: #66b2ff;
+  --success: #4fc98a;
+  --warning: #ffc163;
+  --line: #3a3a3f;
 }
 </style>

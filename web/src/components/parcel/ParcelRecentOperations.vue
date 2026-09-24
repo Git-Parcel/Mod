@@ -33,6 +33,6 @@ const { t } = useI18n();
   padding: 0.3rem 0;
 }
 .muted {
-  color: #888;
+  color: var(--muted);
 }
 </style>

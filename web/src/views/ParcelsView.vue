@@ -277,24 +277,24 @@ function onCreated(parcel: ParcelDto) {
   flex-wrap: wrap;
 }
 .muted {
-  color: #888;
+  color: var(--muted);
 }
 .parcel-name {
   font-weight: 500;
 }
 .sync-synced {
-  color: #18a058;
+  color: var(--success);
 }
 .sync-outOfSync {
-  color: #f0a020;
+  color: var(--warning);
 }
 .sync-never {
-  color: #999;
+  color: var(--faint);
 }
 .link-button {
   border: none;
   background: none;
-  color: #2080f0;
+  color: var(--link);
   cursor: pointer;
   padding: 0;
 }

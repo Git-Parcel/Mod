@@ -225,7 +225,7 @@ function recoverHint(operation: OperationDto): VNode | null {
 .link-button {
   border: none;
   background: none;
-  color: #2080f0;
+  color: var(--link);
   cursor: pointer;
   padding: 0;
 }
@@ -235,7 +235,7 @@ function recoverHint(operation: OperationDto): VNode | null {
 .link-button {
   border: none;
   background: none;
-  color: #2080f0;
+  color: var(--link);
   cursor: pointer;
   padding: 0;
 }

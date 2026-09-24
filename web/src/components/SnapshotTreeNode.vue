@@ -94,13 +94,13 @@ const sourceLabel = computed(() => translateId('snapshots.source', props.node.so
   width: 1rem;
   cursor: pointer;
   user-select: none;
-  color: #888;
+  color: var(--muted);
 }
 .name {
   font-weight: 500;
 }
 .meta {
-  color: #777;
+  color: var(--muted);
   font-size: 0.85rem;
 }
 .spacer {
@@ -114,27 +114,27 @@ const sourceLabel = computed(() => translateId('snapshots.source', props.node.so
   text-decoration: underline;
 }
 .current-mark {
-  color: #18a058;
+  color: var(--success);
   font-weight: 600;
   font-size: 0.85rem;
 }
 .tag {
   font-size: 0.8rem;
-  color: #888;
+  color: var(--muted);
   border: 1px solid currentColor;
   border-radius: 3px;
   padding: 0 0.3rem;
 }
 .source-saved {
-  color: #2080f0;
+  color: var(--link);
 }
 .source-imported {
-  color: #f0a020;
+  color: var(--warning);
 }
 .restore-button {
-  border: 1px solid #f0a020;
+  border: 1px solid var(--warning);
   background: none;
-  color: #f0a020;
+  color: var(--warning);
   border-radius: 3px;
   cursor: pointer;
   font-size: 0.8rem;
@@ -145,7 +145,7 @@ const sourceLabel = computed(() => translateId('snapshots.source', props.node.so
 }
 .children {
   margin-left: 0.9rem;
-  border-left: 1px solid #ddd;
+  border-left: 1px solid var(--line);
   padding-left: 0.5rem;
 }
 </style>

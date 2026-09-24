@@ -109,6 +109,6 @@ function onDeleted() {
   flex-wrap: wrap;
 }
 .muted {
-  color: #888;
+  color: var(--muted);
 }
 </style>

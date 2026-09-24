@@ -223,6 +223,6 @@ function restoreFromNode(node: SnapshotNodeDto) {
   flex-wrap: wrap;
 }
 .muted {
-  color: #888;
+  color: var(--muted);
 }
 </style>

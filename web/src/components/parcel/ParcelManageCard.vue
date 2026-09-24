@@ -219,6 +219,6 @@ loadAuxiliaryData();
   gap: 0.5rem;
 }
 .muted {
-  color: #888;
+  color: var(--muted);
 }
 </style>
