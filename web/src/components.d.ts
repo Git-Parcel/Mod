@@ -62,7 +62,6 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SnapshotTree: typeof import('./components/SnapshotTree.vue')['default']
-    SnapshotTreeNode: typeof import('./components/SnapshotTreeNode.vue')['default']
     StateTag: typeof import('./components/StateTag.vue')['default']
   }
 }

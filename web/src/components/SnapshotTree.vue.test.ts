@@ -83,6 +83,27 @@ describe("SnapshotTree", () => {
 });
 
 describe("SnapshotTree large histories", () => {
+  it("keeps a history at exactly the threshold fully expanded", () => {
+    const nodes: SnapshotNodeDto[] = [node("n0", null)];
+    for (let i = 1; i < 300; i++) {
+      nodes.push(node(`n${i}`, `n${i - 1}`));
+    }
+    const emitted: SnapshotNodeDto[] = [];
+    const Harness = defineComponent({
+      setup() {
+        return () =>
+          h(NMessageProvider, () =>
+            h(SnapshotTree, {
+              nodes,
+              current: "n299",
+              onRestore: (node: SnapshotNodeDto) => emitted.push(node),
+            }));
+      },
+    });
+    const wrapper = mount(Harness, { global: { plugins: [i18n, naive] } });
+    expect(wrapper.findAll(".node-row")).toHaveLength(300);
+  });
+
   it("starts fully collapsed above the threshold", () => {
     // Build a 400-node linear chain: every parent has children, so without
     // the default collapse this would render 400 rows.

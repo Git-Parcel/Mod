@@ -173,7 +173,7 @@
   "rotation.none": "None",
   "snapshots.current": "Current baseline",
   "snapshots.empty": "No snapshots yet for this parcel",
-  "snapshots.files": "{n} files",
+  "snapshots.files": "1 file | {n} files",
   "snapshots.loadHistory": "Load history",
   "snapshots.loadMore": "Load more",
   "snapshots.loading": "Reading snapshot tree…",
