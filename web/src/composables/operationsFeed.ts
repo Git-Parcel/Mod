@@ -26,10 +26,14 @@ let timer: ReturnType<typeof setTimeout> | null = null;
 const ACTIVE_INTERVAL_MS = 3000;
 const IDLE_INTERVAL_MS = 30000;
 
-function currentIntervalMs(): number {
-  const busy_ = trackedCount() > 0 ||
-    operations.value.some((operation) => isOperationActive(operation));
-  return busy_ ? ACTIVE_INTERVAL_MS : IDLE_INTERVAL_MS;
+/** Fast while tracked or running operations exist, relaxed once idle. */
+export function currentIntervalMs(
+  list: OperationDto[],
+  tracked: number,
+): number {
+  const waiting = tracked > 0 ||
+    list.some((operation) => isOperationActive(operation));
+  return waiting ? ACTIVE_INTERVAL_MS : IDLE_INTERVAL_MS;
 }
 
 async function refresh(): Promise<void> {
@@ -59,7 +63,7 @@ function schedule(): void {
   timer = setTimeout(() => {
     timer = null;
     void tick();
-  }, currentIntervalMs());
+  }, currentIntervalMs(operations.value, trackedCount()));
 }
 
 /** Idempotently starts the shared feed; safe to call from every consumer. */
