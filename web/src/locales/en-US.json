@@ -44,6 +44,7 @@
   "common.confirm": "Confirm",
   "common.copied": "Copied",
   "common.copy": "Click to copy",
+  "common.copyFailed": "Copy failed",
   "common.create": "Create",
   "common.error": "Action failed",
   "common.none": "None",

@@ -19,7 +19,7 @@ async function copyId() {
     await navigator.clipboard.writeText(props.node.id);
     message.success(t('common.copied'));
   } catch {
-    message.error('Copy failed');
+    message.error(t("common.copyFailed"));
   }
 }
 

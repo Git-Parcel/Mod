@@ -21,7 +21,7 @@ async function copy() {
       copied.value = false;
     }, 1500);
   } catch {
-    message.error('Copy failed');
+    message.error(t("common.copyFailed"));
   }
 }
 </script>
