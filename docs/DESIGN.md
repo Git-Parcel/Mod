@@ -879,6 +879,8 @@ Web 令牌持有者视为 OWNERS（4 级）：4 是最高权限等级，因此�
 
 全部操作的表格：ID、类型、目标、发起者、状态（queued/running/succeeded/failed/canceled）、当前阶段、进度与单位、时间。不同阶段的单位不合成百分比：无总量时显示阶段与进行中状态（进度协议）。有活动操作时高频轮询，全部终态后降低频率。行展开显示 result、error 与 errorCode。
 
+失败的恢复操作可在记录页直接发起 retry（重新应用目标快照）或 rollback（尽力重新应用恢复前快照），语义与 `/parcel restore recover` 一致。
+
 #### 共享仓库
 
 仓库列表（名称、类型、远程 URL、上次同步）。创建、克隆（URL）、fetch、pull、push；变更均提交为后台操作。
@@ -907,6 +909,7 @@ POST /api/import                                    从共享仓库导入创建�
 GET  /api/players                                   在线玩家
 GET  /api/operations?limit=                         近期操作
 GET  /api/operations/{uuid}                         单个操作
+POST /api/operations/{uuid}/recover                 恢复失败处理（异步；action 为 retry 或 rollback）
 GET  /api/repositories                              共享仓库列表
 GET  /api/repositories/{name}/paths?revision=       parcel 路径候选
 POST /api/repositories                              创建仓库（异步）

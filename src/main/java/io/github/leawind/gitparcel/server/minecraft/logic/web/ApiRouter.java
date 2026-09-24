@@ -32,6 +32,7 @@ public final class ApiRouter {
     PLAYERS("GET", "players"),
     OPERATIONS_LIST("GET", "operations"),
     OPERATION_GET("GET", "operations", "{uuid}"),
+    OPERATION_RECOVER("POST", "operations", "{uuid}", "recover"),
     REPOSITORIES_LIST("GET", "repositories"),
     REPOSITORY_PATHS("GET", "repositories", "{name}", "paths"),
     REPOSITORY_CREATE("POST", "repositories"),

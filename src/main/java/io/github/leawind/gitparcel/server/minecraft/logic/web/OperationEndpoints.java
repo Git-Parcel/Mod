@@ -3,6 +3,7 @@ package io.github.leawind.gitparcel.server.minecraft.logic.web;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import io.github.leawind.gitparcel.server.minecraft.logic.web.WebService.WebResponse;
+import io.github.leawind.gitparcel.server.minecraft.logic.world.SnapshotService;
 import java.util.Map;
 import java.util.UUID;
 
@@ -36,6 +37,45 @@ final class OperationEndpoints {
             .get(uuid)
             .orElseThrow(() -> new ApiException(404, "not_found"));
     return WebResponse.json(200, ApiJson.GSON.toJson(ParcelJson.operation(snapshot)));
+  }
+
+  /**
+   * Resumes an interrupted restore: retry re-applies the target snapshot,
+   * rollback re-applies the pre-restore snapshot. Mirrors
+   * {@code /parcel restore recover}.
+   */
+  static WebResponse recover(WebApi api, String rawUuid, JsonObject request) {
+    UUID operationId;
+    try {
+      operationId = UUID.fromString(rawUuid);
+    } catch (IllegalArgumentException e) {
+      throw new ApiException(400, "invalid_value");
+    }
+    var action = ApiJson.requireString(request, "action");
+    var rollback =
+        switch (action) {
+          case "retry" -> false;
+          case "rollback" -> true;
+          default -> throw new ApiException(400, "invalid_value");
+        };
+
+    var source = api.manager().get(operationId);
+    if (source.isEmpty() || !"restore_snapshot".equals(source.get().kind())) {
+      throw new ApiException(400, "invalid_value");
+    }
+    var targetUuid = source.get().target();
+
+    var ref = api.requireParcel(targetUuid);
+    var service = api.onServerThread(() -> SnapshotService.get(ref.level()));
+    return api.submitOperation(
+        rollback ? "rollback_restore" : "retry_restore",
+        ref.parcel().uuid().toString(),
+        progress ->
+            service
+                .resolvePendingRestoreInBackground(
+                    ref.parcel(), operationId, rollback, false, progress, api.manager())
+                .restored()
+                .value());
   }
 
   private static int parseLimit(String raw) {

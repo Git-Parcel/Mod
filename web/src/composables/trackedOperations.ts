@@ -1,17 +1,17 @@
-import type { OperationDto } from "../api/types";
+import type { OperationDto } from '../api/types'
 
 /**
  * Operations submitted from this session, remembered so their terminal states
  * can be reported exactly once — as a notification and, for snapshot ops, as
  * a history refresh on the parcel page that submitted them.
  */
-const tracked = new Map<string, { kind: string }>();
-const announced = new Set<string>();
+const tracked = new Map<string, { kind: string }>()
+const announced = new Set<string>()
 
-type SettledListener = (operation: OperationDto) => void;
-const settledListeners = new Set<SettledListener>();
+type SettledListener = (operation: OperationDto) => void
+const settledListeners = new Set<SettledListener>()
 
-let listener: (() => void) | null = null;
+let listener: (() => void) | null = null
 
 /**
  * Registers a callback fired whenever an operation becomes tracked — the
@@ -19,25 +19,25 @@ let listener: (() => void) | null = null;
  * interval. Avoids a circular import between the feed and the API client.
  */
 export function onOperationTracked(callback: () => void): void {
-  listener = callback;
+  listener = callback
 }
 
 /** Subscribes to terminal states of tracked operations; returns the unsubscribe fn. */
 export function onTrackedSettled(callback: SettledListener): () => void {
-  settledListeners.add(callback);
-  return () => settledListeners.delete(callback);
+  settledListeners.add(callback)
+  return () => settledListeners.delete(callback)
 }
 
 /** Remembers a submitted operation once the server confirms its identity. */
 export function trackSubmitted<P extends Promise<OperationDto>>(promise: P): P {
   promise.then(
     (operation) => {
-      tracked.set(operation.operationId, { kind: operation.kind });
-      listener?.();
+      tracked.set(operation.operationId, { kind: operation.kind })
+      listener?.()
     },
     () => {}, // request-level failures are surfaced by the caller's own error handling
-  );
-  return promise;
+  )
+  return promise
 }
 
 /**
@@ -47,26 +47,26 @@ export function trackSubmitted<P extends Promise<OperationDto>>(promise: P): P {
 export function announceSettledTracked(all: OperationDto[]): void {
   for (const operation of all) {
     if (
-      !tracked.has(operation.operationId) ||
-      announced.has(operation.operationId)
+      !tracked.has(operation.operationId)
+      || announced.has(operation.operationId)
     ) {
-      continue;
+      continue
     }
     if (isPendingState(operation.state)) {
-      continue;
+      continue
     }
-    announced.add(operation.operationId);
-    tracked.delete(operation.operationId);
+    announced.add(operation.operationId)
+    tracked.delete(operation.operationId)
     for (const listener of settledListeners) {
-      listener(operation);
+      listener(operation)
     }
   }
 }
 
 export function trackedCount(): number {
-  return tracked.size;
+  return tracked.size
 }
 
-function isPendingState(state: OperationDto["state"]): boolean {
-  return state === "queued" || state === "running";
+function isPendingState(state: OperationDto['state']): boolean {
+  return state === 'queued' || state === 'running'
 }

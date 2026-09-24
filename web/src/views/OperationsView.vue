@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, h, ref } from 'vue';
+import { computed, h, ref, type VNode } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
+import { useMessage } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
 import { api } from '../api/client';
 import type { OperationDto, OperationState } from '../api/types';
@@ -9,11 +10,22 @@ import CopyText from '../components/CopyText.vue';
 import ProgressCell from '../components/ProgressCell.vue';
 import StateTag from '../components/StateTag.vue';
 import { useOperationsFeed } from '../composables/operationsFeed';
+import { useErrorToast } from '../composables/errorToast';
 import { translateId } from '../i18n';
 import { abbreviate, formatTime } from '../utils/format';
 
 const { t } = useI18n();
 const router = useRouter();
+const message = useMessage();
+const run = useErrorToast();
+
+/** Resumes a failed restore; mirrors /parcel restore recover. */
+async function recover(operation: OperationDto, action: 'retry' | 'rollback') {
+  const submitted = await run(() => api.recoverOperation(operation.operationId, action));
+  if (submitted) {
+    message.success(t('common.operationStarted'));
+  }
+}
 
 /** Parcel-scoped operations carry the parcel UUID as their target. */
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -47,6 +59,8 @@ const visibleOperations = computed(() => {
     targetLabel: UUID_PATTERN.test(operation.target)
       ? (parcelNames.value.get(operation.target) ?? abbreviate(operation.target))
       : operation.target,
+    /** Failed restores can be resumed; mirrors /parcel restore recover. */
+    recoverable: operation.state === "failed" && operation.kind === "restore_snapshot",
   }));
 });
 
@@ -70,6 +84,7 @@ const columns = computed<DataTableColumns<OperationDto>>(() => [
           t('operations.errorCode'),
           operation.errorCode ? translateId('apiErrors', operation.errorCode) : null,
         ),
+        detailLine(t('operations.recoverHint'), recoverHint(operation)),
       ]),
   },
   {
@@ -131,11 +146,36 @@ const columns = computed<DataTableColumns<OperationDto>>(() => [
   },
 ]);
 
-function detailLine(label: string, value: string | null) {
+function detailLine(label: string, value: string | VNode | null) {
   if (!value) {
     return null;
   }
-  return h('p', { style: 'margin:0.2rem 0' }, [h('strong', `${label}: `), value]);
+  return h("p", { style: "margin:0.2rem 0" }, [h("strong", `${label}: `), value]);
+}
+
+/** Recovery actions for a failed restore, as buttons in the expanded row. */
+function recoverHint(operation: OperationDto): VNode | null {
+  if (operation.state !== 'failed' || operation.kind !== 'restore_snapshot') {
+    return null;
+  }
+  return h('span', { class: 'recover-actions' }, [
+    h(
+      'button',
+      {
+        class: 'link-button',
+        onClick: () => recover(operation, 'retry'),
+      },
+      t('operations.recoverRetry'),
+    ),
+    h(
+      'button',
+      {
+        class: 'link-button',
+        onClick: () => recover(operation, 'rollback'),
+      },
+      t('operations.recoverRollback'),
+    ),
+  ]);
 }
 </script>
 
@@ -177,6 +217,20 @@ function detailLine(label: string, value: string | null) {
 .expand-body {
   padding: 0.25rem 1rem;
   max-width: 48rem;
+}
+.recover-actions {
+  display: inline-flex;
+  gap: 0.75rem;
+}
+.link-button {
+  border: none;
+  background: none;
+  color: #2080f0;
+  cursor: pointer;
+  padding: 0;
+}
+.link-button:hover {
+  text-decoration: underline;
 }
 .link-button {
   border: none;
