@@ -1,0 +1,12 @@
+{
+  "fmt": {
+    "include": ["src/**/*.ts", "src/**/*.test.ts", "scripts/**/*.mjs"],
+    "exclude": ["src/components.d.ts", "node_modules", "dist"],
+    "useTabs": false,
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": false,
+    "trailingCommas": "onlyMultiLine"
+  }
+}

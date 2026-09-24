@@ -2,11 +2,7 @@ import { ref } from "vue";
 import { api } from "../api/client";
 import type { OperationDto } from "../api/types";
 import { isOperationActive } from "../utils/format";
-import {
-  announceSettledTracked,
-  onOperationTracked,
-  trackedCount,
-} from "./trackedOperations";
+import { announceSettledTracked, onOperationTracked, trackedCount } from "./trackedOperations";
 
 /**
  * Single shared feed of recent operations.

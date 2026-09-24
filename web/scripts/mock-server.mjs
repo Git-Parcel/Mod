@@ -413,9 +413,7 @@ async function route(response, method, path, url, body) {
 
   if (method === "GET" && path === "/api/parcels") {
     const dimension = url.searchParams.get("dimension");
-    const list = parcels.filter((parcel) =>
-      !dimension || parcel.dimension === dimension
-    );
+    const list = parcels.filter((parcel) => !dimension || parcel.dimension === dimension);
     return json(response, 200, { parcels: list });
   }
 
@@ -424,9 +422,7 @@ async function route(response, method, path, url, body) {
     if (!/^[\p{L}\p{N}\p{P} ]{1,255}$/u.test(name) || name.includes("  ")) {
       return errorJson(response, 400, "invalid_name");
     }
-    const size = [0, 1, 2].map((axis) =>
-      Math.abs(body.to[axis] - body.from[axis]) + 1
-    );
+    const size = [0, 1, 2].map((axis) => Math.abs(body.to[axis] - body.from[axis]) + 1);
     const created = parcel(randomUUID(), {
       name,
       dimension: body.dimension ?? "minecraft:overworld",
@@ -485,9 +481,7 @@ async function route(response, method, path, url, body) {
   if (method === "POST" && match) {
     const parcel = parcels.find((candidate) => candidate.uuid === match[1]);
     if (!parcel) return errorJson(response, 404, "not_found");
-    const size = [0, 1, 2].map((axis) =>
-      Math.abs(body.to[axis] - body.from[axis]) + 1
-    );
+    const size = [0, 1, 2].map((axis) => Math.abs(body.to[axis] - body.from[axis]) + 1);
     parcel.bounds = { from: [...body.from], to: [...body.to] };
     parcel.sizeParcel = size;
     parcel.sizeWorld = size;
@@ -526,16 +520,12 @@ async function route(response, method, path, url, body) {
     }
     const limit = Math.min(100, Number(url.searchParams.get("limit") ?? 20));
     const cursor = url.searchParams.get("cursor");
-    const startIndex = cursor
-      ? nodes.findIndex((entry) => entry.id === cursor) + 1
-      : 0;
+    const startIndex = cursor ? nodes.findIndex((entry) => entry.id === cursor) + 1 : 0;
     if (cursor && startIndex === 0) {
       return errorJson(response, 400, "stale_cursor");
     }
     const page = nodes.slice(startIndex, startIndex + limit);
-    const nextCursor = startIndex + limit < nodes.length
-      ? page[page.length - 1].id
-      : null;
+    const nextCursor = startIndex + limit < nodes.length ? page[page.length - 1].id : null;
     return json(response, 200, {
       parcelUuid: match[1],
       nodes: page,
@@ -580,9 +570,7 @@ async function route(response, method, path, url, body) {
   match = path.match(/^\/api\/parcels\/([^/]+)$/);
   if (method === "GET" && match) {
     const parcel = parcels.find((candidate) => candidate.uuid === match[1]);
-    return parcel
-      ? json(response, 200, parcel)
-      : errorJson(response, 404, "not_found");
+    return parcel ? json(response, 200, parcel) : errorJson(response, 404, "not_found");
   }
   if (method === "DELETE" && match) {
     const index = parcels.findIndex((candidate) => candidate.uuid === match[1]);
@@ -616,19 +604,13 @@ async function route(response, method, path, url, body) {
 
   match = path.match(/^\/api\/operations\/([^/]+)$/);
   if (method === "GET" && match) {
-    const operation = operations.find((candidate) =>
-      candidate.operationId === match[1]
-    );
-    return operation
-      ? json(response, 200, operation)
-      : errorJson(response, 404, "not_found");
+    const operation = operations.find((candidate) => candidate.operationId === match[1]);
+    return operation ? json(response, 200, operation) : errorJson(response, 404, "not_found");
   }
 
   match = path.match(/^\/api\/operations\/([^/]+)\/recover$/);
   if (method === "POST" && match) {
-    const operation = operations.find((candidate) =>
-      candidate.operationId === match[1]
-    );
+    const operation = operations.find((candidate) => candidate.operationId === match[1]);
     if (!operation) return errorJson(response, 404, "not_found");
     return json(response, 202, addOperation("retry_restore", operation.target));
   }

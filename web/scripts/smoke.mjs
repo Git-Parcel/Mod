@@ -31,12 +31,9 @@ function request(method, path, { headers = {}, body } = {}) {
           status: res.statusCode,
           text: Buffer.concat(chunks).toString("utf-8"),
           contentType: res.headers["content-type"] ?? "",
-        }),
-      );
+        }));
     });
-    req.on("error", () =>
-      resolvePromise({ status: 0, text: "", contentType: "" }),
-    );
+    req.on("error", () => resolvePromise({ status: 0, text: "", contentType: "" }));
     if (body !== undefined) req.write(JSON.stringify(body));
     req.end();
   });
@@ -47,9 +44,7 @@ async function json(method, path, options = {}) {
     ...options,
     headers: {
       Authorization: `Bearer ${TOKEN}`,
-      ...(options.body !== undefined
-        ? { "Content-Type": "application/json" }
-        : {}),
+      ...(options.body !== undefined ? { "Content-Type": "application/json" } : {}),
       ...options.headers,
     },
   });
@@ -169,7 +164,10 @@ if (probeUuid) {
     check("bundled asset is served", assetRes.status === 200);
   }
   const spa = await request("GET", "/some/deep/route");
-  check("SPA fallback serves index for unknown paths", spa.status === 200 && spa.text.includes('id="app"'));
+  check(
+    "SPA fallback serves index for unknown paths",
+    spa.status === 200 && spa.text.includes('id="app"'),
+  );
 }
 // endregion
 
