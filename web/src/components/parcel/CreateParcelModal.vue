@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useMessage } from 'naive-ui';
 import { useI18n } from 'vue-i18n';
 import { api } from '../../api/client';
@@ -30,6 +30,22 @@ const form = ref({
 
 const previewSize = computed(() => boxSize(form.value.from, form.value.to));
 const previewVolume = computed(() => previewSize.value[0] * previewSize.value[1] * previewSize.value[2]);
+
+// Reopening the dialog starts from a blank form, not last time's leftovers.
+watch(
+  () => props.show,
+  (show) => {
+    if (!show) return;
+    form.value = {
+      dimension: props.defaultDimension ?? 'minecraft:overworld',
+      from: [0, 0, 0],
+      to: [0, 0, 0],
+      name: '',
+      mirror: 'none',
+      rotation: 'none',
+    };
+  },
+);
 
 function close() {
   emit('update:show', false);
