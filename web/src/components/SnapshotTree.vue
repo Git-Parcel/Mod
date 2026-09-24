@@ -37,6 +37,9 @@ watch(
     }
     collapsed.value = collapsedIds;
   },
+  // Fires on mount too: the initial page aggregate may already exceed the
+  // threshold, and only collapsed subtrees keep the DOM small.
+  { immediate: true },
 );
 
 function toggle(id: string) {

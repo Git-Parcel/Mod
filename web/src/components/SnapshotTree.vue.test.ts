@@ -81,3 +81,32 @@ describe("SnapshotTree", () => {
     expect(emitted[0].id).toBe("root");
   });
 });
+
+describe("SnapshotTree large histories", () => {
+  it("starts fully collapsed above the threshold", () => {
+    // Build a 400-node linear chain: every parent has children, so without
+    // the default collapse this would render 400 rows.
+    const nodes: SnapshotNodeDto[] = [node("n0", null)];
+    for (let i = 1; i < 400; i++) {
+      nodes.push(node(`n${i}`, `n${i - 1}`));
+    }
+    const emitted: SnapshotNodeDto[] = [];
+    const Harness = defineComponent({
+      setup() {
+        return () =>
+          h(NMessageProvider, () =>
+            h(SnapshotTree, {
+              nodes,
+              current: "n399",
+              onRestore: (node: SnapshotNodeDto) => emitted.push(node),
+            }));
+      },
+    });
+    const wrapper = mount(Harness, { global: { plugins: [i18n, naive] } });
+
+    // Only the chain root renders; the rest waits behind "load more"/expansion.
+    expect(wrapper.findAll(".node-row").length).toBeLessThan(10);
+    // The current baseline stays visible through the summary line.
+    expect(wrapper.find(".current-line").text()).toContain("n399");
+  });
+});
