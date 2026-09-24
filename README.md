@@ -14,3 +14,7 @@ Git Parcel 是一个服务端权威的 Minecraft Mod，用不可变快照管理�
 > [!NOTE]
 >
 > 本模组正在开发中，尚无稳定的公共API。
+
+## Web 管理控制台
+
+服务端可按需启动浏览器管理界面：游戏内执行 `/parcel web start`（默认端口 5639，仅本机可见），用输出的链接在浏览器中管理各维度的 Parcel——创建、配置、保存与恢复快照、发布与导入等。设计细节见 `docs/DESIGN.md`，前端开发见 `web/README.md`。
