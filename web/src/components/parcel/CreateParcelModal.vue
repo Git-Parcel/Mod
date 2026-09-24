@@ -91,7 +91,12 @@ async function submit() {
         <coord-input v-model:value="form.to" />
       </n-form-item>
       <n-form-item :label="t('create.name')">
-        <n-input v-model:value="form.name" :placeholder="t('create.namePlaceholder')" maxlength="255" />
+        <n-input
+          v-model:value="form.name"
+          data-testid="create-name"
+          :placeholder="t('create.namePlaceholder')"
+          maxlength="255"
+        />
       </n-form-item>
       <n-form-item :label="t('create.mirror')">
         <n-select v-model:value="form.mirror" :options="mirrorOptions()" />
