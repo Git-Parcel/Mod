@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { useMessage } from 'naive-ui';
 import { useI18n } from 'vue-i18n';
 import { api } from '../../api/client';
 import type { ParcelDto } from '../../api/types';
@@ -9,6 +10,7 @@ const props = defineProps<{ parcel: ParcelDto }>();
 const emit = defineEmits<{ (e: 'update', parcel: ParcelDto): void }>();
 
 const { t } = useI18n();
+const message = useMessage();
 const run = useErrorToast();
 
 const form = ref({
@@ -30,6 +32,7 @@ watch(
 async function saveConfig(key: string, value: string | number | boolean) {
   const updated = await run(() => api.updateConfig(props.parcel.uuid, key, value));
   if (updated) {
+    message.success(t('common.saved'));
     emit('update', updated);
   }
 }
