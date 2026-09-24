@@ -91,7 +91,7 @@ const columns = computed<DataTableColumns<OperationRow>>(() => [
           t('operations.errorCode'),
           operation.errorCode ? translateId('apiErrors', operation.errorCode) : null,
         ),
-        detailLine(t('operations.recoverHint'), recoverHint(operation)),
+        detailLine(t('operations.recoverHint'), recoverHint(operation, recoverPending.value)),
       ]),
   },
   {
@@ -161,7 +161,7 @@ function detailLine(label: string, value: string | VNode | null) {
 }
 
 /** Recovery actions for a failed restore, as buttons in the expanded row. */
-function recoverHint(operation: OperationDto): VNode | null {
+function recoverHint(operation: OperationDto, pending: boolean): VNode | null {
   if (operation.state !== 'failed' || operation.kind !== 'restore_snapshot') {
     return null;
   }
@@ -170,6 +170,7 @@ function recoverHint(operation: OperationDto): VNode | null {
       'button',
       {
         class: 'link-button',
+        disabled: pending,
         onClick: () => recover(operation, 'retry'),
       },
       t('operations.recoverRetry'),
@@ -178,6 +179,7 @@ function recoverHint(operation: OperationDto): VNode | null {
       'button',
       {
         class: 'link-button',
+        disabled: pending,
         onClick: () => recover(operation, 'rollback'),
       },
       t('operations.recoverRollback'),
