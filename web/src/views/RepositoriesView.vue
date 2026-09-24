@@ -9,6 +9,7 @@ import type { RepoDto } from '../api/types';
 import { useApiData } from '../composables/apiData';
 import { useErrorToast } from '../composables/errorToast';
 import { usePolling } from '../composables/polling';
+import { translateId } from '../i18n';
 import { formatTime } from '../utils/format';
 
 const { t } = useI18n();
@@ -66,9 +67,7 @@ function actionButton(label: string, onClick: () => void) {
 }
 
 function translateRepoType(type: string): string {
-  if (type === 'local') return t('repos.type.local');
-  if (type === 'cloned') return t('repos.type.cloned');
-  return type;
+  return translateId('repos.type', type);
 }
 
 // region create / clone modals
