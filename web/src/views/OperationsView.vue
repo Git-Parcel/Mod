@@ -3,15 +3,13 @@ import { computed, h, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import type { DataTableColumns } from 'naive-ui';
-import { api } from '../api/client';
 import type { OperationDto, OperationState } from '../api/types';
 import CopyText from '../components/CopyText.vue';
 import ProgressCell from '../components/ProgressCell.vue';
 import StateTag from '../components/StateTag.vue';
-import { useApiData } from '../composables/apiData';
-import { usePolling } from '../composables/polling';
+import { useOperationsFeed } from '../composables/operationsFeed';
 import { translateId } from '../i18n';
-import { abbreviate, formatTime, isOperationActive } from '../utils/format';
+import { abbreviate, formatTime } from '../utils/format';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -19,17 +17,8 @@ const router = useRouter();
 /** Parcel-scoped operations carry the parcel UUID as their target. */
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
-const {
-  data: operations,
-  failed,
-  refresh,
-} = useApiData(() => api.operations(100).then((r) => r.operations));
+const { operations, failed, refresh } = useOperationsFeed();
 const stateFilter = ref<OperationState | ''>('');
-
-const hasActive = computed(() => (operations.value ?? []).some(isOperationActive));
-const pollInterval = computed(() => (hasActive.value ? 3000 : 30000));
-
-usePolling(refresh, pollInterval);
 
 const visibleOperations = computed(() =>
   stateFilter.value

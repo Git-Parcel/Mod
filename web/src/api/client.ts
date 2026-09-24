@@ -7,6 +7,7 @@ import type {
   Status,
   TreePageDto,
 } from "./types";
+import { trackSubmitted } from "../composables/trackedOperations";
 
 /** Set once any request comes back 401; App.vue switches to the re-entry guide. */
 export const unauthorized = ref(false);
@@ -77,36 +78,6 @@ async function request<T>(
     return undefined as T;
   }
   return (await response.json()) as T;
-}
-
-/** Operations submitted this session, watched so their completion can be reported. */
-const tracked = new Map<string, { kind: string }>();
-
-function trackSubmitted(promise: Promise<OperationDto>): Promise<OperationDto> {
-  promise.then(
-    (operation) => tracked.set(operation.operationId, { kind: operation.kind }),
-    () => {}, // request-level failures are surfaced by the caller's own error handling
-  );
-  return promise;
-}
-
-/**
- * Returns operations tracked this session that have reached a terminal state,
- * removing them from the watch list.
- */
-export function collectSettledTracked(all: OperationDto[]): OperationDto[] {
-  const settled = all.filter(
-    (operation) =>
-      tracked.has(operation.operationId) && !isPendingState(operation.state),
-  );
-  for (const operation of settled) {
-    tracked.delete(operation.operationId);
-  }
-  return settled;
-}
-
-function isPendingState(state: OperationDto["state"]): boolean {
-  return state === "queued" || state === "running";
 }
 
 export const api = {
