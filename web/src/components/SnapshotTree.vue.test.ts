@@ -73,6 +73,15 @@ describe("SnapshotTree", () => {
     expect(wrapper.findAll(".node-row")).toHaveLength(4);
   });
 
+  it("toggles a branch with keyboard on the caret", async () => {
+    const { wrapper } = makeTree();
+    const caret = wrapper.findAll(".caret")[0];
+    await caret.trigger("keydown.enter");
+    expect(wrapper.findAll(".node-row")).toHaveLength(1);
+    await caret.trigger("keydown.space");
+    expect(wrapper.findAll(".node-row")).toHaveLength(4);
+  });
+
   it("re-emits restore for a node", async () => {
     const { wrapper, emitted } = makeTree();
     const buttons = wrapper.findAll(".restore-button");
