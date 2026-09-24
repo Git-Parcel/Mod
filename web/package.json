@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "build": "npm run check-i18n && npm run check-errors && npm test && vue-tsc --noEmit && vite build",
-    "test": "vitest run",
-    "check-i18n": "node scripts/check-i18n.mjs",
     "check-errors": "node scripts/check-error-codes.mjs",
-    "typecheck": "vue-tsc --noEmit",
+    "check-i18n": "node scripts/check-i18n.mjs",
     "dev": "vite",
+    "mock": "node scripts/mock-server.mjs",
     "preview": "vite preview",
-    "mock": "node scripts/mock-server.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "test": "vitest run",
+    "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
     "naive-ui": "^2.45.3",
