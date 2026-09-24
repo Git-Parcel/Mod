@@ -24,6 +24,36 @@ class ApiRouterTest {
   }
 
   @Test
+  void matchesEveryDocumentedRoute() {
+    assertMatches("GET", "/api/parcels", ApiRouter.Route.PARCELS_LIST);
+    assertMatches("POST", "/api/parcels", ApiRouter.Route.PARCELS_CREATE);
+    assertMatches("GET", "/api/parcels/x", ApiRouter.Route.PARCEL_GET);
+    assertMatches("DELETE", "/api/parcels/x", ApiRouter.Route.PARCEL_DELETE);
+    assertMatches("POST", "/api/parcels/x/config", ApiRouter.Route.PARCEL_CONFIG);
+    assertMatches("POST", "/api/parcels/x/resize", ApiRouter.Route.PARCEL_RESIZE);
+    assertMatches("POST", "/api/parcels/x/save", ApiRouter.Route.PARCEL_SAVE);
+    assertMatches("GET", "/api/parcels/x/history", ApiRouter.Route.PARCEL_HISTORY);
+    assertMatches("POST", "/api/parcels/x/restore", ApiRouter.Route.PARCEL_RESTORE);
+    assertMatches("POST", "/api/parcels/x/teleport", ApiRouter.Route.PARCEL_TELEPORT);
+    assertMatches("POST", "/api/parcels/x/publish", ApiRouter.Route.PARCEL_PUBLISH);
+    assertMatches("POST", "/api/import", ApiRouter.Route.IMPORT);
+    assertMatches("GET", "/api/operations", ApiRouter.Route.OPERATIONS_LIST);
+    assertMatches("GET", "/api/operations/x", ApiRouter.Route.OPERATION_GET);
+    assertMatches("POST", "/api/operations/x/recover", ApiRouter.Route.OPERATION_RECOVER);
+    assertMatches("GET", "/api/repositories", ApiRouter.Route.REPOSITORIES_LIST);
+    assertMatches("GET", "/api/repositories/x/paths", ApiRouter.Route.REPOSITORY_PATHS);
+    assertMatches("POST", "/api/repositories", ApiRouter.Route.REPOSITORY_CREATE);
+    assertMatches("POST", "/api/repositories/x/clone", ApiRouter.Route.REPOSITORY_CLONE);
+    assertMatches("POST", "/api/repositories/x/fetch", ApiRouter.Route.REPOSITORY_FETCH);
+    assertMatches("POST", "/api/repositories/x/pull", ApiRouter.Route.REPOSITORY_PULL);
+    assertMatches("POST", "/api/repositories/x/push", ApiRouter.Route.REPOSITORY_PUSH);
+  }
+
+  private static void assertMatches(String method, String path, ApiRouter.Route expected) {
+    assertEquals(expected, match(method, path).orElseThrow().route());
+  }
+
+  @Test
   void capturesPathParameters() {
     var match = match("GET", "/api/parcels/6f0a2c1e-1111-2222-3333-444455556666/history").orElseThrow();
     assertEquals(ApiRouter.Route.PARCEL_HISTORY, match.route());
