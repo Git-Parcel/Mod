@@ -241,9 +241,24 @@ function scheduleProgress(operation) {
           : operation.kind === 'import_snapshot'
           ? randomUUID()
           : 'OK'
+        if (operation.kind === 'save_snapshot') {
+          appendHistoryNode(operation.target, operation.result)
+        }
+        if (operation.kind === 'restore_snapshot') {
+          currentByParcel.set(operation.target, operation.result)
+        }
       }
     }, 1200)
   }, 800)
+}
+
+/** A completed save appends a snapshot on top of the current baseline. */
+function appendHistoryNode(parcelUuid, snapshotId) {
+  const nodes = historyByParcel.get(parcelUuid)
+  if (!nodes) return
+  const parent = currentByParcel.get(parcelUuid) ?? nodes[nodes.length - 1]?.id ?? null
+  nodes.push(node(snapshotId(), parent, `Snapshot ${nodes.length + 1}`, 0))
+  currentByParcel.set(parcelUuid, snapshotId)
 }
 
 function seedOperations() {
