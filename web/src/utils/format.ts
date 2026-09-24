@@ -17,6 +17,15 @@ export function formatVolume(size: Vec3): number {
   return size[0] * size[1] * size[2];
 }
 
+/** Inclusive block-box size between two corners, in either corner order. */
+export function boxSize(from: Vec3, to: Vec3): Vec3 {
+  return [
+    Math.abs(to[0] - from[0]) + 1,
+    Math.abs(to[1] - from[1]) + 1,
+    Math.abs(to[2] - from[2]) + 1,
+  ];
+}
+
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   const units = ['KiB', 'MiB', 'GiB', 'TiB'];

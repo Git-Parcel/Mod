@@ -65,6 +65,7 @@
   "create.mirror": "Mirror",
   "create.name": "Name",
   "create.namePlaceholder": "Display name",
+  "create.preview": "Size preview",
   "create.rotation": "Rotation",
   "create.submit": "Create",
   "create.title": "Create parcel",

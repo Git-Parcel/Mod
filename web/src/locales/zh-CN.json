@@ -65,6 +65,7 @@
   "create.mirror": "镜像",
   "create.name": "名称",
   "create.namePlaceholder": "parcel 显示名称",
+  "create.preview": "尺寸预览",
   "create.rotation": "旋转",
   "create.submit": "创建",
   "create.title": "创建 Parcel",

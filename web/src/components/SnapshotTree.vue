@@ -82,6 +82,9 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.snapshot-tree {
+  overflow-x: auto;
+}
 .current-line {
   display: flex;
   align-items: center;

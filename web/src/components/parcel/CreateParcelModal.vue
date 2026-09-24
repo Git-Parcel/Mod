@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useMessage } from 'naive-ui';
 import { useI18n } from 'vue-i18n';
 import { api } from '../../api/client';
 import type { ParcelDto, Vec3 } from '../../api/types';
 import { mirrorOptions, rotationOptions, type DimensionOption } from '../../composables/dimensions';
 import { useErrorToast } from '../../composables/errorToast';
+import { boxSize, formatSize } from '../../utils/format';
 import CoordInput from '../CoordInput.vue';
 
 const props = defineProps<{ show: boolean; dimensions: DimensionOption[]; defaultDimension?: string }>();
@@ -19,13 +20,16 @@ const message = useMessage();
 const run = useErrorToast();
 
 const form = ref({
-  dimension: props.defaultDimension ?? 'minecraft:overworld',
+  dimension: props.defaultDimension ?? "minecraft:overworld",
   from: [0, 0, 0] as Vec3,
   to: [0, 0, 0] as Vec3,
-  name: '',
-  mirror: 'none',
-  rotation: 'none',
+  name: "",
+  mirror: "none",
+  rotation: "none",
 });
+
+const previewSize = computed(() => boxSize(form.value.from, form.value.to));
+const previewVolume = computed(() => previewSize.value[0] * previewSize.value[1] * previewSize.value[2]);
 
 function close() {
   emit('update:show', false);
@@ -70,6 +74,12 @@ async function submit() {
       </n-form-item>
       <n-form-item :label="t('create.rotation')">
         <n-select v-model:value="form.rotation" :options="rotationOptions()" />
+      </n-form-item>
+      <n-form-item :label="t('create.preview')">
+        <span class="preview">
+          {{ t('col.size') }} {{ formatSize(previewSize) }} ·
+          {{ t('col.volume') }} {{ previewVolume.toLocaleString() }}
+        </span>
       </n-form-item>
     </n-form>
     <template #footer>

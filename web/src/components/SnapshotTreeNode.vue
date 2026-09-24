@@ -57,7 +57,12 @@ const sourceLabel = computed(() => translateId('snapshots.source', props.node.so
         {{ t('snapshots.files', { n: node.content.files }) }}
       </span>
       <span class="spacer" />
-      <button class="restore-button" type="button" @click.stop="emit('restore', node)">
+      <button
+        v-if="!isCurrent"
+        class="restore-button"
+        type="button"
+        @click.stop="emit('restore', node)"
+      >
         {{ t('snapshots.restoreTo') }}
       </button>
     </div>

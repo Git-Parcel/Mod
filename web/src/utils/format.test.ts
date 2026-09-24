@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { OperationDto, Vec3 } from "../api/types";
 import {
   abbreviate,
+  boxSize,
   formatBytes,
   formatProgress,
   formatSize,
@@ -67,6 +68,14 @@ describe("formatProgress", () => {
     expect(
       formatProgress(operation({ completed: 90, total: 240, unit: "sections" })),
     ).toBe("90 / 240 sections");
+  });
+});
+
+describe("boxSize", () => {
+  it("is inclusive of both corners and order independent", () => {
+    expect(boxSize(vec(0, 0, 0), vec(15, 7, 15))).toEqual(vec(16, 8, 16));
+    expect(boxSize(vec(15, 7, 15), vec(0, 0, 0))).toEqual(vec(16, 8, 16));
+    expect(boxSize(vec(5, 5, 5), vec(5, 5, 5))).toEqual(vec(1, 1, 1));
   });
 });
 
