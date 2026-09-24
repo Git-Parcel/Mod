@@ -49,11 +49,12 @@ const historyHasMore = ref(false);
 
 // When a snapshot op submitted from this page finishes for this parcel, the
 // loaded tree is stale — reload it exactly when the operation settles.
+// Covers restore, retry_restore and rollback_restore alike.
 const offSettled = onTrackedSettled((operation) => {
   if (
     historyLoaded.value &&
     operation.target === props.parcelUuid &&
-    (operation.kind === 'save_snapshot' || operation.kind.startsWith('restore'))
+    (operation.kind === 'save_snapshot' || operation.kind.includes('restore'))
   ) {
     void loadHistory(true);
   }
