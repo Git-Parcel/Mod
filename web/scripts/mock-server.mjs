@@ -640,6 +640,17 @@ async function route(response, method, path, url, body) {
   errorJson(response, 404, 'not_found')
 }
 
+server.on("error", (error) => {
+  if (/** @type {NodeJS.ErrnoException} */ (error).code === "EADDRINUSE") {
+    console.error(
+      `Port ${PORT} is already in use — another mock console is probably running.`,
+    );
+  } else {
+    console.error(error);
+  }
+  process.exit(1);
+});
+
 server.listen(PORT, '127.0.0.1', () => {
   console.log(
     `gitparcel mock console: http://127.0.0.1:${PORT}/?token=${MOCK_TOKEN}`,
