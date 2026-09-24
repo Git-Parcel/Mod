@@ -19,6 +19,7 @@ import {
   abbreviate,
   formatBounds,
   formatCoord,
+  formatNumber,
   formatSize,
   formatVolume,
 } from '../utils/format';
@@ -132,7 +133,7 @@ const columns = computed<DataTableColumns<ParcelDto>>(() => [
     key: 'volume',
     width: 100,
     sorter: (a, b) => formatVolume(a.sizeParcel) - formatVolume(b.sizeParcel),
-    render: (parcel) => formatVolume(parcel.sizeParcel).toLocaleString(),
+    render: (parcel) => formatNumber(formatVolume(parcel.sizeParcel)),
   },
   {
     title: t('col.anchor'),

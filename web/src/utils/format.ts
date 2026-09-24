@@ -17,6 +17,19 @@ export function formatVolume(size: Vec3): number {
   return size[0] * size[1] * size[2];
 }
 
+const numberFormats = new Map<string, Intl.NumberFormat>();
+
+/** Locale-aware integer formatting (grouping separators follow the UI language). */
+export function formatNumber(value: number): string {
+  const locale = currentLocale();
+  let formatter = numberFormats.get(locale);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(locale);
+    numberFormats.set(locale, formatter);
+  }
+  return formatter.format(value);
+}
+
 /** Inclusive block-box size between two corners, in either corner order. */
 export function boxSize(from: Vec3, to: Vec3): Vec3 {
   return [

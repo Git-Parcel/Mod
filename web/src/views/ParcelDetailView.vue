@@ -80,7 +80,7 @@ function onDeleted() {
 
     <template v-else-if="parcel">
       <div class="toolbar">
-        <n-button quaternary aria-label="back" @click="router.push('/parcels')">←</n-button>
+        <n-button quaternary :aria-label="t('nav.parcels')" @click="router.push('/parcels')">←</n-button>
         <h2 style="margin: 0">{{ parcel.name ?? parcel.uuid }}</h2>
         <dimension-tag :dimension="parcel.dimension" />
         <copy-text :value="parcel.uuid" :display="abbreviate(parcel.uuid)" />
