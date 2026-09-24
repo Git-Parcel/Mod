@@ -26,7 +26,7 @@ const totalParcels = computed(() =>
     <n-alert v-if="failed && !status" type="error" :title="t('common.error')" style="margin-bottom: 1rem">
       {{ error ?? t('apiErrors.network') }}
     </n-alert>
-    <n-spin v-if="!status" style="margin-top: 3rem" />
+    <n-spin v-else-if="!status" style="margin-top: 3rem" />
     <template v-else>
       <n-grid :cols="4" :x-gap="12">
         <n-gi>
