@@ -15,9 +15,12 @@ const { t } = useI18n();
 const message = useMessage();
 const run = useErrorToast();
 
-const { data: repositories, failed, refresh } = useApiData<RepoDto[]>(() =>
-  api.repositories().then((r) => r.repositories),
-);
+const {
+  data: repositories,
+  failed,
+  error: loadError,
+  refresh,
+} = useApiData<RepoDto[]>(() => api.repositories().then((r) => r.repositories));
 const repoList = computed(() => repositories.value ?? []);
 
 usePolling(refresh, 20000);
@@ -106,7 +109,7 @@ async function submitClone() {
     </div>
 
     <n-alert v-if="failed && (repositories ?? []).length === 0" type="error" :title="t('common.error')">
-      {{ t('apiErrors.network') }}
+      {{ loadError ?? t('apiErrors.network') }}
     </n-alert>
     <n-empty v-else-if="repoList.length === 0" :description="t('repos.none')" style="margin-top: 3rem" />
 

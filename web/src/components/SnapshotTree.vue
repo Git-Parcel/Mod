@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, provide, ref, watch } from 'vue';
+import { computed, nextTick, provide, ref, watch } from 'vue';
 import type { SnapshotNodeDto } from '../api/types';
 import { buildSnapshotTree, SNAPSHOT_TREE_KEY } from './snapshotTree';
 import SnapshotTreeNode from './SnapshotTreeNode.vue';
@@ -55,15 +55,19 @@ provide(SNAPSHOT_TREE_KEY, {
 });
 
 // Bring the current baseline into view once rendered, per the design's
-// "current path expanded and located" promise.
-onMounted(() => {
-  void nextTick(() => {
-    if (!props.current) return;
-    document
-      .getElementById(`snapshot-node-${props.current}`)
-      ?.scrollIntoView({ block: 'nearest' });
-  });
-});
+// "current path expanded and located" promise. Fires after the async page
+// aggregate lands (not on mount, when the tree is still empty) and only once.
+const located = ref(false);
+watch(
+  [() => props.nodes.length, () => props.current],
+  ([count, current]) => {
+    if (located.value || count === 0 || !current) return;
+    located.value = true;
+    void nextTick(() => {
+      document.getElementById(`snapshot-node-${current}`)?.scrollIntoView({ block: 'nearest' });
+    });
+  },
+);
 </script>
 
 <template>

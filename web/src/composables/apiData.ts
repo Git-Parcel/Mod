@@ -1,4 +1,5 @@
 import { type Ref, ref } from "vue";
+import { errorText } from "../utils/errors";
 
 /**
  * Shared shape of the list/detail pages: nullable data, a failed flag for the
@@ -10,19 +11,23 @@ import { type Ref, ref } from "vue";
 export function useApiData<T>(fetcher: () => Promise<T>): {
   data: Ref<T | null>;
   failed: Ref<boolean>;
+  error: Ref<string | null>;
   refresh: () => Promise<void>;
 } {
   const data: Ref<T | null> = ref(null);
   const failed = ref(false);
+  const error: Ref<string | null> = ref(null);
 
   async function refresh() {
     try {
       data.value = await fetcher();
       failed.value = false;
-    } catch {
+      error.value = null;
+    } catch (e) {
       failed.value = true;
+      error.value = errorText(e);
     }
   }
 
-  return { data, failed, refresh };
+  return { data, failed, error, refresh };
 }

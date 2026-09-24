@@ -12,7 +12,7 @@ import { formatTime } from '../utils/format';
 const { t } = useI18n();
 const router = useRouter();
 
-const { data: status, failed, refresh } = useApiData<Status>(() => api.status());
+const { data: status, failed, error, refresh } = useApiData<Status>(() => api.status());
 usePolling(refresh, 10000);
 
 const totalParcels = computed(() =>
@@ -24,7 +24,7 @@ const totalParcels = computed(() =>
   <div class="overview">
     <h2>{{ t('nav.overview') }}</h2>
     <n-alert v-if="failed && !status" type="error" :title="t('common.error')" style="margin-bottom: 1rem">
-      {{ t('apiErrors.network') }}
+      {{ error ?? t('apiErrors.network') }}
     </n-alert>
     <n-spin v-if="!status" style="margin-top: 3rem" />
     <template v-else>
