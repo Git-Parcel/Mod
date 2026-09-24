@@ -889,7 +889,7 @@ Web 令牌持有者视为 OWNERS（4 级）：4 是最高权限等级，因此�
 
 - 全部端点位于 `/api/*`，需会话令牌；未匹配的路径返回 404。
 - JSON 约定：字段 camelCase，时间戳 ISO-8601 字符串，坐标为 `[x,y,z]` 数组。
-- 错误体 `{"error":"<code>"}`，错误码：`unauthorized`、`not_found`、`bad_request`、`invalid_body`、`invalid_name`、`invalid_value`、`overlap`、`volume_limit`、`busy`、`server_busy`、`stale_cursor`、`internal_error`。
+- 错误体 `{"error":"<code>"}`，错误码：`unauthorized`、`not_found`、`invalid_body`、`invalid_name`、`invalid_value`、`overlap`、`volume_limit`、`busy`、`server_busy`、`stale_cursor`、`internal_error`。
 - 端点：
 
 ```text
