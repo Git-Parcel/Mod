@@ -29,5 +29,7 @@ export const router = createRouter({
       name: "repositories",
       component: () => import("./views/RepositoriesView.vue"),
     },
+    // Unknown paths fall back to the overview instead of a blank view.
+    { path: "/:pathMatch(.*)*", redirect: "/" },
   ],
 });
