@@ -176,7 +176,7 @@
   "snapshots.loadMore": "加载更多",
   "snapshots.loading": "正在读取快照树……",
   "snapshots.mode.direct": "直接恢复",
-  "snapshots.mode.save-first": "先保存再恢复（自动创建保护快照）",
+  "snapshots.mode.save-first": "先保存再恢复",
   "snapshots.reloadHistory": "重新加载",
   "snapshots.restore": "恢复快照",
   "snapshots.restoreConfirm": "恢复会覆盖 parcel 当前的世界内容，且不能保证可靠回退。建议保留「先保存再恢复」。确认恢复到 {id}？",
