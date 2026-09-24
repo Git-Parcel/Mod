@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, inject, type Ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { SnapshotNodeDto } from '../api/types';
+import { useSnapshotTree } from './snapshotTree';
 import { abbreviate, formatTime } from '../utils/format';
 import CopyText from './CopyText.vue';
 
@@ -9,15 +10,7 @@ const props = defineProps<{ node: SnapshotNodeDto }>();
 const emit = defineEmits<{ (e: 'restore', node: SnapshotNodeDto): void }>();
 
 const { t } = useI18n();
-
-interface TreeApi {
-  childrenOf: Ref<Map<string, SnapshotNodeDto[]>>;
-  current: Ref<string | null>;
-  collapsed: Ref<Set<string>>;
-  toggle: (id: string) => void;
-}
-
-const tree = inject<TreeApi>('snapshot-tree')!;
+const tree = useSnapshotTree();
 
 const children = computed(() => tree.childrenOf.value.get(props.node.id) ?? []);
 const hasChildren = computed(() => children.value.length > 0);

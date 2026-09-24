@@ -1,28 +1,18 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { api } from '../api/client';
 import type { Status } from '../api/types';
 import DimensionTag from '../components/DimensionTag.vue';
+import { useApiData } from '../composables/apiData';
 import { usePolling } from '../composables/polling';
 import { formatTime } from '../utils/format';
 
 const { t } = useI18n();
 const router = useRouter();
 
-const status = ref<Status | null>(null);
-const failed = ref(false);
-
-async function refresh() {
-  try {
-    status.value = await api.status();
-    failed.value = false;
-  } catch {
-    failed.value = true;
-  }
-}
-
+const { data: status, failed, refresh } = useApiData<Status>(() => api.status());
 usePolling(refresh, 10000);
 
 const totalParcels = computed(() =>

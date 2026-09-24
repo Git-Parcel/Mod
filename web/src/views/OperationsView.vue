@@ -8,6 +8,7 @@ import type { OperationDto, OperationState } from '../api/types';
 import CopyText from '../components/CopyText.vue';
 import ProgressCell from '../components/ProgressCell.vue';
 import StateTag from '../components/StateTag.vue';
+import { useApiData } from '../composables/apiData';
 import { usePolling } from '../composables/polling';
 import { translateId } from '../i18n';
 import { abbreviate, formatTime, isOperationActive } from '../utils/format';
@@ -18,28 +19,22 @@ const router = useRouter();
 /** Parcel-scoped operations carry the parcel UUID as their target. */
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
-const operations = ref<OperationDto[]>([]);
-const failed = ref(false);
+const {
+  data: operations,
+  failed,
+  refresh,
+} = useApiData(() => api.operations(100).then((r) => r.operations));
 const stateFilter = ref<OperationState | ''>('');
 
-const hasActive = computed(() => operations.value.some(isOperationActive));
+const hasActive = computed(() => (operations.value ?? []).some(isOperationActive));
 const pollInterval = computed(() => (hasActive.value ? 3000 : 30000));
-
-async function refresh() {
-  try {
-    operations.value = (await api.operations(100)).operations;
-    failed.value = false;
-  } catch {
-    failed.value = true;
-  }
-}
 
 usePolling(refresh, pollInterval);
 
 const visibleOperations = computed(() =>
   stateFilter.value
-    ? operations.value.filter((operation) => operation.state === stateFilter.value)
-    : operations.value,
+    ? (operations.value ?? []).filter((operation) => operation.state === stateFilter.value)
+    : (operations.value ?? []),
 );
 
 const stateOptions = (['', 'queued', 'running', 'succeeded', 'failed', 'canceled'] as const).map(
@@ -142,7 +137,7 @@ function detailLine(label: string, value: string | null) {
       <n-button @click="refresh">{{ t('common.refresh') }}</n-button>
     </div>
 
-    <n-alert v-if="failed && operations.length === 0" type="error" :title="t('common.error')">
+    <n-alert v-if="failed && (operations ?? []).length === 0" type="error" :title="t('common.error')">
       {{ t('apiErrors.network') }}
     </n-alert>
 

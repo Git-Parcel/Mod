@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, provide, ref } from 'vue';
 import type { SnapshotNodeDto } from '../api/types';
+import { SNAPSHOT_TREE_KEY } from './snapshotTree';
 import SnapshotTreeNode from './SnapshotTreeNode.vue';
 
 const props = defineProps<{
@@ -42,7 +43,7 @@ function toggle(id: string) {
   collapsed.value = next;
 }
 
-provide('snapshot-tree', {
+provide(SNAPSHOT_TREE_KEY, {
   childrenOf,
   current: computed(() => props.current),
   collapsed,

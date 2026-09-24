@@ -6,34 +6,26 @@ import { useI18n } from 'vue-i18n';
 
 import { api } from '../api/client';
 import type { RepoDto } from '../api/types';
+import { useApiData } from '../composables/apiData';
+import { useErrorToast } from '../composables/errorToast';
 import { usePolling } from '../composables/polling';
-import { errorText } from '../utils/errors';
 import { formatTime } from '../utils/format';
 
 const { t } = useI18n();
 const message = useMessage();
+const run = useErrorToast();
 
-const repositories = ref<RepoDto[]>([]);
-const failed = ref(false);
-
-async function refresh() {
-  try {
-    repositories.value = (await api.repositories()).repositories;
-    failed.value = false;
-  } catch (error) {
-    failed.value = true;
-    message.error(errorText(error));
-  }
-}
+const { data: repositories, failed, refresh } = useApiData<RepoDto[]>(() =>
+  api.repositories().then((r) => r.repositories),
+);
+const repoList = computed(() => repositories.value ?? []);
 
 usePolling(refresh, 20000);
 
 async function runAction(name: string, action: 'fetch' | 'pull' | 'push') {
-  try {
-    await api.repositoryAction(name, action);
+  const operation = await run(() => api.repositoryAction(name, action));
+  if (operation) {
     message.success(t('common.operationStarted'));
-  } catch (error) {
-    message.error(errorText(error));
   }
 }
 
@@ -83,24 +75,22 @@ const showClone = ref(false);
 const cloneForm = ref({ name: '', url: '' });
 
 async function submitCreate() {
-  try {
-    await api.createRepository(createName.value.trim());
+  const operation = await run(() => api.createRepository(createName.value.trim()));
+  if (operation) {
     showCreate.value = false;
     createName.value = '';
     message.success(t('common.operationStarted'));
-  } catch (error) {
-    message.error(errorText(error));
   }
 }
 
 async function submitClone() {
-  try {
-    await api.repositoryAction(cloneForm.value.name.trim(), 'clone', cloneForm.value.url.trim());
+  const operation = await run(() =>
+    api.repositoryAction(cloneForm.value.name.trim(), 'clone', cloneForm.value.url.trim()),
+  );
+  if (operation) {
     showClone.value = false;
     cloneForm.value = { name: '', url: '' };
     message.success(t('common.operationStarted'));
-  } catch (error) {
-    message.error(errorText(error));
   }
 }
 // endregion
@@ -115,15 +105,15 @@ async function submitClone() {
       <n-button type="primary" @click="showCreate = true">{{ t('repos.create') }}</n-button>
     </div>
 
-    <n-alert v-if="failed && repositories.length === 0" type="error" :title="t('common.error')">
+    <n-alert v-if="failed && (repositories ?? []).length === 0" type="error" :title="t('common.error')">
       {{ t('apiErrors.network') }}
     </n-alert>
-    <n-empty v-else-if="repositories.length === 0" :description="t('repos.none')" style="margin-top: 3rem" />
+    <n-empty v-else-if="repoList.length === 0" :description="t('repos.none')" style="margin-top: 3rem" />
 
     <n-data-table
       v-else
       :columns="columns"
-      :data="repositories"
+      :data="repoList"
       :row-key="(repo: RepoDto) => repo.name"
       :bordered="false"
       size="small"
