@@ -214,7 +214,7 @@ function restoreFromNode(node: SnapshotNodeDto) {
           style="width: 26rem"
         />
       </n-form-item>
-      <n-form-item :label="t('snapshots.restoreMode')">
+      <n-form-item :label="t('snapshots.restoreMode')" style="width: 100%">
         <n-radio-group v-model:value="restoreForm.mode">
           <n-radio value="save-first">{{ t('snapshots.mode.save-first') }}</n-radio>
           <n-radio value="direct">{{ t('snapshots.mode.direct') }}</n-radio>
