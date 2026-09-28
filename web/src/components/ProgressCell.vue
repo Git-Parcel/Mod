@@ -38,7 +38,7 @@ const fraction = computed(() =>
   font-weight: 500;
 }
 .count {
-  color: #666;
+  color: var(--faint);
   font-variant-numeric: tabular-nums;
 }
 </style>

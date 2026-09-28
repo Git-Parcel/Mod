@@ -201,5 +201,9 @@
   "state.succeeded": "Succeeded",
   "sync.never": "Never saved",
   "sync.outOfSync": "Out of sync",
-  "sync.synced": "Synced"
+  "sync.synced": "Synced",
+  "theme.dark": "Dark",
+  "theme.label": "Theme",
+  "theme.light": "Light",
+  "theme.system": "System"
 }

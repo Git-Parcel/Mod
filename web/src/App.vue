@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, onErrorCaptured, ref, watch } from 'vue';
+import { computed, onErrorCaptured, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { darkTheme, dateEnUS, dateZhCN, enUS, zhCN } from 'naive-ui';
+import { darkTheme, dateEnUS, dateZhCN, enUS, zhCN, type GlobalThemeOverrides } from 'naive-ui';
 import { captureTokenFromUrl, unauthorized } from './api/client';
 import { LOCALES, setLocale, type Locale } from './i18n';
 
@@ -15,18 +15,14 @@ const router = useRouter();
 const naiveLocale = computed(() => (locale.value === 'zh-CN' ? zhCN : enUS));
 const naiveDateLocale = computed(() => (locale.value === 'zh-CN' ? dateZhCN : dateEnUS));
 
-const activeKey = computed(() => '/' + (route.path.split('/')[1] ?? ''));
-
-const menuOptions = computed(() => [
+const navItems = computed(() => [
   { label: t('nav.overview'), key: '/' },
   { label: t('nav.parcels'), key: '/parcels' },
   { label: t('nav.operations'), key: '/operations' },
   { label: t('nav.repositories'), key: '/repositories' },
 ]);
 
-function onMenuSelect(key: string) {
-  void router.push(key);
-}
+const activeKey = computed(() => '/' + (route.path.split('/')[1] ?? ''));
 
 const currentLocale = computed(() => locale.value as Locale);
 const localeOptions = LOCALES.map((value) => ({
@@ -39,21 +35,132 @@ function onLocaleChange(value: Locale) {
 }
 
 // region appearance
+type ThemeName = 'light' | 'dark' | 'system';
 const THEME_KEY = 'gitparcel-theme';
-type ThemeName = 'light' | 'dark';
-const theme = ref<ThemeName>(localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light');
-const naiveTheme = computed(() => (theme.value === 'dark' ? darkTheme : null));
-const darkMode = computed({
-  get: () => theme.value === 'dark',
-  set: (value: boolean) => {
-    theme.value = value ? 'dark' : 'light';
-  },
-});
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+function readStoredTheme(): ThemeName {
+  try {
+    const value = localStorage.getItem(THEME_KEY);
+    if (value === 'light' || value === 'dark' || value === 'system') return value;
+  } catch {
+    /* 隐私模式等场景读不了就算了 */
+  }
+  return 'system';
+}
+
+const theme = ref<ThemeName>(readStoredTheme());
+const resolvedDark = computed(
+  () => theme.value === 'dark' || (theme.value === 'system' && prefersDark.matches),
+);
+const naiveTheme = computed(() => (resolvedDark.value ? darkTheme : null));
+
+function applyTheme() {
+  document.documentElement.dataset.theme = resolvedDark.value ? 'dark' : 'light';
+}
+
+watch(resolvedDark, applyTheme, { immediate: true });
+
 watch(theme, (value) => {
-  localStorage.setItem(THEME_KEY, value);
-  document.documentElement.dataset.theme = value;
+  try {
+    localStorage.setItem(THEME_KEY, value);
+  } catch {
+    /* 隐私模式等场景存不了就算了 */
+  }
 });
-document.documentElement.dataset.theme = theme.value;
+
+const onSystemThemeChange = () => {
+  if (theme.value === 'system') applyTheme();
+};
+prefersDark.addEventListener('change', onSystemThemeChange);
+onUnmounted(() => prefersDark.removeEventListener('change', onSystemThemeChange));
+
+const themeOptions = computed(() => [
+  { label: t('theme.light'), value: 'light' as const, icon: '☀️' },
+  { label: t('theme.dark'), value: 'dark' as const, icon: '🌙' },
+  { label: t('theme.system'), value: 'system' as const, icon: '🖥️' },
+]);
+
+// Modrinth 调色板（web/src/theme.css 同源）：组件库取值在此下发
+const lightOverrides: GlobalThemeOverrides = {
+  common: {
+    fontFamily: 'var(--font)',
+    primaryColor: '#00af5c',
+    primaryColorHover: '#1fc06c',
+    primaryColorPressed: '#04914f',
+    primaryColorSuppl: '#00af5c',
+    successColor: '#00af5c',
+    warningColor: '#e08325',
+    errorColor: '#cb2245',
+    infoColor: '#686a72',
+    bodyColor: '#ebebeb',
+    cardColor: '#ffffff',
+    modalColor: '#ffffff',
+    popoverColor: '#ffffff',
+    tableColor: '#ffffff',
+    tableHeaderColor: '#f8f8f8',
+    textColorBase: '#1a202c',
+    textColor1: '#1a202c',
+    textColor2: '#2c2e31',
+    textColor3: '#484d54',
+    placeholderColor: '#83868d',
+    borderColor: '#dddddd',
+    dividerColor: '#e5e5e8',
+    borderRadius: '10px',
+    borderRadiusSmall: '8px',
+  },
+  Card: { borderRadius: '12px', borderColor: '#e5e5e8' },
+  Dialog: { borderRadius: '12px' },
+  Tag: { borderRadius: '999px' },
+  DataTable: {
+    borderRadius: '12px',
+    borderColor: '#e5e5e8',
+    thColor: '#f8f8f8',
+    thTextColor: '#484d54',
+    thFontWeight: '600',
+  },
+};
+
+const darkOverrides: GlobalThemeOverrides = {
+  common: {
+    fontFamily: 'var(--font)',
+    primaryColor: '#1bd96a',
+    primaryColorHover: '#48e088',
+    primaryColorPressed: '#17c05c',
+    primaryColorSuppl: '#1bd96a',
+    successColor: '#42e686',
+    warningColor: '#ffa347',
+    errorColor: '#ff496e',
+    infoColor: '#9fa4b3',
+    bodyColor: '#16181c',
+    cardColor: '#27292e',
+    modalColor: '#1d1f23',
+    popoverColor: '#1d1f23',
+    tableColor: '#27292e',
+    tableHeaderColor: '#303339',
+    textColorBase: '#ffffff',
+    textColor1: '#ffffff',
+    textColor2: '#b0bac5',
+    textColor3: '#96a2b0',
+    placeholderColor: '#777b8b',
+    borderColor: '#34363c',
+    dividerColor: '#2f3136',
+    borderRadius: '10px',
+    borderRadiusSmall: '8px',
+  },
+  Card: { borderRadius: '12px', borderColor: '#2f3136' },
+  Dialog: { borderRadius: '12px' },
+  Tag: { borderRadius: '999px' },
+  DataTable: {
+    borderRadius: '12px',
+    borderColor: '#2f3136',
+    thColor: '#303339',
+    thTextColor: '#96a2b0',
+    thFontWeight: '600',
+  },
+};
+
+const themeOverrides = computed(() => (resolvedDark.value ? darkOverrides : lightOverrides));
 // endregion
 
 // Render-crash containment: a broken view shows an error card with a way
@@ -72,60 +179,108 @@ function recoverFromCrash() {
   void router.push('/');
 }
 
-// A new route starts scrolled to the top; the layout content is the scroller.
-const contentRef = ref<InstanceType<typeof import('naive-ui')['NLayoutContent']>>();
+// A new route starts scrolled to the top.
 watch(
   () => route.fullPath,
-  () => {
-    contentRef.value?.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
-  },
+  () => window.scrollTo({ top: 0 }),
 );
 </script>
 
 <template>
-  <n-config-provider :locale="naiveLocale" :date-locale="naiveDateLocale" :theme="naiveTheme">
+  <n-config-provider
+    :locale="naiveLocale"
+    :date-locale="naiveDateLocale"
+    :theme="naiveTheme"
+    :theme-overrides="themeOverrides"
+  >
     <n-message-provider>
       <n-dialog-provider>
         <n-notification-provider :max="4">
           <operation-notifier />
-          <n-result
-            v-if="unauthorized"
-            status="403"
-            :title="t('auth.invalid')"
-            :description="t('auth.hint')"
-            style="margin-top: 6rem"
-          />
-          <n-layout v-else has-sider style="height: 100vh">
-            <n-layout-sider
-              bordered
-              :width="220"
-              content-style="display:flex;flex-direction:column;height:100%"
-            >
-              <div class="brand">
-                <span class="brand-title">{{ t('app.title') }}</span>
+          <div class="shell">
+            <header class="topbar">
+              <div class="topbar-inner">
+                <div class="brand">
+                  <span class="brand-mark">
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M21 8l-9-5-9 5v8l9 5 9-5V8z" />
+                      <path d="M3 8l9 5 9-5" />
+                      <path d="M12 13v9" />
+                    </svg>
+                  </span>
+                  <span class="brand-name">{{ t('app.title') }}</span>
+                </div>
+
+                <nav class="nav">
+                  <button
+                    v-for="item in navItems"
+                    :key="item.key"
+                    type="button"
+                    class="nav-item"
+                    :class="{ active: activeKey === item.key }"
+                    @click="router.push(item.key)"
+                  >
+                    <span>{{ item.label }}</span>
+                  </button>
+                </nav>
+
+                <div class="actions">
+                  <div class="seg" role="group" :aria-label="t('theme.label')">
+                    <button
+                      v-for="opt in themeOptions"
+                      :key="opt.value"
+                      type="button"
+                      class="seg-item"
+                      :class="{ active: theme === opt.value }"
+                      :title="opt.label"
+                      :aria-label="opt.label"
+                      @click="theme = opt.value"
+                    >
+                      {{ opt.icon }}
+                    </button>
+                  </div>
+
+                  <n-dropdown
+                    trigger="click"
+                    :options="localeOptions"
+                    @select="onLocaleChange"
+                  >
+                    <button type="button" class="lang-btn" :aria-label="t('nav.language')">
+                      <span>{{ currentLocale === 'zh-CN' ? '中文' : 'English' }}</span>
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="12"
+                        height="12"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    </button>
+                  </n-dropdown>
+                </div>
               </div>
-              <n-menu :value="activeKey" :options="menuOptions" @update:value="onMenuSelect" />
-              <div class="sider-footer">
-                <span>{{ t('nav.language') }}</span>
-                <n-select
-                  :value="currentLocale"
-                  :options="localeOptions"
-                  size="small"
-                  style="width: 7.5rem"
-                  @update:value="onLocaleChange"
-                />
-                <n-switch v-model:value="darkMode" size="small">
-                  <template #checked>🌙</template>
-                  <template #unchecked>☀️</template>
-                </n-switch>
-              </div>
-            </n-layout-sider>
-            <n-layout-content
-              ref="contentRef"
-              content-style="padding: 1.25rem 1.5rem; height: 100vh; overflow: auto"
-            >
+            </header>
+
+            <main class="content">
               <n-result
-                v-if="renderCrashed"
+                v-if="unauthorized"
+                status="403"
+                :title="t('auth.invalid')"
+                :description="t('auth.hint')"
+                style="margin-top: 6rem"
+              />
+              <n-result
+                v-else-if="renderCrashed"
                 status="500"
                 :title="t('common.error')"
                 :description="renderError ?? ''"
@@ -137,8 +292,8 @@ watch(
                 </template>
               </n-result>
               <router-view v-else :key="route.fullPath" />
-            </n-layout-content>
-          </n-layout>
+            </main>
+          </div>
         </n-notification-provider>
       </n-dialog-provider>
     </n-message-provider>
@@ -146,19 +301,194 @@ watch(
 </template>
 
 <style scoped>
-.brand {
-  padding: 1rem 1.25rem;
-  font-weight: 600;
-  font-size: 1.05rem;
+.shell {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
-.sider-footer {
-  margin-top: auto;
-  padding: 1rem 1.25rem;
+
+/* 顶栏：品牌 + 导航 + 偏好控件 */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--surface-4);
+  border-bottom: 1px solid var(--border-strong);
+}
+.topbar-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 60px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  color: var(--muted);
+  gap: 20px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  color: var(--text-1);
+  flex-shrink: 0;
+}
+/* 品牌图标：品牌绿渐变圆角块 */
+.brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  color: var(--brand);
+  background: linear-gradient(135deg, rgba(0, 175, 92, 0.25) 0%, rgba(29, 217, 106, 0.18) 100%);
+}
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+/* 导航项：胶囊形，悬浮换表面色，选中铺品牌绿软底 */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.nav-item:hover {
+  background: var(--surface-2);
+}
+.nav-item.active {
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-weight: 600;
+}
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* 主题分段：iOS 风格胶囊，激活项浮起 */
+.seg {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-round);
+  background: var(--surface-2);
+}
+.seg-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-round);
+  background: transparent;
+  font-size: 13px;
+  cursor: pointer;
+  filter: grayscale(1);
+  opacity: 0.65;
+}
+.seg-item:hover {
+  opacity: 1;
+}
+.seg-item.active {
+  background: var(--surface-4);
+  box-shadow: var(--shadow-light);
+  filter: none;
+  opacity: 1;
+}
+
+/* 语言下拉触发器：与主题分段同风格的胶囊 */
+.lang-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--radius-round);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.lang-btn:hover {
+  color: var(--text-1);
+  background: var(--surface-5);
+}
+
+/* 内容区：通栏留白 + 居中容器 */
+.content {
+  flex: 1;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* ---- 移动端适配 ---- */
+@media (max-width: 720px) {
+  .topbar-inner {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 0 12px;
+    gap: 0 12px;
+  }
+  .brand {
+    order: 1;
+    flex: 1;
+    min-width: 0;
+  }
+  .actions {
+    order: 2;
+    padding: 8px 0;
+  }
+  .nav {
+    order: 3;
+    flex-basis: 100%;
+    height: 44px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .nav::-webkit-scrollbar {
+    display: none;
+  }
+  .nav-item {
+    flex-shrink: 0;
+    height: 34px;
+  }
+  .content {
+    padding: 12px;
+  }
+}
+@media (max-width: 560px) {
+  .brand-name {
+    display: none;
+  }
+  .lang-btn {
+    padding: 0 9px;
+    gap: 3px;
+  }
 }
 </style>
 
@@ -169,27 +499,5 @@ watch(
   color: var(--link);
   cursor: pointer;
   padding: 0;
-}
-</style>
-
-<style>
-/* Theme-aware custom properties for component styles that naive-ui
-   variables do not reach. */
-:root {
-  --muted: #888;
-  --faint: #999;
-  --link: #2080f0;
-  --success: #18a058;
-  --warning: #f0a020;
-  --line: #ddd;
-}
-
-:root[data-theme='dark'] {
-  --muted: #9aa2ad;
-  --faint: #7d8590;
-  --link: #66b2ff;
-  --success: #4fc98a;
-  --warning: #ffc163;
-  --line: #3a3a3f;
 }
 </style>

@@ -1,0 +1,96 @@
+/*
+ * Modrinth 风格设计系统：分层表面色 + 品牌绿 + 大圆角卡片 + 胶囊导航。
+ * 与 Leawind/agent-memory 控制台同源。自定义组件样式只引用本文件的变量；
+ * Naive UI 组件的对应取值在 App.vue 的 themeOverrides 中保持同源。
+ */
+
+:root {
+  --surface-1: #ebebeb;
+  --surface-2: #f5f5f5;
+  --surface-3: #f8f8f8;
+  --surface-4: #ffffff;
+  --surface-5: #dddddd;
+  --text-1: #1a202c;
+  --text-2: #2c2e31;
+  --text-3: #484d54;
+  --text-placeholder: #83868d;
+  --brand: #00af5c;
+  --brand-hover: #1fc06c;
+  --brand-pressed: #04914f;
+  --brand-soft: #e5faf0;
+  --border-strong: rgba(161, 161, 161, 0.35);
+  --scrollbar: #c4c4c4;
+  --success: #00af5c;
+  --warning: #e08325;
+  --danger: #cb2245;
+  --info: #686a72;
+  --shadow-light: 0 2px 12px rgba(50, 50, 100, 0.1);
+  --shadow: 0 4px 16px rgba(50, 50, 100, 0.12);
+
+  /* 组件样式的语义别名：视图与自定义组件只引用这一层 */
+  --muted: var(--text-3);
+  --faint: var(--text-placeholder);
+  --link: var(--brand);
+  --line: var(--border-strong);
+  --font:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --radius: 10px;
+  --radius-lg: 12px;
+  --radius-round: 999px;
+}
+
+:root[data-theme='dark'] {
+  --surface-1: #16181c;
+  --surface-2: #1d1f23;
+  --surface-3: #27292e;
+  --surface-4: #34363c;
+  --surface-5: #42444a;
+  --text-1: #ffffff;
+  --text-2: #b0bac5;
+  --text-3: #96a2b0;
+  --text-placeholder: #777b8b;
+  --brand: #1bd96a;
+  --brand-hover: #48e088;
+  --brand-pressed: #17c05c;
+  --brand-soft: #16271d;
+  --border-strong: rgba(193, 190, 209, 0.12);
+  --scrollbar: #42444a;
+  --success: #42e686;
+  --warning: #ffa347;
+  --danger: #ff496e;
+  --info: #9fa4b3;
+  --shadow-light: 0 2px 12px rgba(0, 0, 0, 0.35);
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--surface-1);
+  color: var(--text-1);
+  font-family: var(--font);
+}
+
+/* 细滚动条，颜色随主题 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  border-width: 1px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
